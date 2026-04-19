@@ -294,6 +294,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/BrandSignal"
+        recommendations:
+          type: array
+          items:
+            $ref: "#/components/schemas/GeoRecommendation"
       required:
         - url
         - geoScore
@@ -310,6 +314,31 @@ components:
         - hasHttps
         - hasCanonical
         - wordCount
+
+    GeoRecommendation:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        detail:
+          type: string
+        priority:
+          type: string
+          enum: [critical, high, medium, low]
+        category:
+          type: string
+          enum: [answerability, authority, structure, depth, freshness, technical, entity]
+        impact:
+          type: string
+      required:
+        - id
+        - title
+        - detail
+        - priority
+        - category
+        - impact
 
     BrandSignal:
       type: object

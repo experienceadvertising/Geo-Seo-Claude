@@ -87,6 +87,26 @@ export const AnalyzeUrlResponse = zod.object({
       }),
     )
     .optional(),
+  recommendations: zod
+    .array(
+      zod.object({
+        id: zod.string(),
+        title: zod.string(),
+        detail: zod.string(),
+        priority: zod.enum(["critical", "high", "medium", "low"]),
+        category: zod.enum([
+          "answerability",
+          "authority",
+          "structure",
+          "depth",
+          "freshness",
+          "technical",
+          "entity",
+        ]),
+        impact: zod.string(),
+      }),
+    )
+    .optional(),
 });
 
 /**
@@ -175,6 +195,26 @@ export const GetAuditResponse = zod.object({
         found: zod.boolean(),
         state: zod.enum(["found", "not_found", "unavailable"]),
         detail: zod.string().optional(),
+      }),
+    )
+    .optional(),
+  recommendations: zod
+    .array(
+      zod.object({
+        id: zod.string(),
+        title: zod.string(),
+        detail: zod.string(),
+        priority: zod.enum(["critical", "high", "medium", "low"]),
+        category: zod.enum([
+          "answerability",
+          "authority",
+          "structure",
+          "depth",
+          "freshness",
+          "technical",
+          "entity",
+        ]),
+        impact: zod.string(),
       }),
     )
     .optional(),

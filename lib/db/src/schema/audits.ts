@@ -23,6 +23,7 @@ export const auditsTable = pgTable("audits", {
   aiInsights: text("ai_insights"),
   brandName: text("brand_name"),
   brandSignals: jsonb("brand_signals"),
+  recommendations: jsonb("recommendations"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

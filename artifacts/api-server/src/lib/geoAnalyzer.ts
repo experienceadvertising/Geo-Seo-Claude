@@ -1,5 +1,6 @@
 import * as cheerio from "cheerio";
 import { analyzeBrandAuthority, type BrandSignal } from "./brandAuthority";
+import { extractContentSignals, generateGeoRecommendations, type GeoRecommendation } from "./geoRecommendations";
 
 export interface CrawlerStatus {
   name: string;
@@ -56,6 +57,7 @@ export interface AnalysisResult {
   wordCount: number;
   brandName: string;
   brandSignals: BrandSignal[];
+  recommendations: GeoRecommendation[];
 }
 
 const AI_CRAWLERS = [
@@ -188,12 +190,14 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
   let wordCount = 0;
   let structuredDataTypes: SchemaItem[] = [];
   let citabilityBlocks: CitabilityBlock[] = [];
+  let $page: cheerio.CheerioAPI | null = null;
 
   try {
     const response = await fetch(url, { headers, signal: AbortSignal.timeout(15000) });
     html = await response.text();
 
     const $ = cheerio.load(html);
+    $page = $;
 
     title = $("title").first().text().trim() || null;
     description = $("meta[name='description']").attr("content") || $("meta[property='og:description']").attr("content") || null;
@@ -373,7 +377,29 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
   const hasOrgSchema = structuredDataTypes.some(
     (s) => s.present && (s.type === "Organization" || s.type === "LocalBusiness")
   );
+  const hasFaqSchema = structuredDataTypes.some((s) => s.present && s.type === "FAQPage");
+  const hasArticleSchema = structuredDataTypes.some((s) => s.present && s.type === "Article");
+  const hasHowToSchema = structuredDataTypes.some((s) => s.present && s.type === "HowTo");
   const brandAuthority = await analyzeBrandAuthority(url, title, hasOrgSchema, hasLlmsTxt);
+
+  // Generate research-backed GEO recommendations from extracted content signals
+  const blockedAiCrawlers = crawlerStatuses.filter((c) => !c.allowed).map((c) => c.name);
+  let recommendations: GeoRecommendation[] = [];
+  if ($page) {
+    const signals = extractContentSignals($page, url, brandAuthority.brandName || null);
+    recommendations = generateGeoRecommendations({
+      signals,
+      hasFaqSchema,
+      hasArticleSchema,
+      hasOrgSchema,
+      hasHowToSchema,
+      hasLlmsTxt,
+      brandName: brandAuthority.brandName || null,
+      brandFound: brandAuthority.signals.some((s) => s.found),
+      blockedAiCrawlers,
+      avgCitabilityScore,
+    });
+  }
 
   const scores: GeoScores = {
     citability: citabilityScore,
@@ -405,7 +431,7 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
     avgCitabilityScore: Math.round(avgCitabilityScore * 10) / 10,
     schemaTypes: structuredDataTypes,
     platforms,
-    quickWins: quickWins.slice(0, 6),
+    quickWins: mergeQuickWins(quickWins, recommendations).slice(0, 8),
     technicalIssues: technicalIssues.slice(0, 6),
     hasLlmsTxt,
     hasHttps,
@@ -413,5 +439,20 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
     wordCount,
     brandName: brandAuthority.brandName,
     brandSignals: brandAuthority.signals,
+    recommendations,
   };
+}
+
+function mergeQuickWins(existing: string[], recs: GeoRecommendation[]): string[] {
+  const seen = new Set(existing.map((s) => s.toLowerCase()));
+  const out = [...existing];
+  for (const r of recs) {
+    if (r.priority !== "critical" && r.priority !== "high") continue;
+    const line = `${r.title} — ${r.impact}`;
+    if (!seen.has(line.toLowerCase())) {
+      out.push(line);
+      seen.add(line.toLowerCase());
+    }
+  }
+  return out;
 }

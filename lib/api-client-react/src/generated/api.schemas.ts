@@ -77,6 +77,38 @@ export interface BrandSignal {
   detail?: string;
 }
 
+export type GeoRecommendationPriority =
+  (typeof GeoRecommendationPriority)[keyof typeof GeoRecommendationPriority];
+
+export const GeoRecommendationPriority = {
+  critical: "critical",
+  high: "high",
+  medium: "medium",
+  low: "low",
+} as const;
+
+export type GeoRecommendationCategory =
+  (typeof GeoRecommendationCategory)[keyof typeof GeoRecommendationCategory];
+
+export const GeoRecommendationCategory = {
+  answerability: "answerability",
+  authority: "authority",
+  structure: "structure",
+  depth: "depth",
+  freshness: "freshness",
+  technical: "technical",
+  entity: "entity",
+} as const;
+
+export interface GeoRecommendation {
+  id: string;
+  title: string;
+  detail: string;
+  priority: GeoRecommendationPriority;
+  category: GeoRecommendationCategory;
+  impact: string;
+}
+
 export interface GeoAuditResult {
   id?: number;
   url: string;
@@ -99,6 +131,7 @@ export interface GeoAuditResult {
   aiInsights?: string;
   brandName?: string;
   brandSignals?: BrandSignal[];
+  recommendations?: GeoRecommendation[];
 }
 
 export type ListAuditsParams = {

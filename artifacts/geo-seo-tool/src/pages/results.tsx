@@ -141,6 +141,45 @@ export default function Results() {
         </div>
       </div>
 
+      {/* Prioritized GEO Recommendations */}
+      {audit.recommendations && audit.recommendations.length > 0 && (
+        <Card className="shadow-sm border-border mb-6">
+          <CardHeader className="bg-muted/30 pb-4 border-b">
+            <CardTitle className="flex items-center gap-2 text-sm font-mono uppercase tracking-wider">
+              <CheckCircle2 className="h-4 w-4 text-primary" /> Prioritized GEO Recommendations
+            </CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              Grounded in Princeton/IIT Delhi GEO research (KDD 2024). Apply top items first.
+            </p>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <ul className="space-y-4">
+              {audit.recommendations.slice(0, 12).map((r, i) => {
+                const pStyle =
+                  r.priority === "critical" ? "bg-red-100 text-red-700 border-red-200"
+                  : r.priority === "high" ? "bg-amber-100 text-amber-700 border-amber-200"
+                  : r.priority === "medium" ? "bg-teal-100 text-teal-700 border-teal-200"
+                  : "bg-slate-100 text-slate-600 border-slate-200";
+                return (
+                  <li key={r.id ?? i} className="flex items-start gap-3 text-sm">
+                    <span className={`shrink-0 inline-flex items-center justify-center px-2 py-0.5 rounded border text-[10px] font-mono font-bold uppercase ${pStyle}`}>
+                      {r.priority}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-foreground">{r.title}</div>
+                      <div className="text-[11px] text-muted-foreground italic mt-0.5">
+                        {r.category} · {r.impact}
+                      </div>
+                      <p className="text-sm text-muted-foreground leading-snug mt-1">{r.detail}</p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Quick Wins */}
         <Card className="flex flex-col shadow-sm border-border">

@@ -95,6 +95,7 @@ Provide 3-4 specific, prioritized recommendations to improve this site's visibil
       aiInsights,
       brandName: analysis.brandName,
       brandSignals: analysis.brandSignals,
+      recommendations: analysis.recommendations,
     }).returning();
 
     res.json({

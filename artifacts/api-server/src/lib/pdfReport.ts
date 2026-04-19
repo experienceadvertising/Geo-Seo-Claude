@@ -22,6 +22,7 @@ interface AuditRow {
   aiInsights: string | null;
   brandName: string | null;
   brandSignals: unknown;
+  recommendations?: unknown;
   createdAt: Date;
 }
 
@@ -39,6 +40,7 @@ interface Schema { type: string; present: boolean }
 interface Platform { platform: string; score: number; status: string; recommendations: string[] }
 interface CitBlock { heading: string | null; wordCount: number; score: number; grade: string; preview: string }
 interface BrandSignal { source: string; found: boolean; detail: string | null; state?: string }
+interface GeoRec { id: string; title: string; detail: string; priority: "critical"|"high"|"medium"|"low"; category: string; impact: string }
 
 const COLORS = {
   primary: "#0d9488",
@@ -188,6 +190,34 @@ export function generateAuditPdf(audit: AuditRow, stream: Writable): Promise<voi
       doc.fillColor(COLORS.ink).font("Helvetica-Bold").fontSize(10).text(String(s.source ?? ""), 115, y, { width: 130, continued: false });
       doc.fillColor(COLORS.muted).font("Helvetica").fontSize(9).text(s.detail || "—", 245, y, { width: doc.page.width - 295 });
       doc.moveDown(0.4);
+    }
+  }
+
+  // GEO Recommendations (research-backed, prioritized)
+  const recs = asArray<GeoRec>(audit.recommendations);
+  if (recs.length > 0) {
+    if (doc.y > doc.page.height - 250) doc.addPage();
+    sectionHeader(doc, "Prioritized GEO Recommendations");
+    doc.fontSize(8).fillColor(COLORS.muted).font("Helvetica-Oblique")
+      .text("Grounded in Princeton/IIT Delhi GEO research (KDD 2024). Apply top items first.");
+    doc.moveDown(0.4);
+    for (const r of recs.slice(0, 12)) {
+      if (doc.y > doc.page.height - 110) doc.addPage();
+      const y = doc.y;
+      const pColor = r.priority === "critical" ? COLORS.bad
+        : r.priority === "high" ? COLORS.warn
+        : r.priority === "medium" ? COLORS.primary
+        : COLORS.muted;
+      doc.roundedRect(50, y, 58, 14, 3).fillAndStroke(pColor, pColor);
+      doc.fillColor("white").fontSize(8).font("Helvetica-Bold")
+        .text(String(r.priority ?? "").toUpperCase(), 50, y + 3, { width: 58, align: "center" });
+      doc.fillColor(COLORS.ink).fontSize(11).font("Helvetica-Bold")
+        .text(String(r.title ?? ""), 116, y, { width: doc.page.width - 166 });
+      doc.fillColor(COLORS.muted).fontSize(8).font("Helvetica-Oblique")
+        .text(`${String(r.category ?? "")} · ${String(r.impact ?? "")}`, 116, doc.y, { width: doc.page.width - 166 });
+      doc.fillColor(COLORS.ink).fontSize(9).font("Helvetica")
+        .text(String(r.detail ?? ""), 116, doc.y + 2, { width: doc.page.width - 166, lineGap: 1 });
+      doc.moveDown(0.5);
     }
   }
 
