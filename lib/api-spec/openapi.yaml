@@ -288,6 +288,12 @@ components:
           type: integer
         aiInsights:
           type: string
+        brandName:
+          type: string
+        brandSignals:
+          type: array
+          items:
+            $ref: "#/components/schemas/BrandSignal"
       required:
         - url
         - geoScore
@@ -304,3 +310,20 @@ components:
         - hasHttps
         - hasCanonical
         - wordCount
+
+    BrandSignal:
+      type: object
+      properties:
+        source:
+          type: string
+        found:
+          type: boolean
+        state:
+          type: string
+          enum: [found, not_found, unavailable]
+        detail:
+          type: string
+      required:
+        - source
+        - found
+        - state

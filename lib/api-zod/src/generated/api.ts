@@ -76,6 +76,17 @@ export const AnalyzeUrlResponse = zod.object({
   hasCanonical: zod.boolean(),
   wordCount: zod.number(),
   aiInsights: zod.string().optional(),
+  brandName: zod.string().optional(),
+  brandSignals: zod
+    .array(
+      zod.object({
+        source: zod.string(),
+        found: zod.boolean(),
+        state: zod.enum(["found", "not_found", "unavailable"]),
+        detail: zod.string().optional(),
+      }),
+    )
+    .optional(),
 });
 
 /**
@@ -156,4 +167,15 @@ export const GetAuditResponse = zod.object({
   hasCanonical: zod.boolean(),
   wordCount: zod.number(),
   aiInsights: zod.string().optional(),
+  brandName: zod.string().optional(),
+  brandSignals: zod
+    .array(
+      zod.object({
+        source: zod.string(),
+        found: zod.boolean(),
+        state: zod.enum(["found", "not_found", "unavailable"]),
+        detail: zod.string().optional(),
+      }),
+    )
+    .optional(),
 });

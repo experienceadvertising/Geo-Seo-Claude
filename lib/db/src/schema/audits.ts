@@ -21,6 +21,8 @@ export const auditsTable = pgTable("audits", {
   hasCanonical: jsonb("has_canonical").notNull().$type<boolean>(),
   wordCount: integer("word_count").notNull(),
   aiInsights: text("ai_insights"),
+  brandName: text("brand_name"),
+  brandSignals: jsonb("brand_signals"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

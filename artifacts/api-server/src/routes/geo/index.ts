@@ -7,6 +7,7 @@ import {
   GetAuditParams,
 } from "@workspace/api-zod";
 import { analyzeUrl } from "../../lib/geoAnalyzer";
+import { generateAuditPdf } from "../../lib/pdfReport";
 import { anthropic } from "@workspace/integrations-anthropic-ai";
 
 const router: IRouter = Router();
@@ -92,6 +93,8 @@ Provide 3-4 specific, prioritized recommendations to improve this site's visibil
       hasCanonical: analysis.hasCanonical,
       wordCount: analysis.wordCount,
       aiInsights,
+      brandName: analysis.brandName,
+      brandSignals: analysis.brandSignals,
     }).returning();
 
     res.json({
@@ -143,6 +146,39 @@ router.get("/geo/audits/:id", async (req, res): Promise<void> => {
     ...audit,
     createdAt: audit.createdAt.toISOString(),
   });
+});
+
+router.get("/geo/audits/:id/pdf", async (req, res): Promise<void> => {
+  const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const params = GetAuditParams.safeParse({ id: rawId });
+  if (!params.success) {
+    res.status(400).json({ error: "Invalid ID" });
+    return;
+  }
+
+  const [audit] = await db.select().from(auditsTable).where(eq(auditsTable.id, params.data.id));
+  if (!audit) {
+    res.status(404).json({ error: "Audit not found" });
+    return;
+  }
+
+  const safeHost = (() => {
+    try { return new URL(audit.url).hostname.replace(/[^a-z0-9.-]/gi, "_"); } catch { return "audit"; }
+  })();
+
+  try {
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="geo-audit-${safeHost}-${audit.id}.pdf"`);
+    res.on("error", (err) => req.log.error({ err, auditId: audit.id }, "PDF response stream error"));
+    await generateAuditPdf(audit, res);
+  } catch (err) {
+    req.log.error({ err, auditId: audit.id }, "PDF generation failed");
+    if (!res.headersSent) {
+      res.status(500).json({ error: "Failed to generate PDF" });
+    } else {
+      res.destroy();
+    }
+  }
 });
 
 export default router;

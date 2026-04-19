@@ -61,6 +61,22 @@ export type GeoAuditResultScores = {
   platformOptimization: number;
 };
 
+export type BrandSignalState =
+  (typeof BrandSignalState)[keyof typeof BrandSignalState];
+
+export const BrandSignalState = {
+  found: "found",
+  not_found: "not_found",
+  unavailable: "unavailable",
+} as const;
+
+export interface BrandSignal {
+  source: string;
+  found: boolean;
+  state: BrandSignalState;
+  detail?: string;
+}
+
 export interface GeoAuditResult {
   id?: number;
   url: string;
@@ -81,6 +97,8 @@ export interface GeoAuditResult {
   hasCanonical: boolean;
   wordCount: number;
   aiInsights?: string;
+  brandName?: string;
+  brandSignals?: BrandSignal[];
 }
 
 export type ListAuditsParams = {

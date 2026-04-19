@@ -1,4 +1,5 @@
 import * as cheerio from "cheerio";
+import { analyzeBrandAuthority, type BrandSignal } from "./brandAuthority";
 
 export interface CrawlerStatus {
   name: string;
@@ -53,6 +54,8 @@ export interface AnalysisResult {
   hasHttps: boolean;
   hasCanonical: boolean;
   wordCount: number;
+  brandName: string;
+  brandSignals: BrandSignal[];
 }
 
 const AI_CRAWLERS = [
@@ -366,16 +369,15 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
     },
   ];
 
-  const brandAuthorityScore = Math.round(
-    (hasLlmsTxt ? 20 : 0) +
-    (presentSchemaCount >= 2 ? 30 : presentSchemaCount * 15) +
-    (wordCount > 2000 ? 25 : Math.round(wordCount / 80)) +
-    25
+  // Real brand authority via Wikipedia, DuckDuckGo, GitHub
+  const hasOrgSchema = structuredDataTypes.some(
+    (s) => s.present && (s.type === "Organization" || s.type === "LocalBusiness")
   );
+  const brandAuthority = await analyzeBrandAuthority(url, title, hasOrgSchema, hasLlmsTxt);
 
   const scores: GeoScores = {
     citability: citabilityScore,
-    brandAuthority: Math.min(100, brandAuthorityScore),
+    brandAuthority: brandAuthority.score,
     contentQuality: contentQualityScore,
     technicalSeo: technicalScore,
     structuredData: schemaScore,
@@ -409,5 +411,7 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
     hasHttps,
     hasCanonical,
     wordCount,
+    brandName: brandAuthority.brandName,
+    brandSignals: brandAuthority.signals,
   };
 }

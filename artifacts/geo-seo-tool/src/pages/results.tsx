@@ -1,9 +1,10 @@
 import React, { useMemo } from "react";
 import { useParams, Link } from "wouter";
 import { useGetAudit, getGetAuditQueryKey } from "@workspace/api-client-react";
-import { ArrowLeft, CheckCircle2, XCircle, AlertTriangle, Bot, TerminalSquare, FileText, Code2, ShieldAlert, Sparkles, Loader2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, XCircle, AlertTriangle, Bot, TerminalSquare, FileText, Code2, ShieldAlert, Sparkles, Loader2, Download, Building2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ScoreBadge } from "@/components/score-badge";
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from "recharts";
@@ -69,10 +70,18 @@ export default function Results() {
           </Link>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight break-all leading-tight">{audit.title || audit.url}</h1>
           <p className="text-sm font-mono text-muted-foreground">{audit.url}</p>
-          <div className="flex items-center gap-4 text-xs text-muted-foreground mt-2 font-mono">
+          <div className="flex items-center gap-4 text-xs text-muted-foreground mt-2 font-mono flex-wrap">
             <span>Analyzed on {new Date(audit.createdAt).toLocaleDateString()} at {new Date(audit.createdAt).toLocaleTimeString()}</span>
             <span>•</span>
             <span>{audit.wordCount.toLocaleString()} words</span>
+            {audit.brandName && (<><span>•</span><span>Brand: <span className="text-foreground">{audit.brandName}</span></span></>)}
+          </div>
+          <div className="pt-2">
+            <a href={`/api/geo/audits/${audit.id}/pdf`} target="_blank" rel="noopener noreferrer" data-testid="link-download-pdf">
+              <Button variant="outline" size="sm" className="font-mono text-xs gap-2" data-testid="button-download-pdf">
+                <Download className="h-3.5 w-3.5" /> Download PDF Report
+              </Button>
+            </a>
           </div>
         </div>
         
@@ -81,7 +90,7 @@ export default function Results() {
           <div className={`absolute inset-0 ${overallColorClass} opacity-50 group-hover:opacity-100 transition-opacity`} />
           <div className="relative z-10 text-center">
             <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">GEO Score</div>
-            <div className={`text-6xl font-black font-mono tracking-tighter ${overallColorClass.split(' ')[0]}`}>
+            <div className={`text-6xl font-black font-mono tracking-tighter ${overallColorClass.split(' ')[0]}`} data-testid="text-geo-score">
               {audit.geoScore}
             </div>
           </div>
@@ -268,6 +277,43 @@ export default function Results() {
           </Card>
         </div>
       </div>
+
+      {/* Brand Authority Signals */}
+      {audit.brandSignals && audit.brandSignals.length > 0 && (
+        <Card className="shadow-sm border-border" data-testid="card-brand-authority">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-sm font-mono uppercase tracking-wider flex items-center gap-2">
+              <Building2 className="h-4 w-4" /> Brand Authority Signals
+              {audit.brandName && <span className="text-muted-foreground">— {audit.brandName}</span>}
+            </CardTitle>
+            <CardDescription className="text-xs">Real-time checks against Wikipedia, DuckDuckGo, GitHub, and on-page entity markers.</CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="divide-y border-t">
+              {audit.brandSignals.map((signal, i) => (
+                <div key={i} className="flex items-start justify-between p-4 hover:bg-muted/30 transition-colors gap-4" data-testid={`row-brand-signal-${i}`}>
+                  <div className="flex items-start gap-3 min-w-0 flex-1">
+                    {signal.found ? (
+                      <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
+                    ) : (
+                      <XCircle className="h-4 w-4 text-muted-foreground/50 shrink-0 mt-0.5" />
+                    )}
+                    <div className="min-w-0">
+                      <div className="font-bold text-sm">{signal.source}</div>
+                      <div className="text-xs text-muted-foreground font-mono mt-0.5 break-words">
+                        {signal.detail || (signal.found ? "Detected" : "Not found")}
+                      </div>
+                    </div>
+                  </div>
+                  <Badge variant="outline" className={`font-mono text-[10px] shrink-0 ${signal.found ? 'bg-green-500/10 text-green-600 border-green-500/20 dark:text-green-400' : 'text-muted-foreground border-muted-foreground/20'}`}>
+                    {signal.found ? "FOUND" : "NONE"}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Citability Blocks Preview */}
       <div className="space-y-4">
