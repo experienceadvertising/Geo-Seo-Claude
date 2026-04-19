@@ -8,3 +8,81 @@
 export interface HealthStatus {
   status: string;
 }
+
+export interface ErrorResponse {
+  error: string;
+}
+
+export interface AnalyzeUrlBody {
+  /** URL to analyze */
+  url: string;
+}
+
+export interface AuditSummary {
+  id: number;
+  url: string;
+  geoScore: number;
+  createdAt: string;
+}
+
+export interface CrawlerStatus {
+  name: string;
+  allowed: boolean;
+  type: string;
+}
+
+export interface CitabilityBlock {
+  heading?: string;
+  wordCount: number;
+  score: number;
+  grade: string;
+  preview: string;
+}
+
+export interface SchemaItem {
+  type: string;
+  present: boolean;
+  properties?: string[];
+}
+
+export interface PlatformScore {
+  platform: string;
+  score: number;
+  status: string;
+  recommendations: string[];
+}
+
+export type GeoAuditResultScores = {
+  citability: number;
+  brandAuthority: number;
+  contentQuality: number;
+  technicalSeo: number;
+  structuredData: number;
+  platformOptimization: number;
+};
+
+export interface GeoAuditResult {
+  id?: number;
+  url: string;
+  title?: string;
+  description?: string;
+  geoScore: number;
+  createdAt: string;
+  scores: GeoAuditResultScores;
+  crawlers: CrawlerStatus[];
+  citabilityBlocks: CitabilityBlock[];
+  avgCitabilityScore: number;
+  schemaTypes: SchemaItem[];
+  platforms: PlatformScore[];
+  quickWins: string[];
+  technicalIssues: string[];
+  hasLlmsTxt: boolean;
+  hasHttps: boolean;
+  hasCanonical: boolean;
+  wordCount: number;
+  aiInsights?: string;
+}
+
+export type ListAuditsParams = {
+  limit?: number;
+};

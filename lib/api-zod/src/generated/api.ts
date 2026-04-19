@@ -14,3 +14,146 @@ import * as zod from "zod";
 export const HealthCheckResponse = zod.object({
   status: zod.string(),
 });
+
+/**
+ * @summary Run a full GEO+SEO analysis on a URL
+ */
+export const AnalyzeUrlBody = zod.object({
+  url: zod.string().describe("URL to analyze"),
+});
+
+export const AnalyzeUrlResponse = zod.object({
+  id: zod.number().optional(),
+  url: zod.string(),
+  title: zod.string().optional(),
+  description: zod.string().optional(),
+  geoScore: zod.number(),
+  createdAt: zod.string(),
+  scores: zod.object({
+    citability: zod.number(),
+    brandAuthority: zod.number(),
+    contentQuality: zod.number(),
+    technicalSeo: zod.number(),
+    structuredData: zod.number(),
+    platformOptimization: zod.number(),
+  }),
+  crawlers: zod.array(
+    zod.object({
+      name: zod.string(),
+      allowed: zod.boolean(),
+      type: zod.string(),
+    }),
+  ),
+  citabilityBlocks: zod.array(
+    zod.object({
+      heading: zod.string().optional(),
+      wordCount: zod.number(),
+      score: zod.number(),
+      grade: zod.string(),
+      preview: zod.string(),
+    }),
+  ),
+  avgCitabilityScore: zod.number(),
+  schemaTypes: zod.array(
+    zod.object({
+      type: zod.string(),
+      present: zod.boolean(),
+      properties: zod.array(zod.string()).optional(),
+    }),
+  ),
+  platforms: zod.array(
+    zod.object({
+      platform: zod.string(),
+      score: zod.number(),
+      status: zod.string(),
+      recommendations: zod.array(zod.string()),
+    }),
+  ),
+  quickWins: zod.array(zod.string()),
+  technicalIssues: zod.array(zod.string()),
+  hasLlmsTxt: zod.boolean(),
+  hasHttps: zod.boolean(),
+  hasCanonical: zod.boolean(),
+  wordCount: zod.number(),
+  aiInsights: zod.string().optional(),
+});
+
+/**
+ * @summary List recent audits
+ */
+export const listAuditsQueryLimitDefault = 20;
+
+export const ListAuditsQueryParams = zod.object({
+  limit: zod.coerce.number().default(listAuditsQueryLimitDefault),
+});
+
+export const ListAuditsResponseItem = zod.object({
+  id: zod.number(),
+  url: zod.string(),
+  geoScore: zod.number(),
+  createdAt: zod.string(),
+});
+export const ListAuditsResponse = zod.array(ListAuditsResponseItem);
+
+/**
+ * @summary Get a specific audit by ID
+ */
+export const GetAuditParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetAuditResponse = zod.object({
+  id: zod.number().optional(),
+  url: zod.string(),
+  title: zod.string().optional(),
+  description: zod.string().optional(),
+  geoScore: zod.number(),
+  createdAt: zod.string(),
+  scores: zod.object({
+    citability: zod.number(),
+    brandAuthority: zod.number(),
+    contentQuality: zod.number(),
+    technicalSeo: zod.number(),
+    structuredData: zod.number(),
+    platformOptimization: zod.number(),
+  }),
+  crawlers: zod.array(
+    zod.object({
+      name: zod.string(),
+      allowed: zod.boolean(),
+      type: zod.string(),
+    }),
+  ),
+  citabilityBlocks: zod.array(
+    zod.object({
+      heading: zod.string().optional(),
+      wordCount: zod.number(),
+      score: zod.number(),
+      grade: zod.string(),
+      preview: zod.string(),
+    }),
+  ),
+  avgCitabilityScore: zod.number(),
+  schemaTypes: zod.array(
+    zod.object({
+      type: zod.string(),
+      present: zod.boolean(),
+      properties: zod.array(zod.string()).optional(),
+    }),
+  ),
+  platforms: zod.array(
+    zod.object({
+      platform: zod.string(),
+      score: zod.number(),
+      status: zod.string(),
+      recommendations: zod.array(zod.string()),
+    }),
+  ),
+  quickWins: zod.array(zod.string()),
+  technicalIssues: zod.array(zod.string()),
+  hasLlmsTxt: zod.boolean(),
+  hasHttps: zod.boolean(),
+  hasCanonical: zod.boolean(),
+  wordCount: zod.number(),
+  aiInsights: zod.string().optional(),
+});

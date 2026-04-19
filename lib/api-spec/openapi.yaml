@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: geo
+    description: GEO SEO analysis operations
 paths:
   /healthz:
     get:
@@ -24,6 +26,84 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /geo/analyze:
+    post:
+      operationId: analyzeUrl
+      tags: [geo]
+      summary: Run a full GEO+SEO analysis on a URL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnalyzeUrlBody"
+      responses:
+        "200":
+          description: Analysis result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GeoAuditResult"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /geo/audits:
+    get:
+      operationId: listAudits
+      tags: [geo]
+      summary: List recent audits
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of audits
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditSummary"
+
+  /geo/audits/{id}:
+    get:
+      operationId: getAudit
+      tags: [geo]
+      summary: Get a specific audit by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Audit result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GeoAuditResult"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +114,193 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    AnalyzeUrlBody:
+      type: object
+      properties:
+        url:
+          type: string
+          description: URL to analyze
+      required:
+        - url
+
+    AuditSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+        url:
+          type: string
+        geoScore:
+          type: number
+        createdAt:
+          type: string
+      required:
+        - id
+        - url
+        - geoScore
+        - createdAt
+
+    CrawlerStatus:
+      type: object
+      properties:
+        name:
+          type: string
+        allowed:
+          type: boolean
+        type:
+          type: string
+      required:
+        - name
+        - allowed
+        - type
+
+    CitabilityBlock:
+      type: object
+      properties:
+        heading:
+          type: string
+        wordCount:
+          type: integer
+        score:
+          type: number
+        grade:
+          type: string
+        preview:
+          type: string
+      required:
+        - wordCount
+        - score
+        - grade
+        - preview
+
+    SchemaItem:
+      type: object
+      properties:
+        type:
+          type: string
+        present:
+          type: boolean
+        properties:
+          type: array
+          items:
+            type: string
+      required:
+        - type
+        - present
+
+    PlatformScore:
+      type: object
+      properties:
+        platform:
+          type: string
+        score:
+          type: number
+        status:
+          type: string
+        recommendations:
+          type: array
+          items:
+            type: string
+      required:
+        - platform
+        - score
+        - status
+        - recommendations
+
+    GeoAuditResult:
+      type: object
+      properties:
+        id:
+          type: integer
+        url:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        geoScore:
+          type: number
+        createdAt:
+          type: string
+        scores:
+          type: object
+          properties:
+            citability:
+              type: number
+            brandAuthority:
+              type: number
+            contentQuality:
+              type: number
+            technicalSeo:
+              type: number
+            structuredData:
+              type: number
+            platformOptimization:
+              type: number
+          required:
+            - citability
+            - brandAuthority
+            - contentQuality
+            - technicalSeo
+            - structuredData
+            - platformOptimization
+        crawlers:
+          type: array
+          items:
+            $ref: "#/components/schemas/CrawlerStatus"
+        citabilityBlocks:
+          type: array
+          items:
+            $ref: "#/components/schemas/CitabilityBlock"
+        avgCitabilityScore:
+          type: number
+        schemaTypes:
+          type: array
+          items:
+            $ref: "#/components/schemas/SchemaItem"
+        platforms:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlatformScore"
+        quickWins:
+          type: array
+          items:
+            type: string
+        technicalIssues:
+          type: array
+          items:
+            type: string
+        hasLlmsTxt:
+          type: boolean
+        hasHttps:
+          type: boolean
+        hasCanonical:
+          type: boolean
+        wordCount:
+          type: integer
+        aiInsights:
+          type: string
+      required:
+        - url
+        - geoScore
+        - createdAt
+        - scores
+        - crawlers
+        - citabilityBlocks
+        - avgCitabilityScore
+        - schemaTypes
+        - platforms
+        - quickWins
+        - technicalIssues
+        - hasLlmsTxt
+        - hasHttps
+        - hasCanonical
+        - wordCount

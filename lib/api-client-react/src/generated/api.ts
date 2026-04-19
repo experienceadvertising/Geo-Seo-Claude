@@ -5,18 +5,28 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
+  MutationFunction,
   QueryFunction,
   QueryKey,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult,
 } from "@tanstack/react-query";
 
-import type { HealthStatus } from "./api.schemas";
+import type {
+  AnalyzeUrlBody,
+  AuditSummary,
+  ErrorResponse,
+  GeoAuditResult,
+  HealthStatus,
+  ListAuditsParams,
+} from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
-import type { ErrorType } from "../custom-fetch";
+import type { ErrorType, BodyType } from "../custom-fetch";
 
 type AwaitedInput<T> = PromiseLike<T> | T;
 
@@ -92,6 +102,271 @@ export function useHealthCheck<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getHealthCheckQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Run a full GEO+SEO analysis on a URL
+ */
+export const getAnalyzeUrlUrl = () => {
+  return `/api/geo/analyze`;
+};
+
+export const analyzeUrl = async (
+  analyzeUrlBody: AnalyzeUrlBody,
+  options?: RequestInit,
+): Promise<GeoAuditResult> => {
+  return customFetch<GeoAuditResult>(getAnalyzeUrlUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(analyzeUrlBody),
+  });
+};
+
+export const getAnalyzeUrlMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof analyzeUrl>>,
+    TError,
+    { data: BodyType<AnalyzeUrlBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof analyzeUrl>>,
+  TError,
+  { data: BodyType<AnalyzeUrlBody> },
+  TContext
+> => {
+  const mutationKey = ["analyzeUrl"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof analyzeUrl>>,
+    { data: BodyType<AnalyzeUrlBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return analyzeUrl(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AnalyzeUrlMutationResult = NonNullable<
+  Awaited<ReturnType<typeof analyzeUrl>>
+>;
+export type AnalyzeUrlMutationBody = BodyType<AnalyzeUrlBody>;
+export type AnalyzeUrlMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Run a full GEO+SEO analysis on a URL
+ */
+export const useAnalyzeUrl = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof analyzeUrl>>,
+    TError,
+    { data: BodyType<AnalyzeUrlBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof analyzeUrl>>,
+  TError,
+  { data: BodyType<AnalyzeUrlBody> },
+  TContext
+> => {
+  return useMutation(getAnalyzeUrlMutationOptions(options));
+};
+
+/**
+ * @summary List recent audits
+ */
+export const getListAuditsUrl = (params?: ListAuditsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/geo/audits?${stringifiedParams}`
+    : `/api/geo/audits`;
+};
+
+export const listAudits = async (
+  params?: ListAuditsParams,
+  options?: RequestInit,
+): Promise<AuditSummary[]> => {
+  return customFetch<AuditSummary[]>(getListAuditsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListAuditsQueryKey = (params?: ListAuditsParams) => {
+  return [`/api/geo/audits`, ...(params ? [params] : [])] as const;
+};
+
+export const getListAuditsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listAudits>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListAuditsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listAudits>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListAuditsQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listAudits>>> = ({
+    signal,
+  }) => listAudits(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listAudits>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListAuditsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listAudits>>
+>;
+export type ListAuditsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List recent audits
+ */
+
+export function useListAudits<
+  TData = Awaited<ReturnType<typeof listAudits>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListAuditsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listAudits>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListAuditsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get a specific audit by ID
+ */
+export const getGetAuditUrl = (id: number) => {
+  return `/api/geo/audits/${id}`;
+};
+
+export const getAudit = async (
+  id: number,
+  options?: RequestInit,
+): Promise<GeoAuditResult> => {
+  return customFetch<GeoAuditResult>(getGetAuditUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetAuditQueryKey = (id: number) => {
+  return [`/api/geo/audits/${id}`] as const;
+};
+
+export const getGetAuditQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAudit>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getAudit>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetAuditQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getAudit>>> = ({
+    signal,
+  }) => getAudit(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof getAudit>>, TError, TData> & {
+    queryKey: QueryKey;
+  };
+};
+
+export type GetAuditQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAudit>>
+>;
+export type GetAuditQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get a specific audit by ID
+ */
+
+export function useGetAudit<
+  TData = Awaited<ReturnType<typeof getAudit>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getAudit>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetAuditQueryOptions(id, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
