@@ -9,8 +9,10 @@ import {
 import { analyzeUrl } from "../../lib/geoAnalyzer";
 import { generateAuditPdf } from "../../lib/pdfReport";
 import { anthropic } from "@workspace/integrations-anthropic-ai";
+import simulateRouter from "./simulate";
 
 const router: IRouter = Router();
+router.use(simulateRouter);
 
 router.post("/geo/analyze", async (req, res): Promise<void> => {
   const parsed = AnalyzeUrlBody.safeParse(req.body);

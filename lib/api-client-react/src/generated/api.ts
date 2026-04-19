@@ -23,6 +23,10 @@ import type {
   GeoAuditResult,
   HealthStatus,
   ListAuditsParams,
+  PromptSimulationResult,
+  RunSimulationBody,
+  SuggestPrompts200,
+  SuggestPromptsBody,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -367,6 +371,265 @@ export function useGetAudit<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetAuditQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Generate suggested prompts for a brand
+ */
+export const getSuggestPromptsUrl = () => {
+  return `/api/geo/prompts/suggest`;
+};
+
+export const suggestPrompts = async (
+  suggestPromptsBody: SuggestPromptsBody,
+  options?: RequestInit,
+): Promise<SuggestPrompts200> => {
+  return customFetch<SuggestPrompts200>(getSuggestPromptsUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(suggestPromptsBody),
+  });
+};
+
+export const getSuggestPromptsMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof suggestPrompts>>,
+    TError,
+    { data: BodyType<SuggestPromptsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof suggestPrompts>>,
+  TError,
+  { data: BodyType<SuggestPromptsBody> },
+  TContext
+> => {
+  const mutationKey = ["suggestPrompts"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof suggestPrompts>>,
+    { data: BodyType<SuggestPromptsBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return suggestPrompts(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SuggestPromptsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof suggestPrompts>>
+>;
+export type SuggestPromptsMutationBody = BodyType<SuggestPromptsBody>;
+export type SuggestPromptsMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Generate suggested prompts for a brand
+ */
+export const useSuggestPrompts = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof suggestPrompts>>,
+    TError,
+    { data: BodyType<SuggestPromptsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof suggestPrompts>>,
+  TError,
+  { data: BodyType<SuggestPromptsBody> },
+  TContext
+> => {
+  return useMutation(getSuggestPromptsMutationOptions(options));
+};
+
+/**
+ * @summary Run a prompt simulation across AI engines
+ */
+export const getRunSimulationUrl = () => {
+  return `/api/geo/simulate`;
+};
+
+export const runSimulation = async (
+  runSimulationBody: RunSimulationBody,
+  options?: RequestInit,
+): Promise<PromptSimulationResult> => {
+  return customFetch<PromptSimulationResult>(getRunSimulationUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(runSimulationBody),
+  });
+};
+
+export const getRunSimulationMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof runSimulation>>,
+    TError,
+    { data: BodyType<RunSimulationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof runSimulation>>,
+  TError,
+  { data: BodyType<RunSimulationBody> },
+  TContext
+> => {
+  const mutationKey = ["runSimulation"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof runSimulation>>,
+    { data: BodyType<RunSimulationBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return runSimulation(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RunSimulationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof runSimulation>>
+>;
+export type RunSimulationMutationBody = BodyType<RunSimulationBody>;
+export type RunSimulationMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Run a prompt simulation across AI engines
+ */
+export const useRunSimulation = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof runSimulation>>,
+    TError,
+    { data: BodyType<RunSimulationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof runSimulation>>,
+  TError,
+  { data: BodyType<RunSimulationBody> },
+  TContext
+> => {
+  return useMutation(getRunSimulationMutationOptions(options));
+};
+
+/**
+ * @summary Get a saved prompt simulation
+ */
+export const getGetSimulationUrl = (id: number) => {
+  return `/api/geo/simulations/${id}`;
+};
+
+export const getSimulation = async (
+  id: number,
+  options?: RequestInit,
+): Promise<PromptSimulationResult> => {
+  return customFetch<PromptSimulationResult>(getGetSimulationUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetSimulationQueryKey = (id: number) => {
+  return [`/api/geo/simulations/${id}`] as const;
+};
+
+export const getGetSimulationQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSimulation>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSimulation>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetSimulationQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getSimulation>>> = ({
+    signal,
+  }) => getSimulation(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getSimulation>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetSimulationQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSimulation>>
+>;
+export type GetSimulationQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get a saved prompt simulation
+ */
+
+export function useGetSimulation<
+  TData = Awaited<ReturnType<typeof getSimulation>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSimulation>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetSimulationQueryOptions(id, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

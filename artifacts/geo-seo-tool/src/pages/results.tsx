@@ -76,12 +76,17 @@ export default function Results() {
             <span>{audit.wordCount.toLocaleString()} words</span>
             {audit.brandName && (<><span>•</span><span>Brand: <span className="text-foreground">{audit.brandName}</span></span></>)}
           </div>
-          <div className="pt-2">
+          <div className="pt-2 flex items-center gap-2 flex-wrap">
             <a href={`/api/geo/audits/${audit.id}/pdf`} target="_blank" rel="noopener noreferrer" data-testid="link-download-pdf">
               <Button variant="outline" size="sm" className="font-mono text-xs gap-2" data-testid="button-download-pdf">
                 <Download className="h-3.5 w-3.5" /> Download PDF Report
               </Button>
             </a>
+            <Link href={`/simulate/${audit.id}`}>
+              <Button size="sm" className="font-mono text-xs gap-2" data-testid="button-run-simulation">
+                <Sparkles className="h-3.5 w-3.5" /> Run Prompt Simulation
+              </Button>
+            </Link>
           </div>
         </div>
         

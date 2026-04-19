@@ -104,6 +104,82 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /geo/prompts/suggest:
+    post:
+      operationId: suggestPrompts
+      tags: [geo]
+      summary: Generate suggested prompts for a brand
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SuggestPromptsBody"
+      responses:
+        "200":
+          description: Suggested prompts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  prompts:
+                    type: array
+                    items:
+                      type: string
+                required:
+                  - prompts
+
+  /geo/simulate:
+    post:
+      operationId: runSimulation
+      tags: [geo]
+      summary: Run a prompt simulation across AI engines
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RunSimulationBody"
+      responses:
+        "200":
+          description: Simulation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PromptSimulationResult"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /geo/simulations/{id}:
+    get:
+      operationId: getSimulation
+      tags: [geo]
+      summary: Get a saved prompt simulation
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Simulation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PromptSimulationResult"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -356,3 +432,176 @@ components:
         - source
         - found
         - state
+
+    SuggestPromptsBody:
+      type: object
+      properties:
+        brandName:
+          type: string
+        description:
+          type: string
+      required:
+        - brandName
+
+    RunSimulationBody:
+      type: object
+      properties:
+        auditId:
+          type: integer
+        domain:
+          type: string
+        brandName:
+          type: string
+        prompts:
+          type: array
+          items:
+            type: string
+        engines:
+          type: array
+          items:
+            type: string
+            enum: [chatgpt, claude, gemini, perplexity]
+      required:
+        - domain
+        - brandName
+        - prompts
+
+    EngineResult:
+      type: object
+      properties:
+        engine:
+          type: string
+        engineLabel:
+          type: string
+        prompt:
+          type: string
+        responseText:
+          type: string
+        brandMentioned:
+          type: boolean
+        brandFirstPosition:
+          type: number
+          nullable: true
+        domainCited:
+          type: boolean
+        citedUrls:
+          type: array
+          items:
+            type: string
+        competitorMentions:
+          type: array
+          items:
+            type: string
+        error:
+          type: string
+          nullable: true
+        durationMs:
+          type: number
+      required:
+        - engine
+        - engineLabel
+        - prompt
+        - responseText
+        - brandMentioned
+        - domainCited
+        - citedUrls
+        - competitorMentions
+        - durationMs
+
+    PromptResultRow:
+      type: object
+      properties:
+        prompt:
+          type: string
+        engines:
+          type: array
+          items:
+            $ref: "#/components/schemas/EngineResult"
+      required:
+        - prompt
+        - engines
+
+    EngineSummary:
+      type: object
+      properties:
+        engine:
+          type: string
+        engineLabel:
+          type: string
+        mentionRate:
+          type: number
+        citationRate:
+          type: number
+        avgFirstPosition:
+          type: number
+          nullable: true
+        errorRate:
+          type: number
+      required:
+        - engine
+        - engineLabel
+        - mentionRate
+        - citationRate
+        - errorRate
+
+    SimulationSummary:
+      type: object
+      properties:
+        totalPrompts:
+          type: integer
+        perEngine:
+          type: array
+          items:
+            $ref: "#/components/schemas/EngineSummary"
+        topCompetitors:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              count:
+                type: integer
+            required:
+              - name
+              - count
+        overallVisibilityScore:
+          type: number
+      required:
+        - totalPrompts
+        - perEngine
+        - topCompetitors
+        - overallVisibilityScore
+
+    PromptSimulationResult:
+      type: object
+      properties:
+        id:
+          type: integer
+        auditId:
+          type: integer
+          nullable: true
+        domain:
+          type: string
+        brandName:
+          type: string
+        prompts:
+          type: array
+          items:
+            type: string
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/PromptResultRow"
+        summary:
+          $ref: "#/components/schemas/SimulationSummary"
+        createdAt:
+          type: string
+      required:
+        - id
+        - domain
+        - brandName
+        - prompts
+        - results
+        - summary
+        - createdAt

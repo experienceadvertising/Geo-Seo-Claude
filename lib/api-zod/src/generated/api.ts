@@ -219,3 +219,133 @@ export const GetAuditResponse = zod.object({
     )
     .optional(),
 });
+
+/**
+ * @summary Generate suggested prompts for a brand
+ */
+export const SuggestPromptsBody = zod.object({
+  brandName: zod.string(),
+  description: zod.string().optional(),
+});
+
+export const SuggestPromptsResponse = zod.object({
+  prompts: zod.array(zod.string()),
+});
+
+/**
+ * @summary Run a prompt simulation across AI engines
+ */
+export const RunSimulationBody = zod.object({
+  auditId: zod.number().optional(),
+  domain: zod.string(),
+  brandName: zod.string(),
+  prompts: zod.array(zod.string()),
+  engines: zod
+    .array(zod.enum(["chatgpt", "claude", "gemini", "perplexity"]))
+    .optional(),
+});
+
+export const RunSimulationResponse = zod.object({
+  id: zod.number(),
+  auditId: zod.number().nullish(),
+  domain: zod.string(),
+  brandName: zod.string(),
+  prompts: zod.array(zod.string()),
+  results: zod.array(
+    zod.object({
+      prompt: zod.string(),
+      engines: zod.array(
+        zod.object({
+          engine: zod.string(),
+          engineLabel: zod.string(),
+          prompt: zod.string(),
+          responseText: zod.string(),
+          brandMentioned: zod.boolean(),
+          brandFirstPosition: zod.number().nullish(),
+          domainCited: zod.boolean(),
+          citedUrls: zod.array(zod.string()),
+          competitorMentions: zod.array(zod.string()),
+          error: zod.string().nullish(),
+          durationMs: zod.number(),
+        }),
+      ),
+    }),
+  ),
+  summary: zod.object({
+    totalPrompts: zod.number(),
+    perEngine: zod.array(
+      zod.object({
+        engine: zod.string(),
+        engineLabel: zod.string(),
+        mentionRate: zod.number(),
+        citationRate: zod.number(),
+        avgFirstPosition: zod.number().nullish(),
+        errorRate: zod.number(),
+      }),
+    ),
+    topCompetitors: zod.array(
+      zod.object({
+        name: zod.string(),
+        count: zod.number(),
+      }),
+    ),
+    overallVisibilityScore: zod.number(),
+  }),
+  createdAt: zod.string(),
+});
+
+/**
+ * @summary Get a saved prompt simulation
+ */
+export const GetSimulationParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetSimulationResponse = zod.object({
+  id: zod.number(),
+  auditId: zod.number().nullish(),
+  domain: zod.string(),
+  brandName: zod.string(),
+  prompts: zod.array(zod.string()),
+  results: zod.array(
+    zod.object({
+      prompt: zod.string(),
+      engines: zod.array(
+        zod.object({
+          engine: zod.string(),
+          engineLabel: zod.string(),
+          prompt: zod.string(),
+          responseText: zod.string(),
+          brandMentioned: zod.boolean(),
+          brandFirstPosition: zod.number().nullish(),
+          domainCited: zod.boolean(),
+          citedUrls: zod.array(zod.string()),
+          competitorMentions: zod.array(zod.string()),
+          error: zod.string().nullish(),
+          durationMs: zod.number(),
+        }),
+      ),
+    }),
+  ),
+  summary: zod.object({
+    totalPrompts: zod.number(),
+    perEngine: zod.array(
+      zod.object({
+        engine: zod.string(),
+        engineLabel: zod.string(),
+        mentionRate: zod.number(),
+        citationRate: zod.number(),
+        avgFirstPosition: zod.number().nullish(),
+        errorRate: zod.number(),
+      }),
+    ),
+    topCompetitors: zod.array(
+      zod.object({
+        name: zod.string(),
+        count: zod.number(),
+      }),
+    ),
+    overallVisibilityScore: zod.number(),
+  }),
+  createdAt: zod.string(),
+});

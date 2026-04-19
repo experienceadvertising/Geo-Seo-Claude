@@ -134,6 +134,84 @@ export interface GeoAuditResult {
   recommendations?: GeoRecommendation[];
 }
 
+export interface SuggestPromptsBody {
+  brandName: string;
+  description?: string;
+}
+
+export type RunSimulationBodyEnginesItem =
+  (typeof RunSimulationBodyEnginesItem)[keyof typeof RunSimulationBodyEnginesItem];
+
+export const RunSimulationBodyEnginesItem = {
+  chatgpt: "chatgpt",
+  claude: "claude",
+  gemini: "gemini",
+  perplexity: "perplexity",
+} as const;
+
+export interface RunSimulationBody {
+  auditId?: number;
+  domain: string;
+  brandName: string;
+  prompts: string[];
+  engines?: RunSimulationBodyEnginesItem[];
+}
+
+export interface EngineResult {
+  engine: string;
+  engineLabel: string;
+  prompt: string;
+  responseText: string;
+  brandMentioned: boolean;
+  brandFirstPosition?: number | null;
+  domainCited: boolean;
+  citedUrls: string[];
+  competitorMentions: string[];
+  error?: string | null;
+  durationMs: number;
+}
+
+export interface PromptResultRow {
+  prompt: string;
+  engines: EngineResult[];
+}
+
+export interface EngineSummary {
+  engine: string;
+  engineLabel: string;
+  mentionRate: number;
+  citationRate: number;
+  avgFirstPosition?: number | null;
+  errorRate: number;
+}
+
+export type SimulationSummaryTopCompetitorsItem = {
+  name: string;
+  count: number;
+};
+
+export interface SimulationSummary {
+  totalPrompts: number;
+  perEngine: EngineSummary[];
+  topCompetitors: SimulationSummaryTopCompetitorsItem[];
+  overallVisibilityScore: number;
+}
+
+export interface PromptSimulationResult {
+  id: number;
+  auditId?: number | null;
+  domain: string;
+  brandName: string;
+  prompts: string[];
+  results: PromptResultRow[];
+  summary: SimulationSummary;
+  createdAt: string;
+}
+
 export type ListAuditsParams = {
   limit?: number;
+};
+
+export type SuggestPrompts200 = {
+  prompts: string[];
 };
