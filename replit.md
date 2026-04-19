@@ -29,8 +29,17 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 
 ### API Server (`artifacts/api-server`)
 - Express 5 server at `/api`
-- Routes: `POST /api/geo/analyze`, `GET /api/geo/audits`, `GET /api/geo/audits/:id`
+- Routes: `POST /api/geo/analyze`, `GET /api/geo/audits`, `GET /api/geo/audits/:id`,
+  `POST /api/geo/prompts/suggest`, `POST /api/geo/simulate`, `GET /api/geo/simulations/:id`
 - Core analysis in `src/lib/geoAnalyzer.ts` (self-contained, no external API keys needed)
+- Recommendation engine in `src/lib/geoRecommendations.ts` — research basis: Princeton/IIT
+  Delhi KDD 2024 + arXiv 2509.08919 (Sept 2025) + 2026 practitioner consensus
+  (Semrush, HubSpot, Search Engine Land). Notable 2026 shifts: freshness 3.2x lift
+  within 12 months, answer capsules (40-60 word block after H2), FAQ schema as highest-ROI
+  structured data, llms.txt downgraded to optional, named-author byline upgraded to required,
+  comparison tables for agentic search, current-year statistics required.
+- Research summary at `.local/geo-research-2026.md`; refresh script `research-geo.mjs`
+  (run quarterly to update findings).
 - Uses Anthropic via `@workspace/integrations-anthropic-ai`
 
 ## Key Commands
