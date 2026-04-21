@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ScoreBadge } from "@/components/score-badge";
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from "recharts";
+import ReactMarkdown from "react-markdown";
 
 export default function Results() {
   const params = useParams<{ id: string }>();
@@ -111,7 +112,47 @@ export default function Results() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm leading-relaxed text-foreground/90">{audit.aiInsights}</p>
+            <ReactMarkdown
+              components={{
+                h1: ({ children }) => (
+                  <h2 className="text-base font-semibold text-foreground mt-0 mb-3">{children}</h2>
+                ),
+                h2: ({ children }) => (
+                  <h3 className="text-sm font-semibold text-primary uppercase tracking-wide mt-5 mb-2 first:mt-0">
+                    {children}
+                  </h3>
+                ),
+                h3: ({ children }) => (
+                  <h4 className="text-sm font-semibold text-foreground mt-4 mb-1.5">{children}</h4>
+                ),
+                p: ({ children }) => (
+                  <p className="text-sm leading-relaxed text-foreground/90 mb-3 last:mb-0">{children}</p>
+                ),
+                ul: ({ children }) => (
+                  <ul className="text-sm leading-relaxed text-foreground/90 mb-3 ml-5 list-disc space-y-1.5 marker:text-primary/60">
+                    {children}
+                  </ul>
+                ),
+                ol: ({ children }) => (
+                  <ol className="text-sm leading-relaxed text-foreground/90 mb-3 ml-5 list-decimal space-y-1.5 marker:text-primary/60">
+                    {children}
+                  </ol>
+                ),
+                li: ({ children }) => <li className="pl-1">{children}</li>,
+                strong: ({ children }) => (
+                  <strong className="font-semibold text-foreground">{children}</strong>
+                ),
+                em: ({ children }) => <em className="italic text-foreground/90">{children}</em>,
+                code: ({ children }) => (
+                  <code className="px-1 py-0.5 rounded bg-primary/10 text-primary font-mono text-[0.85em]">
+                    {children}
+                  </code>
+                ),
+                hr: () => <hr className="my-4 border-primary/20" />,
+              }}
+            >
+              {audit.aiInsights}
+            </ReactMarkdown>
           </CardContent>
         </Card>
       )}
