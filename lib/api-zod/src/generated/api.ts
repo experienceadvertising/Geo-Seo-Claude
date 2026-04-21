@@ -75,6 +75,28 @@ export const AnalyzeUrlResponse = zod.object({
   hasHttps: zod.boolean(),
   hasCanonical: zod.boolean(),
   wordCount: zod.number(),
+  rawHtmlWordCount: zod
+    .number()
+    .optional()
+    .describe(
+      "Words visible in the raw HTML response (what AI crawlers without JS see).",
+    ),
+  renderedWordCount: zod
+    .number()
+    .optional()
+    .describe(
+      "Words visible after JavaScript renders the page (what human users see).",
+    ),
+  requiresJavaScript: zod
+    .boolean()
+    .optional()
+    .describe(
+      "True when the page is a JS-rendered SPA whose content is invisible to non-JS AI crawlers.",
+    ),
+  renderedSuccessfully: zod
+    .boolean()
+    .optional()
+    .describe("True when the headless browser successfully rendered the page."),
   aiInsights: zod.string().optional(),
   brandName: zod.string().optional(),
   brandSignals: zod
@@ -186,6 +208,28 @@ export const GetAuditResponse = zod.object({
   hasHttps: zod.boolean(),
   hasCanonical: zod.boolean(),
   wordCount: zod.number(),
+  rawHtmlWordCount: zod
+    .number()
+    .optional()
+    .describe(
+      "Words visible in the raw HTML response (what AI crawlers without JS see).",
+    ),
+  renderedWordCount: zod
+    .number()
+    .optional()
+    .describe(
+      "Words visible after JavaScript renders the page (what human users see).",
+    ),
+  requiresJavaScript: zod
+    .boolean()
+    .optional()
+    .describe(
+      "True when the page is a JS-rendered SPA whose content is invisible to non-JS AI crawlers.",
+    ),
+  renderedSuccessfully: zod
+    .boolean()
+    .optional()
+    .describe("True when the headless browser successfully rendered the page."),
   aiInsights: zod.string().optional(),
   brandName: zod.string().optional(),
   brandSignals: zod

@@ -52,7 +52,8 @@ Scores:
 - Platform Optimization: ${analysis.scores.platformOptimization}/100
 
 Key findings:
-- Word count: ${analysis.wordCount}
+- Word count (rendered, what users see): ${analysis.wordCount}
+- Word count (raw HTML, what AI crawlers see): ${analysis.rawHtmlWordCount}${analysis.requiresJavaScript ? "  ⚠ CRITICAL: Page requires JavaScript. AI crawlers without JS see almost nothing." : ""}
 - HTTPS: ${analysis.hasHttps}
 - Has llms.txt: ${analysis.hasLlmsTxt}
 - Has canonical tags: ${analysis.hasCanonical}
@@ -94,6 +95,10 @@ Provide 3-4 specific, prioritized recommendations to improve this site's visibil
       hasHttps: analysis.hasHttps,
       hasCanonical: analysis.hasCanonical,
       wordCount: analysis.wordCount,
+      rawHtmlWordCount: analysis.rawHtmlWordCount,
+      renderedWordCount: analysis.renderedWordCount,
+      requiresJavaScript: analysis.requiresJavaScript,
+      renderedSuccessfully: analysis.renderedSuccessfully,
       aiInsights,
       brandName: analysis.brandName,
       brandSignals: analysis.brandSignals,

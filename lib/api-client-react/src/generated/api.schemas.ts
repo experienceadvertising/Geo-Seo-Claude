@@ -128,6 +128,14 @@ export interface GeoAuditResult {
   hasHttps: boolean;
   hasCanonical: boolean;
   wordCount: number;
+  /** Words visible in the raw HTML response (what AI crawlers without JS see). */
+  rawHtmlWordCount?: number;
+  /** Words visible after JavaScript renders the page (what human users see). */
+  renderedWordCount?: number;
+  /** True when the page is a JS-rendered SPA whose content is invisible to non-JS AI crawlers. */
+  requiresJavaScript?: boolean;
+  /** True when the headless browser successfully rendered the page. */
+  renderedSuccessfully?: boolean;
   aiInsights?: string;
   brandName?: string;
   brandSignals?: BrandSignal[];

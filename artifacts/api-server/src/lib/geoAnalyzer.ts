@@ -1,6 +1,7 @@
 import * as cheerio from "cheerio";
 import { analyzeBrandAuthority, type BrandSignal } from "./brandAuthority";
 import { extractContentSignals, generateGeoRecommendations, type GeoRecommendation } from "./geoRecommendations";
+import { renderPage } from "./pageRenderer";
 
 export interface CrawlerStatus {
   name: string;
@@ -55,6 +56,10 @@ export interface AnalysisResult {
   hasHttps: boolean;
   hasCanonical: boolean;
   wordCount: number;
+  rawHtmlWordCount: number;
+  renderedWordCount: number;
+  requiresJavaScript: boolean;
+  renderedSuccessfully: boolean;
   brandName: string;
   brandSignals: BrandSignal[];
   recommendations: GeoRecommendation[];
@@ -183,81 +188,121 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
     "Accept-Language": "en-US,en;q=0.9",
   };
 
-  let html = "";
+  let rawHtml = "";
+  let renderedHtml = "";
   let title: string | null = null;
   let description: string | null = null;
   let hasCanonical = false;
   let wordCount = 0;
+  let rawHtmlWordCount = 0;
+  let renderedWordCount = 0;
+  let renderedSuccessfully = false;
+  let rawFetchSucceeded = false;
   let structuredDataTypes: SchemaItem[] = [];
   let citabilityBlocks: CitabilityBlock[] = [];
   let $page: cheerio.CheerioAPI | null = null;
 
+  // 1) Fetch raw HTML (this is what AI crawlers without JS see)
   try {
     const response = await fetch(url, { headers, signal: AbortSignal.timeout(15000) });
-    html = await response.text();
-
-    const $ = cheerio.load(html);
-    $page = $;
-
-    title = $("title").first().text().trim() || null;
-    description = $("meta[name='description']").attr("content") || $("meta[property='og:description']").attr("content") || null;
-    hasCanonical = $("link[rel='canonical']").length > 0;
-
-    // Extract text and score citability
-    $("script, style, nav, footer, header, aside, form").remove();
-    const contentBlocks: { heading: string | null; content: string }[] = [];
-    let currentHeading: string | null = "Introduction";
-    let currentParas: string[] = [];
-
-    $("h1, h2, h3, h4, p, ul, ol").each((_, el) => {
-      const tagName = (el as any).tagName?.toLowerCase();
-      if (["h1", "h2", "h3", "h4"].includes(tagName)) {
-        if (currentParas.length > 0) {
-          const combined = currentParas.join(" ");
-          if (combined.split(/\s+/).length >= 20) {
-            contentBlocks.push({ heading: currentHeading, content: combined });
-          }
-        }
-        currentHeading = $(el).text().trim();
-        currentParas = [];
-      } else {
-        const text = $(el).text().trim();
-        if (text && text.split(/\s+/).length >= 5) {
-          currentParas.push(text);
-        }
-      }
-    });
-    if (currentParas.length > 0) {
-      const combined = currentParas.join(" ");
-      if (combined.split(/\s+/).length >= 20) {
-        contentBlocks.push({ heading: currentHeading, content: combined });
+    if (response.ok) {
+      const ct = (response.headers.get("content-type") || "").toLowerCase();
+      if (ct.includes("html") || ct === "" || ct.includes("xml")) {
+        rawHtml = await response.text();
+        rawFetchSucceeded = true;
+        const $raw = cheerio.load(rawHtml);
+        $raw("script, style, noscript").remove();
+        const rawText = $raw("body").text().replace(/\s+/g, " ").trim();
+        rawHtmlWordCount = rawText.split(/\s+/).filter(Boolean).length;
       }
     }
+  } catch {}
 
-    citabilityBlocks = contentBlocks.map(b => scorePassage(b.content, b.heading));
-    const allText = $("body").text().replace(/\s+/g, " ").trim();
-    wordCount = allText.split(/\s+/).filter(Boolean).length;
+  // 2) Try rendering with a real browser to capture client-side content
+  try {
+    const rendered = await renderPage(url);
+    if (rendered) {
+      renderedHtml = rendered.html;
+      renderedWordCount = rendered.visibleText.split(/\s+/).filter(Boolean).length;
+      renderedSuccessfully = true;
+    }
+  } catch {}
 
-    // Detect schema types
-    const schemaScripts = $("script[type='application/ld+json']");
-    const detectedTypes = new Set<string>();
-    schemaScripts.each((_, el) => {
-      try {
-        const data = JSON.parse($(el).html() || "{}");
-        const types = Array.isArray(data) ? data.map((d: any) => d["@type"]) : [data["@type"]];
-        types.forEach((t: string) => t && detectedTypes.add(t));
-      } catch {}
-    });
+  // Use rendered HTML for analysis when available; fall back to raw HTML.
+  const analysisHtml = renderedHtml || rawHtml;
 
-    const schemaChecks = ["Organization", "LocalBusiness", "Article", "Product", "WebSite", "FAQPage", "HowTo", "BreadcrumbList"];
-    structuredDataTypes = schemaChecks.map(type => ({
-      type,
-      present: detectedTypes.has(type),
-    }));
+  if (analysisHtml) {
+    try {
+      const $ = cheerio.load(analysisHtml);
+      $page = $;
 
-  } catch (err) {
-    // Page fetch failed — proceed with empty analysis
+      title = $("title").first().text().trim() || null;
+      description =
+        $("meta[name='description']").attr("content") ||
+        $("meta[property='og:description']").attr("content") ||
+        null;
+      hasCanonical = $("link[rel='canonical']").length > 0;
+
+      // Detect schema types from raw HTML (JSON-LD is server-rendered for SEO)
+      const $forSchema = cheerio.load(rawHtml || analysisHtml);
+      const schemaScripts = $forSchema("script[type='application/ld+json']");
+      const detectedTypes = new Set<string>();
+      schemaScripts.each((_, el) => {
+        try {
+          const data = JSON.parse($forSchema(el).html() || "{}");
+          const types = Array.isArray(data) ? data.map((d: any) => d["@type"]) : [data["@type"]];
+          types.forEach((t: string) => t && detectedTypes.add(t));
+        } catch {}
+      });
+      const schemaChecks = ["Organization", "LocalBusiness", "Article", "Product", "WebSite", "FAQPage", "HowTo", "BreadcrumbList"];
+      structuredDataTypes = schemaChecks.map((type) => ({ type, present: detectedTypes.has(type) }));
+
+      // Extract text and score citability
+      $("script, style, nav, footer, header, aside, form").remove();
+      const contentBlocks: { heading: string | null; content: string }[] = [];
+      let currentHeading: string | null = "Introduction";
+      let currentParas: string[] = [];
+
+      $("h1, h2, h3, h4, p, ul, ol").each((_, el) => {
+        const tagName = (el as any).tagName?.toLowerCase();
+        if (["h1", "h2", "h3", "h4"].includes(tagName)) {
+          if (currentParas.length > 0) {
+            const combined = currentParas.join(" ");
+            if (combined.split(/\s+/).length >= 20) {
+              contentBlocks.push({ heading: currentHeading, content: combined });
+            }
+          }
+          currentHeading = $(el).text().trim();
+          currentParas = [];
+        } else {
+          const text = $(el).text().trim();
+          if (text && text.split(/\s+/).length >= 5) {
+            currentParas.push(text);
+          }
+        }
+      });
+      if (currentParas.length > 0) {
+        const combined = currentParas.join(" ");
+        if (combined.split(/\s+/).length >= 20) {
+          contentBlocks.push({ heading: currentHeading, content: combined });
+        }
+      }
+
+      citabilityBlocks = contentBlocks.map((b) => scorePassage(b.content, b.heading));
+      const allText = $("body").text().replace(/\s+/g, " ").trim();
+      const analyzedWordCount = allText.split(/\s+/).filter(Boolean).length;
+      // Prefer the rendered word count if rendering succeeded
+      wordCount = renderedSuccessfully ? Math.max(renderedWordCount, analyzedWordCount) : analyzedWordCount;
+    } catch {}
   }
+
+  // SPA detection: rendered content is dramatically larger than raw HTML.
+  // Only meaningful when BOTH passes succeeded — otherwise we can't compare.
+  const requiresJavaScript =
+    renderedSuccessfully &&
+    rawFetchSucceeded &&
+    renderedWordCount >= 100 &&
+    (rawHtmlWordCount < 50 || renderedWordCount > rawHtmlWordCount * 4);
 
   // Check robots.txt
   const crawlerStatuses: CrawlerStatus[] = [];
@@ -312,6 +357,19 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
   if (hasCanonical) technicalScore += 10;
   else { technicalIssues.push("No canonical tag found"); quickWins.push("Add canonical tags to prevent duplicate content"); }
 
+  if (requiresJavaScript) {
+    technicalIssues.push(
+      `Page requires JavaScript to render content (raw HTML: ${rawHtmlWordCount} words, rendered: ${renderedWordCount} words). Most AI crawlers (GPTBot, ClaudeBot, PerplexityBot) do not execute JavaScript and will see almost nothing.`
+    );
+    quickWins.push(
+      "Add server-side rendering (SSR), static prerendering, or dynamic rendering for AI crawler user-agents — your client-side content is invisible to AI search engines"
+    );
+    technicalScore -= 15;
+  } else if (!renderedSuccessfully) {
+    technicalIssues.push(
+      "JavaScript-rendered analysis was unavailable — SPA detection may be incomplete and the word count reflects only the raw HTML response."
+    );
+  }
   if (wordCount < 300) { technicalIssues.push(`Low word count (${wordCount} words) — AI models prefer content-rich pages`); }
   if (wordCount > 3000) technicalScore += 10;
 
@@ -437,6 +495,10 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
     hasHttps,
     hasCanonical,
     wordCount,
+    rawHtmlWordCount,
+    renderedWordCount,
+    requiresJavaScript,
+    renderedSuccessfully,
     brandName: brandAuthority.brandName,
     brandSignals: brandAuthority.signals,
     recommendations,

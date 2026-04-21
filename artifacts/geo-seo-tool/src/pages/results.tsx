@@ -74,7 +74,12 @@ export default function Results() {
           <div className="flex items-center gap-4 text-xs text-muted-foreground mt-2 font-mono flex-wrap">
             <span>Analyzed on {new Date(audit.createdAt).toLocaleDateString()} at {new Date(audit.createdAt).toLocaleTimeString()}</span>
             <span>•</span>
-            <span>{audit.wordCount.toLocaleString()} words</span>
+            <span title={audit.requiresJavaScript ? "Rendered word count (after JavaScript executes)" : "Total words on page"}>
+              {audit.wordCount.toLocaleString()} words
+              {audit.requiresJavaScript && audit.rawHtmlWordCount != null && (
+                <span className="text-amber-600 dark:text-amber-500"> · {audit.rawHtmlWordCount.toLocaleString()} to AI bots</span>
+              )}
+            </span>
             {audit.brandName && (<><span>•</span><span>Brand: <span className="text-foreground">{audit.brandName}</span></span></>)}
           </div>
           <div className="pt-2 flex items-center gap-2 flex-wrap">
