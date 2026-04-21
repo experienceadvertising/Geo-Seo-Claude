@@ -4,6 +4,7 @@ import {
   useGetAudit,
   useSuggestPrompts,
   useRunSimulation,
+  useGetLatestSimulationForAudit,
 } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,9 @@ export default function SimulatePage() {
 
   const suggest = useSuggestPrompts();
   const run = useRunSimulation();
+  const latest = useGetLatestSimulationForAudit(auditId, {
+    query: { retry: false, refetchOnWindowFocus: false },
+  });
 
   const domain = useMemo(() => audit?.url ? getDomain(audit.url) : "", [audit]);
 
@@ -81,7 +85,16 @@ export default function SimulatePage() {
     );
   };
 
-  const result = run.data as any;
+  // Show live mutation result if present, otherwise the most-recent saved one.
+  // After a fresh run completes, refetch the "latest" cache so subsequent
+  // mounts/refreshes show the same data.
+  React.useEffect(() => {
+    if (run.isSuccess) {
+      latest.refetch();
+    }
+  }, [run.isSuccess]);
+  const result = (run.data as any) || (latest.data as any);
+  const showingHistorical = !run.data && !!latest.data;
 
   if (auditLoading) {
     return <div className="container max-w-6xl py-8 space-y-4"><Skeleton className="h-10 w-64" /><Skeleton className="h-64 w-full" /></div>;
@@ -197,6 +210,13 @@ export default function SimulatePage() {
       {/* Results */}
       {result && (
         <>
+          {showingHistorical && (
+            <div className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-900 p-3 text-sm">
+              Showing your most recent simulation
+              {result.createdAt ? <> from {new Date(result.createdAt).toLocaleString()}</> : null}.
+              Run a new one above to refresh the data.
+            </div>
+          )}
           {/* Summary */}
           <Card>
             <CardHeader>

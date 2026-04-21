@@ -552,6 +552,101 @@ export const useRunSimulation = <
 };
 
 /**
+ * @summary Get the most recent prompt simulation for an audit
+ */
+export const getGetLatestSimulationForAuditUrl = (auditId: number) => {
+  return `/api/geo/audits/${auditId}/simulation/latest`;
+};
+
+export const getLatestSimulationForAudit = async (
+  auditId: number,
+  options?: RequestInit,
+): Promise<PromptSimulationResult> => {
+  return customFetch<PromptSimulationResult>(
+    getGetLatestSimulationForAuditUrl(auditId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetLatestSimulationForAuditQueryKey = (auditId: number) => {
+  return [`/api/geo/audits/${auditId}/simulation/latest`] as const;
+};
+
+export const getGetLatestSimulationForAuditQueryOptions = <
+  TData = Awaited<ReturnType<typeof getLatestSimulationForAudit>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  auditId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLatestSimulationForAudit>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetLatestSimulationForAuditQueryKey(auditId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getLatestSimulationForAudit>>
+  > = ({ signal }) =>
+    getLatestSimulationForAudit(auditId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!auditId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getLatestSimulationForAudit>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetLatestSimulationForAuditQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getLatestSimulationForAudit>>
+>;
+export type GetLatestSimulationForAuditQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get the most recent prompt simulation for an audit
+ */
+
+export function useGetLatestSimulationForAudit<
+  TData = Awaited<ReturnType<typeof getLatestSimulationForAudit>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  auditId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLatestSimulationForAudit>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetLatestSimulationForAuditQueryOptions(
+    auditId,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
  * @summary Get a saved prompt simulation
  */
 export const getGetSimulationUrl = (id: number) => {

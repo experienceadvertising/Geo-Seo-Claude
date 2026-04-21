@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import { db, promptSimulationsTable } from "@workspace/db";
 import { runPromptSimulation, generatePromptsForBrand, type EngineId } from "../../lib/promptSimulator";
 
@@ -93,6 +93,28 @@ router.post("/geo/simulate", async (req, res): Promise<void> => {
     req.log.error({ err }, "Prompt simulation failed");
     res.status(500).json({ error: "Simulation failed. Please try again." });
   }
+});
+
+router.get("/geo/audits/:auditId/simulation/latest", async (req, res): Promise<void> => {
+  const auditId = parseInt(Array.isArray(req.params.auditId) ? req.params.auditId[0] : req.params.auditId, 10);
+  if (Number.isNaN(auditId)) {
+    res.status(400).json({ error: "Invalid auditId" });
+    return;
+  }
+  const [sim] = await db
+    .select()
+    .from(promptSimulationsTable)
+    .where(and(eq(promptSimulationsTable.auditId, auditId), eq(promptSimulationsTable.status, "complete")))
+    .orderBy(desc(promptSimulationsTable.id))
+    .limit(1);
+  if (!sim) {
+    res.status(404).json({ error: "No simulation found for this audit" });
+    return;
+  }
+  res.json({
+    ...sim,
+    createdAt: sim.createdAt.toISOString(),
+  });
 });
 
 router.get("/geo/simulations/:id", async (req, res): Promise<void> => {
