@@ -4,6 +4,7 @@ import { z } from "zod/v4";
 
 export const promptSimulationsTable = pgTable("prompt_simulations", {
   id: serial("id").primaryKey(),
+  userId: text("user_id"),
   auditId: integer("audit_id"),
   domain: text("domain").notNull(),
   brandName: text("brand_name"),

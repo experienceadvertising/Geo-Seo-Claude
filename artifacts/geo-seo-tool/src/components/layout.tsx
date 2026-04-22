@@ -1,6 +1,30 @@
 import React from "react";
-import { Link } from "wouter";
-import { Activity, LayoutDashboard, Settings } from "lucide-react";
+import { Link, useLocation } from "wouter";
+import { Activity, LogOut } from "lucide-react";
+import { Show, useClerk, useUser, SignInButton, SignUpButton } from "@clerk/react";
+import { Button } from "@/components/ui/button";
+
+function UserBadge() {
+  const { user } = useUser();
+  const { signOut } = useClerk();
+  const [, setLocation] = useLocation();
+  if (!user) return null;
+  const label = user.primaryEmailAddress?.emailAddress || user.username || "Account";
+  return (
+    <div className="flex items-center gap-2">
+      <span className="hidden sm:inline text-xs text-muted-foreground max-w-[200px] truncate">{label}</span>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => signOut(() => setLocation("/"))}
+        title="Sign out"
+      >
+        <LogOut className="h-4 w-4" />
+        <span className="ml-1 hidden sm:inline">Sign out</span>
+      </Button>
+    </div>
+  );
+}
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -13,12 +37,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <span>GEO SEO</span>
             </Link>
           </div>
-          <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
-            <div className="w-full flex-1 md:w-auto md:flex-none">
-            </div>
-            <nav className="flex items-center gap-4 text-sm font-medium text-muted-foreground">
-              <Link href="/" className="hover:text-foreground transition-colors">Audits</Link>
-            </nav>
+          <div className="flex flex-1 items-center justify-end gap-3">
+            <Show when="signed-in">
+              <nav className="hidden md:flex items-center gap-4 text-sm font-medium text-muted-foreground">
+                <Link href="/" className="hover:text-foreground transition-colors">Audits</Link>
+              </nav>
+              <UserBadge />
+            </Show>
+            <Show when="signed-out">
+              <SignInButton mode="modal">
+                <Button variant="ghost" size="sm">Sign in</Button>
+              </SignInButton>
+              <SignUpButton mode="modal">
+                <Button size="sm">Get started</Button>
+              </SignUpButton>
+            </Show>
           </div>
         </div>
       </header>

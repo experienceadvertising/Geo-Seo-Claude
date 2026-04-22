@@ -2,6 +2,7 @@ import * as cheerio from "cheerio";
 import { analyzeBrandAuthority, type BrandSignal } from "./brandAuthority";
 import { extractContentSignals, generateGeoRecommendations, type GeoRecommendation } from "./geoRecommendations";
 import { renderPage } from "./pageRenderer";
+import { safeFetch } from "./safeFetch";
 
 export interface CrawlerStatus {
   name: string;
@@ -204,7 +205,7 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
 
   // 1) Fetch raw HTML (this is what AI crawlers without JS see)
   try {
-    const response = await fetch(url, { headers, signal: AbortSignal.timeout(15000) });
+    const response = await safeFetch(url, { headers, timeoutMs: 15000, maxBytes: 8 * 1024 * 1024 });
     if (response.ok) {
       const ct = (response.headers.get("content-type") || "").toLowerCase();
       if (ct.includes("html") || ct === "" || ct.includes("xml")) {
@@ -308,9 +309,10 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
   const crawlerStatuses: CrawlerStatus[] = [];
   let robotsTxt = "";
   try {
-    const robotsRes = await fetch(`${baseUrl}/robots.txt`, {
+    const robotsRes = await safeFetch(`${baseUrl}/robots.txt`, {
       headers,
-      signal: AbortSignal.timeout(10000),
+      timeoutMs: 10000,
+      maxBytes: 512 * 1024,
     });
     robotsTxt = await robotsRes.text();
   } catch {}
@@ -330,9 +332,10 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
   // Check llms.txt
   let hasLlmsTxt = false;
   try {
-    const llmsRes = await fetch(`${baseUrl}/llms.txt`, {
+    const llmsRes = await safeFetch(`${baseUrl}/llms.txt`, {
       headers,
-      signal: AbortSignal.timeout(8000),
+      timeoutMs: 8000,
+      maxBytes: 256 * 1024,
     });
     hasLlmsTxt = llmsRes.ok;
   } catch {}

@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import { db, auditsTable } from "@workspace/db";
 import {
   AnalyzeUrlBody,
@@ -10,11 +10,14 @@ import { analyzeUrl } from "../../lib/geoAnalyzer";
 import { generateAuditPdf } from "../../lib/pdfReport";
 import { anthropic } from "@workspace/integrations-anthropic-ai";
 import simulateRouter from "./simulate";
+import { requireAuth } from "../../middlewares/auth";
+import { analyzeRateLimiter, readRateLimiter } from "../../middlewares/rateLimiters";
+import { assertPublicUrl, SsrfError } from "../../lib/safeFetch";
 
 const router: IRouter = Router();
 router.use(simulateRouter);
 
-router.post("/geo/analyze", async (req, res): Promise<void> => {
+router.post("/geo/analyze", requireAuth, analyzeRateLimiter, async (req, res): Promise<void> => {
   const parsed = AnalyzeUrlBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -24,18 +27,20 @@ router.post("/geo/analyze", async (req, res): Promise<void> => {
   const { url } = parsed.data;
 
   try {
-    new URL(url);
-  } catch {
-    res.status(400).json({ error: "Invalid URL" });
+    await assertPublicUrl(url);
+  } catch (err) {
+    if (err instanceof SsrfError) {
+      req.log.warn({ url, reason: err.message, userId: req.userId }, "Blocked URL");
+    }
+    res.status(400).json({ error: "URL must be a publicly reachable http(s) address." });
     return;
   }
 
-  req.log.info({ url }, "Starting GEO analysis");
+  req.log.info({ url, userId: req.userId }, "Starting GEO analysis");
 
   try {
     const analysis = await analyzeUrl(url);
 
-    // Generate AI insights using Claude
     let aiInsights: string | null = null;
     try {
       const prompt = `You are a GEO (Generative Engine Optimization) expert. Analyze this website audit and provide 3-4 specific, actionable insights:
@@ -77,8 +82,8 @@ Provide 3-4 specific, prioritized recommendations to improve this site's visibil
       req.log.warn({ err: aiErr }, "AI insights generation failed, proceeding without");
     }
 
-    // Store in DB
     const [audit] = await db.insert(auditsTable).values({
+      userId: req.userId!,
       url: analysis.url,
       title: analysis.title,
       description: analysis.description,
@@ -117,7 +122,7 @@ Provide 3-4 specific, prioritized recommendations to improve this site's visibil
   }
 });
 
-router.get("/geo/audits", async (req, res): Promise<void> => {
+router.get("/geo/audits", requireAuth, readRateLimiter, async (req, res): Promise<void> => {
   const parsed = ListAuditsQueryParams.safeParse(req.query);
   const limit = parsed.success ? (parsed.data.limit ?? 20) : 20;
 
@@ -127,6 +132,7 @@ router.get("/geo/audits", async (req, res): Promise<void> => {
     geoScore: auditsTable.geoScore,
     createdAt: auditsTable.createdAt,
   }).from(auditsTable)
+    .where(eq(auditsTable.userId, req.userId!))
     .orderBy(desc(auditsTable.createdAt))
     .limit(limit);
 
@@ -136,7 +142,7 @@ router.get("/geo/audits", async (req, res): Promise<void> => {
   })));
 });
 
-router.get("/geo/audits/:id", async (req, res): Promise<void> => {
+router.get("/geo/audits/:id", requireAuth, readRateLimiter, async (req, res): Promise<void> => {
   const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const params = GetAuditParams.safeParse({ id: rawId });
   if (!params.success) {
@@ -144,7 +150,9 @@ router.get("/geo/audits/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  const [audit] = await db.select().from(auditsTable).where(eq(auditsTable.id, params.data.id));
+  const [audit] = await db.select().from(auditsTable).where(
+    and(eq(auditsTable.id, params.data.id), eq(auditsTable.userId, req.userId!))
+  );
   if (!audit) {
     res.status(404).json({ error: "Audit not found" });
     return;
@@ -156,7 +164,7 @@ router.get("/geo/audits/:id", async (req, res): Promise<void> => {
   });
 });
 
-router.get("/geo/audits/:id/pdf", async (req, res): Promise<void> => {
+router.get("/geo/audits/:id/pdf", requireAuth, readRateLimiter, async (req, res): Promise<void> => {
   const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const params = GetAuditParams.safeParse({ id: rawId });
   if (!params.success) {
@@ -164,7 +172,9 @@ router.get("/geo/audits/:id/pdf", async (req, res): Promise<void> => {
     return;
   }
 
-  const [audit] = await db.select().from(auditsTable).where(eq(auditsTable.id, params.data.id));
+  const [audit] = await db.select().from(auditsTable).where(
+    and(eq(auditsTable.id, params.data.id), eq(auditsTable.userId, req.userId!))
+  );
   if (!audit) {
     res.status(404).json({ error: "Audit not found" });
     return;

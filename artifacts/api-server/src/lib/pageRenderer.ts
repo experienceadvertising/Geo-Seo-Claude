@@ -1,5 +1,6 @@
 import { chromium, type Browser } from "playwright-core";
 import { execSync } from "node:child_process";
+import { assertPublicUrl } from "./safeFetch";
 
 let cachedBrowser: Browser | null = null;
 let cachedExecPath: string | null | undefined = undefined;
@@ -41,6 +42,11 @@ export interface RenderedPage {
 }
 
 export async function renderPage(url: string, timeoutMs = 25000): Promise<RenderedPage | null> {
+  try {
+    await assertPublicUrl(url);
+  } catch {
+    return null;
+  }
   const browser = await getBrowser();
   if (!browser) return null;
   let context;
@@ -51,6 +57,20 @@ export async function renderPage(url: string, timeoutMs = 25000): Promise<Render
       viewport: { width: 1280, height: 900 },
     });
     const page = await context.newPage();
+    await page.route("**/*", (route) => {
+      const reqUrl = route.request().url();
+      try {
+        const u = new URL(reqUrl);
+        if (u.protocol !== "http:" && u.protocol !== "https:") return route.abort();
+        const host = u.hostname.toLowerCase();
+        if (host === "localhost" || host === "127.0.0.1" || host === "0.0.0.0" || host === "::1" || host.endsWith(".internal") || host.endsWith(".local")) {
+          return route.abort();
+        }
+      } catch {
+        return route.abort();
+      }
+      return route.continue();
+    });
     await page.goto(url, { waitUntil: "networkidle", timeout: timeoutMs }).catch(async () => {
       await page.waitForLoadState("domcontentloaded", { timeout: 5000 }).catch(() => {});
     });
