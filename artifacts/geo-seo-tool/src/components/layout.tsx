@@ -1,8 +1,32 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
-import { Sparkles, LogOut } from "lucide-react";
+import { Sparkles, LogOut, Shield } from "lucide-react";
 import { Show, useClerk, useUser, SignInButton, SignUpButton } from "@clerk/react";
+import { useQuery } from "@tanstack/react-query";
+import { customFetch } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
+
+function AdminLink() {
+  const { user } = useUser();
+  const { data } = useQuery<{ isAdmin: boolean }>({
+    queryKey: ["admin", "me"],
+    queryFn: () => customFetch<{ isAdmin: boolean }>("/api/admin/me"),
+    enabled: !!user,
+    retry: false,
+    staleTime: 60_000,
+  });
+  if (!data?.isAdmin) return null;
+  return (
+    <Link
+      href="/admin"
+      className="hidden sm:flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+      title="Admin dashboard"
+    >
+      <Shield className="h-4 w-4" />
+      <span>Admin</span>
+    </Link>
+  );
+}
 
 function UserBadge() {
   const { user } = useUser();
@@ -44,6 +68,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <nav className="hidden md:flex items-center gap-4 text-sm font-medium text-muted-foreground">
                 <Link href="/" className="hover:text-foreground transition-colors">Audits</Link>
               </nav>
+              <AdminLink />
               <UserBadge />
             </Show>
             <Show when="signed-out">

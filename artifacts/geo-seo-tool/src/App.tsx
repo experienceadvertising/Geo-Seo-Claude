@@ -8,6 +8,7 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Results from "@/pages/results";
 import Simulate from "@/pages/simulate";
+import Admin from "@/pages/admin";
 import { Layout } from "@/components/layout";
 
 const queryClient = new QueryClient();
@@ -135,6 +136,9 @@ function AppRoutes() {
         </Route>
         <Route path="/simulate/:id">
           <RequireAuth><Simulate /></RequireAuth>
+        </Route>
+        <Route path="/admin">
+          <RequireAuth><Admin /></RequireAuth>
         </Route>
         <Route component={NotFound} />
       </Switch>
