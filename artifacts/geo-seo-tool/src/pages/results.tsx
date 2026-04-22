@@ -100,7 +100,7 @@ export default function Results() {
         <div className="shrink-0 flex flex-col items-center justify-center p-6 rounded-full border-4 aspect-square min-w-[160px] shadow-sm relative overflow-hidden group hover:scale-105 transition-transform cursor-default" style={{ borderColor: 'currentColor' }}>
           <div className={`absolute inset-0 ${overallColorClass} opacity-50 group-hover:opacity-100 transition-opacity`} />
           <div className="relative z-10 text-center">
-            <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">GEO Score</div>
+            <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">AEO Score</div>
             <div className={`text-6xl font-black font-mono tracking-tighter ${overallColorClass.split(' ')[0]}`} data-testid="text-geo-score">
               {audit.geoScore}
             </div>

@@ -48,14 +48,14 @@ function SignedOutLanding() {
     <div className="flex-1 w-full max-w-5xl mx-auto p-4 md:p-8 space-y-12">
       <section className="flex flex-col items-center text-center space-y-6 py-12 md:py-24">
         <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold border-transparent bg-primary/10 text-primary mb-4">
-          Generative Engine Optimization
+          Answer Engine Optimization
         </div>
         <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-          Audit your visibility in <br className="hidden md:block"/> AI Search Engines.
+          Get cited by <br className="hidden md:block"/> ChatGPT, Claude & Perplexity.
         </h1>
-        <p className="text-lg text-muted-foreground max-w-[600px]">
-          Analyze how well your website is optimized for ChatGPT, Claude, Gemini, and Perplexity.
-          Get actionable insights to dominate AI-driven discovery.
+        <p className="text-lg text-muted-foreground max-w-[640px]">
+          AEO Improvement scores your website's citability across every major AI search engine
+          and tells you exactly what to change — backed by 2026 research, personalized to your URL.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 mt-4">
           <SignUpButton mode="modal">
@@ -122,7 +122,7 @@ function SignedInDashboard() {
           {greeting}
         </div>
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
-          Audit your visibility in <br className="hidden md:block"/> AI Search Engines.
+          Audit any URL for <br className="hidden md:block"/> AI search visibility.
         </h1>
         <form onSubmit={handleAnalyze} className="w-full max-w-2xl mt-4 flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
@@ -169,7 +169,7 @@ function SignedInDashboard() {
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="flex flex-col items-end">
-                    <span className="text-xs text-muted-foreground mb-1 uppercase tracking-wider">GEO Score</span>
+                    <span className="text-xs text-muted-foreground mb-1 uppercase tracking-wider">AEO Score</span>
                     <ScoreBadge score={audit.geoScore} className="text-sm px-3 py-1" />
                   </div>
                   <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
