@@ -43,34 +43,99 @@ router.post("/geo/analyze", requireAuth, analyzeRateLimiter, async (req, res): P
 
     let aiInsights: string | null = null;
     try {
-      const prompt = `You are a GEO (Generative Engine Optimization) expert. Analyze this website audit and provide 3-4 specific, actionable insights:
+      const brand = analysis.brandName || (() => {
+        try { return new URL(url).hostname.replace(/^www\./, "").split(".")[0]; } catch { return "this site"; }
+      })();
+      const hostname = (() => { try { return new URL(url).hostname; } catch { return url; } })();
 
+      const topRecs = analysis.recommendations
+        .filter((r) => r.priority === "critical" || r.priority === "high")
+        .slice(0, 6)
+        .map((r, i) => `${i + 1}. [${r.priority.toUpperCase()}] ${r.title} — ${r.detail}`)
+        .join("\n");
+
+      const headingsList = (analysis.topHeadings ?? []).slice(0, 8).map((h) => `  • ${h}`).join("\n") || "  (no headings detected)";
+
+      const brandAuthLines = analysis.brandSignals
+        .map((s) => `  • ${s.platform}: ${s.found ? `FOUND${s.detail ? ` (${s.detail})` : ""}` : "not found"}`)
+        .join("\n");
+
+      const presentSchemas = analysis.schemaTypes.filter((s) => s.present).map((s) => s.type);
+      const missingImportantSchemas = ["Organization", "Article", "FAQPage", "BreadcrumbList", "Product"]
+        .filter((t) => !presentSchemas.includes(t));
+
+      const blockedCrawlers = analysis.crawlers.filter((c) => !c.allowed).map((c) => c.name);
+
+      const wins: string[] = [];
+      if (analysis.scores.citability >= 70) wins.push(`citability score is strong (${analysis.scores.citability}/100)`);
+      if (analysis.scores.technicalSeo >= 80) wins.push("technical SEO foundation is solid");
+      if (analysis.scores.structuredData >= 70) wins.push("structured data is in good shape");
+      if (analysis.scores.brandAuthority >= 70) wins.push(`${brand} already has measurable brand authority signals`);
+      if (analysis.crawlers.every((c) => c.allowed)) wins.push("all major AI crawlers are allowed");
+      if (!analysis.requiresJavaScript) wins.push("content is server-rendered (AI crawlers can read it)");
+
+      const prompt = `You are a senior Generative Engine Optimization (GEO) consultant writing a personalized briefing for ${brand} on the page at ${url}.
+
+Your job: write 4-5 highly specific, actionable recommendations that reference ${brand} by name and reference the actual content, headings, or signals below. Avoid generic platitudes — every recommendation must be something the ${brand} team could implement on THIS page this week.
+
+=== PAGE CONTEXT ===
+Brand / company: ${brand}
 URL: ${url}
-Overall GEO Score: ${analysis.geoScore}/100
+Domain: ${hostname}
+Page title: ${analysis.title || "(no title)"}
+Meta description: ${analysis.description || "(no description)"}
+Word count (rendered): ${analysis.wordCount} | Word count (raw HTML, what crawlers see): ${analysis.rawHtmlWordCount}${analysis.requiresJavaScript ? " — ⚠ JS-DEPENDENT, crawlers see almost nothing" : ""}
 
-Scores:
-- Citability: ${analysis.scores.citability}/100
-- Brand Authority: ${analysis.scores.brandAuthority}/100
-- Content Quality: ${analysis.scores.contentQuality}/100
-- Technical SEO: ${analysis.scores.technicalSeo}/100
-- Structured Data: ${analysis.scores.structuredData}/100
-- Platform Optimization: ${analysis.scores.platformOptimization}/100
+Top headings on the page:
+${headingsList}
 
-Key findings:
-- Word count (rendered, what users see): ${analysis.wordCount}
-- Word count (raw HTML, what AI crawlers see): ${analysis.rawHtmlWordCount}${analysis.requiresJavaScript ? "  ⚠ CRITICAL: Page requires JavaScript. AI crawlers without JS see almost nothing." : ""}
-- HTTPS: ${analysis.hasHttps}
-- Has llms.txt: ${analysis.hasLlmsTxt}
-- Has canonical tags: ${analysis.hasCanonical}
-- AI crawlers allowed: ${analysis.crawlers.filter(c => c.allowed).length}/${analysis.crawlers.length}
-- Schema types present: ${analysis.schemaTypes.filter(s => s.present).map(s => s.type).join(", ") || "None"}
-- Avg citability score: ${analysis.avgCitabilityScore}/100
+First ~1500 chars of visible content:
+"""
+${analysis.pageExcerpt || "(no content extracted)"}
+"""
 
-Provide 3-4 specific, prioritized recommendations to improve this site's visibility in AI search engines like ChatGPT, Claude, and Perplexity. Be concrete and direct. Keep total response under 200 words.`;
+=== AI VISIBILITY SIGNALS ===
+Overall GEO score: ${analysis.geoScore}/100
+Citability ${analysis.scores.citability}/100 · Brand Authority ${analysis.scores.brandAuthority}/100 · Content Quality ${analysis.scores.contentQuality}/100 · Technical SEO ${analysis.scores.technicalSeo}/100 · Structured Data ${analysis.scores.structuredData}/100 · Platform Optimization ${analysis.scores.platformOptimization}/100
+
+Brand authority footprint for "${brand}":
+${brandAuthLines || "  (no signals checked)"}
+
+Schema present: ${presentSchemas.join(", ") || "none"}
+Schema missing (high-impact): ${missingImportantSchemas.join(", ") || "none"}
+Blocked AI crawlers: ${blockedCrawlers.join(", ") || "none"}
+Has llms.txt: ${analysis.hasLlmsTxt} · HTTPS: ${analysis.hasHttps} · Canonical: ${analysis.hasCanonical}
+
+What's already working: ${wins.join("; ") || "limited bright spots — focus on fundamentals"}
+
+=== TOP RULE-BASED FINDINGS (don't just repeat — build on these with company-specific advice) ===
+${topRecs || "(no critical/high findings — focus on advanced GEO tactics)"}
+
+=== INSTRUCTIONS ===
+Write a briefing in this exact markdown structure:
+
+**Executive summary**
+2-3 sentences naming ${brand} explicitly, stating the single biggest opportunity for this specific page given what it appears to be about (infer from title, headings, content excerpt).
+
+**Top recommendations**
+4-5 numbered recommendations. Each must:
+- Start with a bold one-line action ("**1. Add a comparison table of ${brand} vs. [likely competitors]**")
+- Reference something concrete from the page (a heading you saw, the topic, the brand, the missing schema, the JS-rendering issue, etc.)
+- Give 1-2 sentences of "how to do it on this page" — no generic theory
+- End with the expected impact in plain language
+
+**Quick wins this week**
+3 bullets — fastest things ${brand} can ship in <1 day each.
+
+Hard rules:
+- Mention "${brand}" by name in at least 3 places
+- Reference at least 2 specific headings or phrases from the actual page content above
+- No filler ("In today's AI landscape..." etc.) — every sentence has a fact or instruction
+- Total length 350-500 words`;
 
       const message = await anthropic.messages.create({
-        model: "claude-haiku-4-5",
-        max_tokens: 8192,
+        model: "claude-sonnet-4-5",
+        max_tokens: 2048,
         messages: [{ role: "user", content: prompt }],
       });
 

@@ -64,6 +64,8 @@ export interface AnalysisResult {
   brandName: string;
   brandSignals: BrandSignal[];
   recommendations: GeoRecommendation[];
+  pageExcerpt?: string;
+  topHeadings?: string[];
 }
 
 const AI_CRAWLERS = [
@@ -505,6 +507,16 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
     brandName: brandAuthority.brandName,
     brandSignals: brandAuthority.signals,
     recommendations,
+    pageExcerpt: $page
+      ? $page("body").text().replace(/\s+/g, " ").trim().slice(0, 1500)
+      : undefined,
+    topHeadings: $page
+      ? $page("h1, h2, h3")
+          .map((_, el) => $page!(el).text().trim())
+          .get()
+          .filter((t) => t.length > 0 && t.length < 200)
+          .slice(0, 10)
+      : undefined,
   };
 }
 
