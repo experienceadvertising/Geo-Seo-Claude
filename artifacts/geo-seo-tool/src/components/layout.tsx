@@ -54,7 +54,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background flex flex-col font-sans">
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-14 max-w-screen-2xl items-center">
+        <div className="container flex h-14 max-w-screen-2xl items-center px-4 sm:px-6 lg:px-8">
           <div className="flex mr-4 items-center gap-2">
             <Link href="/" className="flex items-center gap-2 font-bold text-lg tracking-tight">
               <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-teal-600 to-emerald-700 text-white shadow-sm">
