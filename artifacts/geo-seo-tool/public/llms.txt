@@ -1,0 +1,61 @@
+# AEO Improvement
+
+> AEO Improvement is a free Answer Engine Optimization (AEO) audit platform that scores any website's citability across ChatGPT, Claude, Perplexity, and Google AI Overviews, then delivers personalized, research-backed recommendations to improve AI search visibility.
+
+## What is AEO Improvement?
+
+AEO Improvement is a web-based auditing tool built for marketers, SEOs, and website owners who want their content to be cited inside AI-generated answers. It analyzes any public URL across six pillars:
+
+1. **Citability** — How well-structured and extractable is the page content for AI systems?
+2. **AI Crawler Access** — Is the site allowing GPTBot, ClaudeBot, PerplexityBot, Google-Extended, Applebot, and meta-externalagent to crawl and index it?
+3. **Brand Authority** — Does the brand have a clear digital footprint on Wikipedia, Wikidata, LinkedIn, GitHub, Twitter/X, and other authoritative sources?
+4. **Schema Markup** — Is structured data (JSON-LD) present and correctly applied (Organization, WebSite, Article, FAQ, etc.)?
+5. **Technical SEO** — Core technical health: HTTPS, meta tags, canonical URL, Open Graph, page speed indicators.
+6. **Prompt Simulation** — Live simulation of how ChatGPT, Claude, Gemini, and Perplexity respond when asked questions the site should be cited for.
+
+## Key Features
+
+- **AEO Score (0–100)**: A single weighted score representing overall AI search visibility.
+- **Audit History**: Users can view all past audits and re-run them at any time to track improvement over time.
+- **AI Executive Briefing**: Claude Sonnet generates a concise briefing of the site's AEO strengths and weaknesses.
+- **Personalized Recommendations**: Prioritized, actionable fixes ranked by AEO impact — not generic checklists.
+- **Prompt Simulation**: Test how real AI engines answer queries your brand should be cited for.
+- **Auto-Generated Prompts**: Smart prompt suggestions based on the site's actual topic, audience, and content.
+
+## What is AEO (Answer Engine Optimization)?
+
+Answer Engine Optimization is the discipline of making website content citable inside AI-generated answers from systems like ChatGPT, Perplexity, Claude, and Google AI Overviews. Unlike traditional SEO which optimizes for ranking in keyword-based search results, AEO focuses on:
+
+- **Content extractability**: Clear headings, direct-answer paragraphs, factual density, and statistics
+- **Schema markup**: JSON-LD structured data that helps AI understand content type, author, and entity relationships
+- **Crawler access**: Explicit allowance for AI training and search crawlers in robots.txt
+- **Brand authority**: Presence on structured knowledge sources (Wikipedia, Wikidata, LinkedIn, Crunchbase)
+- **llms.txt**: A plain-text briefing file (this file) that helps LLMs understand the site without executing JavaScript
+
+## Who is it for?
+
+- **Marketers** tracking whether their brand appears in AI-generated answers
+- **SEOs** expanding their practice into answer engine optimization
+- **Founders and startups** wanting to establish brand authority with AI search engines early
+- **Content teams** optimizing articles and landing pages for AI citability
+- **Agencies** running AEO audits for clients
+
+## How the Score Works
+
+The AEO score (0–100) is a weighted composite:
+- Citability signals: 30%
+- AI crawler access: 20%
+- Brand authority: 20%
+- Schema markup: 15%
+- Technical SEO: 15%
+
+Scores below 40 are rated Poor (high priority to fix). Scores 40–69 are Moderate. Scores 70+ are Good.
+
+## Technology
+
+AEO Improvement is built on a Node.js/Express API backend with a React + Vite frontend. AI insights are powered by Claude Sonnet (Anthropic). Prompt simulation uses live API calls to ChatGPT (OpenAI), Claude (Anthropic), Perplexity, and Gemini (Google). User authentication is handled by Clerk.
+
+## Contact and Access
+
+- Website: https://aeoimprovement.com/
+- Sign up for a free account to run audits: https://aeoimprovement.com/sign-up
