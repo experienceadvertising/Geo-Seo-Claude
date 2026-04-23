@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
-import { useParams, Link } from "wouter";
-import { useGetAudit, getGetAuditQueryKey } from "@workspace/api-client-react";
-import { ArrowLeft, CheckCircle2, XCircle, AlertTriangle, Bot, TerminalSquare, FileText, Code2, ShieldAlert, Sparkles, Loader2, Download, Building2 } from "lucide-react";
+import { useParams, Link, useLocation } from "wouter";
+import { useGetAudit, getGetAuditQueryKey, useAnalyzeUrl } from "@workspace/api-client-react";
+import { ArrowLeft, CheckCircle2, XCircle, AlertTriangle, Bot, TerminalSquare, FileText, Code2, ShieldAlert, Sparkles, Loader2, Download, Building2, RefreshCw } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,10 +9,14 @@ import { Separator } from "@/components/ui/separator";
 import { ScoreBadge } from "@/components/score-badge";
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from "recharts";
 import ReactMarkdown from "react-markdown";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Results() {
   const params = useParams<{ id: string }>();
   const id = parseInt(params.id || "0", 10);
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const reRun = useAnalyzeUrl();
 
   const { data: audit, isLoading, isError } = useGetAudit(id, {
     query: {
@@ -58,8 +62,8 @@ export default function Results() {
   }
 
   let overallColorClass = "text-red-500 border-red-500/20 bg-red-500/5";
-  if (audit.geoScore >= 80) overallColorClass = "text-green-500 border-green-500/20 bg-green-500/5";
-  else if (audit.geoScore >= 60) overallColorClass = "text-yellow-500 border-yellow-500/20 bg-yellow-500/5";
+  if (audit.geoScore >= 70) overallColorClass = "text-green-500 border-green-500/20 bg-green-500/5";
+  else if (audit.geoScore >= 40) overallColorClass = "text-yellow-500 border-yellow-500/20 bg-yellow-500/5";
 
   return (
     <div className="flex-1 w-full max-w-7xl mx-auto p-4 md:p-8 space-y-8 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -93,6 +97,29 @@ export default function Results() {
                 <Sparkles className="h-3.5 w-3.5" /> Run Prompt Simulation
               </Button>
             </Link>
+            <Button
+              variant="outline"
+              size="sm"
+              className="font-mono text-xs gap-2"
+              disabled={reRun.isPending}
+              onClick={() => {
+                reRun.mutate(
+                  { data: { url: audit.url } },
+                  {
+                    onSuccess: (result) => setLocation(`/results/${result.id}`),
+                    onError: (err: any) => toast({
+                      title: "Re-scan failed",
+                      description: err?.error || "Could not re-analyze this URL.",
+                      variant: "destructive",
+                    }),
+                  }
+                );
+              }}
+              data-testid="button-rerun"
+            >
+              {reRun.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+              {reRun.isPending ? "Re-scanning…" : "Re-scan URL"}
+            </Button>
           </div>
         </div>
         
@@ -348,21 +375,40 @@ export default function Results() {
           <Card className="shadow-sm border-border">
             <CardHeader className="pb-4">
               <CardTitle className="text-sm font-mono uppercase tracking-wider flex items-center gap-2">
-                <Code2 className="h-4 w-4" /> Schema Detected
+                <Code2 className="h-4 w-4" /> Schema Markup
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-4 pt-0">
-              <div className="flex flex-wrap gap-2">
-                {audit.schemaTypes.length > 0 ? (
-                  audit.schemaTypes.map((schema, i) => (
-                    <Badge key={i} variant={schema.present ? "secondary" : "outline"} className={`font-mono text-[10px] uppercase ${schema.present ? 'bg-primary/10 text-primary hover:bg-primary/20 border-primary/20' : 'text-muted-foreground opacity-50'}`}>
-                      {schema.type}
-                    </Badge>
-                  ))
-                ) : (
-                  <div className="text-xs text-muted-foreground italic">No schema markup detected.</div>
-                )}
-              </div>
+            <CardContent className="p-4 pt-0 space-y-4">
+              {audit.schemaTypes.length === 0 ? (
+                <div className="text-xs text-muted-foreground italic">No schema markup detected.</div>
+              ) : (
+                <>
+                  {audit.schemaTypes.some(s => s.present) && (
+                    <div className="space-y-1.5">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-green-600 dark:text-green-400">Detected</p>
+                      <div className="flex flex-wrap gap-2">
+                        {audit.schemaTypes.filter(s => s.present).map((schema, i) => (
+                          <Badge key={i} className="font-mono text-[10px] uppercase bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20 gap-1">
+                            <CheckCircle2 className="h-3 w-3" /> {schema.type}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {audit.schemaTypes.some(s => !s.present) && (
+                    <div className="space-y-1.5">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Missing</p>
+                      <div className="flex flex-wrap gap-2">
+                        {audit.schemaTypes.filter(s => !s.present).map((schema, i) => (
+                          <Badge key={i} variant="outline" className="font-mono text-[10px] uppercase text-muted-foreground gap-1">
+                            <XCircle className="h-3 w-3" /> {schema.type}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
             </CardContent>
           </Card>
         </div>

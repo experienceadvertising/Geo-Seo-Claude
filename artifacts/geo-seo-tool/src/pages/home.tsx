@@ -172,6 +172,59 @@ function SignedOutLanding() {
   );
 }
 
+const ANALYSIS_STEPS = [
+  "Fetching page",
+  "Analyzing content",
+  "Checking crawlers",
+  "Computing scores",
+  "Generating insights",
+];
+
+function AnalysisProgress() {
+  const [step, setStep] = React.useState(0);
+
+  React.useEffect(() => {
+    const durations = [3000, 6000, 5000, 6000, 8000];
+    let idx = 0;
+    function advance() {
+      idx++;
+      if (idx < ANALYSIS_STEPS.length - 1) {
+        setStep(idx);
+        setTimeout(advance, durations[idx]);
+      } else {
+        setStep(ANALYSIS_STEPS.length - 1);
+      }
+    }
+    const t = setTimeout(advance, durations[0]);
+    return () => clearTimeout(t);
+  }, []);
+
+  return (
+    <div className="flex flex-col items-center gap-4 py-4">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex flex-col items-center gap-3 w-full max-w-sm">
+        {ANALYSIS_STEPS.map((label, i) => {
+          const done = i < step;
+          const active = i === step;
+          return (
+            <div key={label} className={`flex items-center gap-3 text-sm transition-all ${done ? "text-primary" : active ? "text-foreground font-semibold" : "text-muted-foreground/40"}`}>
+              {done ? (
+                <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+              ) : active ? (
+                <Loader2 className="h-4 w-4 animate-spin text-primary shrink-0" />
+              ) : (
+                <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/20 shrink-0" />
+              )}
+              <span>{label}</span>
+            </div>
+          );
+        })}
+      </div>
+      <p className="text-xs text-muted-foreground mt-2">This usually takes 20–30 seconds</p>
+    </div>
+  );
+}
+
 function SignedInDashboard() {
   const [url, setUrl] = React.useState("");
   const [, setLocation] = useLocation();
@@ -182,10 +235,13 @@ function SignedInDashboard() {
   const auditsQuery = useListAudits({ limit: 10 });
   const audits = auditsQuery.data || [];
 
+  const trimmedUrl = url.trim();
+  const isValidUrl = trimmedUrl.length > 0;
+
   const handleAnalyze = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!url) return;
-    let targetUrl = url;
+    if (!isValidUrl) return;
+    let targetUrl = trimmedUrl;
     if (!targetUrl.startsWith("http")) targetUrl = `https://${targetUrl}`;
     analyze.mutate(
       { data: { url: targetUrl } },
@@ -203,6 +259,17 @@ function SignedInDashboard() {
   };
 
   const greeting = user?.firstName ? `Welcome back, ${user.firstName}` : "Welcome back";
+
+  if (analyze.isPending) {
+    return (
+      <div className="flex-1 w-full max-w-5xl mx-auto p-4 md:p-8 flex items-center justify-center min-h-[50vh]">
+        <div className="w-full max-w-md text-center space-y-2">
+          <h2 className="text-xl font-bold tracking-tight">Auditing {url}</h2>
+          <AnalysisProgress />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 w-full max-w-5xl mx-auto p-4 md:p-8 space-y-12">
@@ -222,15 +289,11 @@ function SignedInDashboard() {
               className="pl-10 h-12 text-base font-mono bg-card"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              disabled={analyze.isPending}
+              autoFocus
             />
           </div>
-          <Button type="submit" size="lg" className="h-12 px-8 font-semibold" disabled={analyze.isPending}>
-            {analyze.isPending ? (
-              <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Analyzing...</>
-            ) : (
-              <>Scan URL <ArrowRight className="ml-2 h-5 w-5" /></>
-            )}
+          <Button type="submit" size="lg" className="h-12 px-8 font-semibold" disabled={!isValidUrl}>
+            Scan URL <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
         </form>
         <p className="text-xs text-muted-foreground">Limit: 20 audits per hour per account.</p>

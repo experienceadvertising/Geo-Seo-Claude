@@ -17,25 +17,64 @@ function normalize(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
+/** Strip a trailing truncated word (e.g. "Shelving Inc. Mich" → "Shelving Inc.") */
+function stripTrailingFragment(seg: string): string {
+  const knownSuffixes = new Set(["inc", "llc", "ltd", "co", "corp", "group", "the", "and", "of"]);
+  const words = seg.split(/\s+/);
+  if (words.length < 2) return seg;
+  const last = words[words.length - 1].replace(/[^a-zA-Z]/g, "").toLowerCase();
+  // Suspect if last word is ≤4 chars, not a known suffix, and total title is already ≥60 chars
+  if (last.length <= 4 && !knownSuffixes.has(last) && seg.length >= 12) {
+    return words.slice(0, -1).join(" ").trim().replace(/[.,]+$/, "");
+  }
+  return seg;
+}
+
 function deriveBrandName(url: string, title: string | null): string {
-  // Prefer domain-derived brand (most reliable, deterministic).
   const host = new URL(url).hostname.replace(/^www\./, "");
   const root = host.split(".")[0];
   const domainBrand = root.charAt(0).toUpperCase() + root.slice(1);
 
   if (!title) return domainBrand;
 
-  // If a title segment matches the domain brand, prefer the cased version from the title.
   const segments = title
     .split(/[|•\-—–·:»]/)
     .map((s) => s.trim())
-    .filter((s) => s.length >= 2 && s.length <= 40);
+    .filter((s) => s.length >= 2 && s.length <= 50);
+
   const target = normalize(domainBrand);
+
+  // Pass 1: exact/prefix match on normalized domain root
   for (const seg of segments) {
-    if (normalize(seg) === target || normalize(seg).startsWith(target) || target.startsWith(normalize(seg))) {
-      return seg;
+    const n = normalize(seg);
+    if (n === target || n.startsWith(target) || target.startsWith(n)) {
+      return stripTrailingFragment(seg);
     }
   }
+
+  // Pass 2: domain abbreviation match — every char in domain appears in sequence in the segment
+  // e.g. "nytimes" is a subsequence-abbreviation of "The New York Times" (thenewyorktimes)
+  for (const seg of segments) {
+    const n = normalize(seg);
+    if (n.length < target.length) continue; // segment must be longer than abbreviation
+    let ti = 0;
+    for (let si = 0; si < n.length && ti < target.length; si++) {
+      if (n[si] === target[ti]) ti++;
+    }
+    if (ti === target.length) {
+      return stripTrailingFragment(seg);
+    }
+  }
+
+  // Pass 3: pick the shortest segment that looks like a proper name (has at least one uppercase start)
+  const properNameSegs = segments.filter(
+    (s) => s.length >= 3 && s.length <= 40 && /^[A-Z]/.test(s) && !/^(Home|Welcome|Official)$/i.test(s)
+  );
+  if (properNameSegs.length > 0) {
+    const shortest = properNameSegs.sort((a, b) => a.length - b.length)[0];
+    return stripTrailingFragment(shortest);
+  }
+
   return domainBrand;
 }
 

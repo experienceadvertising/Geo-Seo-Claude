@@ -41,7 +41,7 @@ export default function SimulatePage() {
   const suggest = useSuggestPrompts();
   const run = useRunSimulation();
   const latest = useGetLatestSimulationForAudit(auditId, {
-    query: { retry: false, refetchOnWindowFocus: false },
+    query: { retry: false, refetchOnWindowFocus: false, queryKey: ["simulation", "latest", auditId] },
   });
 
   const domain = useMemo(() => audit?.url ? getDomain(audit.url) : "", [audit]);

@@ -131,7 +131,8 @@ Hard rules:
 - Mention "${brand}" by name in at least 3 places
 - Reference at least 2 specific headings or phrases from the actual page content above
 - No filler ("In today's AI landscape..." etc.) — every sentence has a fact or instruction
-- Total length 350-500 words`;
+- Total length 350-500 words
+- NEVER recommend something that is already confirmed satisfied above (e.g. if Has llms.txt: true, do NOT suggest creating llms.txt; if no blocked crawlers, do NOT suggest unblocking them; if HTTPS is true, do NOT mention HTTPS)`;
 
       const message = await anthropic.messages.create({
         model: "claude-sonnet-4-5",
