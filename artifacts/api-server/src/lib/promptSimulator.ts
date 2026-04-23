@@ -372,15 +372,48 @@ export async function runPromptSimulation(
   };
 }
 
-export async function generatePromptsForBrand(brandName: string, description: string | null): Promise<string[]> {
-  const sys = `Generate 8 realistic prompts that a typical user would type into ChatGPT, Perplexity, or Google AI Overviews when researching ${brandName}'s product category. Mix:
-- 2 informational ("what is", "how does")
-- 2 comparative ("X vs Y", "best X for Y")
-- 2 how-to ("how do I", "how to")
-- 2 recommendation ("best", "top")
-Do NOT include the brand name in the prompts — they should be generic category prompts that the brand could plausibly be cited for.
-Return ONLY the prompts, one per line, no numbering, no quotes, no explanation.`;
-  const user = `Brand: ${brandName}\nDescription: ${description || "(none)"}`;
+export interface PromptGenerationContext {
+  description?: string | null;
+  title?: string | null;
+  aiInsights?: string | null;
+}
+
+export async function generatePromptsForBrand(
+  brandName: string,
+  ctx: PromptGenerationContext | string | null,
+): Promise<string[]> {
+  // Support legacy string signature for backwards compat
+  const context: PromptGenerationContext = typeof ctx === "string" || ctx === null
+    ? { description: ctx }
+    : (ctx ?? {});
+
+  const contextLines: string[] = [];
+  if (context.title) contextLines.push(`Page title: ${context.title}`);
+  if (context.description) contextLines.push(`Meta description: ${context.description}`);
+  // Include the first 600 chars of AI insights to give the model rich context about what the site does
+  if (context.aiInsights) {
+    const snippet = context.aiInsights.slice(0, 600).replace(/\n+/g, " ").trim();
+    contextLines.push(`AI analysis summary (first 600 chars): ${snippet}`);
+  }
+  const contextBlock = contextLines.length
+    ? contextLines.join("\n")
+    : "(no additional context)";
+
+  const sys = `You are an expert in Answer Engine Optimization (AEO). Your task is to generate 8 realistic search prompts that real users type into ChatGPT, Perplexity, Claude, or Google AI Overviews when researching a topic that ${brandName} should ideally be cited for.
+
+IMPORTANT: Read the site context carefully below to understand what ${brandName} actually does — community platform, SaaS tool, marketplace, agency, media brand, etc. — and generate prompts that match those specific use cases, not generic category prompts.
+
+Rules:
+- Generate exactly 8 prompts
+- Mix intent types: 2 informational, 2 comparative, 2 how-to, 2 recommendation
+- Match the prompts to the ACTUAL product/service/community type inferred from the context
+- Do NOT include the brand name "${brandName}" in any prompt — they must be neutral category prompts the brand could be cited for
+- Write in natural human language (not marketing language)
+- Target the actual audience inferred from the context (B2B vs B2C, skill level, industry, etc.)
+- Return ONLY the 8 prompts, one per line, no numbering, no bullets, no quotes, no explanation`;
+
+  const user = `Brand: ${brandName}\n\n${contextBlock}`;
+
   const resp = await openaiClient.chat.completions.create({
     model: "gpt-5-mini",
     messages: [

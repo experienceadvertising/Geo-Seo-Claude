@@ -61,7 +61,12 @@ export default function SimulatePage() {
   const handleSuggest = async () => {
     if (!brandName) return;
     const res = await suggest.mutateAsync({
-      data: { brandName, description: audit?.description || undefined },
+      data: {
+        brandName,
+        description: audit?.description || undefined,
+        ...(audit?.title ? { title: audit.title } : {}),
+        ...(audit?.aiInsights ? { aiInsights: audit.aiInsights } : {}),
+      } as any,
     });
     setPromptsText((res as any).prompts.join("\n"));
   };

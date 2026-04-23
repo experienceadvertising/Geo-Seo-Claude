@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { eq, desc, and } from "drizzle-orm";
 import { db, promptSimulationsTable, auditsTable } from "@workspace/db";
-import { runPromptSimulation, generatePromptsForBrand, type EngineId } from "../../lib/promptSimulator";
+import { runPromptSimulation, generatePromptsForBrand, type EngineId, type PromptGenerationContext } from "../../lib/promptSimulator";
 import { requireAuth } from "../../middlewares/auth";
 import { simulateRateLimiter, readRateLimiter } from "../../middlewares/rateLimiters";
 
@@ -11,13 +11,17 @@ const VALID_ENGINES: EngineId[] = ["chatgpt", "claude", "gemini", "perplexity"];
 
 router.post("/geo/prompts/suggest", requireAuth, readRateLimiter, async (req, res): Promise<void> => {
   const brandName = typeof req.body?.brandName === "string" ? req.body.brandName.trim().slice(0, 120) : "";
-  const description = typeof req.body?.description === "string" ? req.body.description.slice(0, 1000) : null;
   if (!brandName || brandName.length < 2) {
     res.status(400).json({ error: "brandName is required (2-120 chars)" });
     return;
   }
+  const context: PromptGenerationContext = {
+    description: typeof req.body?.description === "string" ? req.body.description.slice(0, 500) : null,
+    title: typeof req.body?.title === "string" ? req.body.title.slice(0, 200) : null,
+    aiInsights: typeof req.body?.aiInsights === "string" ? req.body.aiInsights.slice(0, 800) : null,
+  };
   try {
-    const prompts = await generatePromptsForBrand(brandName, description);
+    const prompts = await generatePromptsForBrand(brandName, context);
     res.json({ prompts });
   } catch (err) {
     req.log.error({ err }, "Prompt suggestion failed");
