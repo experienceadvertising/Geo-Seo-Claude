@@ -314,14 +314,14 @@ function SignedInDashboard() {
         ) : (
           <div className="grid grid-cols-1 gap-3">
             {audits.map((audit) => (
-              <Link key={audit.id} href={`/results/${audit.id}`} className="group flex items-center justify-between p-4 rounded-lg border bg-card hover:border-primary/50 transition-all cursor-pointer shadow-sm hover:shadow-md">
-                <div className="flex flex-col gap-1">
-                  <span className="font-mono text-sm font-medium group-hover:text-primary transition-colors">{audit.url}</span>
+              <Link key={audit.id} href={`/results/${audit.id}`} className="group flex items-center justify-between gap-4 p-4 rounded-lg border bg-card hover:border-primary/50 transition-all cursor-pointer shadow-sm hover:shadow-md">
+                <div className="flex flex-col gap-1 min-w-0 flex-1">
+                  <span className="font-mono text-sm font-medium group-hover:text-primary transition-colors truncate">{audit.url}</span>
                   <span className="text-xs text-muted-foreground">{new Date(audit.createdAt).toLocaleDateString()}</span>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3 shrink-0">
                   <div className="flex flex-col items-end">
-                    <span className="text-xs text-muted-foreground mb-1 uppercase tracking-wider">AEO Score</span>
+                    <span className="text-xs text-muted-foreground mb-1 uppercase tracking-wider hidden sm:block">AEO Score</span>
                     <ScoreBadge score={audit.geoScore} className="text-sm px-3 py-1" />
                   </div>
                   <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />

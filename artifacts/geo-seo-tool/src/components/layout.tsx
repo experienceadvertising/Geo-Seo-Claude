@@ -57,10 +57,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div className="container flex h-14 max-w-screen-2xl items-center px-4 sm:px-6 lg:px-8">
           <div className="flex mr-4 items-center gap-2">
             <Link href="/" className="flex items-center gap-2 font-bold text-lg tracking-tight">
-              <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-teal-600 to-emerald-700 text-white shadow-sm">
+              <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-teal-600 to-emerald-700 text-white shadow-sm">
                 <Sparkles className="h-4 w-4" />
               </span>
-              <span>AEO Improvement</span>
+              <span className="whitespace-nowrap">AEO Improvement</span>
             </Link>
           </div>
           <div className="flex flex-1 items-center justify-end gap-3">

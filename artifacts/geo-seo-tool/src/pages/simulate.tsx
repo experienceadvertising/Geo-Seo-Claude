@@ -102,22 +102,20 @@ export default function SimulatePage() {
   const showingHistorical = !run.data && !!latest.data;
 
   if (auditLoading) {
-    return <div className="container max-w-6xl py-8 space-y-4"><Skeleton className="h-10 w-64" /><Skeleton className="h-64 w-full" /></div>;
+    return <div className="container max-w-6xl px-4 sm:px-6 py-6 sm:py-8 space-y-4"><Skeleton className="h-10 w-64" /><Skeleton className="h-64 w-full" /></div>;
   }
 
   return (
-    <div className="container max-w-6xl py-8 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <Link href={`/results/${auditId}`} className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-2">
-            <ArrowLeft className="h-4 w-4 mr-1" /> Back to audit
-          </Link>
-          <h1 className="text-3xl font-bold tracking-tight">Prompt Simulation</h1>
-          <p className="text-muted-foreground mt-1">
-            See how AI search engines respond when users search for your category
-            {audit && <> · <span className="font-medium text-foreground">{domain}</span></>}
-          </p>
-        </div>
+    <div className="container max-w-6xl px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+      <div>
+        <Link href={`/results/${auditId}`} className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-2">
+          <ArrowLeft className="h-4 w-4 mr-1" /> Back to audit
+        </Link>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Prompt Simulation</h1>
+        <p className="text-muted-foreground mt-1 text-sm sm:text-base">
+          See how AI search engines respond when users search for your category
+          {audit && <> · <span className="font-medium text-foreground">{domain}</span></>}
+        </p>
       </div>
 
       {/* Configuration card */}
@@ -186,11 +184,12 @@ export default function SimulatePage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 pt-2">
+          <div className="flex flex-wrap items-center gap-3 pt-2">
             <Button
               onClick={handleRun}
               disabled={run.isPending || prompts.length === 0 || !brandName || selectedEngines.length === 0}
               size="lg"
+              className="w-full sm:w-auto"
             >
               {run.isPending ? (
                 <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Running ({prompts.length * selectedEngines.length} queries)…</>
@@ -200,7 +199,7 @@ export default function SimulatePage() {
             </Button>
             {run.isPending && (
               <p className="text-sm text-muted-foreground">
-                This may take 1-3 minutes. Each engine performs a live web search.
+                This may take 1–3 minutes. Each engine performs a live web search.
               </p>
             )}
             {run.isError && (
