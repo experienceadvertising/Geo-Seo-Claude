@@ -115,7 +115,7 @@ router.post("/stripe/checkout", requireAuth, async (req, res): Promise<void> => 
       mode: "subscription",
       client_reference_id: userId,
       metadata: { userId, price_id: priceId, plan: plan ?? "" },
-      success_url: `${baseUrl}/?checkout=success`,
+      success_url: `${baseUrl}/pricing?checkout=success`,
       cancel_url: `${baseUrl}/pricing?checkout=cancel`,
     });
 

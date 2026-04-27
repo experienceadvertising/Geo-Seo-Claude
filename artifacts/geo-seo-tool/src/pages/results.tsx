@@ -98,7 +98,7 @@ export default function Results() {
           <h2 className="text-2xl font-bold text-destructive">Audit Not Found</h2>
           <p className="text-muted-foreground">The requested audit could not be loaded or the analysis failed. Please try again.</p>
           <Link href="/" className="text-primary hover:underline inline-flex items-center gap-2 mt-4 font-mono">
-            <ArrowLeft className="h-4 w-4" /> Return to Command Center
+            <ArrowLeft className="h-4 w-4" /> Back to Audits
           </Link>
         </div>
       </div>

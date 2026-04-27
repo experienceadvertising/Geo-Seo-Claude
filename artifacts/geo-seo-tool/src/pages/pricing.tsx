@@ -1,11 +1,13 @@
 import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { useUser, SignInButton } from "@clerk/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, Zap, Building2, Star, ExternalLink, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
 import { usePlan } from "@/hooks/usePlan";
 import { useStripeProducts, useStripeSubscription, useCheckout, useCustomerPortal } from "@/hooks/useStripe";
 import { useToast } from "@/hooks/use-toast";
@@ -45,6 +47,7 @@ interface PlanCardProps {
   planId: "free" | "pro" | "agency";
   name: string;
   price: string;
+  priceLoading?: boolean;
   period?: string;
   description: string;
   features: string[];
@@ -60,6 +63,7 @@ function PlanCard({
   planId,
   name,
   price,
+  priceLoading,
   period,
   description,
   features,
@@ -116,8 +120,12 @@ function PlanCard({
         </div>
 
         <div className="flex items-end gap-1">
-          <span className="text-4xl font-extrabold tracking-tight">{price}</span>
-          {period && <span className="text-muted-foreground text-sm mb-1">{period}</span>}
+          {priceLoading ? (
+            <Skeleton className="h-10 w-20" />
+          ) : (
+            <span className="text-4xl font-extrabold tracking-tight">{price}</span>
+          )}
+          {period && !priceLoading && <span className="text-muted-foreground text-sm mb-1">{period}</span>}
         </div>
       </CardHeader>
 
@@ -172,11 +180,14 @@ export default function PricingPage() {
   const checkout = useCheckout();
   const portal = useCustomerPortal();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Handle return from Stripe
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("checkout") === "success") {
+      // Invalidate plan cache so the new plan reflects immediately
+      queryClient.invalidateQueries({ queryKey: ["me", "plan"] });
       toast({
         title: "Subscription activated!",
         description: "Your plan has been upgraded. It may take a moment to reflect.",
@@ -231,7 +242,8 @@ export default function PricingPage() {
     {
       planId: "pro" as const,
       name: "Pro",
-      price: productsLoading ? "—" : proPrice ? formatPrice(proPrice.unitAmount) : "$79",
+      price: proPrice ? formatPrice(proPrice.unitAmount) : "$79",
+      priceLoading: productsLoading,
       period: "/mo",
       description: "For marketers & SEO professionals",
       features: PLAN_FEATURES.pro,
@@ -240,7 +252,8 @@ export default function PricingPage() {
     {
       planId: "agency" as const,
       name: "Agency",
-      price: productsLoading ? "—" : agencyPrice ? formatPrice(agencyPrice.unitAmount) : "$249",
+      price: agencyPrice ? formatPrice(agencyPrice.unitAmount) : "$249",
+      priceLoading: productsLoading,
       period: "/mo",
       description: "For agencies managing multiple clients",
       features: PLAN_FEATURES.agency,
@@ -296,13 +309,13 @@ export default function PricingPage() {
             <PlanCard
               key={p.planId}
               {...p}
-              isCurrentPlan={currentPlan === p.planId}
+              isCurrentPlan={!!isSignedIn && currentPlan === p.planId}
               isSignedIn={!!isSignedIn}
               onUpgrade={() => handleUpgrade(p.planId as "pro" | "agency")}
               upgradeLoading={
                 checkout.isPending && checkout.variables?.plan === p.planId
               }
-              badgeLabel={currentPlan === p.planId ? "Current" : undefined}
+              badgeLabel={!!isSignedIn && currentPlan === p.planId ? "Current" : undefined}
             />
           ))}
         </div>

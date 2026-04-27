@@ -140,9 +140,14 @@ function SignedOutLanding() {
                   </Button>
                 </SignInButton>
               </div>
-              <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                <Lock className="h-3 w-3" /> Free account required. No credit card.
-              </p>
+              <div className="flex flex-col items-center lg:items-start gap-1">
+                <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                  <Lock className="h-3 w-3" /> Free account required. No credit card.
+                </p>
+                <Link href="/pricing" className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline font-medium">
+                  See all plans &amp; pricing →
+                </Link>
+              </div>
             </div>
 
             {/* Right: hero visual */}
