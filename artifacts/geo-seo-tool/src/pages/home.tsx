@@ -233,7 +233,7 @@ function SignedInDashboard() {
     if (!trimmed) return;
     let normalized = trimmed;
     if (!/^https?:\/\//.test(normalized)) normalized = "https://" + normalized;
-    analyzeUrl.mutate({ url: normalized }, {
+    analyzeUrl.mutate({ data: { url: normalized } }, {
       onSuccess: (data: any) => {
         setLocation(`/results/${data.id}`);
       },
