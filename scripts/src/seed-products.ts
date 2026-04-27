@@ -1,6 +1,13 @@
 import Stripe from "stripe";
 
-async function getUncachableStripeClient(): Promise<Stripe> {
+async function getStripeClient(): Promise<Stripe> {
+  // Direct env var — used when seeding live account
+  if (process.env.STRIPE_SECRET_KEY) {
+    console.log("Using STRIPE_SECRET_KEY from environment");
+    return new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2025-08-27.basil" as any });
+  }
+
+  // Fallback: Replit-managed sandbox
   const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
   const xReplitToken = process.env.REPL_IDENTITY
     ? "repl " + process.env.REPL_IDENTITY
@@ -9,7 +16,7 @@ async function getUncachableStripeClient(): Promise<Stripe> {
       : null;
 
   if (!hostname || !xReplitToken) {
-    throw new Error("Missing Replit env vars. Ensure Stripe integration is connected.");
+    throw new Error("No Stripe credentials found. Set STRIPE_SECRET_KEY or connect the Stripe integration.");
   }
 
   const url = new URL(`https://${hostname}/api/v2/connection`);
@@ -27,7 +34,7 @@ async function getUncachableStripeClient(): Promise<Stripe> {
 }
 
 async function createProducts() {
-  const stripe = await getUncachableStripeClient();
+  const stripe = await getStripeClient();
   console.log("Creating AEO Improvement plans in Stripe...");
 
   const plans = [
@@ -56,6 +63,13 @@ async function createProducts() {
     if (existing.data.length > 0) {
       product = existing.data[0];
       console.log(`  ↳ ${plan.name} already exists (${product.id})`);
+      // Ensure metadata is set
+      if (!product.metadata?.plan_id) {
+        product = await stripe.products.update(product.id, {
+          metadata: { plan_id: plan.plan_id },
+        });
+        console.log(`  ✓ Updated metadata for ${plan.name}`);
+      }
     } else {
       product = await stripe.products.create({
         name: plan.name,
@@ -96,8 +110,7 @@ async function createProducts() {
     }
   }
 
-  console.log("\n✅ Done! Webhooks will sync products to your database automatically.");
-  console.log("Run: pnpm --filter @workspace/api-server run dev  — then restart to sync.");
+  console.log("\n✅ Done!");
 }
 
 createProducts().catch(err => {

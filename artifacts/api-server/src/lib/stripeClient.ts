@@ -2,6 +2,15 @@ import Stripe from "stripe";
 import { StripeSync } from "stripe-replit-sync";
 
 async function getCredentials(): Promise<{ publishableKey: string; secretKey: string }> {
+  // Direct env var override — used in production with own Stripe account
+  if (process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PUBLISHABLE_KEY) {
+    return {
+      publishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
+      secretKey: process.env.STRIPE_SECRET_KEY,
+    };
+  }
+
+  // Fallback: Replit-managed Stripe integration (sandbox / dev)
   const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
   const xReplitToken = process.env.REPL_IDENTITY
     ? "repl " + process.env.REPL_IDENTITY
@@ -10,7 +19,7 @@ async function getCredentials(): Promise<{ publishableKey: string; secretKey: st
       : null;
 
   if (!hostname || !xReplitToken) {
-    throw new Error("Missing Replit environment variables. Ensure the Stripe integration is connected.");
+    throw new Error("Stripe not configured: set STRIPE_SECRET_KEY and STRIPE_PUBLISHABLE_KEY, or connect the Stripe integration.");
   }
 
   const isProduction = process.env.REPLIT_DEPLOYMENT === "1";
