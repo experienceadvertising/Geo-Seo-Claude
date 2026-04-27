@@ -1,16 +1,16 @@
-import { clerkClient } from "@clerk/express";
 import { db } from "@workspace/db";
 import { usersTable } from "@workspace/db";
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { getUncachableStripeClient, getStripeSync } from "./stripeClient";
 
-async function updateClerkPlan(userId: string, plan: "free" | "pro" | "agency") {
+async function updateDbPlan(userId: string, plan: "free" | "pro" | "agency") {
   try {
-    await clerkClient.users.updateUserMetadata(userId, {
-      publicMetadata: { plan },
-    });
+    await db
+      .update(usersTable)
+      .set({ plan })
+      .where(eq(usersTable.id, userId));
   } catch (err) {
-    console.error(`Failed to update Clerk plan for user ${userId}:`, err);
+    console.error(`Failed to update DB plan for user ${userId}:`, err);
   }
 }
 
@@ -29,7 +29,6 @@ async function getPlanFromPriceId(priceId: string): Promise<"pro" | "agency" | n
 }
 
 async function getUserIdFromCustomer(customerId: string): Promise<string | null> {
-  // First check DB (user we created via checkout)
   try {
     const result = await db.execute(
       sql`SELECT id FROM users WHERE stripe_customer_id = ${customerId}`
@@ -37,7 +36,6 @@ async function getUserIdFromCustomer(customerId: string): Promise<string | null>
     if (result.rows[0]) return (result.rows[0] as any).id;
   } catch { /* ignore */ }
 
-  // Fallback: fetch customer metadata from Stripe API
   try {
     const stripe = await getUncachableStripeClient();
     const customer = await stripe.customers.retrieve(customerId);
@@ -56,7 +54,7 @@ export class WebhookHandlers {
       );
     }
 
-    // Let stripe-replit-sync handle the sync (best-effort; don't fail if it errors)
+    // Let stripe-replit-sync handle the sync (best-effort)
     try {
       const sync = await getStripeSync();
       await sync.processWebhook(payload, signature);
@@ -64,7 +62,6 @@ export class WebhookHandlers {
       console.warn("StripeSync.processWebhook error (non-fatal):", (err as any)?.message);
     }
 
-    // Parse event for custom Clerk metadata updates
     let event: any;
     try {
       event = JSON.parse(payload.toString());
@@ -80,16 +77,15 @@ export class WebhookHandlers {
 
       if (userId) {
         const plan = priceId ? await getPlanFromPriceId(priceId) : null;
-        if (plan) await updateClerkPlan(userId, plan);
+        if (plan) await updateDbPlan(userId, plan);
 
-        // Upsert user with their Stripe customer ID
         if (customerId) {
           await db
             .insert(usersTable)
-            .values({ id: userId, email: obj?.customer_details?.email ?? null, stripeCustomerId: customerId })
+            .values({ id: userId, email: obj?.customer_details?.email ?? null, stripeCustomerId: customerId, plan: plan ?? "free" })
             .onConflictDoUpdate({
               target: usersTable.id,
-              set: { stripeCustomerId: customerId },
+              set: { stripeCustomerId: customerId, ...(plan ? { plan } : {}) },
             })
             .catch((e) => console.error("Failed to upsert user:", e.message));
         }
@@ -105,9 +101,9 @@ export class WebhookHandlers {
       if (userId) {
         if (status === "active" || status === "trialing") {
           const plan = priceId ? await getPlanFromPriceId(priceId) : null;
-          if (plan) await updateClerkPlan(userId, plan);
+          if (plan) await updateDbPlan(userId, plan);
         } else if (["canceled", "unpaid", "past_due"].includes(status)) {
-          await updateClerkPlan(userId, "free");
+          await updateDbPlan(userId, "free");
         }
       }
     }
@@ -115,7 +111,7 @@ export class WebhookHandlers {
     if (type === "customer.subscription.deleted") {
       const customerId: string = obj?.customer;
       const userId = customerId ? await getUserIdFromCustomer(customerId) : null;
-      if (userId) await updateClerkPlan(userId, "free");
+      if (userId) await updateDbPlan(userId, "free");
     }
   }
 }

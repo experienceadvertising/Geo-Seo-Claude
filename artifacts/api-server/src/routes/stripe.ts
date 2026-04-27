@@ -3,7 +3,8 @@ import { requireAuth } from "../middlewares/auth";
 import { getUncachableStripeClient, getStripePublishableKey } from "../lib/stripeClient";
 import { stripeStorage } from "../lib/stripeStorage";
 import { getUserPlan } from "../lib/planUtils";
-import { clerkClient } from "@clerk/express";
+import { db, usersTable } from "@workspace/db";
+import { eq } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -97,8 +98,12 @@ router.post("/stripe/checkout", requireAuth, async (req, res): Promise<void> => 
     let customerId = user?.stripeCustomerId ?? null;
 
     if (!customerId) {
-      const clerkUser = await clerkClient.users.getUser(userId);
-      const email = clerkUser.emailAddresses[0]?.emailAddress ?? undefined;
+      // Get email from DB
+      const [dbUser] = await db
+        .select({ email: usersTable.email })
+        .from(usersTable)
+        .where(eq(usersTable.id, userId));
+      const email = dbUser?.email ?? undefined;
       const customer = await stripe.customers.create({
         email,
         metadata: { userId },

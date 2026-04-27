@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useUser } from "@clerk/react";
+import { useAuth } from "@/context/AuthContext";
 import { customFetch } from "@workspace/api-client-react";
 
 export type Plan = "free" | "pro" | "agency";
@@ -20,11 +20,11 @@ const PLAN_LIMITS: Record<Plan, { simulationPrompts: number; simulationEngines: 
 };
 
 export function usePlan(): PlanInfo & { isLoading: boolean } {
-  const { user } = useUser();
+  const { isSignedIn } = useAuth();
   const { data, isLoading } = useQuery<{ plan: Plan }>({
     queryKey: ["me", "plan"],
     queryFn: () => customFetch<{ plan: Plan }>("/api/me"),
-    enabled: !!user,
+    enabled: isSignedIn,
     staleTime: 60_000,
     retry: false,
   });

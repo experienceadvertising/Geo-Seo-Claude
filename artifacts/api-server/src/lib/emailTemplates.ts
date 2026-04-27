@@ -227,6 +227,42 @@ export function weeklyDigestEmail(data: WeeklyDigestData): { subject: string; ht
   return { subject, html, text };
 }
 
+// ── Email: Email Verification ─────────────────────────────────────────────────
+export function verificationEmail(firstName: string, verifyUrl: string): { subject: string; html: string; text: string } {
+  const subject = "Verify your AEO Improvement email address";
+  const html = layout(
+    `${h1("Confirm your email")}
+    ${p(`Hi ${firstName || "there"}, welcome to AEO Improvement! Just click the button below to verify your email address and activate your free account.`)}
+    <div style="text-align:center;margin:32px 0;">
+      ${btn("Verify my email →", verifyUrl)}
+    </div>
+    ${divider()}
+    ${p("This link expires in 24 hours. If you didn't create an account, you can safely ignore this email.", "color:#6b7280;font-size:13px;")}
+    ${p(`Or copy this link into your browser:<br/><a href="${verifyUrl}" style="color:${BRAND_COLOR};word-break:break-all;font-size:12px;">${verifyUrl}</a>`, "color:#6b7280;font-size:12px;")}`,
+    "Verify your email to activate your AEO Improvement account →"
+  );
+  const text = `Hi ${firstName || "there"},\n\nVerify your AEO Improvement email address by visiting:\n${verifyUrl}\n\nThis link expires in 24 hours. If you didn't create an account, you can safely ignore this email.`;
+  return { subject, html, text };
+}
+
+// ── Email: Password Reset ─────────────────────────────────────────────────────
+export function passwordResetEmail(firstName: string, resetUrl: string): { subject: string; html: string; text: string } {
+  const subject = "Reset your AEO Improvement password";
+  const html = layout(
+    `${h1("Reset your password")}
+    ${p(`Hi ${firstName || "there"}, we received a request to reset your AEO Improvement password. Click the button below to choose a new one.`)}
+    <div style="text-align:center;margin:32px 0;">
+      ${btn("Reset my password →", resetUrl)}
+    </div>
+    ${divider()}
+    ${p("This link expires in 1 hour. If you didn't request a password reset, you can safely ignore this email — your password won't change.", "color:#6b7280;font-size:13px;")}
+    ${p(`Or copy this link into your browser:<br/><a href="${resetUrl}" style="color:${BRAND_COLOR};word-break:break-all;font-size:12px;">${resetUrl}</a>`, "color:#6b7280;font-size:12px;")}`,
+    "Reset your AEO Improvement password →"
+  );
+  const text = `Hi ${firstName || "there"},\n\nReset your AEO Improvement password by visiting:\n${resetUrl}\n\nThis link expires in 1 hour. If you didn't request this, ignore this email — your password won't change.`;
+  return { subject, html, text };
+}
+
 // ── Email 5: Monthly Report (Agency) ─────────────────────────────────────────
 export interface MonthlyReportData {
   firstName: string;

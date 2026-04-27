@@ -1,17 +1,17 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
 import { Sparkles, LogOut, Shield } from "lucide-react";
-import { Show, useClerk, useUser, SignInButton, SignUpButton } from "@clerk/react";
+import { useAuth } from "@/context/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { customFetch } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 
 function AdminLink() {
-  const { user } = useUser();
+  const { isSignedIn } = useAuth();
   const { data } = useQuery<{ isAdmin: boolean }>({
     queryKey: ["admin", "me"],
     queryFn: () => customFetch<{ isAdmin: boolean }>("/api/admin/me"),
-    enabled: !!user,
+    enabled: isSignedIn,
     retry: false,
     staleTime: 60_000,
   });
@@ -29,18 +29,17 @@ function AdminLink() {
 }
 
 function UserBadge() {
-  const { user } = useUser();
-  const { signOut } = useClerk();
+  const { user, signOut } = useAuth();
   const [, setLocation] = useLocation();
   if (!user) return null;
-  const label = user.primaryEmailAddress?.emailAddress || user.username || "Account";
+  const label = user.email || "Account";
   return (
     <div className="flex items-center gap-2">
       <span className="hidden sm:inline text-xs text-muted-foreground max-w-[200px] truncate">{label}</span>
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => signOut(() => setLocation("/"))}
+        onClick={() => signOut().then(() => setLocation("/"))}
         title="Sign out"
       >
         <LogOut className="h-4 w-4" />
@@ -51,6 +50,8 @@ function UserBadge() {
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
+  const { isSignedIn, isLoaded } = useAuth();
+
   return (
     <div className="min-h-screen bg-background flex flex-col font-sans">
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -64,25 +65,29 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </Link>
           </div>
           <div className="flex flex-1 items-center justify-end gap-3">
-            <Show when="signed-in">
-              <nav className="hidden md:flex items-center gap-4 text-sm font-medium text-muted-foreground">
-                <Link href="/" className="hover:text-foreground transition-colors">Audits</Link>
-                <Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
-              </nav>
-              <AdminLink />
-              <UserBadge />
-            </Show>
-            <Show when="signed-out">
-              <nav className="hidden md:flex items-center gap-4 text-sm font-medium text-muted-foreground">
-                <Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
-              </nav>
-              <SignInButton mode="modal">
-                <Button variant="ghost" size="sm">Sign in</Button>
-              </SignInButton>
-              <SignUpButton mode="modal">
-                <Button size="sm">Get started</Button>
-              </SignUpButton>
-            </Show>
+            {isLoaded && isSignedIn && (
+              <>
+                <nav className="hidden md:flex items-center gap-4 text-sm font-medium text-muted-foreground">
+                  <Link href="/" className="hover:text-foreground transition-colors">Audits</Link>
+                  <Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
+                </nav>
+                <AdminLink />
+                <UserBadge />
+              </>
+            )}
+            {isLoaded && !isSignedIn && (
+              <>
+                <nav className="hidden md:flex items-center gap-4 text-sm font-medium text-muted-foreground">
+                  <Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
+                </nav>
+                <Link href="/sign-in">
+                  <Button variant="ghost" size="sm">Sign in</Button>
+                </Link>
+                <Link href="/sign-up">
+                  <Button size="sm">Get started</Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>

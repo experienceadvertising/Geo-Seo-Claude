@@ -1,7 +1,6 @@
 import cron from "node-cron";
 import { db, usersTable, auditsTable } from "@workspace/db";
 import { sql, and, isNotNull, eq, gte, lte } from "drizzle-orm";
-import { clerkClient } from "@clerk/express";
 import { getUserPlan } from "./planUtils";
 import { EmailService } from "./emailService";
 import { logger } from "./logger";
@@ -16,13 +15,8 @@ function monthName(d: Date): string {
   return d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 }
 
-async function getFirstName(userId: string): Promise<string> {
-  try {
-    const user = await clerkClient.users.getUser(userId);
-    return user.firstName || user.emailAddresses?.[0]?.emailAddress?.split("@")[0] || "";
-  } catch {
-    return "";
-  }
+function getFirstName(user: { firstName?: string | null; email?: string | null }): string {
+  return user.firstName || user.email?.split("@")[0] || "";
 }
 
 // ── Welcome series (runs daily at 9:00 AM UTC) ───────────────────────────────
@@ -36,14 +30,13 @@ async function runWelcomeSeries() {
 
   for (const user of users) {
     if (!user.email) continue;
+    const firstName = getFirstName(user);
 
-    // Day 3: user created 3+ days ago, d3 email not sent, welcome email was sent
     if (
       user.welcomeEmailSentAt &&
       !user.welcomeD3SentAt &&
       new Date(user.createdAt) <= daysAgo(3)
     ) {
-      const firstName = await getFirstName(user.id);
       const ok = await EmailService.sendWelcomeD3(user.email, firstName);
       if (ok) {
         await db
@@ -53,13 +46,11 @@ async function runWelcomeSeries() {
       }
     }
 
-    // Day 7: user created 7+ days ago, d7 email not sent
     if (
       user.welcomeEmailSentAt &&
       !user.welcomeD7SentAt &&
       new Date(user.createdAt) <= daysAgo(7)
     ) {
-      const firstName = await getFirstName(user.id);
       const ok = await EmailService.sendWelcomeD7(user.email, firstName);
       if (ok) {
         await db
@@ -87,7 +78,6 @@ async function runWeeklyDigests() {
     const plan = await getUserPlan(user.id);
     if (plan === "free") continue;
 
-    // Fetch audits from the past 7 days
     const weekAudits = await db
       .select()
       .from(auditsTable)
@@ -101,7 +91,7 @@ async function runWeeklyDigests() {
       .limit(10);
 
     const latestAudit = weekAudits[0];
-    const firstName = await getFirstName(user.id);
+    const firstName = getFirstName(user);
 
     const ok = await EmailService.sendWeeklyDigest(user.email, {
       firstName,
@@ -165,7 +155,7 @@ async function runMonthlyReports() {
     const allWins = monthAudits.flatMap((a) => (a.quickWins as string[]) ?? []);
     const uniqueWins = [...new Set(allWins)];
 
-    const firstName = await getFirstName(user.id);
+    const firstName = getFirstName(user);
 
     const ok = await EmailService.sendMonthlyReport(user.email, {
       firstName,
@@ -193,21 +183,18 @@ export function startEmailScheduler() {
     return;
   }
 
-  // Welcome series: daily at 9:00 AM UTC
   cron.schedule("0 9 * * *", () => {
     runWelcomeSeries().catch((err) =>
       logger.error({ err }, "Welcome series cron error")
     );
   });
 
-  // Weekly digest: every Monday at 8:00 AM UTC
   cron.schedule("0 8 * * 1", () => {
     runWeeklyDigests().catch((err) =>
       logger.error({ err }, "Weekly digest cron error")
     );
   });
 
-  // Monthly report: 1st of each month at 8:00 AM UTC
   cron.schedule("0 8 1 * *", () => {
     runMonthlyReports().catch((err) =>
       logger.error({ err }, "Monthly report cron error")

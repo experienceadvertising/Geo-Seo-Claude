@@ -1,6 +1,6 @@
 import { useEffect } from "react";
-import { useLocation } from "wouter";
-import { useUser, SignInButton } from "@clerk/react";
+import { Link, useLocation } from "wouter";
+import { useAuth } from "@/context/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, Zap, Building2, Star, ExternalLink, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -148,11 +148,11 @@ function PlanCard({
             Always Free
           </Button>
         ) : !isSignedIn ? (
-          <SignInButton mode="modal">
+          <Link href="/sign-up">
             <Button className={`w-full bg-gradient-to-r ${gradients[planId]} hover:opacity-90 text-white border-0`}>
               Get Started
             </Button>
-          </SignInButton>
+          </Link>
         ) : (
           <Button
             className={`w-full bg-gradient-to-r ${gradients[planId]} hover:opacity-90 text-white border-0`}
@@ -173,7 +173,7 @@ function PlanCard({
 
 export default function PricingPage() {
   const [, setLocation] = useLocation();
-  const { isSignedIn } = useUser();
+  const { isSignedIn } = useAuth();
   const { plan: currentPlan } = usePlan();
   const { data: productsData, isLoading: productsLoading } = useStripeProducts();
   const { data: subData } = useStripeSubscription();
@@ -182,11 +182,9 @@ export default function PricingPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Handle return from Stripe
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("checkout") === "success") {
-      // Invalidate plan cache so the new plan reflects immediately
       queryClient.invalidateQueries({ queryKey: ["me", "plan"] });
       toast({
         title: "Subscription activated!",
@@ -264,8 +262,6 @@ export default function PricingPage() {
   return (
     <div className="min-h-[calc(100vh-4rem)] py-14 px-4">
       <div className="max-w-5xl mx-auto space-y-12">
-
-        {/* Header */}
         <div className="text-center space-y-3">
           <Badge className="bg-emerald-100 text-emerald-700 border-0 px-3 py-1 text-xs font-medium">
             Plans &amp; Pricing
@@ -279,7 +275,6 @@ export default function PricingPage() {
           </p>
         </div>
 
-        {/* Current plan alert */}
         {isSignedIn && currentPlan !== "free" && (
           <Alert className="border-emerald-200 bg-emerald-50 max-w-lg mx-auto">
             <CheckCircle2 className="h-4 w-4 text-emerald-600" />
@@ -303,7 +298,6 @@ export default function PricingPage() {
           </Alert>
         )}
 
-        {/* Plan cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch pt-4">
           {plans.map((p) => (
             <PlanCard
@@ -320,7 +314,6 @@ export default function PricingPage() {
           ))}
         </div>
 
-        {/* Footer notes */}
         <div className="text-center space-y-2 text-sm text-muted-foreground">
           <p>All plans billed monthly. Cancel anytime from your billing portal.</p>
           <p>

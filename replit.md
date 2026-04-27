@@ -18,6 +18,24 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **AI**: Anthropic Claude (via Replit AI Integrations)
 - **Web scraping**: Cheerio
 
+## Authentication
+
+Custom email+password auth (Clerk was removed — email delivery was unreliable and domain conflicts blocked production).
+
+- **Session**: `express-session` + `connect-pg-simple` (sessions stored in PostgreSQL `sessions` table)
+- **Passwords**: `bcryptjs` (12 rounds)
+- **Email verification**: 24h token links sent via Postmark
+- **Password reset**: 1h token links sent via Postmark
+- **Cookie**: `aeo.sid`, httpOnly, sameSite=lax, 30-day maxAge
+- **Session data**: `{ userId: string, email: string }`
+- **Frontend**: `AuthContext` at `artifacts/geo-seo-tool/src/context/AuthContext.tsx`
+- **Auth routes**: `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/logout`,
+  `GET /api/auth/verify-email?token=`, `POST /api/auth/resend-verification`,
+  `POST /api/auth/forgot-password`, `POST /api/auth/reset-password`, `GET /api/auth/me`
+- **Session middleware**: `artifacts/api-server/src/middlewares/session.ts`
+- **Admin check**: `req.session.email` compared to `ADMIN_EMAILS` env var (comma-separated)
+- **Plan**: stored in `users.plan` column (updated by Stripe webhooks)
+
 ## Artifacts
 
 ### GEO SEO Analyzer (`artifacts/geo-seo-tool`)
@@ -26,25 +44,26 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - Users enter any URL and get a full AI search optimization audit
 - Features: AEO score (0-100), AI crawler access, citability scoring, schema detection, quick wins
 - AI-powered insights via Claude; prompt simulation via GPT-4o-mini + ChatGPT/Claude/Gemini/Perplexity
-- Tiered SaaS: Free / Pro ($79/mo) / Agency ($249/mo) via Clerk publicMetadata `plan` field
+- Tiered SaaS: Free / Pro ($79/mo) / Agency ($249/mo) via `users.plan` DB column
 - Sentiment analysis: keyword-heuristic detection of Positive/Neutral/Negative brand tone per engine result
 - Visibility Trend: line chart of historical AEO scores for a domain (`/api/geo/audits/history`)
 - Fix Generator (Pro only): generates ready-to-copy llms.txt, JSON-LD schema, robots.txt snippets
 - Plan hook: `src/hooks/usePlan.tsx` reads plan from `/api/me`, gates engine/prompt UI
 - Upgrade CTA component: `src/components/upgrade-prompt.tsx`
+- Auth pages: `/sign-in`, `/sign-up`, `/verify-email`, `/forgot-password`, `/reset-password`
 
 ### API Server (`artifacts/api-server`)
 - Express 5 server at `/api`
 - Routes: `POST /api/geo/analyze`, `GET /api/geo/audits`, `GET /api/geo/audits/:id`,
   `GET /api/geo/audits/history?domain=X`, `GET /api/geo/audits/:id/fixes` (Pro),
   `POST /api/geo/prompts/suggest`, `POST /api/geo/simulate`, `GET /api/geo/simulations/:id`,
-  `GET /api/me` (returns user plan from Clerk)
+  `GET /api/me` (returns user plan from DB)
 - Stripe payment routes: `GET /api/stripe/products`, `GET /api/stripe/subscription`,
   `POST /api/stripe/checkout`, `POST /api/stripe/portal`, `POST /api/stripe/webhook`
 - Plan system: `src/lib/planUtils.ts` — getUserPlan(), planAtLeast(), PLAN_LIMITS
 - Stripe integration: `src/lib/stripeClient.ts` (Replit managed credentials), `src/lib/webhookHandlers.ts`
 - Webhook must be registered BEFORE `express.json()` in `app.ts` (needs raw Buffer body)
-- On checkout.session.completed webhook: updates Clerk `publicMetadata.plan` to "pro"/"agency"
+- On checkout.session.completed webhook: updates `users.plan` in DB to "pro"/"agency"
 - On subscription.deleted webhook: resets plan to "free"
 - Products seeded via `pnpm --filter @workspace/scripts run seed-products`
 - Core analysis in `src/lib/geoAnalyzer.ts` (self-contained, no external API keys needed)
@@ -64,6 +83,7 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
+- `pnpm --filter @workspace/db run push-force` — force push schema (runs `drizzle-kit push --force`)
 - `pnpm --filter @workspace/api-server run dev` — run API server locally
 - `pnpm --filter @workspace/scripts run seed-products` — create Pro/Agency Stripe products (idempotent)
 

@@ -2,20 +2,16 @@ import express, { type Express } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import pinoHttp from "pino-http";
-import { clerkMiddleware } from "@clerk/express";
 import router from "./routes";
 import { logger } from "./lib/logger";
-import { CLERK_PROXY_PATH, clerkProxyMiddleware } from "./middlewares/clerkProxyMiddleware";
 import { WebhookHandlers } from "./lib/webhookHandlers";
-import clerkWebhookRouter from "./routes/clerk-webhook";
+import { createSessionMiddleware } from "./middlewares/session";
 
 const app: Express = express();
 
 app.set("trust proxy", 1);
 
 // ── Raw-body webhook routes (must be BEFORE express.json()) ──────────────────
-
-// Stripe webhook — needs raw Buffer for signature verification
 app.post(
   "/api/stripe/webhook",
   express.raw({ type: "application/json" }),
@@ -34,13 +30,6 @@ app.post(
       res.status(400).json({ error: "Webhook processing failed" });
     }
   }
-);
-
-// Clerk webhook — needs raw Buffer for Svix signature verification
-app.use(
-  "/api/clerk/webhook",
-  express.raw({ type: "application/json" }),
-  clerkWebhookRouter
 );
 
 app.use(
@@ -63,8 +52,6 @@ app.use(
   }),
 );
 
-app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
-
 app.use(helmet({
   contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false,
@@ -74,7 +61,7 @@ app.use(cors({ credentials: true, origin: true }));
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 
-app.use(clerkMiddleware());
+app.use(createSessionMiddleware());
 
 app.use("/api", router);
 

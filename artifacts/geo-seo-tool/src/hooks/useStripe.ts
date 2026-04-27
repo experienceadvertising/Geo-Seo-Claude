@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useUser } from "@clerk/react";
+import { useAuth } from "@/context/AuthContext";
 import { customFetch } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -29,11 +29,11 @@ export function useStripeProducts() {
 }
 
 export function useStripeSubscription() {
-  const { user } = useUser();
+  const { isSignedIn } = useAuth();
   return useQuery<{ subscription: any; plan: string }>({
     queryKey: ["stripe", "subscription"],
     queryFn: () => customFetch<{ subscription: any; plan: string }>("/api/stripe/subscription"),
-    enabled: !!user,
+    enabled: isSignedIn,
     staleTime: 60_000,
     retry: false,
   });

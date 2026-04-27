@@ -1,7 +1,6 @@
 import { Router, type IRouter } from "express";
-import { sql } from "drizzle-orm";
-import { clerkClient } from "@clerk/express";
-import { db, auditsTable } from "@workspace/db";
+import { sql, desc } from "drizzle-orm";
+import { db, auditsTable, usersTable } from "@workspace/db";
 import { requireAuth } from "../../middlewares/auth";
 import { requireAdmin, isAdminRequest } from "../../middlewares/admin";
 import { readRateLimiter } from "../../middlewares/rateLimiters";
@@ -16,7 +15,6 @@ router.get("/admin/users", requireAuth, requireAdmin, readRateLimiter, async (re
   const limitParam = Number(req.query.limit);
   const limit = Number.isFinite(limitParam) && limitParam > 0 && limitParam <= 200 ? limitParam : 100;
 
-  // Aggregate audit stats per user_id
   const auditStats = await db
     .select({
       userId: auditsTable.userId,
@@ -36,31 +34,29 @@ router.get("/admin/users", requireAuth, requireAdmin, readRateLimiter, async (re
     });
   }
 
-  // List Clerk users
-  const userList = await clerkClient.users.getUserList({
-    limit,
-    orderBy: "-created_at",
-  });
+  const dbUsers = await db
+    .select()
+    .from(usersTable)
+    .orderBy(desc(usersTable.createdAt))
+    .limit(limit);
 
-  const users = userList.data.map((u) => {
+  const users = dbUsers.map((u) => {
     const stats = statsByUser.get(u.id);
-    const primaryEmail = u.emailAddresses.find((e) => e.id === u.primaryEmailAddressId)
-      || u.emailAddresses[0];
     return {
       id: u.id,
-      email: primaryEmail?.emailAddress ?? null,
+      email: u.email ?? null,
       firstName: u.firstName ?? null,
-      lastName: u.lastName ?? null,
-      imageUrl: u.imageUrl ?? null,
-      createdAt: new Date(u.createdAt).toISOString(),
-      lastSignInAt: u.lastSignInAt ? new Date(u.lastSignInAt).toISOString() : null,
+      lastName: null,
+      imageUrl: null,
+      createdAt: u.createdAt.toISOString(),
+      lastSignInAt: null,
+      plan: u.plan,
       auditCount: stats?.auditCount ?? 0,
       lastAudit: stats?.lastAudit ? new Date(stats.lastAudit).toISOString() : null,
       avgScore: stats?.avgScore ? Math.round(stats.avgScore) : null,
     };
   });
 
-  // Totals
   const [totalsRow] = await db
     .select({
       totalAudits: sql<number>`count(*)::int`,
@@ -70,7 +66,7 @@ router.get("/admin/users", requireAuth, requireAdmin, readRateLimiter, async (re
     .from(auditsTable);
 
   res.json({
-    totalUsers: userList.totalCount,
+    totalUsers: dbUsers.length,
     totalAudits: totalsRow?.totalAudits ?? 0,
     audits24h: totalsRow?.audits24h ?? 0,
     audits7d: totalsRow?.audits7d ?? 0,

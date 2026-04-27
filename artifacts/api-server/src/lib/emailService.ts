@@ -6,6 +6,8 @@ import {
   welcomeD7Email,
   weeklyDigestEmail,
   monthlyReportEmail,
+  verificationEmail,
+  passwordResetEmail,
   type WeeklyDigestData,
   type MonthlyReportData,
 } from "./emailTemplates";
@@ -76,5 +78,15 @@ export const EmailService = {
   async sendMonthlyReport(email: string, data: MonthlyReportData): Promise<boolean> {
     const { subject, html, text } = monthlyReportEmail(data);
     return send(email, subject, html, text, "monthly-report");
+  },
+
+  async sendVerificationEmail(email: string, firstName: string, verifyUrl: string): Promise<boolean> {
+    const { subject, html, text } = verificationEmail(firstName, verifyUrl);
+    return send(email, subject, html, text, "verify-email");
+  },
+
+  async sendPasswordReset(email: string, firstName: string, resetUrl: string): Promise<boolean> {
+    const { subject, html, text } = passwordResetEmail(firstName, resetUrl);
+    return send(email, subject, html, text, "password-reset");
   },
 };

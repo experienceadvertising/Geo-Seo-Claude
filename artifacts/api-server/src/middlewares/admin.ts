@@ -1,5 +1,4 @@
 import type { Request, Response, NextFunction } from "express";
-import { clerkClient } from "@clerk/express";
 
 const adminEmails = (process.env.ADMIN_EMAILS || "")
   .split(",")
@@ -8,13 +7,8 @@ const adminEmails = (process.env.ADMIN_EMAILS || "")
 
 export async function isAdminRequest(req: Request): Promise<boolean> {
   if (!req.userId || adminEmails.length === 0) return false;
-  try {
-    const user = await clerkClient.users.getUser(req.userId);
-    const emails = (user.emailAddresses || []).map((e) => e.emailAddress.toLowerCase());
-    return emails.some((e) => adminEmails.includes(e));
-  } catch {
-    return false;
-  }
+  const sessionEmail = req.session?.email?.toLowerCase();
+  return !!sessionEmail && adminEmails.includes(sessionEmail);
 }
 
 export async function requireAdmin(req: Request, res: Response, next: NextFunction): Promise<void> {

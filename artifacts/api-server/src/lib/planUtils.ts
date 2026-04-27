@@ -1,4 +1,5 @@
-import { clerkClient } from "@clerk/express";
+import { db, usersTable } from "@workspace/db";
+import { eq } from "drizzle-orm";
 
 export type Plan = "free" | "pro" | "agency";
 
@@ -14,8 +15,11 @@ export function planAtLeast(userPlan: Plan, required: Plan): boolean {
 
 export async function getUserPlan(userId: string): Promise<Plan> {
   try {
-    const user = await clerkClient.users.getUser(userId);
-    const plan = (user.publicMetadata as any)?.plan as string | undefined;
+    const [user] = await db
+      .select({ plan: usersTable.plan })
+      .from(usersTable)
+      .where(eq(usersTable.id, userId));
+    const plan = user?.plan;
     if (plan === "agency") return "agency";
     if (plan === "pro") return "pro";
     return "free";

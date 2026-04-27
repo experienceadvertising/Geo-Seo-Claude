@@ -12,6 +12,7 @@ interface AdminUser {
   imageUrl: string | null;
   createdAt: string;
   lastSignInAt: string | null;
+  plan: string;
   auditCount: number;
   lastAudit: string | null;
   avgScore: number | null;
@@ -57,7 +58,7 @@ function formatDate(iso: string | null): string {
   return d.toLocaleDateString();
 }
 
-function fullName(u: AdminUser): string {
+function displayName(u: AdminUser): string {
   const parts = [u.firstName, u.lastName].filter(Boolean);
   return parts.length ? parts.join(" ") : (u.email?.split("@")[0] ?? "Unnamed");
 }
@@ -89,7 +90,7 @@ export default function Admin() {
         <h1 className="text-2xl font-bold">{status === 403 ? "Admin access required" : "Could not load admin"}</h1>
         <p className="text-muted-foreground text-sm">
           {status === 403
-            ? "Your account isn't on the admin list. If you should have access, contact the site owner to add your email to ADMIN_EMAILS."
+            ? "Your account isn't on the admin list. Contact the site owner to add your email to ADMIN_EMAILS."
             : "Something went wrong loading admin data. Please try again."}
         </p>
       </div>
@@ -129,8 +130,8 @@ export default function Admin() {
                 <thead className="border-b bg-muted/30">
                   <tr className="text-left text-xs uppercase tracking-wider text-muted-foreground">
                     <th className="px-4 py-3 font-semibold">User</th>
+                    <th className="px-4 py-3 font-semibold">Plan</th>
                     <th className="px-4 py-3 font-semibold">Signed up</th>
-                    <th className="px-4 py-3 font-semibold">Last sign-in</th>
                     <th className="px-4 py-3 font-semibold text-right">Audits</th>
                     <th className="px-4 py-3 font-semibold text-right">Avg AEO</th>
                     <th className="px-4 py-3 font-semibold">Last audit</th>
@@ -141,21 +142,19 @@ export default function Admin() {
                     <tr key={u.id} className="border-b last:border-0 hover:bg-muted/20 transition-colors">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
-                          {u.imageUrl ? (
-                            <img src={u.imageUrl} alt="" className="h-8 w-8 rounded-full" />
-                          ) : (
-                            <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold">
-                              {(u.email?.[0] ?? "?").toUpperCase()}
-                            </div>
-                          )}
+                          <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold">
+                            {(u.email?.[0] ?? "?").toUpperCase()}
+                          </div>
                           <div className="flex flex-col">
-                            <span className="font-medium">{fullName(u)}</span>
+                            <span className="font-medium">{displayName(u)}</span>
                             <span className="text-xs text-muted-foreground font-mono">{u.email ?? "(no email)"}</span>
                           </div>
                         </div>
                       </td>
+                      <td className="px-4 py-3">
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-muted font-medium capitalize">{u.plan}</span>
+                      </td>
                       <td className="px-4 py-3 text-muted-foreground">{formatDate(u.createdAt)}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{formatDate(u.lastSignInAt)}</td>
                       <td className="px-4 py-3 text-right tabular-nums font-semibold">{u.auditCount}</td>
                       <td className="px-4 py-3 text-right tabular-nums">{u.avgScore ?? "—"}</td>
                       <td className="px-4 py-3 text-muted-foreground">{formatDate(u.lastAudit)}</td>

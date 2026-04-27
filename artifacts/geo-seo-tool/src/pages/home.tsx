@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
 import { Search, Loader2, ArrowRight, BarChart3, TrendingUp, Zap, Shield, Lock, Sparkles, CheckCircle2 } from "lucide-react";
-import { Show, SignInButton, SignUpButton, useUser } from "@clerk/react";
+import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -47,9 +47,7 @@ function MarketStats() {
 function HeroVisual() {
   return (
     <div className="relative w-full aspect-[4/3] max-w-xl mx-auto lg:mx-0">
-      {/* glow halo */}
       <div className="absolute inset-0 -z-10 bg-gradient-to-tr from-emerald-500/30 via-teal-400/20 to-cyan-400/30 blur-3xl rounded-full animate-pulse-slow" />
-      {/* image card */}
       <div className="relative rounded-3xl overflow-hidden border border-emerald-500/20 shadow-2xl shadow-emerald-500/10 bg-card animate-float">
         <img
           src={heroImage}
@@ -58,10 +56,8 @@ function HeroVisual() {
           loading="eager"
           fetchPriority="high"
         />
-        {/* subtle gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-background/30 via-transparent to-transparent" />
       </div>
-      {/* floating score chip */}
       <div className="hidden md:flex absolute -bottom-4 -left-4 lg:-left-8 items-center gap-3 bg-card border shadow-xl rounded-2xl px-4 py-3 animate-float-delayed">
         <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white font-bold text-lg">
           92
@@ -73,7 +69,6 @@ function HeroVisual() {
           </span>
         </div>
       </div>
-      {/* floating crawler chip */}
       <div className="hidden md:flex absolute -top-4 -right-4 lg:-right-8 items-center gap-2 bg-card border shadow-xl rounded-full px-4 py-2 animate-float">
         <div className="h-2 w-2 rounded-full bg-emerald-500 animate-ping-slow" />
         <span className="text-xs font-semibold">GPTBot · ClaudeBot · PerplexityBot</span>
@@ -85,14 +80,11 @@ function HeroVisual() {
 function SignedOutLanding() {
   return (
     <div className="flex-1 w-full">
-      {/* Hero section with full-bleed gradient background */}
       <section className="relative overflow-hidden">
-        {/* Background gradient mesh */}
         <div aria-hidden className="absolute inset-0 -z-10">
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-emerald-950/40 dark:via-background dark:to-teal-950/40" />
           <div className="absolute top-0 left-1/4 w-[600px] h-[600px] rounded-full bg-emerald-400/20 blur-[120px]" />
           <div className="absolute top-1/3 right-0 w-[500px] h-[500px] rounded-full bg-teal-400/20 blur-[120px]" />
-          {/* dot grid */}
           <div className="absolute inset-0 opacity-[0.15] dark:opacity-[0.08]" style={{
             backgroundImage: "radial-gradient(circle, currentColor 1px, transparent 1px)",
             backgroundSize: "24px 24px",
@@ -101,7 +93,6 @@ function SignedOutLanding() {
 
         <div className="w-full max-w-7xl mx-auto px-4 md:px-8 py-16 md:py-24">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            {/* Left: copy */}
             <div className="flex flex-col items-center lg:items-start text-center lg:text-left space-y-6">
               <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400 backdrop-blur-sm">
                 <Sparkles className="h-3 w-3" /> Answer Engine Optimization
@@ -118,7 +109,6 @@ function SignedOutLanding() {
                 personalized, research-backed recommendations to climb the rankings.
               </p>
 
-              {/* trust bullets */}
               <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm text-foreground/80 max-w-md">
                 {["Real AI engine prompts", "Schema & crawler audits", "Personalized fixes", "Free to start"].map(item => (
                   <li key={item} className="flex items-center gap-2">
@@ -129,16 +119,16 @@ function SignedOutLanding() {
               </ul>
 
               <div className="flex flex-col sm:flex-row gap-3 mt-2">
-                <SignUpButton mode="modal">
+                <Link href="/sign-up">
                   <Button size="lg" className="h-12 px-8 font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg shadow-emerald-500/25">
                     Audit my site — it's free <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
-                </SignUpButton>
-                <SignInButton mode="modal">
+                </Link>
+                <Link href="/sign-in">
                   <Button size="lg" variant="outline" className="h-12 px-8 font-semibold border-emerald-500/30 hover:bg-emerald-500/10">
                     Sign in
                   </Button>
-                </SignInButton>
+                </Link>
               </div>
               <div className="flex flex-col items-center lg:items-start gap-1">
                 <p className="text-xs text-muted-foreground flex items-center gap-1.5">
@@ -149,8 +139,6 @@ function SignedOutLanding() {
                 </Link>
               </div>
             </div>
-
-            {/* Right: hero visual */}
             <HeroVisual />
           </div>
         </div>
@@ -218,14 +206,13 @@ function AnalysisProgress() {
               ) : active ? (
                 <Loader2 className="h-4 w-4 animate-spin text-primary shrink-0" />
               ) : (
-                <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/20 shrink-0" />
+                <div className="h-4 w-4 rounded-full border border-current shrink-0" />
               )}
-              <span>{label}</span>
+              {label}
             </div>
           );
         })}
       </div>
-      <p className="text-xs text-muted-foreground mt-2">This usually takes 20–30 seconds</p>
     </div>
   );
 }
@@ -234,117 +221,113 @@ function SignedInDashboard() {
   const [url, setUrl] = React.useState("");
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const { user } = useUser();
+  const { user } = useAuth();
+  const firstName = user?.firstName;
 
-  const analyze = useAnalyzeUrl();
-  const auditsQuery = useListAudits({ limit: 10 });
-  const audits = auditsQuery.data || [];
+  const { data: audits, isLoading: auditsLoading } = useListAudits();
+  const analyzeUrl = useAnalyzeUrl();
 
-  const trimmedUrl = url.trim();
-  const isValidUrl = trimmedUrl.length > 0;
-
-  const handleAnalyze = (e: React.FormEvent) => {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!isValidUrl) return;
-    let targetUrl = trimmedUrl;
-    if (!targetUrl.startsWith("http")) targetUrl = `https://${targetUrl}`;
-    analyze.mutate(
-      { data: { url: targetUrl } },
-      {
-        onSuccess: (result) => setLocation(`/results/${result.id}`),
-        onError: (err: any) => {
-          toast({
-            title: "Analysis failed",
-            description: err?.error || "An error occurred while analyzing the URL.",
-            variant: "destructive",
-          });
-        },
-      }
-    );
-  };
-
-  const greeting = user?.firstName ? `Welcome back, ${user.firstName}` : "Welcome back";
-
-  if (analyze.isPending) {
-    return (
-      <div className="flex-1 w-full max-w-5xl mx-auto p-4 md:p-8 flex items-center justify-center min-h-[50vh]">
-        <div className="w-full max-w-md text-center space-y-2">
-          <h2 className="text-xl font-bold tracking-tight">Auditing {url}</h2>
-          <AnalysisProgress />
-        </div>
-      </div>
-    );
+    const trimmed = url.trim();
+    if (!trimmed) return;
+    let normalized = trimmed;
+    if (!/^https?:\/\//.test(normalized)) normalized = "https://" + normalized;
+    analyzeUrl.mutate({ url: normalized }, {
+      onSuccess: (data: any) => {
+        setLocation(`/results/${data.id}`);
+      },
+      onError: (err: any) => {
+        toast({
+          title: "Audit failed",
+          description: err?.message || "Could not analyze this URL. Check it's accessible and try again.",
+          variant: "destructive",
+        });
+      },
+    });
   }
 
+  const greeting = firstName ? `Welcome back, ${firstName}` : "Welcome back";
+
   return (
-    <div className="flex-1 w-full max-w-5xl mx-auto p-4 md:p-8 space-y-12">
-      <section className="flex flex-col items-center text-center space-y-6 py-12 md:py-16">
-        <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold border-transparent bg-primary/10 text-primary mb-4">
-          {greeting}
+    <div className="flex-1 w-full max-w-4xl mx-auto px-4 md:px-8 py-10 md:py-14 space-y-10">
+      <div className="space-y-1">
+        <h1 className="text-3xl font-bold tracking-tight">{greeting}</h1>
+        <p className="text-muted-foreground">Run an AEO audit to see how your site performs in AI search.</p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="flex gap-2 max-w-2xl">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            className="pl-10 h-11 text-base"
+            placeholder="https://yourwebsite.com"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            disabled={analyzeUrl.isPending}
+          />
         </div>
-        <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
-          Audit any URL for <br className="hidden md:block"/> AI search visibility.
-        </h1>
-        <form onSubmit={handleAnalyze} className="w-full max-w-2xl mt-4 flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input
-              type="url"
-              placeholder="https://example.com"
-              className="pl-10 h-12 text-base font-mono bg-card"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              autoFocus
-            />
-          </div>
-          <Button type="submit" size="lg" className="h-12 px-8 font-semibold" disabled={!isValidUrl}>
-            Scan URL <ArrowRight className="ml-2 h-5 w-5" />
-          </Button>
-        </form>
-        <p className="text-xs text-muted-foreground">Limit: 20 audits per hour per account.</p>
-      </section>
+        <Button
+          type="submit"
+          size="lg"
+          disabled={analyzeUrl.isPending || !url.trim()}
+          className="h-11 px-6 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-md shadow-emerald-500/25"
+        >
+          {analyzeUrl.isPending ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <>Audit <ArrowRight className="ml-1 h-4 w-4" /></>
+          )}
+        </Button>
+      </form>
 
-      <MarketStats />
+      {analyzeUrl.isPending && <AnalysisProgress />}
 
-      <section className="space-y-6">
-        <h2 className="text-2xl font-bold tracking-tight">Your Recent Audits</h2>
-        {auditsQuery.isLoading ? (
-          <div className="grid grid-cols-1 gap-3">
-            {[1, 2, 3].map(i => <div key={i} className="h-20 bg-muted/50 rounded-lg animate-pulse" />)}
-          </div>
-        ) : audits.length === 0 ? (
-          <div className="text-center p-12 border border-dashed rounded-lg text-muted-foreground">
-            No audits yet. Enter a URL above to run your first scan.
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-3">
-            {audits.map((audit) => (
-              <Link key={audit.id} href={`/results/${audit.id}`} className="group flex items-center justify-between gap-4 p-4 rounded-lg border bg-card hover:border-primary/50 transition-all cursor-pointer shadow-sm hover:shadow-md">
-                <div className="flex flex-col gap-1 min-w-0 flex-1">
-                  <span className="font-mono text-sm font-medium group-hover:text-primary transition-colors truncate">{audit.url}</span>
-                  <span className="text-xs text-muted-foreground">{new Date(audit.createdAt).toLocaleDateString()}</span>
-                </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  <div className="flex flex-col items-end">
-                    <span className="text-xs text-muted-foreground mb-1 uppercase tracking-wider hidden sm:block">AEO Score</span>
-                    <ScoreBadge score={audit.geoScore} className="text-sm px-3 py-1" />
-                  </div>
-                  <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
+      {!analyzeUrl.isPending && (
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold">Recent audits</h2>
+          {auditsLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-16 rounded-xl bg-muted/50 animate-pulse" />
+              ))}
+            </div>
+          ) : !audits || audits.length === 0 ? (
+            <Card className="border-dashed">
+              <CardContent className="py-12 text-center space-y-2">
+                <Sparkles className="h-8 w-8 text-muted-foreground/40 mx-auto" />
+                <p className="text-muted-foreground">No audits yet. Enter a URL above to get your first AEO score.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-2">
+              {audits.map((audit: any) => (
+                <Link key={audit.id} href={`/results/${audit.id}`}>
+                  <Card className="cursor-pointer hover:border-emerald-500/30 hover:shadow-md transition-all">
+                    <CardContent className="py-4 flex items-center justify-between gap-4">
+                      <div className="flex flex-col min-w-0">
+                        <span className="font-medium text-sm truncate">{audit.url}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(audit.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+                        </span>
+                      </div>
+                      <ScoreBadge score={Math.round(audit.geoScore * 100)} size="sm" />
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
 export default function Home() {
-  return (
-    <>
-      <Show when="signed-in"><SignedInDashboard /></Show>
-      <Show when="signed-out"><SignedOutLanding /></Show>
-    </>
-  );
+  const { isSignedIn, isLoaded } = useAuth();
+
+  if (!isLoaded) return null;
+  if (!isSignedIn) return <SignedOutLanding />;
+  return <SignedInDashboard />;
 }
