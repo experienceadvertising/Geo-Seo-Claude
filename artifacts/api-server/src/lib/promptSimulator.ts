@@ -23,6 +23,8 @@ function sanitizeError(err: unknown): string {
 
 export type EngineId = "chatgpt" | "claude" | "gemini" | "perplexity";
 
+export type SentimentLabel = "Positive" | "Neutral" | "Negative";
+
 export interface EngineResult {
   engine: EngineId;
   engineLabel: string;
@@ -33,6 +35,7 @@ export interface EngineResult {
   domainCited: boolean;
   citedUrls: string[];
   competitorMentions: string[];
+  sentiment: SentimentLabel | null;
   error: string | null;
   durationMs: number;
 }
@@ -119,6 +122,36 @@ function rootDomain(hostname: string): string {
   if (parts.length <= 2) return parts.join(".");
   // Naively use last 2 labels (handles most TLDs; .co.uk style edge cases over-bucket but acceptable)
   return parts.slice(-2).join(".");
+}
+
+const POSITIVE_SIGNALS = [
+  "recommend", "best", "top", "leading", "excellent", "great", "highly rated",
+  "popular", "trusted", "praised", "well-regarded", "widely used", "industry-leading",
+  "strong", "effective", "powerful", "impressive", "innovative", "award", "favorite",
+];
+const NEGATIVE_SIGNALS = [
+  "avoid", "poor", "bad", "worst", "overpriced", "disappointing", "lacks", "inferior",
+  "struggles", "fails", "complaint", "criticism", "controversial", "sued", "penalized",
+  "unreliable", "buggy", "slow", "expensive", "not recommended",
+];
+
+function detectSentiment(text: string, brandName: string): SentimentLabel | null {
+  if (!brandName || !text) return null;
+  const escaped = brandName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const re = new RegExp(`(.{0,120}\\b${escaped}\\b.{0,120})`, "gi");
+  const contexts: string[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    contexts.push(m[1].toLowerCase());
+  }
+  if (contexts.length === 0) return "Neutral";
+  const joined = contexts.join(" ");
+  let pos = 0, neg = 0;
+  for (const s of POSITIVE_SIGNALS) { if (joined.includes(s)) pos++; }
+  for (const s of NEGATIVE_SIGNALS) { if (joined.includes(s)) neg++; }
+  if (pos > neg + 1) return "Positive";
+  if (neg > pos) return "Negative";
+  return "Neutral";
 }
 
 function detectCompetitors(citedUrls: string[], brandName: string, targetDomain: string): string[] {
@@ -268,6 +301,7 @@ async function runEngineForPrompt(
     const { mentioned, firstPosition } = detectBrandMention(text, brandName);
     const domainCited = detectDomainCitation(urls, domain);
     const competitorMentions = detectCompetitors(urls, brandName, domain);
+    const sentiment = mentioned ? detectSentiment(text, brandName) : null;
     return {
       engine: engineId,
       engineLabel,
@@ -278,6 +312,7 @@ async function runEngineForPrompt(
       domainCited,
       citedUrls: urls.slice(0, 10),
       competitorMentions,
+      sentiment,
       error: null,
       durationMs: Date.now() - start,
     };
@@ -292,6 +327,7 @@ async function runEngineForPrompt(
       domainCited: false,
       citedUrls: [],
       competitorMentions: [],
+      sentiment: null,
       error: sanitizeError(err),
       durationMs: Date.now() - start,
     };

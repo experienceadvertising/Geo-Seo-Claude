@@ -22,15 +22,24 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 
 ### GEO SEO Analyzer (`artifacts/geo-seo-tool`)
 - React + Vite web app at preview path `/`
-- A GEO (Generative Engine Optimization) audit tool based on the geo-seo-claude GitHub repo
+- An AEO (Answer Engine Optimization) audit tool — branding: AEO Improvement
 - Users enter any URL and get a full AI search optimization audit
-- Features: GEO score (0-100), AI crawler access check, citability scoring, schema detection, platform readiness scores, quick wins
-- AI-powered insights via Claude Haiku
+- Features: AEO score (0-100), AI crawler access, citability scoring, schema detection, quick wins
+- AI-powered insights via Claude; prompt simulation via GPT-4o-mini + ChatGPT/Claude/Gemini/Perplexity
+- Tiered SaaS: Free / Pro ($79/mo) / Agency ($249/mo) via Clerk publicMetadata `plan` field
+- Sentiment analysis: keyword-heuristic detection of Positive/Neutral/Negative brand tone per engine result
+- Visibility Trend: line chart of historical AEO scores for a domain (`/api/geo/audits/history`)
+- Fix Generator (Pro only): generates ready-to-copy llms.txt, JSON-LD schema, robots.txt snippets
+- Plan hook: `src/hooks/usePlan.tsx` reads plan from `/api/me`, gates engine/prompt UI
+- Upgrade CTA component: `src/components/upgrade-prompt.tsx`
 
 ### API Server (`artifacts/api-server`)
 - Express 5 server at `/api`
 - Routes: `POST /api/geo/analyze`, `GET /api/geo/audits`, `GET /api/geo/audits/:id`,
-  `POST /api/geo/prompts/suggest`, `POST /api/geo/simulate`, `GET /api/geo/simulations/:id`
+  `GET /api/geo/audits/history?domain=X`, `GET /api/geo/audits/:id/fixes` (Pro),
+  `POST /api/geo/prompts/suggest`, `POST /api/geo/simulate`, `GET /api/geo/simulations/:id`,
+  `GET /api/me` (returns user plan from Clerk)
+- Plan system: `src/lib/planUtils.ts` — getUserPlan(), planAtLeast(), PLAN_LIMITS
 - Core analysis in `src/lib/geoAnalyzer.ts` (self-contained, no external API keys needed)
 - Recommendation engine in `src/lib/geoRecommendations.ts` — research basis: Princeton/IIT
   Delhi KDD 2024 + arXiv 2509.08919 (Sept 2025) + 2026 practitioner consensus

@@ -1,0 +1,30 @@
+Since you're having trouble copying the content directly, I’ve reformatted everything into two clean, distinct blocks. You should be able to click the "Copy" icon in the top right of each block individually.
+### 1. The Replit Implementation Prompt
+Use this prompt to tell the Replit AI agent exactly how to update your code to support the new tiers.
+```markdown
+Act as a senior full-stack developer. I need to upgrade my AEO Audit tool to a professional SaaS architecture with a tiered 'Free vs Pro' logic.
+
+1. Tiered Logic Implementation:
+* Free Tier Limits: Restrict the Prompt Simulation to 3 prompts and 1 engine (ChatGPT) per audit. Limit the AI Executive Summary to a high-level overview without competitor data.
+* Pro Tier Features: Unlock all 25 prompts and 4 engines (Claude, Gemini, Perplexity). Enable 'Competitor Tracking' where users can enter up to 3 rival URLs to generate a 'Citation Gap' comparison table.
+
+2. New Pro-Only Features:
+* Sentiment Analysis: Update the simulation logic to grade AI responses as 'Positive', 'Neutral', or 'Negative' regarding the brand.
+* Fix Generator: Based on audit results, create a 'Download Fixes' button for Pro users that generates a custom llms.txt file and optimized JSON-LD schema blocks.
+* Sitemap Scanner: Add an input for sitemap.xml that runs a batch 'AEO Health Check' on the top 10 most important pages using async processing.
+
+3. Data & Dashboard:
+* History Tracking: Store AEO scores in a database to create a 'Visibility Trend' line chart for recurring users.
+* Auth/Billing: Integrate Clerk metadata to toggle these UI elements based on the user's subscription level.
+
+Technical Constraint: Maintain the current 20-30 second analysis window for single audits.
+
+```
+### 2. The 2026 AEO Pricing Model
+This is your business blueprint for how to charge users while keeping the "free" value high.
+| Tier | Price | Best For | Key Features |
+|---|---|---|---|
+| **Free** | **$0** | Solopreneurs | Full Core Audit (JS Gap, Crawlers, Schema), 3 Prompts (ChatGPT only), Radar Chart, and PDF Scorecard. |
+| **Pro** | **$79/mo** | Marketing Teams | All 25 Prompts, 4 AI Engines, Competitor Benchmarking, llms.txt Generator, and Historical Visibility Trends. |
+| **Agency** | **$249/mo** | SEO Agencies | Bulk Sitemap Scanning, White-Label PDF Reports, Sentiment Analysis, and Multi-user seats. |
+**Pro Tip for Replit:** If the code is too long for one go, ask Replit to "Update the database schema and Clerk logic first," then follow up with "Now update the frontend UI for the new tiers." This prevents the AI from timing out on large files.

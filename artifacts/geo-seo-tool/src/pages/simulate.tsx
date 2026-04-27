@@ -12,7 +12,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, Sparkles, Play, ArrowLeft, CheckCircle2, XCircle, Link as LinkIcon, AlertTriangle, ExternalLink } from "lucide-react";
+import { Loader2, Sparkles, Play, ArrowLeft, CheckCircle2, XCircle, Link as LinkIcon, AlertTriangle, ExternalLink, Lock, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { usePlan } from "@/hooks/usePlan";
+import { UpgradePrompt } from "@/components/upgrade-prompt";
 
 const ENGINES = [
   { id: "chatgpt", label: "ChatGPT", color: "bg-emerald-500" },
@@ -29,10 +31,30 @@ function getDomain(url: string): string {
   try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return url; }
 }
 
+function SentimentBadge({ sentiment }: { sentiment: string | null }) {
+  if (!sentiment) return null;
+  if (sentiment === "Positive") return (
+    <Badge className="text-xs bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 gap-1">
+      <TrendingUp className="h-3 w-3" /> Positive
+    </Badge>
+  );
+  if (sentiment === "Negative") return (
+    <Badge className="text-xs bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 gap-1">
+      <TrendingDown className="h-3 w-3" /> Negative
+    </Badge>
+  );
+  return (
+    <Badge variant="outline" className="text-xs gap-1">
+      <Minus className="h-3 w-3" /> Neutral
+    </Badge>
+  );
+}
+
 export default function SimulatePage() {
   const params = useParams<{ id: string }>();
   const auditId = parseInt(params.id, 10);
   const { data: audit, isLoading: auditLoading } = useGetAudit(auditId);
+  const { plan, isPro, simulationPrompts: maxPrompts, simulationEngines: allowedEngines, isLoading: planLoading } = usePlan();
 
   const [brandName, setBrandName] = useState("");
   const [promptsText, setPromptsText] = useState("");
@@ -144,7 +166,10 @@ export default function SimulatePage() {
 
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-sm font-medium">Prompts (one per line, max 25)</label>
+              <label className="text-sm font-medium">
+                Prompts (one per line
+                {!isPro && <span className="ml-1 text-amber-600 font-semibold">· Free: max {maxPrompts}</span>})
+              </label>
               <Button
                 size="sm"
                 variant="outline"
@@ -161,27 +186,43 @@ export default function SimulatePage() {
               value={promptsText}
               onChange={(e) => setPromptsText(e.target.value)}
             />
-            <p className="text-xs text-muted-foreground mt-1">{prompts.length} valid prompt{prompts.length === 1 ? "" : "s"}</p>
+            <div className="flex items-center justify-between mt-1">
+              <p className="text-xs text-muted-foreground">{prompts.length} valid prompt{prompts.length === 1 ? "" : "s"}</p>
+              {!isPro && prompts.length > maxPrompts && (
+                <p className="text-xs text-amber-600 font-medium">Only first {maxPrompts} prompts will run on the Free plan</p>
+              )}
+            </div>
           </div>
 
           <div>
             <label className="text-sm font-medium mb-1.5 block">Engines</label>
             <div className="flex flex-wrap gap-2">
-              {ENGINES.map(e => (
-                <button
-                  key={e.id}
-                  onClick={() => toggleEngine(e.id)}
-                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-md border text-sm transition-colors ${
-                    selectedEngines.includes(e.id)
-                      ? "border-primary bg-primary/10 text-foreground"
-                      : "border-border bg-background text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <span className={`h-2 w-2 rounded-full ${e.color}`} />
-                  {e.label}
-                </button>
-              ))}
+              {ENGINES.map(e => {
+                const locked = !isPro && !allowedEngines.includes(e.id);
+                return (
+                  <button
+                    key={e.id}
+                    onClick={() => !locked && toggleEngine(e.id)}
+                    disabled={locked}
+                    title={locked ? `Upgrade to Pro to use ${e.label}` : undefined}
+                    className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-md border text-sm transition-colors ${
+                      locked
+                        ? "border-border bg-muted text-muted-foreground opacity-60 cursor-not-allowed"
+                        : selectedEngines.includes(e.id)
+                        ? "border-primary bg-primary/10 text-foreground"
+                        : "border-border bg-background text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <span className={`h-2 w-2 rounded-full ${e.color}`} />
+                    {e.label}
+                    {locked && <Lock className="h-3 w-3 ml-0.5" />}
+                  </button>
+                );
+              })}
             </div>
+            {!isPro && (
+              <p className="text-xs text-muted-foreground mt-2">Free plan: ChatGPT only · <span className="text-primary cursor-pointer hover:underline">Upgrade to Pro</span> for all 4 engines</p>
+            )}
           </div>
 
           <div className="flex flex-wrap items-center gap-3 pt-2">
@@ -307,7 +348,7 @@ export default function SimulatePage() {
                               <span className={`h-2 w-2 rounded-full ${eng?.color}`} />
                               <span className="font-semibold text-sm">{er.engineLabel}</span>
                             </div>
-                            <div className="flex gap-1">
+                            <div className="flex gap-1 flex-wrap justify-end">
                               {er.error ? (
                                 <Badge variant="destructive" className="text-xs">error</Badge>
                               ) : (
@@ -326,6 +367,7 @@ export default function SimulatePage() {
                                     <LinkIcon className="h-3 w-3 mr-1" />
                                     Cited
                                   </Badge>
+                                  {er.brandMentioned && <SentimentBadge sentiment={er.sentiment} />}
                                 </>
                               )}
                             </div>

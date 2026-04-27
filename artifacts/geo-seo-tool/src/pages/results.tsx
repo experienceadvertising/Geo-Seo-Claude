@@ -1,15 +1,18 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { useParams, Link, useLocation } from "wouter";
-import { useGetAudit, getGetAuditQueryKey, useAnalyzeUrl } from "@workspace/api-client-react";
-import { ArrowLeft, CheckCircle2, XCircle, AlertTriangle, Bot, TerminalSquare, FileText, Code2, ShieldAlert, Sparkles, Loader2, Download, Building2, RefreshCw } from "lucide-react";
+import { useGetAudit, getGetAuditQueryKey, useAnalyzeUrl, customFetch } from "@workspace/api-client-react";
+import { ArrowLeft, CheckCircle2, XCircle, AlertTriangle, Bot, TerminalSquare, FileText, Code2, ShieldAlert, Sparkles, Loader2, Download, Building2, RefreshCw, TrendingUp, Wrench, Lock, ChevronDown, ChevronUp, Copy, Check } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ScoreBadge } from "@/components/score-badge";
-import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from "recharts";
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 import ReactMarkdown from "react-markdown";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
+import { usePlan } from "@/hooks/usePlan";
+import { UpgradePrompt } from "@/components/upgrade-prompt";
 
 export default function Results() {
   const params = useParams<{ id: string }>();
@@ -17,6 +20,9 @@ export default function Results() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const reRun = useAnalyzeUrl();
+  const { isPro } = usePlan();
+  const [showFixes, setShowFixes] = useState(false);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const { data: audit, isLoading, isError } = useGetAudit(id, {
     query: {
@@ -36,6 +42,44 @@ export default function Results() {
       { subject: 'Platform Opt', A: audit.scores.platformOptimization, fullMark: 100 },
     ];
   }, [audit]);
+
+  const domain = useMemo(() => {
+    if (!audit?.url) return null;
+    try { return new URL(audit.url).hostname.replace(/^www\./, ""); } catch { return null; }
+  }, [audit?.url]);
+
+  const { data: historyData } = useQuery({
+    queryKey: ["audit-history", domain],
+    queryFn: () => customFetch<{ history: Array<{ id: number; url: string; geoScore: number; createdAt: string }> }>(`/api/geo/audits/history?domain=${encodeURIComponent(domain!)}`),
+    enabled: !!domain && !!audit,
+    staleTime: 60_000,
+    retry: false,
+  });
+
+  const trendData = useMemo(() => {
+    if (!historyData?.history) return [];
+    return historyData.history.map((h) => ({
+      date: new Date(h.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      score: h.geoScore,
+      id: h.id,
+    }));
+  }, [historyData]);
+
+  const { data: fixesData, isLoading: fixesLoading, isError: fixesError } = useQuery({
+    queryKey: ["audit-fixes", id],
+    queryFn: () => customFetch<any>(`/api/geo/audits/${id}/fixes`),
+    enabled: isPro && showFixes && !!id,
+    staleTime: Infinity,
+    retry: false,
+  });
+
+  const copyToClipboard = async (text: string, key: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedKey(key);
+      setTimeout(() => setCopiedKey(null), 2000);
+    } catch { /* ignore */ }
+  };
 
   if (isLoading) {
     return (
@@ -97,6 +141,16 @@ export default function Results() {
                 <Sparkles className="h-3.5 w-3.5" /> Run Prompt Simulation
               </Button>
             </Link>
+            <Button
+              variant="outline"
+              size="sm"
+              className="font-mono text-xs gap-2"
+              onClick={() => setShowFixes(v => !v)}
+              data-testid="button-fix-generator"
+            >
+              {isPro ? <Wrench className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
+              Fix Generator {isPro ? (showFixes ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />) : <Badge className="text-[10px] ml-1 px-1 py-0 bg-gradient-to-r from-emerald-500 to-teal-500 text-white">Pro</Badge>}
+            </Button>
             <Button
               variant="outline"
               size="sm"
@@ -447,6 +501,102 @@ export default function Results() {
                 </div>
               ))}
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Fix Generator Panel */}
+      {showFixes && (
+        isPro ? (
+          <Card className="border-emerald-200 dark:border-emerald-900 shadow-sm">
+            <CardHeader className="border-b bg-emerald-500/5 pb-4">
+              <CardTitle className="flex items-center gap-2 text-sm font-mono uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                <Wrench className="h-4 w-4" /> Fix Generator
+              </CardTitle>
+              <CardDescription className="text-xs">Ready-to-deploy files generated from your audit. Copy each one into your site.</CardDescription>
+            </CardHeader>
+            <CardContent className="pt-5 space-y-6">
+              {fixesLoading && <div className="flex items-center gap-3 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Generating custom fix files…</div>}
+              {fixesError && <p className="text-sm text-destructive">Failed to generate fixes. Try again.</p>}
+              {fixesData && (
+                <>
+                  {/* llms.txt */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="font-semibold text-sm font-mono">llms.txt</div>
+                      <Button variant="outline" size="sm" className="gap-1.5 text-xs h-7" onClick={() => copyToClipboard(fixesData.llmsTxt, "llms")}>
+                        {copiedKey === "llms" ? <><Check className="h-3 w-3 text-green-600" /> Copied</> : <><Copy className="h-3 w-3" /> Copy</>}
+                      </Button>
+                    </div>
+                    <pre className="text-xs font-mono bg-muted/60 rounded-lg p-4 overflow-auto max-h-64 whitespace-pre-wrap">{fixesData.llmsTxt}</pre>
+                  </div>
+
+                  {/* robots.txt snippet */}
+                  {fixesData.crawlersBlocked?.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="font-semibold text-sm font-mono">robots.txt additions</div>
+                        <Button variant="outline" size="sm" className="gap-1.5 text-xs h-7" onClick={() => copyToClipboard(fixesData.robotsSnippet, "robots")}>
+                          {copiedKey === "robots" ? <><Check className="h-3 w-3 text-green-600" /> Copied</> : <><Copy className="h-3 w-3" /> Copy</>}
+                        </Button>
+                      </div>
+                      <pre className="text-xs font-mono bg-muted/60 rounded-lg p-4 overflow-auto max-h-48 whitespace-pre-wrap">{fixesData.robotsSnippet}</pre>
+                    </div>
+                  )}
+
+                  {/* JSON-LD schema */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="font-semibold text-sm font-mono">JSON-LD Schema Markup</div>
+                      <Button variant="outline" size="sm" className="gap-1.5 text-xs h-7" onClick={() => copyToClipboard(JSON.stringify(fixesData.schemaBlocks, null, 2), "schema")}>
+                        {copiedKey === "schema" ? <><Check className="h-3 w-3 text-green-600" /> Copied</> : <><Copy className="h-3 w-3" /> Copy</>}
+                      </Button>
+                    </div>
+                    <pre className="text-xs font-mono bg-muted/60 rounded-lg p-4 overflow-auto max-h-80 whitespace-pre-wrap">{JSON.stringify(fixesData.schemaBlocks, null, 2)}</pre>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        ) : (
+          <UpgradePrompt
+            feature="Fix Generator"
+            description="Generate ready-to-deploy llms.txt, JSON-LD schema, and robots.txt additions tailored to your audit findings. Copy and paste into your site in minutes."
+            requiredPlan="pro"
+          />
+        )
+      )}
+
+      {/* Visibility Trend */}
+      {trendData.length > 1 && (
+        <Card className="shadow-sm border-border">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-sm font-mono uppercase tracking-wider">
+              <TrendingUp className="h-4 w-4 text-primary" /> AEO Score Trend
+              <span className="text-muted-foreground font-normal normal-case tracking-normal ml-1">— {domain}</span>
+            </CardTitle>
+            <CardDescription className="text-xs">{trendData.length} audits tracked · Score history for this domain</CardDescription>
+          </CardHeader>
+          <CardContent className="h-64 pb-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={trendData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="date" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))", fontFamily: "var(--font-mono)" }} />
+                <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))", fontFamily: "var(--font-mono)" }} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }}
+                  formatter={(v: any) => [v, "AEO Score"]}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="score"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth={2}
+                  dot={{ r: 4, fill: "hsl(var(--primary))", strokeWidth: 0 }}
+                  activeDot={{ r: 6 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
       )}

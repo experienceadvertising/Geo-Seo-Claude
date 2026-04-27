@@ -4,6 +4,7 @@ import { db, promptSimulationsTable, auditsTable } from "@workspace/db";
 import { runPromptSimulation, generatePromptsForBrand, type EngineId, type PromptGenerationContext } from "../../lib/promptSimulator";
 import { requireAuth } from "../../middlewares/auth";
 import { simulateRateLimiter, readRateLimiter } from "../../middlewares/rateLimiters";
+import { getUserPlan, PLAN_LIMITS } from "../../lib/planUtils";
 
 const router: IRouter = Router();
 
@@ -47,8 +48,18 @@ router.post("/geo/simulate", requireAuth, simulateRateLimiter, async (req, res):
     res.status(400).json({ error: "prompts[] is required" });
     return;
   }
-  if (body.prompts.length > 25) {
-    res.status(400).json({ error: "Maximum 25 prompts per simulation" });
+
+  // Enforce plan limits
+  const plan = await getUserPlan(req.userId!);
+  const limits = PLAN_LIMITS[plan];
+
+  if (body.prompts.length > limits.simulationPrompts) {
+    res.status(403).json({
+      error: `Your ${plan} plan allows a maximum of ${limits.simulationPrompts} prompt${limits.simulationPrompts === 1 ? "" : "s"} per simulation.`,
+      plan,
+      limit: limits.simulationPrompts,
+      upgradeRequired: true,
+    });
     return;
   }
 
@@ -64,25 +75,41 @@ router.post("/geo/simulate", requireAuth, simulateRateLimiter, async (req, res):
 
   const cleanPrompts: string[] = body.prompts
     .map((p: unknown) => (typeof p === "string" ? p.trim() : ""))
-    .filter((p: string) => p.length >= 5 && p.length <= 300);
+    .filter((p: string) => p.length >= 5 && p.length <= 300)
+    .slice(0, limits.simulationPrompts);
 
   if (cleanPrompts.length === 0) {
     res.status(400).json({ error: "No valid prompts (5-300 chars each)" });
     return;
   }
 
-  const selectedEngines = Array.isArray(body.engines)
+  // Filter engines by plan
+  const allowedEngines = limits.simulationEngines as EngineId[];
+  const requestedEngines = Array.isArray(body.engines)
     ? body.engines.filter((e: unknown): e is EngineId => typeof e === "string" && (VALID_ENGINES as string[]).includes(e))
     : undefined;
+  const selectedEngines = requestedEngines
+    ? requestedEngines.filter((e) => allowedEngines.includes(e))
+    : allowedEngines;
 
-  req.log.info({ domain, promptCount: cleanPrompts.length, engines: selectedEngines, userId: req.userId }, "Starting prompt simulation");
+  if (selectedEngines.length === 0) {
+    res.status(403).json({
+      error: `Your ${plan} plan only allows these engines: ${allowedEngines.join(", ")}.`,
+      plan,
+      allowedEngines,
+      upgradeRequired: true,
+    });
+    return;
+  }
+
+  req.log.info({ domain, promptCount: cleanPrompts.length, engines: selectedEngines, plan, userId: req.userId }, "Starting prompt simulation");
 
   try {
     const { results, summary } = await runPromptSimulation(
       cleanPrompts,
       brandName,
       domain,
-      selectedEngines && selectedEngines.length > 0 ? selectedEngines : undefined
+      selectedEngines.length > 0 ? selectedEngines : undefined
     );
 
     const [saved] = await db.insert(promptSimulationsTable).values({
@@ -104,6 +131,7 @@ router.post("/geo/simulate", requireAuth, simulateRateLimiter, async (req, res):
       prompts: cleanPrompts,
       results,
       summary,
+      plan,
       createdAt: saved.createdAt.toISOString(),
     });
   } catch (err) {

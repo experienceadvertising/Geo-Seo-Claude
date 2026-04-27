@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, like, asc } from "drizzle-orm";
 import { db, auditsTable } from "@workspace/db";
 import {
   AnalyzeUrlBody,
@@ -13,6 +13,7 @@ import simulateRouter from "./simulate";
 import { requireAuth } from "../../middlewares/auth";
 import { analyzeRateLimiter, readRateLimiter } from "../../middlewares/rateLimiters";
 import { assertPublicUrl, SsrfError } from "../../lib/safeFetch";
+import { getUserPlan, planAtLeast } from "../../lib/planUtils";
 
 const router: IRouter = Router();
 router.use(simulateRouter);
@@ -263,6 +264,180 @@ router.get("/geo/audits/:id/pdf", requireAuth, readRateLimiter, async (req, res)
       res.destroy();
     }
   }
+});
+
+// ─── Visibility History ──────────────────────────────────────────────────────
+router.get("/geo/audits/history", requireAuth, readRateLimiter, async (req, res): Promise<void> => {
+  const domain = typeof req.query.domain === "string" ? req.query.domain.trim().toLowerCase() : "";
+  if (!domain) {
+    res.status(400).json({ error: "domain query param required" });
+    return;
+  }
+  const plan = await getUserPlan(req.userId!);
+  // Free: last 30 days; Pro: last year; Agency: 2 years
+  const daysCap = plan === "agency" ? 730 : plan === "pro" ? 365 : 30;
+  const since = new Date(Date.now() - daysCap * 24 * 60 * 60 * 1000);
+
+  const audits = await db
+    .select({
+      id: auditsTable.id,
+      url: auditsTable.url,
+      geoScore: auditsTable.geoScore,
+      createdAt: auditsTable.createdAt,
+    })
+    .from(auditsTable)
+    .where(
+      and(
+        eq(auditsTable.userId, req.userId!),
+        like(auditsTable.url, `%${domain}%`),
+      )
+    )
+    .orderBy(asc(auditsTable.createdAt))
+    .limit(100);
+
+  const filtered = audits.filter((a) => a.createdAt >= since);
+  res.json({
+    domain,
+    plan,
+    daysCap,
+    history: filtered.map((a) => ({
+      id: a.id,
+      url: a.url,
+      geoScore: a.geoScore,
+      createdAt: a.createdAt.toISOString(),
+    })),
+  });
+});
+
+// ─── Fix Generator ────────────────────────────────────────────────────────────
+router.get("/geo/audits/:id/fixes", requireAuth, readRateLimiter, async (req, res): Promise<void> => {
+  const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const params = GetAuditParams.safeParse({ id: rawId });
+  if (!params.success) { res.status(400).json({ error: "Invalid ID" }); return; }
+
+  const plan = await getUserPlan(req.userId!);
+  if (!planAtLeast(plan, "pro")) {
+    res.status(403).json({ error: "Fix Generator is a Pro feature. Upgrade to download custom fixes.", upgradeRequired: true });
+    return;
+  }
+
+  const [audit] = await db.select().from(auditsTable).where(
+    and(eq(auditsTable.id, params.data.id), eq(auditsTable.userId, req.userId!))
+  );
+  if (!audit) { res.status(404).json({ error: "Audit not found" }); return; }
+
+  const hostname = (() => { try { return new URL(audit.url).hostname; } catch { return audit.url; } })();
+  const brandName = (audit.brandName as string | null) || hostname.replace(/^www\./, "").split(".")[0];
+  const description = (audit.description as string | null) || `${brandName} — website`;
+
+  // Build llms.txt
+  const schemaDetected = ((audit.schemaTypes as any[]) || []).filter((s: any) => s.present).map((s: any) => s.type);
+  const crawlersBlocked = ((audit.crawlers as any[]) || []).filter((c: any) => !c.allowed).map((c: any) => c.name);
+  const recs = ((audit.recommendations as any[]) || []).slice(0, 6);
+
+  const llmsTxt = `# ${brandName}
+
+> ${description}
+
+## About
+
+${brandName} is a website located at ${audit.url}. This llms.txt file is provided to help AI search engines and LLM crawlers understand the site's content and purpose.
+
+## What we do
+
+${(audit.aiInsights as string | null)?.split("\n").slice(0, 3).join("\n") || `${brandName} provides services at ${audit.url}.`}
+
+## Key Pages
+
+- Homepage: ${audit.url}
+
+## Contact
+
+- Website: ${audit.url}
+
+## For AI Crawlers
+
+This site welcomes indexing by AI search crawlers including GPTBot, ClaudeBot, PerplexityBot, Google-Extended, Applebot, and meta-externalagent. Please index and cite this site's content appropriately.
+`;
+
+  // Build optimized JSON-LD schema
+  const missingSchema = ((audit.schemaTypes as any[]) || []).filter((s: any) => !s.present).map((s: any) => s.type);
+  const schemaBlocks: Record<string, any>[] = [];
+
+  // Always include Organization + WebSite
+  schemaBlocks.push({
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "@id": `${audit.url}#organization`,
+    "name": brandName,
+    "url": audit.url,
+    "description": description,
+    "sameAs": [],
+  });
+
+  schemaBlocks.push({
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "@id": `${audit.url}#website`,
+    "url": audit.url,
+    "name": brandName,
+    "publisher": { "@id": `${audit.url}#organization` },
+    "inLanguage": "en-US",
+  });
+
+  if (missingSchema.includes("FAQPage") || !schemaDetected.includes("FAQPage")) {
+    schemaBlocks.push({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": `What is ${brandName}?`,
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": description,
+          },
+        },
+      ],
+    });
+  }
+
+  if (missingSchema.includes("BreadcrumbList")) {
+    schemaBlocks.push({
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": audit.url },
+      ],
+    });
+  }
+
+  // Robots.txt snippet for missing crawlers
+  const robotsSnippet = crawlersBlocked.length > 0
+    ? `# Add these rules to your robots.txt to allow AI crawlers:\n${crawlersBlocked.map((name: string) => {
+        const agentMap: Record<string, string> = {
+          GPTBot: "GPTBot",
+          ClaudeBot: "ClaudeBot",
+          PerplexityBot: "PerplexityBot",
+          "Google-Extended": "Google-Extended",
+          Applebot: "Applebot",
+          "meta-externalagent": "meta-externalagent",
+        };
+        const agent = agentMap[name] || name;
+        return `\nUser-agent: ${agent}\nAllow: /`;
+      }).join("\n")}`
+    : "# All major AI crawlers are already allowed in your robots.txt.";
+
+  res.json({
+    brandName,
+    llmsTxt,
+    schemaBlocks,
+    robotsSnippet,
+    crawlersBlocked,
+    missingSchema,
+    schemaDetected,
+    recommendations: recs.map((r: any) => ({ title: r.title, detail: r.detail, priority: r.priority })),
+  });
 });
 
 export default router;
