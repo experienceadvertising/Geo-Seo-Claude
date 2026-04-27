@@ -67,11 +67,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <Show when="signed-in">
               <nav className="hidden md:flex items-center gap-4 text-sm font-medium text-muted-foreground">
                 <Link href="/" className="hover:text-foreground transition-colors">Audits</Link>
+                <Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
               </nav>
               <AdminLink />
               <UserBadge />
             </Show>
             <Show when="signed-out">
+              <nav className="hidden md:flex items-center gap-4 text-sm font-medium text-muted-foreground">
+                <Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
+              </nav>
               <SignInButton mode="modal">
                 <Button variant="ghost" size="sm">Sign in</Button>
               </SignInButton>

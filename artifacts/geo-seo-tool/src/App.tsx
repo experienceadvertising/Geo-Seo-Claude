@@ -9,6 +9,7 @@ import Home from "@/pages/home";
 import Results from "@/pages/results";
 import Simulate from "@/pages/simulate";
 import Admin from "@/pages/admin";
+import Pricing from "@/pages/pricing";
 import { Layout } from "@/components/layout";
 
 const queryClient = new QueryClient();
@@ -140,6 +141,7 @@ function AppRoutes() {
         <Route path="/admin">
           <RequireAuth><Admin /></RequireAuth>
         </Route>
+        <Route path="/pricing" component={Pricing} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

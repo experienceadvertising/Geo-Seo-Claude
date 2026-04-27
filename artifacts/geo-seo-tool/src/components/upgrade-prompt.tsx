@@ -3,6 +3,7 @@ import { Sparkles, Lock, ArrowRight, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useLocation } from "wouter";
 import { type Plan } from "@/hooks/usePlan";
 
 interface UpgradePromptProps {
@@ -32,9 +33,14 @@ export function UpgradePrompt({
   compact = false,
   className = "",
 }: UpgradePromptProps) {
+  const [, setLocation] = useLocation();
+
   if (compact) {
     return (
-      <div className={`flex items-center gap-2 p-3 rounded-lg border border-dashed border-primary/30 bg-primary/5 text-sm ${className}`}>
+      <div
+        className={`flex items-center gap-2 p-3 rounded-lg border border-dashed border-primary/30 bg-primary/5 text-sm cursor-pointer hover:bg-primary/10 transition-colors ${className}`}
+        onClick={() => setLocation("/pricing")}
+      >
         <Lock className="h-4 w-4 text-primary shrink-0" />
         <span className="text-muted-foreground flex-1">{description}</span>
         <Badge className={`text-xs shrink-0 ${PLAN_COLORS[requiredPlan]}`}>
@@ -60,11 +66,13 @@ export function UpgradePrompt({
           <p className="text-sm text-muted-foreground max-w-sm">{description}</p>
         </div>
         <div className="flex flex-col sm:flex-row items-center gap-3">
-          <Button className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 gap-2">
+          <Button
+            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 gap-2"
+            onClick={() => setLocation("/pricing")}
+          >
             <Zap className="h-4 w-4" /> Upgrade to {requiredPlan === "pro" ? "Pro" : "Agency"} — {PLAN_PRICES[requiredPlan]}
             <ArrowRight className="h-4 w-4" />
           </Button>
-          <span className="text-xs text-muted-foreground">Contact us to upgrade</span>
         </div>
       </CardContent>
     </Card>
