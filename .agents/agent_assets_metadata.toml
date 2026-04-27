@@ -1,8 +1,13 @@
 uploads = []
-outputs = []
 
 [[generated]]
 id = "H8P2opU7AE_1WH2P4svi1"
 uri = "file://artifacts/geo-seo-tool/src/assets/hero.png"
 type = "image"
 title = "AEO hero visualization"
+
+[[outputs]]
+id = "rc5mocFTznTKvNYNjndqV"
+uri = "file://AEO-Improvement-Features.md"
+type = "text"
+title = "AEO Improvement — Feature Overview"
