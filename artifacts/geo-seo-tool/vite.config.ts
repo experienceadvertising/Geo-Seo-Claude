@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
@@ -26,12 +26,39 @@ if (!basePath) {
   );
 }
 
+// SPA fallback: serve index.html for any path that looks like a page route.
+// Vite preview serves built static files literally, so direct navigation to
+// /verify-email or /sign-in would 404. This middleware rewrites those requests
+// to serve index.html while keeping the browser URL intact so the React router
+// can pick up the path + query string (e.g. ?token=...).
+function spaFallback(): Plugin {
+  return {
+    name: "spa-fallback",
+    configurePreviewServer(server) {
+      server.middlewares.use((req, _res, next) => {
+        const url = req.url ?? "/";
+        // Strip query string for extension check
+        const pathname = url.split("?")[0];
+        const hasFileExtension = /\.[a-zA-Z0-9]{1,10}$/.test(pathname);
+        const isViteInternal = pathname.startsWith("/@") || pathname === "/__vite_ping";
+        if (!hasFileExtension && !isViteInternal) {
+          // Preserve the full URL (path + query string) in the browser;
+          // only tell the static server to serve from the root so it finds index.html.
+          req.url = basePath.replace(/\/$/, "") + "/";
+        }
+        next();
+      });
+    },
+  };
+}
+
 export default defineConfig({
   base: basePath,
   plugins: [
     react(),
     tailwindcss(),
     runtimeErrorOverlay(),
+    spaFallback(),
     ...(process.env.NODE_ENV !== "production" &&
     process.env.REPL_ID !== undefined
       ? [
