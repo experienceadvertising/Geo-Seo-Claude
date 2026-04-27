@@ -15,7 +15,6 @@ export function createSessionMiddleware() {
     store: new PgStore({
       conString: process.env.DATABASE_URL!,
       tableName: "sessions",
-      createTableIfMissing: true,
     }),
     secret: process.env.SESSION_SECRET || "aeo-fallback-secret-change-in-prod",
     resave: false,
