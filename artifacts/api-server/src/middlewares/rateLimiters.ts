@@ -1,7 +1,8 @@
-import rateLimit from "express-rate-limit";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import type { Request } from "express";
 
-const userKey = (req: Request) => req.userId || req.ip || "anon";
+const userKey = (req: Request) =>
+  req.userId || ipKeyGenerator(req.ip || "anon") || "anon";
 
 export const analyzeRateLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,

@@ -2,6 +2,7 @@ import app from "./app";
 import { logger } from "./lib/logger";
 import { runMigrations } from "stripe-replit-sync";
 import { getStripeSync } from "./lib/stripeClient";
+import { startEmailScheduler } from "./lib/emailScheduler";
 
 async function initStripe() {
   const databaseUrl = process.env.DATABASE_URL;
@@ -47,6 +48,7 @@ if (Number.isNaN(port) || port <= 0) {
 
 async function start() {
   await initStripe();
+  startEmailScheduler();
   app.listen(port, (err) => {
     if (err) {
       logger.error({ err }, "Error listening on port");

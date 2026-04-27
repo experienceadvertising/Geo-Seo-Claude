@@ -7,12 +7,15 @@ import router from "./routes";
 import { logger } from "./lib/logger";
 import { CLERK_PROXY_PATH, clerkProxyMiddleware } from "./middlewares/clerkProxyMiddleware";
 import { WebhookHandlers } from "./lib/webhookHandlers";
+import clerkWebhookRouter from "./routes/clerk-webhook";
 
 const app: Express = express();
 
 app.set("trust proxy", 1);
 
-// Register Stripe webhook BEFORE express.json() — needs raw Buffer body
+// ── Raw-body webhook routes (must be BEFORE express.json()) ──────────────────
+
+// Stripe webhook — needs raw Buffer for signature verification
 app.post(
   "/api/stripe/webhook",
   express.raw({ type: "application/json" }),
@@ -31,6 +34,13 @@ app.post(
       res.status(400).json({ error: "Webhook processing failed" });
     }
   }
+);
+
+// Clerk webhook — needs raw Buffer for Svix signature verification
+app.use(
+  "/api/clerk/webhook",
+  express.raw({ type: "application/json" }),
+  clerkWebhookRouter
 );
 
 app.use(
