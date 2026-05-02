@@ -14,13 +14,23 @@ async function initStripe() {
     logger.info("Initializing Stripe schema...");
     await runMigrations({ databaseUrl, schema: "stripe" });
     logger.info("Stripe schema ready");
+  } catch (err) {
+    // Schema migrations failing is fatal — without the stripe.* tables no
+    // checkout / webhook flow can work. Surface loudly so deploys don't
+    // silently come up with a broken Stripe layer.
+    logger.error({ err }, "Stripe schema migration failed");
+    throw err;
+  }
 
+  try {
     const stripeSync = await getStripeSync();
     const domain = process.env.REPLIT_DOMAINS?.split(",")[0];
     if (domain) {
       const webhookUrl = `https://${domain}/api/stripe/webhook`;
       await stripeSync.findOrCreateManagedWebhook(webhookUrl);
       logger.info({ webhookUrl }, "Stripe webhook configured");
+    } else {
+      logger.warn("REPLIT_DOMAINS not set — skipping webhook auto-creation");
     }
 
     // Backfill in background — don't block server start
@@ -28,7 +38,9 @@ async function initStripe() {
       .then(() => logger.info("Stripe backfill complete"))
       .catch((err) => logger.warn({ err }, "Stripe backfill error (non-fatal)"));
   } catch (err) {
-    logger.warn({ err }, "Stripe init skipped (integration not connected yet)");
+    // Webhook / sync setup is non-fatal: server can still serve traffic and
+    // we can manually reconcile webhooks later, but make it visible.
+    logger.warn({ err }, "Stripe webhook/sync setup skipped (will retry on next boot)");
   }
 }
 

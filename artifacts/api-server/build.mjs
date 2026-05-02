@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { build as esbuild } from "esbuild";
 import esbuildPluginPino from "esbuild-plugin-pino";
-import { rm } from "node:fs/promises";
+import { cp, rm, stat } from "node:fs/promises";
 
 // Plugins (e.g. 'esbuild-plugin-pino') may use `require` to resolve dependencies
 globalThis.require = createRequire(import.meta.url);
@@ -124,6 +124,33 @@ globalThis.__dirname = __bannerPath.dirname(globalThis.__filename);
     `,
     },
   });
+
+  await copyRuntimeAssets(distDir);
+}
+
+async function copyRuntimeAssets(distDir) {
+  // stripe-replit-sync ships SQL migration files in <pkg>/dist/migrations/.
+  // The library resolves them at runtime via path.resolve(__dirname, "./migrations").
+  // Since esbuild bundles the JS inline, we must copy the SQL files alongside dist/index.mjs.
+  const require2 = createRequire(import.meta.url);
+  const stripeSyncEntry = require2.resolve("stripe-replit-sync");
+  const stripeSyncDist = path.dirname(stripeSyncEntry);
+  const sourceMigrations = path.join(stripeSyncDist, "migrations");
+
+  try {
+    const s = await stat(sourceMigrations);
+    if (!s.isDirectory()) {
+      throw new Error(`Expected ${sourceMigrations} to be a directory`);
+    }
+  } catch (err) {
+    throw new Error(
+      `stripe-replit-sync migrations folder not found at ${sourceMigrations}: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
+
+  const destMigrations = path.join(distDir, "migrations");
+  await cp(sourceMigrations, destMigrations, { recursive: true });
+  console.log(`Copied stripe-replit-sync migrations -> ${destMigrations}`);
 }
 
 buildAll().catch((err) => {
