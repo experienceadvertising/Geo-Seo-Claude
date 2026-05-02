@@ -2,15 +2,11 @@ import Stripe from "stripe";
 import { StripeSync } from "stripe-replit-sync";
 
 async function getCredentials(): Promise<{ publishableKey: string; secretKey: string }> {
-  // Direct env var override — used in production with own Stripe account
-  if (process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PUBLISHABLE_KEY) {
-    return {
-      publishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
-      secretKey: process.env.STRIPE_SECRET_KEY,
-    };
-  }
-
-  // Fallback: Replit-managed Stripe integration (sandbox / dev)
+  // PREFER the Replit-managed Stripe integration when available.
+  // The integration is bound per-environment (dev → sandbox, prod → live AEO
+  // Optimization account). Reaching for it first keeps the app self-healing
+  // even if stale STRIPE_* env-vars from a previous Stripe account get
+  // chain-mirrored into the workspace or deployment.
   const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
   const xReplitToken = process.env.REPL_IDENTITY
     ? "repl " + process.env.REPL_IDENTITY
@@ -18,33 +14,41 @@ async function getCredentials(): Promise<{ publishableKey: string; secretKey: st
       ? "depl " + process.env.WEB_REPL_RENEWAL
       : null;
 
-  if (!hostname || !xReplitToken) {
-    throw new Error("Stripe not configured: set STRIPE_SECRET_KEY and STRIPE_PUBLISHABLE_KEY, or connect the Stripe integration.");
+  if (hostname && xReplitToken) {
+    const isProduction = process.env.REPLIT_DEPLOYMENT === "1";
+    const targetEnvironment = isProduction ? "production" : "development";
+
+    const url = new URL(`https://${hostname}/api/v2/connection`);
+    url.searchParams.set("include_secrets", "true");
+    url.searchParams.set("connector_names", "stripe");
+    url.searchParams.set("environment", targetEnvironment);
+
+    const resp = await fetch(url.toString(), {
+      headers: { Accept: "application/json", "X-Replit-Token": xReplitToken },
+      signal: AbortSignal.timeout(10_000),
+    });
+
+    if (resp.ok) {
+      const data = await resp.json();
+      const settings = data.items?.[0]?.settings;
+      if (settings?.secret && settings?.publishable) {
+        return { publishableKey: settings.publishable, secretKey: settings.secret };
+      }
+    }
+    // Fall through to env-var path if connector lookup fails or returns
+    // incomplete settings — useful when running outside Replit.
   }
 
-  const isProduction = process.env.REPLIT_DEPLOYMENT === "1";
-  const targetEnvironment = isProduction ? "production" : "development";
-
-  const url = new URL(`https://${hostname}/api/v2/connection`);
-  url.searchParams.set("include_secrets", "true");
-  url.searchParams.set("connector_names", "stripe");
-  url.searchParams.set("environment", targetEnvironment);
-
-  const resp = await fetch(url.toString(), {
-    headers: { Accept: "application/json", "X-Replit-Token": xReplitToken },
-    signal: AbortSignal.timeout(10_000),
-  });
-
-  if (!resp.ok) throw new Error(`Failed to fetch Stripe credentials: ${resp.status} ${resp.statusText}`);
-
-  const data = await resp.json();
-  const settings = data.items?.[0]?.settings;
-
-  if (!settings?.secret || !settings?.publishable) {
-    throw new Error("Stripe integration not connected or missing keys. Connect Stripe via the Integrations tab.");
+  // Fallback: explicit env-var override (for self-hosted / non-Replit deploys
+  // where the integration isn't reachable).
+  if (process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PUBLISHABLE_KEY) {
+    return {
+      publishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
+      secretKey: process.env.STRIPE_SECRET_KEY,
+    };
   }
 
-  return { publishableKey: settings.publishable, secretKey: settings.secret };
+  throw new Error("Stripe not configured: connect the Stripe integration, or set STRIPE_SECRET_KEY and STRIPE_PUBLISHABLE_KEY.");
 }
 
 export async function getUncachableStripeClient(): Promise<Stripe> {
