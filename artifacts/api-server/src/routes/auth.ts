@@ -1,22 +1,103 @@
 import { Router } from "express";
+import type { Request } from "express";
 import { randomBytes, randomUUID } from "crypto";
 import bcrypt from "bcryptjs";
 import { db, usersTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { EmailService } from "../lib/emailService";
 import { logger } from "../lib/logger";
 import { requireAuth } from "../middlewares/auth";
+import {
+  loginRateLimiter,
+  registerRateLimiter,
+  passwordEmailRateLimiter,
+} from "../middlewares/rateLimiters";
 
 const router = Router();
 const SALT_ROUNDS = 12;
-const BASE_URL = process.env.FRONTEND_URL || "https://aeoimprovement.com";
+const PRODUCTION_HOST = "aeoimprovement.com";
+
+// Pre-computed bcrypt hash of a random throwaway string. Used to make /login
+// timing equivalent for "user exists" vs "user does not exist" responses.
+const DUMMY_HASH = bcrypt.hashSync("__dummy_password_for_timing__", SALT_ROUNDS);
 
 function token() {
   return randomBytes(32).toString("hex");
 }
 
+/**
+ * Build the set of hostnames we are willing to embed in outbound emails.
+ * Anything not in this set is treated as a phishing attempt (since the auth
+ * routes are unauthenticated, an attacker could otherwise spoof Origin /
+ * Referer to make us mail a victim a malicious verify / reset link).
+ */
+function buildAllowedHosts(): Set<string> {
+  const hosts = new Set<string>([PRODUCTION_HOST, `www.${PRODUCTION_HOST}`]);
+
+  // Explicit override (preferred in production).
+  if (process.env.FRONTEND_URL) {
+    try { hosts.add(new URL(process.env.FRONTEND_URL).host); } catch { /* ignore */ }
+  }
+
+  // Replit-injected domains for the dev preview / deployment.
+  const csv = (s: string | undefined) =>
+    (s ?? "").split(",").map((x) => x.trim()).filter(Boolean);
+  for (const d of csv(process.env.REPLIT_DOMAINS)) hosts.add(d);
+  if (process.env.REPLIT_DEV_DOMAIN) hosts.add(process.env.REPLIT_DEV_DOMAIN);
+
+  return hosts;
+}
+const ALLOWED_HOSTS = buildAllowedHosts();
+const PRODUCTION_BASE_URL = `https://${PRODUCTION_HOST}`;
+
+/**
+ * Resolve the public base URL for the user-facing app from the request.
+ * Returns a URL on a known-trusted host so attackers can't trick us into
+ * emailing users a phishing link by spoofing Origin / Referer headers.
+ *
+ * This also ensures users who sign up via the dev preview receive a
+ * verification link that returns to the same dev preview, instead of a
+ * production URL whose database does not contain their token.
+ */
+function baseUrlFromReq(req: Request): string {
+  // Explicit env override always wins (single source of truth in prod).
+  if (process.env.FRONTEND_URL) return process.env.FRONTEND_URL.replace(/\/$/, "");
+
+  const candidates: string[] = [];
+
+  const origin = req.get("origin");
+  if (origin) candidates.push(origin);
+
+  const referer = req.get("referer");
+  if (referer) {
+    try {
+      const u = new URL(referer);
+      candidates.push(`${u.protocol}//${u.host}`);
+    } catch { /* ignore */ }
+  }
+
+  const xfProto = (req.get("x-forwarded-proto") || req.protocol || "https")
+    .split(",")[0].trim();
+  const xfHost = (req.get("x-forwarded-host") || req.get("host") || "")
+    .split(",")[0].trim();
+  if (xfHost) candidates.push(`${xfProto}://${xfHost}`);
+
+  for (const raw of candidates) {
+    try {
+      const u = new URL(raw);
+      if (u.protocol !== "https:" && u.protocol !== "http:") continue;
+      if (ALLOWED_HOSTS.has(u.host)) return `${u.protocol}//${u.host}`;
+    } catch { /* skip malformed */ }
+  }
+
+  // No trusted candidate — fall back to production. Worst case: a dev
+  // signup gets a production link (the original bug), but we never send
+  // an attacker-controlled phishing URL.
+  return PRODUCTION_BASE_URL;
+}
+
 // ── Register ──────────────────────────────────────────────────────────────────
-router.post("/auth/register", async (req, res): Promise<void> => {
+router.post("/auth/register", registerRateLimiter, async (req, res): Promise<void> => {
   const { email, password, firstName } = req.body as {
     email?: string;
     password?: string;
@@ -66,24 +147,22 @@ router.post("/auth/register", async (req, res): Promise<void> => {
     plan: "free",
   });
 
-  const verifyUrl = `${BASE_URL}/verify-email?token=${verToken}`;
+  const baseUrl = baseUrlFromReq(req);
+  const verifyUrl = `${baseUrl}/verify-email?token=${verToken}`;
   await EmailService.sendVerificationEmail(normalizedEmail, firstName?.trim() || "", verifyUrl);
 
-  // Send welcome email
-  await EmailService.sendWelcome(normalizedEmail, firstName?.trim() || "");
-  await db
-    .update(usersTable)
-    .set({ welcomeEmailSentAt: new Date() })
-    .where(eq(usersTable.id, userId));
+  // The "Welcome" introduction email is deferred until the user has actually
+  // verified their email address. Sending it pre-verification trains people
+  // to ignore our mail and risks reputation damage on Postmark.
 
-  logger.info({ userId, email: normalizedEmail }, "User registered");
+  logger.info({ userId, email: normalizedEmail, baseUrl }, "User registered");
   res.status(201).json({
     message: "Account created! Check your email for a verification link.",
   });
 });
 
 // ── Login ─────────────────────────────────────────────────────────────────────
-router.post("/auth/login", async (req, res): Promise<void> => {
+router.post("/auth/login", loginRateLimiter, async (req, res): Promise<void> => {
   const { email, password } = req.body as { email?: string; password?: string };
 
   if (!email || !password) {
@@ -98,13 +177,12 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     .from(usersTable)
     .where(eq(usersTable.email, normalizedEmail));
 
-  if (!user || !user.passwordHash) {
-    res.status(401).json({ error: "Invalid email or password." });
-    return;
-  }
+  // Always run a bcrypt comparison to keep timing constant whether the
+  // account exists or not. This prevents email-enumeration timing attacks.
+  const hashToCompare = user?.passwordHash ?? DUMMY_HASH;
+  const valid = await bcrypt.compare(password, hashToCompare);
 
-  const valid = await bcrypt.compare(password, user.passwordHash);
-  if (!valid) {
+  if (!user || !user.passwordHash || !valid) {
     res.status(401).json({ error: "Invalid email or password." });
     return;
   }
@@ -156,7 +234,7 @@ router.post("/auth/logout", (req, res): void => {
 router.get("/auth/verify-email", async (req, res): Promise<void> => {
   const { token: verToken } = req.query as { token?: string };
   if (!verToken) {
-    res.status(400).json({ error: "Missing token." });
+    res.status(400).json({ error: "Missing token.", code: "missing_token" });
     return;
   }
 
@@ -166,12 +244,18 @@ router.get("/auth/verify-email", async (req, res): Promise<void> => {
     .where(eq(usersTable.verificationToken, verToken));
 
   if (!user) {
-    res.status(400).json({ error: "Invalid or expired verification link." });
+    res.status(400).json({
+      error: "This verification link is invalid. It may have already been used — try signing in.",
+      code: "invalid_token",
+    });
     return;
   }
 
   if (user.verificationExpires && user.verificationExpires < new Date()) {
-    res.status(400).json({ error: "Verification link has expired. Please request a new one." });
+    res.status(400).json({
+      error: "This verification link has expired. Request a new one below.",
+      code: "expired_token",
+    });
     return;
   }
 
@@ -180,12 +264,48 @@ router.get("/auth/verify-email", async (req, res): Promise<void> => {
     .set({ emailVerified: true, verificationToken: null, verificationExpires: null })
     .where(eq(usersTable.id, user.id));
 
+  // Now that the user has confirmed their email, kick off the welcome series.
+  // We do this here (rather than at registration) so we never email people
+  // who never validated their address.
+  //
+  // Use an atomic "claim" update — UPDATE … WHERE welcome_email_sent_at IS
+  // NULL — so two concurrent verify clicks can't both send the welcome
+  // email. Only the request whose UPDATE actually changed a row sends.
+  if (!user.welcomeEmailSentAt) {
+    const claim = await db
+      .update(usersTable)
+      .set({ welcomeEmailSentAt: new Date() })
+      .where(and(eq(usersTable.id, user.id), isNull(usersTable.welcomeEmailSentAt)))
+      .returning({ id: usersTable.id });
+
+    if (claim.length === 1) {
+      const firstName = user.firstName || user.email?.split("@")[0] || "";
+      EmailService.sendWelcome(user.email!, firstName)
+        .then((ok) => {
+          if (!ok) {
+            // Roll the claim back so a future click can retry.
+            return db
+              .update(usersTable)
+              .set({ welcomeEmailSentAt: null })
+              .where(eq(usersTable.id, user.id));
+          }
+        })
+        .catch((err) => {
+          logger.error({ err, userId: user.id }, "Welcome email failed");
+          db.update(usersTable)
+            .set({ welcomeEmailSentAt: null })
+            .where(eq(usersTable.id, user.id))
+            .catch(() => { /* best-effort rollback */ });
+        });
+    }
+  }
+
   logger.info({ userId: user.id }, "Email verified");
   res.json({ ok: true, message: "Email verified! You can now sign in." });
 });
 
 // ── Resend Verification ───────────────────────────────────────────────────────
-router.post("/auth/resend-verification", async (req, res): Promise<void> => {
+router.post("/auth/resend-verification", passwordEmailRateLimiter, async (req, res): Promise<void> => {
   const { email } = req.body as { email?: string };
   if (!email) {
     res.status(400).json({ error: "Email required." });
@@ -212,14 +332,15 @@ router.post("/auth/resend-verification", async (req, res): Promise<void> => {
     .set({ verificationToken: verToken, verificationExpires: verExpires })
     .where(eq(usersTable.id, user.id));
 
-  const verifyUrl = `${BASE_URL}/verify-email?token=${verToken}`;
+  const baseUrl = baseUrlFromReq(req);
+  const verifyUrl = `${baseUrl}/verify-email?token=${verToken}`;
   await EmailService.sendVerificationEmail(normalizedEmail, user.firstName || "", verifyUrl);
 
   res.json({ message: "If that email is registered and unverified, a new link has been sent." });
 });
 
 // ── Forgot Password ───────────────────────────────────────────────────────────
-router.post("/auth/forgot-password", async (req, res): Promise<void> => {
+router.post("/auth/forgot-password", passwordEmailRateLimiter, async (req, res): Promise<void> => {
   const { email } = req.body as { email?: string };
   if (!email) {
     res.status(400).json({ error: "Email required." });
@@ -241,7 +362,8 @@ router.post("/auth/forgot-password", async (req, res): Promise<void> => {
       .set({ resetToken: resetTok, resetExpires: resetExp })
       .where(eq(usersTable.id, user.id));
 
-    const resetUrl = `${BASE_URL}/reset-password?token=${resetTok}`;
+    const baseUrl = baseUrlFromReq(req);
+    const resetUrl = `${baseUrl}/reset-password?token=${resetTok}`;
     await EmailService.sendPasswordReset(normalizedEmail, user.firstName || "", resetUrl);
   }
 
@@ -250,7 +372,7 @@ router.post("/auth/forgot-password", async (req, res): Promise<void> => {
 });
 
 // ── Reset Password ────────────────────────────────────────────────────────────
-router.post("/auth/reset-password", async (req, res): Promise<void> => {
+router.post("/auth/reset-password", passwordEmailRateLimiter, async (req, res): Promise<void> => {
   const { token: resetTok, password } = req.body as { token?: string; password?: string };
 
   if (!resetTok || !password) {
@@ -287,6 +409,48 @@ router.post("/auth/reset-password", async (req, res): Promise<void> => {
 
   logger.info({ userId: user.id }, "Password reset");
   res.json({ ok: true, message: "Password updated successfully. You can now sign in." });
+});
+
+// ── Change Password (logged-in users) ─────────────────────────────────────────
+router.post("/auth/change-password", requireAuth, async (req, res): Promise<void> => {
+  const { currentPassword, newPassword } = req.body as {
+    currentPassword?: string;
+    newPassword?: string;
+  };
+
+  if (!currentPassword || !newPassword) {
+    res.status(400).json({ error: "Current and new password are required." });
+    return;
+  }
+  if (newPassword.length < 8) {
+    res.status(400).json({ error: "New password must be at least 8 characters." });
+    return;
+  }
+
+  const [user] = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.id, req.userId!));
+
+  if (!user || !user.passwordHash) {
+    res.status(404).json({ error: "Account not found." });
+    return;
+  }
+
+  const valid = await bcrypt.compare(currentPassword, user.passwordHash);
+  if (!valid) {
+    res.status(401).json({ error: "Current password is incorrect." });
+    return;
+  }
+
+  const passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+  await db
+    .update(usersTable)
+    .set({ passwordHash })
+    .where(eq(usersTable.id, user.id));
+
+  logger.info({ userId: user.id }, "Password changed");
+  res.json({ ok: true, message: "Password updated." });
 });
 
 // ── Get Current Session ───────────────────────────────────────────────────────

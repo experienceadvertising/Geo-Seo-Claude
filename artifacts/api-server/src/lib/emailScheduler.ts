@@ -23,10 +23,19 @@ function getFirstName(user: { firstName?: string | null; email?: string | null }
 async function runWelcomeSeries() {
   logger.info("Email scheduler: running welcome series check");
 
+  // Only email users who have actually verified their address. Sending the
+  // follow-up cadence to unverified accounts wastes Postmark quota and hurts
+  // sender reputation.
   const users = await db
     .select()
     .from(usersTable)
-    .where(and(eq(usersTable.emailOptOut, false), isNotNull(usersTable.email)));
+    .where(
+      and(
+        eq(usersTable.emailOptOut, false),
+        eq(usersTable.emailVerified, true),
+        isNotNull(usersTable.email),
+      ),
+    );
 
   for (const user of users) {
     if (!user.email) continue;

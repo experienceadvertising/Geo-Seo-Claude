@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { Link } from "wouter";
+import { useEffect, useState } from "react";
+import { Link, useLocation } from "wouter";
 import { Loader2, Sparkles, CheckCircle2 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,7 +14,30 @@ export default function SignUpPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [resent, setResent] = useState(false);
+  const [resending, setResending] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { isLoaded, isSignedIn } = useAuth();
+  const [, setLocation] = useLocation();
+
+  // If the user is already signed in, send them to the dashboard rather than
+  // showing the sign-up form.
+  useEffect(() => {
+    if (isLoaded && isSignedIn) setLocation("/");
+  }, [isLoaded, isSignedIn, setLocation]);
+
+  async function handleResend() {
+    if (!email || resending) return;
+    setResending(true);
+    try {
+      await customFetch("/api/auth/resend-verification", {
+        method: "POST",
+        body: JSON.stringify({ email }),
+      });
+      setResent(true);
+    } catch { /* ignore — endpoint always returns success */ }
+    finally { setResending(false); }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -43,6 +67,16 @@ export default function SignUpPage() {
               We sent a verification link to <strong>{email}</strong>. Click the link to activate your account.
             </p>
             <p className="text-xs text-muted-foreground">
+              The link will expire in 24 hours. Don't see it? Check your spam folder.
+            </p>
+            {resent ? (
+              <p className="text-sm text-emerald-700">A new verification link has been sent.</p>
+            ) : (
+              <Button variant="outline" size="sm" onClick={handleResend} disabled={resending}>
+                {resending ? "Sending…" : "Resend verification email"}
+              </Button>
+            )}
+            <p className="text-xs text-muted-foreground pt-2">
               Already verified?{" "}
               <Link href="/sign-in" className="text-emerald-600 font-medium hover:underline">
                 Sign in
@@ -53,6 +87,9 @@ export default function SignUpPage() {
       </div>
     );
   }
+
+  // Avoid flashing the sign-up form for users who are already authenticated.
+  if (!isLoaded || isSignedIn) return null;
 
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4">

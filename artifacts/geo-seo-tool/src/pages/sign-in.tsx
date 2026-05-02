@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Loader2, Sparkles } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -8,6 +8,18 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { customFetch } from "@workspace/api-client-react";
 
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+function getNextPath(): string {
+  // Read ?next=... from the URL. Restrict to same-origin paths to avoid open
+  // redirect vulnerabilities — only allow values that start with "/".
+  const raw = new URLSearchParams(window.location.search).get("next");
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return "/";
+  // Strip BASE prefix if present so wouter receives a router-relative path.
+  if (BASE && raw.startsWith(BASE + "/")) return raw.slice(BASE.length) || "/";
+  return raw;
+}
+
 export default function SignInPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -15,8 +27,15 @@ export default function SignInPage() {
   const [unverified, setUnverified] = useState(false);
   const [resent, setResent] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { refresh } = useAuth();
+  const { refresh, isLoaded, isSignedIn } = useAuth();
   const [, setLocation] = useLocation();
+
+  // Send already-signed-in users to wherever they were headed (or home).
+  useEffect(() => {
+    if (isLoaded && isSignedIn) {
+      setLocation(getNextPath());
+    }
+  }, [isLoaded, isSignedIn, setLocation]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -29,7 +48,7 @@ export default function SignInPage() {
         body: JSON.stringify({ email, password }),
       });
       await refresh();
-      setLocation("/");
+      setLocation(getNextPath());
     } catch (err: any) {
       if (err?.body?.code === "email_not_verified") {
         setUnverified(true);
@@ -50,6 +69,11 @@ export default function SignInPage() {
       setResent(true);
     } catch { /* ignore */ }
   }
+
+  // While we are still figuring out whether the visitor is logged in, render
+  // nothing — this avoids a flash of the sign-in form for already-signed-in
+  // users.
+  if (!isLoaded || isSignedIn) return null;
 
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4">

@@ -1,18 +1,27 @@
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
-import { Loader2, CheckCircle2, XCircle } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { customFetch } from "@workspace/api-client-react";
 
+type Status = "loading" | "success" | "error";
+
 export default function VerifyEmailPage() {
-  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
+  const [status, setStatus] = useState<Status>("loading");
   const [message, setMessage] = useState("");
+  const [errorCode, setErrorCode] = useState<string | null>(null);
+  const [resendEmail, setResendEmail] = useState("");
+  const [resent, setResent] = useState(false);
+  const [resending, setResending] = useState(false);
 
   useEffect(() => {
     const token = new URLSearchParams(window.location.search).get("token");
     if (!token) {
       setStatus("error");
+      setErrorCode("missing_token");
       setMessage("Missing verification token. Please use the link from your email.");
       return;
     }
@@ -23,9 +32,27 @@ export default function VerifyEmailPage() {
       })
       .catch((err: any) => {
         setStatus("error");
-        setMessage(err?.body?.error || "Invalid or expired link. Please request a new verification email.");
+        setErrorCode(err?.body?.code || null);
+        setMessage(
+          err?.body?.error ||
+            "We couldn't verify this link. Request a new one and try again.",
+        );
       });
   }, []);
+
+  async function handleResend(e: React.FormEvent) {
+    e.preventDefault();
+    if (!resendEmail || resending) return;
+    setResending(true);
+    try {
+      await customFetch("/api/auth/resend-verification", {
+        method: "POST",
+        body: JSON.stringify({ email: resendEmail }),
+      });
+      setResent(true);
+    } catch { /* endpoint always returns success */ }
+    finally { setResending(false); }
+  }
 
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4">
@@ -37,6 +64,7 @@ export default function VerifyEmailPage() {
               <h2 className="text-xl font-bold">Verifying your email…</h2>
             </>
           )}
+
           {status === "success" && (
             <>
               <CheckCircle2 className="h-14 w-14 text-emerald-500 mx-auto" />
@@ -47,14 +75,60 @@ export default function VerifyEmailPage() {
               </Link>
             </>
           )}
+
           {status === "error" && (
             <>
               <XCircle className="h-14 w-14 text-red-500 mx-auto" />
               <h2 className="text-xl font-bold">Verification failed</h2>
               <p className="text-muted-foreground text-sm">{message}</p>
-              <Link href="/sign-up">
-                <Button variant="outline">Back to sign up</Button>
-              </Link>
+
+              {errorCode === "invalid_token" && (
+                <p className="text-xs text-muted-foreground">
+                  This often means the link has already been used. Try signing in
+                  with the account you created.
+                </p>
+              )}
+
+              {/* Inline resend form: never make the user navigate away just to
+                  request a new verification email. */}
+              {resent ? (
+                <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-800">
+                  If that email is registered and unverified, a new link has been sent.
+                </div>
+              ) : (
+                <form onSubmit={handleResend} className="space-y-3 text-left pt-2">
+                  <Label htmlFor="resend-email" className="text-sm">
+                    Send a new verification link
+                  </Label>
+                  <Input
+                    id="resend-email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={resendEmail}
+                    onChange={(e) => setResendEmail(e.target.value)}
+                    required
+                    autoComplete="email"
+                  />
+                  <Button
+                    type="submit"
+                    className="w-full bg-emerald-600 hover:bg-emerald-700"
+                    disabled={resending || !resendEmail}
+                  >
+                    <Mail className="h-4 w-4 mr-2" />
+                    {resending ? "Sending…" : "Send new link"}
+                  </Button>
+                </form>
+              )}
+
+              <div className="flex items-center justify-center gap-3 pt-2 text-xs">
+                <Link href="/sign-in" className="text-emerald-600 hover:underline">
+                  Sign in
+                </Link>
+                <span className="text-muted-foreground">·</span>
+                <Link href="/sign-up" className="text-emerald-600 hover:underline">
+                  Create account
+                </Link>
+              </div>
             </>
           )}
         </CardContent>
