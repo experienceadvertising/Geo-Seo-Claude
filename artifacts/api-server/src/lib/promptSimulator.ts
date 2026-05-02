@@ -342,14 +342,29 @@ export async function runPromptSimulation(
 ): Promise<{ results: PromptResultRow[]; summary: SimulationSummary }> {
   const engines = ENGINES.filter((e) => !selectedEngines || selectedEngines.includes(e.id));
 
-  const results: PromptResultRow[] = [];
-  for (const prompt of prompts) {
-    // Run all engines for this prompt in parallel
-    const engineResults = await Promise.all(
-      engines.map((e) => runEngineForPrompt(e.id, e.label, e.fn, prompt, brandName, domain))
-    );
-    results.push({ prompt, engines: engineResults });
+  // Each prompt runs all engines in parallel. We additionally run several
+  // prompts in parallel (bounded concurrency) so a 25-prompt simulation
+  // doesn't serialize on the prompt axis. Concurrency=3 is a safe middle
+  // ground — high enough to cut wall-clock time roughly 3x, low enough to
+  // stay well under per-engine rate limits even with 4 engines × 3 prompts
+  // in flight.
+  const PROMPT_CONCURRENCY = 3;
+  const results: PromptResultRow[] = new Array(prompts.length);
+  let nextIdx = 0;
+  async function worker() {
+    while (true) {
+      const idx = nextIdx++;
+      if (idx >= prompts.length) return;
+      const prompt = prompts[idx];
+      const engineResults = await Promise.all(
+        engines.map((e) => runEngineForPrompt(e.id, e.label, e.fn, prompt, brandName, domain))
+      );
+      results[idx] = { prompt, engines: engineResults };
+    }
   }
+  await Promise.all(
+    Array.from({ length: Math.min(PROMPT_CONCURRENCY, prompts.length) }, worker),
+  );
 
   // Build summary
   const perEngine = engines.map((e) => {

@@ -1,7 +1,14 @@
 import { db } from "@workspace/db";
 import { usersTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
+import { randomBytes } from "crypto";
 import { getUncachableStripeClient, getStripeSync } from "./stripeClient";
+import { EmailService } from "./emailService";
+import { logger } from "./logger";
+
+function newUnsubToken(): string {
+  return randomBytes(32).toString("hex");
+}
 
 async function updateDbPlan(userId: string, plan: "free" | "pro" | "agency") {
   try {
@@ -10,7 +17,7 @@ async function updateDbPlan(userId: string, plan: "free" | "pro" | "agency") {
       .set({ plan })
       .where(eq(usersTable.id, userId));
   } catch (err) {
-    console.error(`Failed to update DB plan for user ${userId}:`, err);
+    logger.error({ err, userId, plan }, "Failed to update DB plan");
   }
 }
 
@@ -28,21 +35,68 @@ async function getPlanFromPriceId(priceId: string): Promise<"pro" | "agency" | n
   }
 }
 
-async function getUserIdFromCustomer(customerId: string): Promise<string | null> {
+// Resolve a Stripe customer id back to our local user row. Returns the
+// minimal contact fields we need for outbound notification emails.
+async function getUserFromCustomer(
+  customerId: string,
+): Promise<{ id: string; email: string | null; firstName: string | null; plan: string } | null> {
   try {
     const result = await db.execute(
-      sql`SELECT id FROM users WHERE stripe_customer_id = ${customerId}`
+      sql`SELECT id, email, first_name AS "firstName", plan FROM users WHERE stripe_customer_id = ${customerId} LIMIT 1`
     );
-    if (result.rows[0]) return (result.rows[0] as any).id;
+    const row = result.rows[0] as any;
+    if (row) return { id: row.id, email: row.email ?? null, firstName: row.firstName ?? null, plan: row.plan ?? "free" };
   } catch { /* ignore */ }
 
+  // Fall back to the userId stashed in the Stripe customer metadata.
   try {
     const stripe = await getUncachableStripeClient();
     const customer = await stripe.customers.retrieve(customerId);
     if (customer.deleted) return null;
-    return (customer as any).metadata?.userId ?? null;
+    const userId = (customer as any).metadata?.userId;
+    if (!userId) return null;
+    const [row] = await db
+      .select({
+        id: usersTable.id,
+        email: usersTable.email,
+        firstName: usersTable.firstName,
+        plan: usersTable.plan,
+      })
+      .from(usersTable)
+      .where(eq(usersTable.id, userId));
+    return row ?? null;
   } catch {
     return null;
+  }
+}
+
+function planLabel(plan: string): string {
+  if (plan === "agency") return "Agency";
+  if (plan === "pro") return "Pro";
+  return "paid";
+}
+
+// Atomic idempotency claim. Inserts the event id into processed_webhook_events
+// — the row only "wins" the first time we see this event. Stripe legitimately
+// retries webhook deliveries (and during outages can deliver out of order /
+// multiple times), so without this guard we'd resend payment-failed and
+// subscription-canceled emails — and re-apply plan transitions — on every
+// retry.
+async function claimEvent(eventId: string, eventType: string): Promise<boolean> {
+  if (!eventId) return true; // unparseable event — let it through, can't dedupe
+  try {
+    const result = await db.execute(
+      sql`INSERT INTO processed_webhook_events (event_id, event_type)
+          VALUES (${eventId}, ${eventType})
+          ON CONFLICT (event_id) DO NOTHING
+          RETURNING event_id`
+    );
+    return result.rows.length > 0;
+  } catch (err) {
+    // If the dedupe table itself is unavailable, fall back to processing
+    // (better to risk a duplicate than to silently drop an event).
+    logger.error({ err, eventId }, "Webhook idempotency check failed — processing anyway");
+    return true;
   }
 }
 
@@ -54,21 +108,31 @@ export class WebhookHandlers {
       );
     }
 
-    // Let stripe-replit-sync handle the sync (best-effort)
-    try {
-      const sync = await getStripeSync();
-      await sync.processWebhook(payload, signature);
-    } catch (err) {
-      console.warn("StripeSync.processWebhook error (non-fatal):", (err as any)?.message);
-    }
+    // Signature verification is MANDATORY. stripe-replit-sync verifies the
+    // signature internally and throws on mismatch. If we let an unverified
+    // payload through, an attacker could POST a forged checkout.session.completed
+    // and grant themselves the Agency plan, or a forged subscription.deleted
+    // and downgrade a real customer. This must abort the request.
+    const sync = await getStripeSync();
+    await sync.processWebhook(payload, signature);
 
+    // Past this point the signature is valid — safe to parse.
     let event: any;
     try {
       event = JSON.parse(payload.toString());
     } catch { return; }
 
     const type: string = event?.type ?? "";
+    const eventId: string = event?.id ?? "";
     const obj = event?.data?.object;
+
+    // Idempotency — if we've already processed this event, skip side effects
+    // (plan changes, emails). Stripe retries duplicates routinely.
+    const isFirstDelivery = await claimEvent(eventId, type);
+    if (!isFirstDelivery) {
+      logger.info({ eventId, type }, "Webhook event already processed — skipping");
+      return;
+    }
 
     if (type === "checkout.session.completed") {
       const userId: string | null = obj?.client_reference_id || obj?.metadata?.userId;
@@ -80,14 +144,22 @@ export class WebhookHandlers {
         if (plan) await updateDbPlan(userId, plan);
 
         if (customerId) {
+          // Insert path needs a token (NOT NULL); update path leaves the
+          // existing token alone.
           await db
             .insert(usersTable)
-            .values({ id: userId, email: obj?.customer_details?.email ?? null, stripeCustomerId: customerId, plan: plan ?? "free" })
+            .values({
+              id: userId,
+              email: obj?.customer_details?.email ?? null,
+              stripeCustomerId: customerId,
+              plan: plan ?? "free",
+              unsubscribeToken: newUnsubToken(),
+            })
             .onConflictDoUpdate({
               target: usersTable.id,
               set: { stripeCustomerId: customerId, ...(plan ? { plan } : {}) },
             })
-            .catch((e) => console.error("Failed to upsert user:", e.message));
+            .catch((e) => logger.error({ err: e?.message, userId }, "Failed to upsert user"));
         }
       }
     }
@@ -96,22 +168,51 @@ export class WebhookHandlers {
       const customerId: string = obj?.customer;
       const status: string = obj?.status;
       const priceId: string | null = obj?.items?.data?.[0]?.price?.id ?? null;
-      const userId = customerId ? await getUserIdFromCustomer(customerId) : null;
+      const user = customerId ? await getUserFromCustomer(customerId) : null;
 
-      if (userId) {
+      if (user) {
         if (status === "active" || status === "trialing") {
           const plan = priceId ? await getPlanFromPriceId(priceId) : null;
-          if (plan) await updateDbPlan(userId, plan);
-        } else if (["canceled", "unpaid", "past_due"].includes(status)) {
-          await updateDbPlan(userId, "free");
+          if (plan) await updateDbPlan(user.id, plan);
+        } else if (status === "past_due") {
+          // Don't downgrade yet — Stripe will retry the invoice for several
+          // days under Smart Retries. Downgrading immediately on past_due
+          // means a one-day card hiccup wipes out a paying customer's
+          // access. The actual downgrade happens when Stripe gives up and
+          // either fires customer.subscription.deleted or transitions the
+          // sub to canceled/unpaid.
+          logger.info({ userId: user.id, status }, "Subscription past_due — keeping plan during grace period");
+        } else if (status === "canceled" || status === "unpaid") {
+          await updateDbPlan(user.id, "free");
         }
       }
     }
 
     if (type === "customer.subscription.deleted") {
       const customerId: string = obj?.customer;
-      const userId = customerId ? await getUserIdFromCustomer(customerId) : null;
-      if (userId) await updateDbPlan(userId, "free");
+      const user = customerId ? await getUserFromCustomer(customerId) : null;
+      if (user) {
+        const previousPlan = user.plan;
+        await updateDbPlan(user.id, "free");
+        if (user.email && previousPlan !== "free") {
+          EmailService.sendSubscriptionCanceled(user.email, user.firstName || "", planLabel(previousPlan)).catch(
+            (err) => logger.error({ err, userId: user.id }, "Subscription-canceled email failed"),
+          );
+        }
+      }
+    }
+
+    if (type === "invoice.payment_failed") {
+      const customerId: string = obj?.customer;
+      const attemptCount: number = obj?.attempt_count ?? 1;
+      const nextRetryUnix: number | null = obj?.next_payment_attempt ?? null;
+      const nextRetryAt = nextRetryUnix ? new Date(nextRetryUnix * 1000) : null;
+      const user = customerId ? await getUserFromCustomer(customerId) : null;
+      if (user?.email) {
+        EmailService.sendPaymentFailed(user.email, user.firstName || "", attemptCount, nextRetryAt).catch(
+          (err) => logger.error({ err, userId: user.id }, "Payment-failed email failed"),
+        );
+      }
     }
   }
 }

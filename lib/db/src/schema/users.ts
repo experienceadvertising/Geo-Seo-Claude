@@ -25,6 +25,13 @@ export const usersTable = pgTable("users", {
 
   // Preferences
   emailOptOut: boolean("email_opt_out").default(false).notNull(),
+
+  // Per-user random token used in the unsubscribe link of every outbound
+  // email. We never put the user id (or anything else identifying) in the
+  // URL — just an opaque secret that maps back to one row.
+  // NOT NULL + UNIQUE enforced at the DB level via raw migration; declared
+  // here as required so any new code path inserting a user must supply one.
+  unsubscribeToken: text("unsubscribe_token").notNull(),
 });
 
 export type User = typeof usersTable.$inferSelect;

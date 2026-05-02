@@ -143,6 +143,22 @@ export default function SignInPage() {
               <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700" disabled={loading}>
                 {loading ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Signing in…</> : "Sign in"}
               </Button>
+              {resent ? (
+                <p className="text-center text-xs text-emerald-700">Verification link sent. Check your inbox.</p>
+              ) : (
+                <p className="text-center text-xs text-muted-foreground">
+                  Need a new verification link?{" "}
+                  <button
+                    type="button"
+                    onClick={handleResend}
+                    disabled={!email}
+                    className="text-emerald-600 font-medium hover:underline disabled:text-muted-foreground/50 disabled:no-underline disabled:cursor-not-allowed"
+                  >
+                    Resend it
+                  </button>
+                  {!email && <span className="text-muted-foreground/60"> (enter your email above first)</span>}
+                </p>
+              )}
               <p className="text-center text-sm text-muted-foreground">
                 Don't have an account?{" "}
                 <Link href="/sign-up" className="text-emerald-600 font-medium hover:underline">

@@ -5,6 +5,15 @@ import { getUserPlan } from "./planUtils";
 import { EmailService } from "./emailService";
 import { logger } from "./logger";
 
+// Cron-driven sends have no inbound HTTP request to derive a base URL from,
+// so we use the configured FRONTEND_URL (preferred in prod) or fall back to
+// the production domain.
+const SCHEDULER_BASE_URL = (process.env.FRONTEND_URL || "https://aeoimprovement.com").replace(/\/$/, "");
+
+function unsubUrl(token: string | null | undefined): string | undefined {
+  return token ? `${SCHEDULER_BASE_URL}/api/auth/unsubscribe?token=${token}` : undefined;
+}
+
 function daysAgo(n: number): Date {
   const d = new Date();
   d.setDate(d.getDate() - n);
@@ -46,7 +55,7 @@ async function runWelcomeSeries() {
       !user.welcomeD3SentAt &&
       new Date(user.createdAt) <= daysAgo(3)
     ) {
-      const ok = await EmailService.sendWelcomeD3(user.email, firstName);
+      const ok = await EmailService.sendWelcomeD3(user.email, firstName, unsubUrl(user.unsubscribeToken));
       if (ok) {
         await db
           .update(usersTable)
@@ -60,7 +69,21 @@ async function runWelcomeSeries() {
       !user.welcomeD7SentAt &&
       new Date(user.createdAt) <= daysAgo(7)
     ) {
-      const ok = await EmailService.sendWelcomeD7(user.email, firstName);
+      // The D7 email pitches Pro. Don't send it to users already on Pro or
+      // Agency — at best it's noise, at worst it makes us look like we don't
+      // know who our paying customers are.
+      const plan = await getUserPlan(user.id);
+      if (plan !== "free") {
+        // Mark it "sent" anyway so we don't keep re-checking this user every
+        // day for the rest of time.
+        await db
+          .update(usersTable)
+          .set({ welcomeD7SentAt: new Date() })
+          .where(eq(usersTable.id, user.id));
+        continue;
+      }
+
+      const ok = await EmailService.sendWelcomeD7(user.email, firstName, unsubUrl(user.unsubscribeToken));
       if (ok) {
         await db
           .update(usersTable)
@@ -102,18 +125,22 @@ async function runWeeklyDigests() {
     const latestAudit = weekAudits[0];
     const firstName = getFirstName(user);
 
-    const ok = await EmailService.sendWeeklyDigest(user.email, {
-      firstName,
-      auditCount: weekAudits.length,
-      latestAudit: latestAudit
-        ? {
-            url: latestAudit.url,
-            geoScore: latestAudit.geoScore,
-            quickWins: (latestAudit.quickWins as string[]) ?? [],
-            createdAt: latestAudit.createdAt,
-          }
-        : undefined,
-    });
+    const ok = await EmailService.sendWeeklyDigest(
+      user.email,
+      {
+        firstName,
+        auditCount: weekAudits.length,
+        latestAudit: latestAudit
+          ? {
+              url: latestAudit.url,
+              geoScore: latestAudit.geoScore,
+              quickWins: (latestAudit.quickWins as string[]) ?? [],
+              createdAt: latestAudit.createdAt,
+            }
+          : undefined,
+      },
+      unsubUrl(user.unsubscribeToken),
+    );
 
     if (ok) {
       await db
@@ -166,15 +193,19 @@ async function runMonthlyReports() {
 
     const firstName = getFirstName(user);
 
-    const ok = await EmailService.sendMonthlyReport(user.email, {
-      firstName,
-      month: label,
-      totalAudits: monthAudits.length,
-      avgScore,
-      bestScore: best.geoScore * 100,
-      topUrl: best.url,
-      quickWins: uniqueWins,
-    });
+    const ok = await EmailService.sendMonthlyReport(
+      user.email,
+      {
+        firstName,
+        month: label,
+        totalAudits: monthAudits.length,
+        avgScore,
+        bestScore: best.geoScore * 100,
+        topUrl: best.url,
+        quickWins: uniqueWins,
+      },
+      unsubUrl(user.unsubscribeToken),
+    );
 
     if (ok) {
       await db

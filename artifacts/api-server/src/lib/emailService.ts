@@ -8,11 +8,14 @@ import {
   monthlyReportEmail,
   verificationEmail,
   passwordResetEmail,
+  passwordChangedEmail,
+  paymentFailedEmail,
+  subscriptionCanceledEmail,
   type WeeklyDigestData,
   type MonthlyReportData,
 } from "./emailTemplates";
 
-const FROM_EMAIL = "AEO Improvement <info@aeoimprovement.com>";
+const FROM_EMAIL = process.env.POSTMARK_FROM_EMAIL || "AEO Improvement <info@aeoimprovement.com>";
 
 function getClient(): postmark.ServerClient | null {
   const token = process.env.POSTMARK_API_TOKEN;
@@ -28,7 +31,8 @@ async function send(
   subject: string,
   html: string,
   text: string,
-  tag: string
+  tag: string,
+  unsubscribeUrl?: string,
 ): Promise<boolean> {
   const client = getClient();
   if (!client) return false;
@@ -36,6 +40,16 @@ async function send(
     logger.warn({ to, tag }, "Skipping email — invalid address");
     return false;
   }
+  // Set RFC 2369 List-Unsubscribe header for marketing/digest mail. Modern
+  // mail clients (Gmail, Apple Mail) surface this as a 1-click unsubscribe
+  // button at the top of the email — better deliverability + CAN-SPAM /
+  // RFC 8058 compliance.
+  const headers = unsubscribeUrl
+    ? [
+        { Name: "List-Unsubscribe", Value: `<${unsubscribeUrl}>` },
+        { Name: "List-Unsubscribe-Post", Value: "List-Unsubscribe=One-Click" },
+      ]
+    : undefined;
   try {
     await client.sendEmail({
       From: FROM_EMAIL,
@@ -45,6 +59,7 @@ async function send(
       TextBody: text,
       MessageStream: "outbound",
       Tag: tag,
+      Headers: headers,
     });
     logger.info({ to, tag }, "Email sent");
     return true;
@@ -55,31 +70,32 @@ async function send(
 }
 
 export const EmailService = {
-  async sendWelcome(email: string, firstName: string): Promise<boolean> {
-    const { subject, html, text } = welcomeEmail(firstName);
-    return send(email, subject, html, text, "welcome");
+  async sendWelcome(email: string, firstName: string, unsubscribeUrl?: string): Promise<boolean> {
+    const { subject, html, text } = welcomeEmail(firstName, unsubscribeUrl);
+    return send(email, subject, html, text, "welcome", unsubscribeUrl);
   },
 
-  async sendWelcomeD3(email: string, firstName: string): Promise<boolean> {
-    const { subject, html, text } = welcomeD3Email(firstName);
-    return send(email, subject, html, text, "welcome-d3");
+  async sendWelcomeD3(email: string, firstName: string, unsubscribeUrl?: string): Promise<boolean> {
+    const { subject, html, text } = welcomeD3Email(firstName, unsubscribeUrl);
+    return send(email, subject, html, text, "welcome-d3", unsubscribeUrl);
   },
 
-  async sendWelcomeD7(email: string, firstName: string): Promise<boolean> {
-    const { subject, html, text } = welcomeD7Email(firstName);
-    return send(email, subject, html, text, "welcome-d7");
+  async sendWelcomeD7(email: string, firstName: string, unsubscribeUrl?: string): Promise<boolean> {
+    const { subject, html, text } = welcomeD7Email(firstName, unsubscribeUrl);
+    return send(email, subject, html, text, "welcome-d7", unsubscribeUrl);
   },
 
-  async sendWeeklyDigest(email: string, data: WeeklyDigestData): Promise<boolean> {
-    const { subject, html, text } = weeklyDigestEmail(data);
-    return send(email, subject, html, text, "weekly-digest");
+  async sendWeeklyDigest(email: string, data: WeeklyDigestData, unsubscribeUrl?: string): Promise<boolean> {
+    const { subject, html, text } = weeklyDigestEmail(data, unsubscribeUrl);
+    return send(email, subject, html, text, "weekly-digest", unsubscribeUrl);
   },
 
-  async sendMonthlyReport(email: string, data: MonthlyReportData): Promise<boolean> {
-    const { subject, html, text } = monthlyReportEmail(data);
-    return send(email, subject, html, text, "monthly-report");
+  async sendMonthlyReport(email: string, data: MonthlyReportData, unsubscribeUrl?: string): Promise<boolean> {
+    const { subject, html, text } = monthlyReportEmail(data, unsubscribeUrl);
+    return send(email, subject, html, text, "monthly-report", unsubscribeUrl);
   },
 
+  // Transactional emails (no unsubscribe — legally exempt under CAN-SPAM).
   async sendVerificationEmail(email: string, firstName: string, verifyUrl: string): Promise<boolean> {
     const { subject, html, text } = verificationEmail(firstName, verifyUrl);
     return send(email, subject, html, text, "verify-email");
@@ -88,5 +104,20 @@ export const EmailService = {
   async sendPasswordReset(email: string, firstName: string, resetUrl: string): Promise<boolean> {
     const { subject, html, text } = passwordResetEmail(firstName, resetUrl);
     return send(email, subject, html, text, "password-reset");
+  },
+
+  async sendPasswordChanged(email: string, firstName: string): Promise<boolean> {
+    const { subject, html, text } = passwordChangedEmail(firstName, "");
+    return send(email, subject, html, text, "password-changed");
+  },
+
+  async sendPaymentFailed(email: string, firstName: string, attemptCount: number, nextRetryAt?: Date | null): Promise<boolean> {
+    const { subject, html, text } = paymentFailedEmail(firstName, attemptCount, nextRetryAt);
+    return send(email, subject, html, text, "payment-failed");
+  },
+
+  async sendSubscriptionCanceled(email: string, firstName: string, planName: string): Promise<boolean> {
+    const { subject, html, text } = subscriptionCanceledEmail(firstName, planName);
+    return send(email, subject, html, text, "subscription-canceled");
   },
 };

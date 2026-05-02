@@ -294,9 +294,31 @@ function SignedInDashboard() {
             </div>
           ) : !audits || audits.length === 0 ? (
             <Card className="border-dashed">
-              <CardContent className="py-12 text-center space-y-2">
+              <CardContent className="py-12 text-center space-y-4">
                 <Sparkles className="h-8 w-8 text-muted-foreground/40 mx-auto" />
                 <p className="text-muted-foreground">No audits yet. Enter a URL above to get your first AEO score.</p>
+                <div className="space-y-2">
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground/70">Or try one of these</p>
+                  <div className="flex flex-wrap items-center justify-center gap-2">
+                    {(() => {
+                      const samples = ["stripe.com", "notion.so", "anthropic.com"];
+                      const userDomain = user?.email?.split("@")[1];
+                      const chips = userDomain && !["gmail.com","yahoo.com","outlook.com","hotmail.com","icloud.com"].includes(userDomain)
+                        ? [userDomain, ...samples.slice(0, 2)]
+                        : samples;
+                      return chips.map((d) => (
+                        <button
+                          key={d}
+                          type="button"
+                          onClick={() => setUrl(d)}
+                          className="rounded-full border border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-400 transition-colors"
+                        >
+                          {d}
+                        </button>
+                      ));
+                    })()}
+                  </div>
+                </div>
               </CardContent>
             </Card>
           ) : (

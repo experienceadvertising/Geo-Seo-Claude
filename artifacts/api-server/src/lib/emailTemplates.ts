@@ -1,8 +1,10 @@
 const BASE_URL = process.env.FRONTEND_URL || "https://aeoimprovement.com";
 const BRAND_COLOR = "#10b981";
-const BRAND_DARK = "#059669";
 
-function layout(content: string, preheader: string): string {
+function layout(content: string, preheader: string, unsubscribeUrl?: string): string {
+  const unsubscribeLink = unsubscribeUrl
+    ? `<a href="${unsubscribeUrl}" style="color:#d1d5db;text-decoration:underline;">Unsubscribe</a> · `
+    : "";
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,7 +18,6 @@ function layout(content: string, preheader: string): string {
     <tr><td align="center">
       <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
 
-        <!-- Header -->
         <tr>
           <td style="background:linear-gradient(135deg,#064e3b,#065f46);border-radius:12px 12px 0 0;padding:28px 40px;text-align:center;">
             <span style="font-size:22px;font-weight:700;color:#ffffff;letter-spacing:-0.3px;">
@@ -25,22 +26,19 @@ function layout(content: string, preheader: string): string {
           </td>
         </tr>
 
-        <!-- Body -->
         <tr>
           <td style="background:#ffffff;padding:40px;border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb;">
             ${content}
           </td>
         </tr>
 
-        <!-- Footer -->
         <tr>
           <td style="background:#f9fafb;border:1px solid #e5e7eb;border-top:0;border-radius:0 0 12px 12px;padding:24px 40px;text-align:center;">
             <p style="margin:0 0 8px;font-size:12px;color:#9ca3af;">
               AEO Improvement · <a href="${BASE_URL}" style="color:${BRAND_COLOR};text-decoration:none;">aeoimprovement.com</a>
             </p>
             <p style="margin:0;font-size:11px;color:#d1d5db;">
-              <a href="${BASE_URL}/unsubscribe" style="color:#d1d5db;text-decoration:underline;">Unsubscribe</a> · 
-              <a href="mailto:info@aeoimprovement.com" style="color:#d1d5db;text-decoration:underline;">Contact support</a>
+              ${unsubscribeLink}<a href="mailto:info@aeoimprovement.com" style="color:#d1d5db;text-decoration:underline;">Contact support</a>
             </p>
           </td>
         </tr>
@@ -99,7 +97,7 @@ function scoreBar(label: string, score: number): string {
 }
 
 // ── Email 1: Welcome (Day 0) ─────────────────────────────────────────────────
-export function welcomeEmail(firstName: string): { subject: string; html: string; text: string } {
+export function welcomeEmail(firstName: string, unsubscribeUrl?: string) {
   const subject = `Welcome to AEO Improvement, ${firstName || "there"}!`;
   const html = layout(
     `${h1(`Welcome, ${firstName || "there"} 👋`)}
@@ -118,14 +116,15 @@ export function welcomeEmail(firstName: string): { subject: string; html: string
 
     ${divider()}
     ${p("Questions? Just reply to this email — we read every one.", "color:#6b7280;font-size:14px;")}`,
-    "You're set up. Run your first AEO audit now →"
+    "You're set up. Run your first AEO audit now →",
+    unsubscribeUrl,
   );
   const text = `Welcome to AEO Improvement!\n\nYou're now set up to track and improve your citability across ChatGPT, Claude, Gemini, and Perplexity.\n\nRun your first audit: ${BASE_URL}\n\nQuestions? Reply to this email.`;
   return { subject, html, text };
 }
 
 // ── Email 2: Day-3 Tips ──────────────────────────────────────────────────────
-export function welcomeD3Email(firstName: string): { subject: string; html: string; text: string } {
+export function welcomeD3Email(firstName: string, unsubscribeUrl?: string) {
   const subject = "3 quick AEO wins you can do this week";
   const html = layout(
     `${h1("3 quick wins for better AI citations")}
@@ -143,14 +142,15 @@ export function welcomeD3Email(firstName: string): { subject: string; html: stri
 
     ${divider()}
     ${p("The Fix Generator (Pro) writes your llms.txt, JSON-LD, and robots.txt patches automatically — copy and deploy in minutes.", "color:#6b7280;font-size:13px;")}`,
-    "3 high-impact improvements most sites can make this week →"
+    "3 high-impact improvements most sites can make this week →",
+    unsubscribeUrl,
   );
   const text = `Hi ${firstName || "there"},\n\n3 quick AEO wins:\n\n1. Add an llms.txt file at /llms.txt\n2. Add FAQPage JSON-LD schema\n3. Open robots.txt to AI bots (GPTBot, ClaudeBot)\n\nSee your audit: ${BASE_URL}\n\nThe Fix Generator (Pro) creates all of these for you automatically.`;
   return { subject, html, text };
 }
 
 // ── Email 3: Day-7 Upgrade Prompt ────────────────────────────────────────────
-export function welcomeD7Email(firstName: string): { subject: string; html: string; text: string } {
+export function welcomeD7Email(firstName: string, unsubscribeUrl?: string) {
   const subject = "What Pro unlocks for your AEO strategy";
   const html = layout(
     `${h1("Ready to go deeper?")}
@@ -169,7 +169,8 @@ export function welcomeD7Email(firstName: string): { subject: string; html: stri
     </div>
 
     ${p("Cancel anytime. No long-term contracts.", "color:#9ca3af;font-size:13px;text-align:center;")}`,
-    "Here's what Pro unlocks for your AEO strategy →"
+    "Here's what Pro unlocks for your AEO strategy →",
+    unsubscribeUrl,
   );
   const text = `Hi ${firstName || "there"},\n\nHere's what Pro unlocks:\n- All 4 AI engines (Claude, Gemini, Perplexity)\n- Fix Generator (llms.txt, JSON-LD, robots.txt)\n- Competitor citation gap table\n- 1-year history & sentiment analysis\n\nUpgrade: ${BASE_URL}/pricing\n\nCancel anytime.`;
   return { subject, html, text };
@@ -187,7 +188,7 @@ export interface WeeklyDigestData {
   auditCount: number;
 }
 
-export function weeklyDigestEmail(data: WeeklyDigestData): { subject: string; html: string; text: string } {
+export function weeklyDigestEmail(data: WeeklyDigestData, unsubscribeUrl?: string) {
   const { firstName, latestAudit, auditCount } = data;
   const subject = `Your AEO weekly digest`;
   const scoreSection = latestAudit
@@ -221,14 +222,15 @@ export function weeklyDigestEmail(data: WeeklyDigestData): { subject: string; ht
       </tr>
     </table>
     ${scoreSection}`,
-    `Your weekly AEO Improvement digest — ${auditCount} audit${auditCount !== 1 ? "s" : ""} this week`
+    `Your weekly AEO Improvement digest — ${auditCount} audit${auditCount !== 1 ? "s" : ""} this week`,
+    unsubscribeUrl,
   );
   const text = `Hi ${firstName || "there"}, your AEO weekly digest:\n\nAudits this week: ${auditCount}\n${latestAudit ? `Latest AEO score: ${Math.round(latestAudit.geoScore * 100)}\nTop quick win: ${latestAudit.quickWins[0] || "none"}\n` : ""}\nView your dashboard: ${BASE_URL}`;
   return { subject, html, text };
 }
 
-// ── Email: Email Verification ─────────────────────────────────────────────────
-export function verificationEmail(firstName: string, verifyUrl: string): { subject: string; html: string; text: string } {
+// ── Email: Email Verification (transactional — no unsubscribe) ────────────────
+export function verificationEmail(firstName: string, verifyUrl: string) {
   const subject = "Verify your AEO Improvement email address";
   const html = layout(
     `${h1("Confirm your email")}
@@ -239,14 +241,14 @@ export function verificationEmail(firstName: string, verifyUrl: string): { subje
     ${divider()}
     ${p("This link expires in 24 hours. If you didn't create an account, you can safely ignore this email.", "color:#6b7280;font-size:13px;")}
     ${p(`Or copy this link into your browser:<br/><a href="${verifyUrl}" style="color:${BRAND_COLOR};word-break:break-all;font-size:12px;">${verifyUrl}</a>`, "color:#6b7280;font-size:12px;")}`,
-    "Verify your email to activate your AEO Improvement account →"
+    "Verify your email to activate your AEO Improvement account →",
   );
   const text = `Hi ${firstName || "there"},\n\nVerify your AEO Improvement email address by visiting:\n${verifyUrl}\n\nThis link expires in 24 hours. If you didn't create an account, you can safely ignore this email.`;
   return { subject, html, text };
 }
 
-// ── Email: Password Reset ─────────────────────────────────────────────────────
-export function passwordResetEmail(firstName: string, resetUrl: string): { subject: string; html: string; text: string } {
+// ── Email: Password Reset (transactional — no unsubscribe) ────────────────────
+export function passwordResetEmail(firstName: string, resetUrl: string) {
   const subject = "Reset your AEO Improvement password";
   const html = layout(
     `${h1("Reset your password")}
@@ -257,9 +259,86 @@ export function passwordResetEmail(firstName: string, resetUrl: string): { subje
     ${divider()}
     ${p("This link expires in 1 hour. If you didn't request a password reset, you can safely ignore this email — your password won't change.", "color:#6b7280;font-size:13px;")}
     ${p(`Or copy this link into your browser:<br/><a href="${resetUrl}" style="color:${BRAND_COLOR};word-break:break-all;font-size:12px;">${resetUrl}</a>`, "color:#6b7280;font-size:12px;")}`,
-    "Reset your AEO Improvement password →"
+    "Reset your AEO Improvement password →",
   );
   const text = `Hi ${firstName || "there"},\n\nReset your AEO Improvement password by visiting:\n${resetUrl}\n\nThis link expires in 1 hour. If you didn't request this, ignore this email — your password won't change.`;
+  return { subject, html, text };
+}
+
+// ── Email: Password Changed (transactional — security notification) ───────────
+export function passwordChangedEmail(firstName: string, supportUrl: string) {
+  const subject = "Your AEO Improvement password was just changed";
+  const html = layout(
+    `${h1("Your password was changed")}
+    ${p(`Hi ${firstName || "there"}, this is a confirmation that the password for your AEO Improvement account was just changed.`)}
+    <table cellpadding="0" cellspacing="0" width="100%" style="margin:16px 0;background:#fefce8;border-radius:8px;">
+      <tr><td style="padding:16px 20px;font-size:14px;color:#713f12;">
+        <strong>Didn't make this change?</strong><br/>
+        Reset your password immediately and contact us at info@aeoimprovement.com — your account may be compromised.
+      </td></tr>
+    </table>
+    <div style="text-align:center;margin:24px 0;">
+      ${btn("Reset password →", `${BASE_URL}/forgot-password`)}
+    </div>
+    ${divider()}
+    ${p(`If you made this change, no further action is needed.`, "color:#6b7280;font-size:13px;")}`,
+    "Confirmation: your AEO Improvement password was just changed.",
+  );
+  const text = `Hi ${firstName || "there"},\n\nThis is a confirmation that the password for your AEO Improvement account was just changed.\n\nDidn't make this change? Reset your password immediately at ${BASE_URL}/forgot-password and contact info@aeoimprovement.com.`;
+  return { subject, html, text };
+}
+
+// ── Email: Payment Failed (transactional — billing) ───────────────────────────
+export function paymentFailedEmail(firstName: string, attemptCount: number, nextRetryAt?: Date | null) {
+  const subject = "Action needed: payment failed for AEO Improvement";
+  const retryLine = nextRetryAt
+    ? `We'll automatically retry on ${nextRetryAt.toLocaleDateString("en-US", { month: "long", day: "numeric" })}.`
+    : "We'll automatically retry over the next few days.";
+  const html = layout(
+    `${h1("Your payment didn't go through")}
+    ${p(`Hi ${firstName || "there"}, we tried to charge your card for your AEO Improvement subscription and it was declined.`)}
+    <table cellpadding="0" cellspacing="0" width="100%" style="margin:16px 0;background:#fef2f2;border-radius:8px;">
+      <tr><td style="padding:16px 20px;font-size:14px;color:#7f1d1d;">
+        <strong>Attempt ${attemptCount} failed.</strong> ${retryLine} If we can't collect payment, your account will be moved to the free plan.
+      </td></tr>
+    </table>
+    ${p("Please update your payment method to keep access to:")}
+    <ul style="margin:0 0 16px 0;padding:0 0 0 20px;font-size:14px;line-height:1.8;color:#374151;">
+      <li>All 4 AI engines (ChatGPT, Claude, Gemini, Perplexity)</li>
+      <li>Fix Generator and competitor citation gap reports</li>
+      <li>1-year trend history and sentiment analysis</li>
+    </ul>
+    <div style="text-align:center;margin:24px 0;">
+      ${btn("Update payment method →", `${BASE_URL}/pricing`)}
+    </div>
+    ${divider()}
+    ${p("Questions about your bill? Just reply to this email.", "color:#6b7280;font-size:13px;")}`,
+    "Action needed: your AEO Improvement payment was declined.",
+  );
+  const text = `Hi ${firstName || "there"},\n\nWe tried to charge your card for your AEO Improvement subscription and it was declined (attempt ${attemptCount}).\n\n${retryLine} If we can't collect payment, your account will be moved to the free plan.\n\nUpdate payment method: ${BASE_URL}/pricing\n\nQuestions? Reply to this email.`;
+  return { subject, html, text };
+}
+
+// ── Email: Subscription Canceled (transactional — billing) ────────────────────
+export function subscriptionCanceledEmail(firstName: string, planName: string) {
+  const subject = "Your AEO Improvement subscription has ended";
+  const html = layout(
+    `${h1("Your subscription has ended")}
+    ${p(`Hi ${firstName || "there"}, your AEO Improvement <strong>${planName}</strong> subscription has been canceled. Your account is now on the free plan.`)}
+    ${p("You can still:")}
+    <ul style="margin:0 0 16px 0;padding:0 0 0 20px;font-size:14px;line-height:1.8;color:#374151;">
+      <li>Run AEO audits (3 prompts each, ChatGPT only)</li>
+      <li>View your audit history</li>
+      <li>Re-subscribe at any time</li>
+    </ul>
+    <div style="text-align:center;margin:24px 0;">
+      ${btn("Resubscribe →", `${BASE_URL}/pricing`)}
+    </div>
+    ${divider()}
+    ${p("Mind sharing why you canceled? Just reply to this email — your feedback shapes what we build next.", "color:#6b7280;font-size:13px;")}`,
+    "Your AEO Improvement subscription has been canceled.",
+  );
+  const text = `Hi ${firstName || "there"},\n\nYour AEO Improvement ${planName} subscription has been canceled. Your account is now on the free plan.\n\nResubscribe anytime: ${BASE_URL}/pricing\n\nMind sharing why? Just reply.`;
   return { subject, html, text };
 }
 
@@ -274,7 +353,7 @@ export interface MonthlyReportData {
   quickWins: string[];
 }
 
-export function monthlyReportEmail(data: MonthlyReportData): { subject: string; html: string; text: string } {
+export function monthlyReportEmail(data: MonthlyReportData, unsubscribeUrl?: string) {
   const { firstName, month, totalAudits, avgScore, bestScore, topUrl, quickWins } = data;
   const subject = `Your AEO monthly report — ${month}`;
   const html = layout(
@@ -317,7 +396,8 @@ export function monthlyReportEmail(data: MonthlyReportData): { subject: string; 
 
     ${divider()}
     ${p("This report is sent monthly to Agency plan subscribers. Upgrade or manage your plan at any time.", "color:#9ca3af;font-size:12px;")}`,
-    `Your AEO monthly performance report for ${month} — ${totalAudits} audits, avg score ${Math.round(avgScore)}`
+    `Your AEO monthly performance report for ${month} — ${totalAudits} audits, avg score ${Math.round(avgScore)}`,
+    unsubscribeUrl,
   );
   const text = `Monthly AEO Report — ${month}\n\nHi ${firstName || "there"},\n\nTotal audits: ${totalAudits}\nAvg AEO score: ${Math.round(avgScore)}\nBest score: ${Math.round(bestScore)}\n${topUrl ? `Best site: ${topUrl}\n` : ""}${quickWins.length > 0 ? `\nTop opportunities:\n${quickWins.slice(0, 5).map(w => `- ${w}`).join("\n")}` : ""}\n\nView dashboard: ${BASE_URL}`;
   return { subject, html, text };

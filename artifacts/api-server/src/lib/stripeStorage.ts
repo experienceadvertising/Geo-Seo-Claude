@@ -1,5 +1,6 @@
 import { db, usersTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
+import { randomBytes } from "crypto";
 
 export class StripeStorage {
   async getUser(clerkUserId: string) {
@@ -8,9 +9,18 @@ export class StripeStorage {
   }
 
   async upsertUser(clerkUserId: string, email: string | null, stripeCustomerId?: string) {
+    // unsubscribe_token is NOT NULL — supply one on the INSERT branch. The
+    // ON CONFLICT update path does NOT touch it, so existing users keep
+    // their original token (any rotation here would invalidate previously
+    // mailed unsubscribe links).
     const [user] = await db
       .insert(usersTable)
-      .values({ id: clerkUserId, email, stripeCustomerId: stripeCustomerId ?? null })
+      .values({
+        id: clerkUserId,
+        email,
+        stripeCustomerId: stripeCustomerId ?? null,
+        unsubscribeToken: randomBytes(32).toString("hex"),
+      })
       .onConflictDoUpdate({
         target: usersTable.id,
         set: {

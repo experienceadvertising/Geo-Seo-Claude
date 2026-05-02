@@ -14,6 +14,7 @@ import SignUpPage from "@/pages/sign-up";
 import VerifyEmailPage from "@/pages/verify-email";
 import ForgotPasswordPage from "@/pages/forgot-password";
 import ResetPasswordPage from "@/pages/reset-password";
+import UnsubscribePage from "@/pages/unsubscribe";
 import { Layout } from "@/components/layout";
 
 const queryClient = new QueryClient();
@@ -43,6 +44,7 @@ function AppRoutes() {
         <Route path="/verify-email" component={VerifyEmailPage} />
         <Route path="/forgot-password" component={ForgotPasswordPage} />
         <Route path="/reset-password" component={ResetPasswordPage} />
+        <Route path="/unsubscribe" component={UnsubscribePage} />
         <Route path="/results/:id">
           <RequireAuth><Results /></RequireAuth>
         </Route>

@@ -135,6 +135,7 @@ router.post("/auth/register", registerRateLimiter, async (req, res): Promise<voi
   const verToken = token();
   const verExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
   const userId = randomUUID();
+  const unsubToken = token();
 
   await db.insert(usersTable).values({
     id: userId,
@@ -145,6 +146,7 @@ router.post("/auth/register", registerRateLimiter, async (req, res): Promise<voi
     verificationToken: verToken,
     verificationExpires: verExpires,
     plan: "free",
+    unsubscribeToken: unsubToken,
   });
 
   const baseUrl = baseUrlFromReq(req);
@@ -280,7 +282,10 @@ router.get("/auth/verify-email", async (req, res): Promise<void> => {
 
     if (claim.length === 1) {
       const firstName = user.firstName || user.email?.split("@")[0] || "";
-      EmailService.sendWelcome(user.email!, firstName)
+      const unsubUrl = user.unsubscribeToken
+        ? `${baseUrlFromReq(req)}/api/auth/unsubscribe?token=${user.unsubscribeToken}`
+        : undefined;
+      EmailService.sendWelcome(user.email!, firstName, unsubUrl)
         .then((ok) => {
           if (!ok) {
             // Roll the claim back so a future click can retry.
@@ -407,6 +412,49 @@ router.post("/auth/reset-password", passwordEmailRateLimiter, async (req, res): 
     .set({ passwordHash, resetToken: null, resetExpires: null, emailVerified: true })
     .where(eq(usersTable.id, user.id));
 
+  // Reset == password change. Notify so the account owner sees an alert if
+  // someone else successfully reset their password (e.g., compromised inbox).
+  if (user.email) {
+    EmailService.sendPasswordChanged(user.email, user.firstName || "").catch((err) =>
+      logger.error({ err, userId: user.id }, "Password-changed email failed (post-reset)"),
+    );
+  }
+
+  // If the user reset their password before ever verifying their email
+  // (clicking the reset link verifies them), they never received the welcome
+  // series. Kick it off now using the same atomic-claim pattern as
+  // /verify-email so concurrent resets can't double-send.
+  if (!user.welcomeEmailSentAt && user.email) {
+    const claim = await db
+      .update(usersTable)
+      .set({ welcomeEmailSentAt: new Date() })
+      .where(and(eq(usersTable.id, user.id), isNull(usersTable.welcomeEmailSentAt)))
+      .returning({ id: usersTable.id });
+
+    if (claim.length === 1) {
+      const firstName = user.firstName || user.email.split("@")[0] || "";
+      const unsubUrl = user.unsubscribeToken
+        ? `${baseUrlFromReq(req)}/api/auth/unsubscribe?token=${user.unsubscribeToken}`
+        : undefined;
+      EmailService.sendWelcome(user.email, firstName, unsubUrl)
+        .then((ok) => {
+          if (!ok) {
+            return db
+              .update(usersTable)
+              .set({ welcomeEmailSentAt: null })
+              .where(eq(usersTable.id, user.id));
+          }
+        })
+        .catch((err) => {
+          logger.error({ err, userId: user.id }, "Welcome email failed (post-reset)");
+          db.update(usersTable)
+            .set({ welcomeEmailSentAt: null })
+            .where(eq(usersTable.id, user.id))
+            .catch(() => { /* best-effort rollback */ });
+        });
+    }
+  }
+
   logger.info({ userId: user.id }, "Password reset");
   res.json({ ok: true, message: "Password updated successfully. You can now sign in." });
 });
@@ -449,8 +497,115 @@ router.post("/auth/change-password", requireAuth, async (req, res): Promise<void
     .set({ passwordHash })
     .where(eq(usersTable.id, user.id));
 
+  // Send a security-notification email so the user knows their password was
+  // changed. Fire-and-forget — we don't want a Postmark hiccup to block the
+  // password change response.
+  if (user.email) {
+    EmailService.sendPasswordChanged(user.email, user.firstName || "").catch((err) =>
+      logger.error({ err, userId: user.id }, "Password-changed email failed"),
+    );
+  }
+
   logger.info({ userId: user.id }, "Password changed");
   res.json({ ok: true, message: "Password updated." });
+});
+
+// ── Unsubscribe ───────────────────────────────────────────────────────────────
+// Token-based, no auth required. The same URL is used in:
+//   1. The footer "Unsubscribe" link in every marketing/digest email
+//   2. The RFC 8058 List-Unsubscribe-Post header (Gmail / Apple Mail
+//      one-click unsubscribe button)
+//
+// GET → redirect to friendly frontend confirmation page.
+// POST → flip email_opt_out=true atomically. Idempotent.
+router.get("/auth/unsubscribe", (req, res): void => {
+  const tok = (req.query.token as string | undefined) ?? "";
+  if (!tok) {
+    res.status(400).send("Missing token.");
+    return;
+  }
+  const baseUrl = baseUrlFromReq(req);
+  res.redirect(`${baseUrl}/unsubscribe?token=${encodeURIComponent(tok)}`);
+});
+
+router.post("/auth/unsubscribe", async (req, res): Promise<void> => {
+  // Token may arrive in body (frontend POST) or query (Gmail one-click POST).
+  const tok =
+    (req.body && typeof req.body === "object" && (req.body as any).token) ||
+    (req.query.token as string | undefined) ||
+    "";
+  if (!tok || typeof tok !== "string") {
+    res.status(400).json({ error: "Missing token." });
+    return;
+  }
+
+  const result = await db
+    .update(usersTable)
+    .set({ emailOptOut: true })
+    .where(eq(usersTable.unsubscribeToken, tok))
+    .returning({ id: usersTable.id, email: usersTable.email });
+
+  if (result.length === 0) {
+    // Don't reveal whether the token existed — return 200 either way so a
+    // bot scraping random tokens learns nothing.
+    res.json({ ok: true });
+    return;
+  }
+
+  logger.info({ userId: result[0].id }, "User unsubscribed via token");
+  res.json({ ok: true });
+});
+
+// Look up subscription state for the frontend confirmation page so it can
+// render either "You're subscribed → unsubscribe" or "You're already
+// unsubscribed → resubscribe" without revealing the user's full email.
+router.get("/auth/unsubscribe-info", async (req, res): Promise<void> => {
+  const tok = (req.query.token as string | undefined) ?? "";
+  if (!tok) {
+    res.status(400).json({ error: "Missing token." });
+    return;
+  }
+  const [user] = await db
+    .select({ email: usersTable.email, emailOptOut: usersTable.emailOptOut })
+    .from(usersTable)
+    .where(eq(usersTable.unsubscribeToken, tok));
+
+  if (!user || !user.email) {
+    res.status(404).json({ error: "Invalid unsubscribe link." });
+    return;
+  }
+
+  // Mask the email for display: a***@example.com
+  const [local, domain] = user.email.split("@");
+  const masked = local.length <= 1
+    ? `*@${domain}`
+    : `${local[0]}${"*".repeat(Math.min(local.length - 1, 6))}@${domain}`;
+
+  res.json({ email: masked, optedOut: user.emailOptOut });
+});
+
+router.post("/auth/resubscribe", async (req, res): Promise<void> => {
+  const tok =
+    (req.body && typeof req.body === "object" && (req.body as any).token) ||
+    (req.query.token as string | undefined) ||
+    "";
+  if (!tok || typeof tok !== "string") {
+    res.status(400).json({ error: "Missing token." });
+    return;
+  }
+
+  const result = await db
+    .update(usersTable)
+    .set({ emailOptOut: false })
+    .where(eq(usersTable.unsubscribeToken, tok))
+    .returning({ id: usersTable.id });
+
+  if (result.length === 0) {
+    res.json({ ok: true });
+    return;
+  }
+  logger.info({ userId: result[0].id }, "User resubscribed via token");
+  res.json({ ok: true });
 });
 
 // ── Get Current Session ───────────────────────────────────────────────────────
