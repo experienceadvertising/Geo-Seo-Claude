@@ -1,0 +1,188 @@
+M2 is complete and verified — 275 tests passing, marketing site live (/, /apply, /login, plus the four legal pages), end-to-end signup working with stubbed Postmark sends. Time to start Milestone 3 — Admin panel (lightweight v1).
+This milestone gives me (Evan, the only admin in v1) the operating console for LinkEarn: approving applicants, managing the brand catalog, monitoring affiliate health, watching analytics, and processing manual payouts. No new platform capability — the API endpoints all already exist from Ticket 1.4 in M1. This milestone is the UI on top.
+Re-read these before doing anything: LinkEarn-v1-spec.md (§3b Admin panel and §7 data model), LinkEarn-Phase1-tickets.md (Milestone 3 section, tickets 3.1 through 3.6), and the M2 master prompt's hard rules section (the brand identity + shadcn-only + mobile-first rules carry over).
+Confirm to me you've re-read them and summarize the 6 M3 tickets in one line each, before writing any code.
+M3 has 6 tickets total. Build them in this order:
+
+3.1 first — Admin layout + sidebar nav. Foundational. Every other ticket renders inside this shell. Includes the requireAdmin() server gate and the active-nav-highlight pattern. Don't skip the placeholder routes for the other five tickets — stub them with "Coming next" content so I can navigate the full sidebar from day one.
+3.2 second — Applicants queue. The most operationally-urgent screen — without this, every signup from M2 is dead-ended in the database. Build this before anyone touches the production landing page.
+3.3 third — Brand catalog manager. Unlocks AI brand-voice context (M6 needs this populated before LinkedIn post generation works) and per-brand commission overrides.
+3.4 fourth — Affiliate manager. Build after 3.2 because it shares the same table + drawer pattern.
+3.5 fifth — Analytics dashboard. Pure read surface, no mutations, lower risk.
+3.6 last — Payouts manager. Touches money. Build last with the most care, after every other admin path is exercised.
+
+Hard rules — do NOT deviate:
+
+/admin/* is gated by requireAdmin(). Server-side check in the layout. Non-admins get 302 to /login. Pending/rejected/suspended affiliates accidentally hitting an admin URL get 302 to /account/status (the page from Ticket 2.3). Never render admin chrome to a non-admin, even briefly.
+All admin mutations go through the M1.4 endpoints. Do not add new business logic in route handlers. If a needed endpoint is missing, surface it before implementing — don't fork.
+Audit-log every admin action that changes state (approve, reject, suspend, reinstate, sync, edit brand, mark payout paid). Use the same structured-log pattern from M2: INFO admin_action action={name} adminId={id} targetId={id} props={...}. No PII in props beyond what M2 already permits. M6 will wire these to a persistent audit table — for now log markers only.
+Optimistic UI is fine, but always reconcile with server state on response. If an approve fails server-side, the row goes back to pending and a destructive-style toast surfaces the error. No silent failures.
+Money rendering uses the cents() formatter helper from packages/shared. Never (value / 100).toFixed(2) inline. Multi-currency support is M4 backlog — for v1, all money is USD; if a brand's offer is non-USD, render it with the source currency code suffix and flag the row.
+shadcn/ui only for tables, drawers, modals, toasts, accordions, dropdowns. The data table pattern needs to be consistent across 3.2/3.3/3.4 — extract a shared <AdminTable> component on first use, not on third copy.
+Brand identity from M2 carries. Blue-700 primary, lime-500 accent (sparingly — only for "earnings" / money affordances). The CSS variables and Tailwind config from 2.1 are now global; admin pages inherit them.
+No PII in URL paths or query strings. User IDs (UUIDs) are fine; emails and names are not. The applicants drawer reads from ?applicant={uuid} not ?email=....
+Mobile responsiveness is a stretch goal here, not a hard gate. The admin panel is desktop-first (you'll mostly use it from a laptop). Sidebar collapses on mobile per Ticket 3.1, but I won't reject 3.x for sub-optimal phone rendering. Don't ship visually broken phone layouts though.
+
+Sub_id assignment policy (decision locked): When approving an applicant, generate a sub_id of the form le-{6-digit-zero-padded-sequence} (e.g. le-000001, le-000042, le-001234). Use a Postgres sequence or atomic counter table, not a count-based query — race conditions matter once we have multiple admins (post-v1). Ticket 3.2 implements this.
+
+Ticket-by-ticket details
+Ticket 3.1 — Admin layout + sidebar nav — START HERE
+Per LinkEarn-Phase1-tickets.md Ticket 3.1.
+
+Route group at apps/web/src/app/admin/ with layout.tsx running requireAdmin() server-side. Redirect rules above.
+Sidebar items (in this order, with lucide-react icons): Applicants (Inbox), Affiliates (Users), Brands (Tag), Analytics (BarChart3), Payouts (DollarSign).
+Active item gets blue-700 background tint and a left-edge accent bar.
+Topbar: LinkEarn wordmark (left, click → /admin), admin name + email + logout button (right, dropdown).
+Sidebar collapses to icon-only at <1024px and to a sheet/drawer at <768px (use shadcn Sheet).
+Stub the five sub-routes (/admin/applicants, /admin/affiliates, /admin/brands, /admin/analytics, /admin/payouts) with a "Coming next — Ticket 3.{n}" placeholder so the sidebar nav works end-to-end from day one.
+The /admin index renders a simple "Welcome back, {firstName}" + 4 KPI cards stub (placeholder values for now — 3.5 will wire them).
+
+Acceptance:
+
+Vitest test asserting non-admin GET to /admin returns 302 to /login.
+Vitest test asserting pending-affiliate GET to /admin returns 302 to /account/status.
+Playwright (or HTTP-harness substitute): admin login → land on /admin → click each sidebar item → land on the corresponding placeholder route. Logout → back to /login.
+
+Checkpoint: when 3.1 is done, send me a screenshot of the admin shell + the routing test results before moving to 3.2.
+Ticket 3.2 — Applicants queue
+Per Ticket 3.2.
+
+Table at /admin/applicants. Columns: Applied (relative time + tooltip absolute), Name, Email, LinkedIn (icon link → opens new tab), Audience size (formatted), Niche (truncated, full on hover), Status (only shown when filter≠pending), Actions (Approve / Reject buttons).
+Filter dropdown: Pending (default), All, Rejected, Approved. URL-stateful so back-button works.
+Click anywhere on the row (except action buttons) → drawer opens showing full application: every field from the signup form including the why-join textarea. Drawer has "Approve" + "Reject" buttons too.
+Approve flow: POST /api/admin/applicants/{id}/approve (Ticket 1.4 endpoint). Server-side: set status='approved', generate sub_id per the policy locked above, set the brand split to the global default 70/30 (affiliate/LinkEarn), log the admin action. UI optimistic, reconciles on response, toast confirms with the assigned sub_id.
+Reject flow: modal asks for optional notes (max 500 chars), calls reject endpoint, sets status='rejected' and persists notes. Toast confirms.
+Stub two would_send_email log lines on approve/reject so M6 can wire them: template=affiliate-approved and template=affiliate-rejected.
+Pagination: 25/page, cursor-based using the M1 (sortKey, id) composite cursor pattern.
+Empty state: "Inbox zero. Nothing pending." — slate-500, plain.
+
+Acceptance:
+
+Approve flow assigns sequential sub_id per the policy (test under concurrent approval — two admins approving simultaneously shouldn't collide; use a Postgres sequence or SELECT … FOR UPDATE pattern, not count(*) + 1).
+Reject notes persist and are visible on the All filter.
+Vitest tests for approve, reject, sub_id sequence safety, and the audit-log markers.
+HTTP-harness e2e: log in as admin → approve a pending user from M2 → see them disappear from queue → switch to All filter → see them with status=approved + sub_id populated → switch the filter to Rejected → empty state.
+
+Checkpoint: walk me through approving Jane Doe (the M2 e2e test user, if she's still in the DB) and show me her sub_id, the two would_send_email log lines, and the audit-log line.
+Ticket 3.3 — Brand catalog manager
+Per Ticket 3.3.
+
+Table at /admin/brands. Columns: Logo (with the wordmark fallback from 2.1 — DO NOT re-implement, import the same component), Name, Status (Active / Pending / Archived chip), has_sub_id (✓ / ✗), Split (e.g. "70 / 30" — affiliate / LinkEarn, percent), Last synced (relative time), Actions.
+Filters: Status (default Active), Eligible only (has_sub_id=true, default ON), search by name.
+"Sync now" button (top-right) → POST /api/admin/brands/sync from M1.4 → toast on completion with counts (e.g. "Synced 88 active, 7 archived, 2 new").
+Click row → drawer opens. Editor sections:
+
+Visibility: Active / Paused toggle. Paused brands stay in the catalog but don't show in the affiliate dashboard or extension.
+Commission split: slider, defaults to global 70/30, range 50–95% to affiliate. Show the dollar/percent impact on a sample $100 commission inline as the user drags ("$70 to affiliate / $30 to LinkEarn").
+AI brand voice (textarea, max 800 chars): prose describing the brand's voice for Claude prompts. Placeholder example given.
+AI value props (multi-line list editor): 3–8 bullet points the AI should emphasize. Add/remove.
+AI do-not-say (multi-line list editor): the prohibited phrases / claims for this brand. Add/remove.
+Curated post angles (list editor): post-prompt seeds for PostAngle rows in the schema. Each angle: short title + 1–2 sentence description.
+
+
+Save button persists to DB via the admin endpoint, audit-logs the change, toast confirms.
+New for this ticket — logo backfill task in apps/workers: add a job that fetches each brand's logo URL from the PartnerStack /v2/marketplace/programs/{key} endpoint (Ticket 1.1 client) and persists to Brand.logo_url. Run on demand from a "Backfill logos" button in the catalog header. (Currently all 88 brands have null logo_url and the marketing site falls back to wordmarks. This unsticks that.)
+
+Acceptance:
+
+Editor saves all fields, persists, and the row reflects new state on close.
+Slider clamps to 50–95.
+Logo backfill processes the catalog in batches of 10, retries failed fetches once, logs successes/failures, and is idempotent on re-run.
+Vitest tests for slider clamping, the AI list-editor component, and the backfill worker (mocked client).
+
+Checkpoint: edit one brand (Closely is a good test case — high-value 60% recurring), show me the saved state in DB, then run the logo-backfill button and show me Brand.logo_url populated for at least one brand. Report which brands' logos PartnerStack actually exposes vs which still come back null.
+Ticket 3.4 — Affiliate manager
+Per Ticket 3.4.
+
+Table at /admin/affiliates. Reuse the <AdminTable> shared from 3.2/3.3.
+Columns: Name, Email, sub_id (monospace, copy-on-click), Total clicks, Total conversions, Lifetime earned (formatted USD), Status chip, Joined date (relative).
+Filter: Status (Approved default, Suspended, All).
+Click row → detail page (full route /admin/affiliates/{id}, not a drawer — there's enough content to warrant a full page):
+
+Header: name, email, sub_id, status, joined date, total earnings — all read-only.
+Tabs: Posts (list of their Post rows with brand, click count, conversion count, status), Conversions (timeline view, last 30d), Payouts (table of their Payout rows).
+Actions area: Suspend / Reinstate buttons (with confirmation modal — suspending stops all attribution going forward; existing pending balance is preserved). Audit-log the action.
+
+
+Suspend triggers POST /api/admin/affiliates/{id}/suspend (Ticket 1.4); reinstate is the inverse.
+
+Acceptance:
+
+Suspend pauses redirect attribution for that affiliate's sub_id (the M1.5 redirect should already check status — verify it does, fix it if it doesn't).
+Vitest tests for the actions and the timeline rendering.
+The detail page is fast — KPIs come from a single composite query, not N+1.
+
+Checkpoint: pull up Jane Doe's detail page (assuming she was approved in 3.2 and has zero activity), show me her empty Posts/Conversions/Payouts tabs, suspend her, and prove a redirect with her sub_id no longer attributes by tailing the redirect log.
+Ticket 3.5 — Analytics dashboard
+Per Ticket 3.5.
+
+/admin/analytics. Read-only.
+KPI cards (top row, 5 cards): Active affiliates, Total clicks (selector: 7d / 30d / all), Total conversions (same selector), Gross revenue (same selector — sum of Conversion.gross_commission_cents where status=approved or paid), Pending payouts (sum of approved-not-yet-paid balances).
+Charts (Recharts, already in the stack):
+
+Clicks over time — line chart, last 30 days, 1 day per point. X-axis dates, Y-axis click count.
+Top brands by revenue — bar chart, last 30 days, top 10 brands sorted by gross revenue. Reuse the formatOffer() helper for tooltips.
+
+
+All queries cached at the route level for 5 minutes (revalidate = 300).
+Skeleton loaders while the queries are in flight.
+
+Acceptance:
+
+KPI numbers match a hand-rolled SQL spot-check.
+Both charts render with empty-state messages when there's no data (don't render an empty chart with axes — render "No clicks in the last 30 days" or similar).
+Vitest tests on the SQL aggregation helpers.
+
+Checkpoint: screenshots of the dashboard with the seed/test data, plus paste the SQL spot-check showing my KPI numbers match what the page shows.
+Ticket 3.6 — Payouts manager
+Per Ticket 3.6. Build with care — money path.
+
+/admin/payouts. Lists affiliates whose pending balance (sum of approved-but-not-yet-paid Conversion.affiliate_share_cents) is ≥ $50.00.
+Columns: Name, Email, sub_id, Pending balance (USD), Payout method on file (placeholder for v1 — text "TBD: collected at first payout"), Last paid date, Action.
+"Mark as paid" button → modal: enter ACH/Wise/PayPal reference number (required, free text, max 100 chars), confirm amount, submit.
+Submit calls POST /api/admin/payouts/{id}/mark-paid (Ticket 1.4) which:
+
+Creates a Payout row with the affiliate, amount, reference number, and the list of Conversion.ids included (snapshot, immutable).
+Updates each included conversion's status to paid.
+Sets Payout.paid_at = now() (admin's timestamp, not affiliate's TZ).
+Stubs a would_send_email template=payout-confirmation log line.
+Audit-logs the action.
+
+
+Show a "History" table below the active payouts list: last 30 days of completed payouts (date, affiliate, amount, reference number, conversions count).
+
+Acceptance:
+
+Atomicity: Payout creation + Conversion.status updates happen in a single transaction. If any conversion fails to update, the whole payout rolls back.
+Idempotency: posting the same payout twice (same conversion set) returns 409.
+Reference number is required and persisted.
+Money rendering uses the cents() helper everywhere.
+Vitest test for the transaction (use the test DB to actually run it, not a mock — money paths get real assertions).
+
+Checkpoint: create a fake conversion set for Jane Doe summing to ≥ $50, run a "Mark as paid" with reference number TEST-001, show me:
+
+The Payout row in DB with the correct amount and conversion list.
+All included conversions now status=paid.
+The would_send_email template=payout-confirmation log line.
+The audit-log line.
+Try to mark the same set as paid again — 409 returned.
+
+
+Final M3 checkpoint
+When all 6 tickets are done:
+
+Walk-through video or screenshot sequence:
+
+Log in as admin → land on /admin → see KPIs populated
+Approve a pending applicant → see sub_id assigned → see them appear in /admin/affiliates
+Edit a brand's commission split → see the change persist
+View an affiliate's detail page → suspend → reinstate
+Run a payout → see it in DB and in the history table
+
+
+All tests passing: pnpm typecheck, pnpm test (give me the new total — I expect 350-400 with M3's additions), pnpm lint clean.
+Tell me M3 is officially done and you're ready for M4 (affiliate dashboard).
+
+After M3 is approved, M4 (the affiliate-side dashboard) is next. M4 is what an approved sub-affiliate sees when they log in — posts, links, earnings, profile. I'll send the M4 prompt.
+
+Begin by re-reading the spec + tickets files and giving me the one-line summary of the 6 M3 tickets. Then start with Ticket 3.1 (admin layout) and stop at the 3.1 checkpoint before moving to 3.2.
