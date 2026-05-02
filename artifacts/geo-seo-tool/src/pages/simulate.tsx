@@ -81,6 +81,20 @@ export default function SimulatePage() {
     () => promptsText.split("\n").map(s => s.trim()).filter(s => s.length >= 5),
     [promptsText]
   );
+  const promptLines = useMemo(
+    () => promptsText.split("\n").map(s => s.trim()).filter(Boolean),
+    [promptsText]
+  );
+  const invalidPromptCount = Math.max(0, promptLines.length - prompts.length);
+  const runDisabledReason = !brandName.trim()
+    ? "Add a brand name."
+    : !domain
+    ? "Audit domain missing."
+    : prompts.length === 0
+    ? "Add at least one prompt with 5+ characters."
+    : selectedEngines.length === 0
+    ? "Select at least one engine."
+    : null;
 
   const handleSuggest = async () => {
     if (!brandName) return;
@@ -246,6 +260,11 @@ export default function SimulatePage() {
             />
             <div className="flex items-center justify-between mt-1">
               <p className="text-xs text-muted-foreground">{prompts.length} valid prompt{prompts.length === 1 ? "" : "s"}</p>
+              {invalidPromptCount > 0 && (
+                <p className="text-xs text-amber-600 font-medium">
+                  {invalidPromptCount} line{invalidPromptCount === 1 ? "" : "s"} ignored (&lt;5 chars)
+                </p>
+              )}
               {!isPro && prompts.length > maxPrompts && (
                 <p className="text-xs text-amber-600 font-medium">Only first {maxPrompts} prompts will run on the Free plan</p>
               )}
@@ -324,7 +343,7 @@ export default function SimulatePage() {
           <div className="flex flex-wrap items-center gap-3 pt-2">
             <Button
               onClick={handleRun}
-              disabled={run.isPending || prompts.length === 0 || !brandName || selectedEngines.length === 0}
+              disabled={run.isPending || !!runDisabledReason}
               size="lg"
               className="w-full sm:w-auto"
             >
@@ -338,6 +357,9 @@ export default function SimulatePage() {
               <p className="text-sm text-muted-foreground">
                 This may take 1–3 minutes. Each engine performs a live web search.
               </p>
+            )}
+            {!run.isPending && runDisabledReason && (
+              <p className="text-sm text-amber-700 dark:text-amber-500">{runDisabledReason}</p>
             )}
             {run.isError && (
               <p className="text-sm text-destructive">

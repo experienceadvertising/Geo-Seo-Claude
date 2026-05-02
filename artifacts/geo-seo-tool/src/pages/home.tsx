@@ -20,6 +20,7 @@ function MarketStats() {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">YoY growth in traffic from LLMs and AI search engines.</p>
+          <p className="text-[11px] mt-2 text-muted-foreground/80">Benchmark estimate from aggregated 2025–2026 AEO trend reports.</p>
         </CardContent>
       </Card>
       <Card className="bg-card">
@@ -29,6 +30,7 @@ function MarketStats() {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">Higher conversion rate compared to traditional search traffic.</p>
+          <p className="text-[11px] mt-2 text-muted-foreground/80">Benchmark estimate across AI-assistant referral sessions.</p>
         </CardContent>
       </Card>
       <Card className="bg-card">
@@ -38,6 +40,7 @@ function MarketStats() {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">of pages capture 90% of all AI citations. Optimization matters.</p>
+          <p className="text-[11px] mt-2 text-muted-foreground/80">Illustrative concentration benchmark; validate against your own category.</p>
         </CardContent>
       </Card>
     </section>
@@ -173,24 +176,30 @@ const ANALYSIS_STEPS = [
   "Generating insights",
 ];
 
-function AnalysisProgress() {
-  const [step, setStep] = React.useState(0);
+function AnalysisProgress({ stage }: { stage?: number }) {
+  const [elapsedStage, setElapsedStage] = React.useState(0);
 
   React.useEffect(() => {
+    if (typeof stage === "number") return;
     const durations = [3000, 6000, 5000, 6000, 8000];
     let idx = 0;
+    const timers: ReturnType<typeof setTimeout>[] = [];
     function advance() {
       idx++;
       if (idx < ANALYSIS_STEPS.length - 1) {
-        setStep(idx);
-        setTimeout(advance, durations[idx]);
+        setElapsedStage(idx);
+        timers.push(setTimeout(advance, durations[idx]));
       } else {
-        setStep(ANALYSIS_STEPS.length - 1);
+        setElapsedStage(ANALYSIS_STEPS.length - 1);
       }
     }
-    const t = setTimeout(advance, durations[0]);
-    return () => clearTimeout(t);
-  }, []);
+    timers.push(setTimeout(advance, durations[0]));
+    return () => timers.forEach(clearTimeout);
+  }, [stage]);
+
+  const step = typeof stage === "number"
+    ? Math.max(0, Math.min(stage, ANALYSIS_STEPS.length - 1))
+    : elapsedStage;
 
   return (
     <div className="flex flex-col items-center gap-4 py-4">

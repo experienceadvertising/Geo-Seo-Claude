@@ -11,17 +11,22 @@ declare module "express-session" {
 const PgStore = connectPg(session);
 
 export function createSessionMiddleware() {
+  const isProd = process.env.NODE_ENV === "production";
+  const secret = process.env.SESSION_SECRET;
+  if (isProd && !secret) {
+    throw new Error("SESSION_SECRET is required in production.");
+  }
   return session({
     store: new PgStore({
       conString: process.env.DATABASE_URL!,
       tableName: "sessions",
     }),
-    secret: process.env.SESSION_SECRET || "aeo-fallback-secret-change-in-prod",
+    secret: secret || "local-dev-only-session-secret",
     resave: false,
     saveUninitialized: false,
     name: "aeo.sid",
     cookie: {
-      secure: process.env.NODE_ENV === "production",
+      secure: isProd,
       httpOnly: true,
       sameSite: "lax",
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
