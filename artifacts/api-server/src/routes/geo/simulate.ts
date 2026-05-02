@@ -5,6 +5,10 @@ import { runPromptSimulation, generatePromptsForBrand, type EngineId, type Promp
 import { requireAuth } from "../../middlewares/auth";
 import { simulateRateLimiter, readRateLimiter } from "../../middlewares/rateLimiters";
 import { getUserPlan, PLAN_LIMITS } from "../../lib/planUtils";
+import { consumeQuota, refundQuota, currentYearMonth } from "../../lib/usageLimits";
+import { sql } from "drizzle-orm";
+import { db as appDb, usersTable } from "@workspace/db";
+import { EmailService } from "../../lib/emailService";
 
 const router: IRouter = Router();
 
@@ -63,6 +67,10 @@ router.post("/geo/simulate", requireAuth, simulateRateLimiter, async (req, res):
     return;
   }
 
+  // ALL deterministic 4xx validations MUST run before consumeQuota — once
+  // we reserve a slot, an early return without refund would burn the
+  // user's monthly quota for an invalid request that never ran.
+
   // If linked to an audit, verify it belongs to this user
   if (auditId !== null) {
     const [audit] = await db.select({ id: auditsTable.id }).from(auditsTable)
@@ -102,6 +110,41 @@ router.post("/geo/simulate", requireAuth, simulateRateLimiter, async (req, res):
     return;
   }
 
+  // All validations passed — NOW consume quota. Pin month at request start
+  // for UTC-midnight safety. Refund happens in the catch block below if
+  // the LLM fan-out itself fails.
+  const ym = currentYearMonth();
+  const monthQuota = await consumeQuota(req.userId!, plan, "simulations", ym);
+  if (!monthQuota.allowed) {
+    if (monthQuota.firstDenial) {
+      appDb
+        .select({
+          email: usersTable.email,
+          firstName: usersTable.firstName,
+          unsubscribeToken: usersTable.unsubscribeToken,
+          emailOptOut: usersTable.emailOptOut,
+        })
+        .from(usersTable)
+        .where(sql`id = ${req.userId!}`)
+        .then(([u]) => {
+          if (u?.email && !u.emailOptOut) {
+            const baseUrl = process.env.FRONTEND_URL || "https://aeoimprovement.com";
+            const unsubscribeUrl = `${baseUrl}/unsubscribe?token=${u.unsubscribeToken}`;
+            return EmailService.sendLimitReached(u.email, u.firstName || "", "simulations", monthQuota.cap, unsubscribeUrl);
+          }
+        })
+        .catch((err) => req.log.error({ err, userId: req.userId }, "limit-reached email failed"));
+    }
+    res.status(429).json({
+      error: `You've used all ${monthQuota.cap} ${plan === "free" ? "free " : ""}prompt simulations this month. ${plan === "free" ? "Upgrade to Pro for 30 simulations/mo." : "Your quota refills next month."}`,
+      upgradeRequired: plan === "free",
+      limitType: "simulations",
+      used: monthQuota.used,
+      cap: monthQuota.cap,
+    });
+    return;
+  }
+
   req.log.info({ domain, promptCount: cleanPrompts.length, engines: selectedEngines, plan, userId: req.userId }, "Starting prompt simulation");
 
   try {
@@ -123,6 +166,9 @@ router.post("/geo/simulate", requireAuth, simulateRateLimiter, async (req, res):
       status: "complete",
     }).returning();
 
+    // Quota already reserved up-front — nothing to increment here.
+    // (See consumeQuota at top of handler; refunded in catch below if we throw.)
+
     res.json({
       id: saved.id,
       auditId: saved.auditId,
@@ -136,6 +182,10 @@ router.post("/geo/simulate", requireAuth, simulateRateLimiter, async (req, res):
     });
   } catch (err) {
     req.log.error({ err }, "Prompt simulation failed");
+    // Refund the reservation since we couldn't deliver the simulation.
+    refundQuota(req.userId!, "simulations", ym).catch((refundErr) =>
+      req.log.error({ err: refundErr, userId: req.userId, ym }, "Failed to refund simulation quota"),
+    );
     res.status(500).json({ error: "Simulation failed. Please try again." });
   }
 });

@@ -11,6 +11,8 @@ import {
   passwordChangedEmail,
   paymentFailedEmail,
   subscriptionCanceledEmail,
+  limitReachedEmail,
+  firstAuditEmail,
   type WeeklyDigestData,
   type MonthlyReportData,
 } from "./emailTemplates";
@@ -119,5 +121,30 @@ export const EmailService = {
   async sendSubscriptionCanceled(email: string, firstName: string, planName: string): Promise<boolean> {
     const { subject, html, text } = subscriptionCanceledEmail(firstName, planName);
     return send(email, subject, html, text, "subscription-canceled");
+  },
+
+  // Conversion-stage emails — these have an unsubscribe link because they
+  // are marketing/upsell, not transactional under CAN-SPAM.
+  async sendLimitReached(
+    email: string,
+    firstName: string,
+    kind: "audits" | "simulations",
+    cap: number,
+    unsubscribeUrl?: string,
+  ): Promise<boolean> {
+    const { subject, html, text } = limitReachedEmail(firstName, kind, cap, unsubscribeUrl);
+    return send(email, subject, html, text, `limit-reached-${kind}`, unsubscribeUrl);
+  },
+
+  async sendFirstAudit(
+    email: string,
+    firstName: string,
+    url: string,
+    geoScore: number,
+    topRecommendation: string | null,
+    unsubscribeUrl?: string,
+  ): Promise<boolean> {
+    const { subject, html, text } = firstAuditEmail(firstName, url, geoScore, topRecommendation, unsubscribeUrl);
+    return send(email, subject, html, text, "first-audit", unsubscribeUrl);
   },
 };

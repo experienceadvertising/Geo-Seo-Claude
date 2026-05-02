@@ -14,6 +14,10 @@ import { requireAuth } from "../../middlewares/auth";
 import { analyzeRateLimiter, readRateLimiter } from "../../middlewares/rateLimiters";
 import { assertPublicUrl, SsrfError } from "../../lib/safeFetch";
 import { getUserPlan, planAtLeast } from "../../lib/planUtils";
+import { consumeQuota, refundQuota, currentYearMonth } from "../../lib/usageLimits";
+import { db as appDb, usersTable } from "@workspace/db";
+import { sql } from "drizzle-orm";
+import { EmailService } from "../../lib/emailService";
 
 const router: IRouter = Router();
 router.use(simulateRouter);
@@ -34,6 +38,48 @@ router.post("/geo/analyze", requireAuth, analyzeRateLimiter, async (req, res): P
       req.log.warn({ url, reason: err.message, userId: req.userId }, "Blocked URL");
     }
     res.status(400).json({ error: "URL must be a publicly reachable http(s) address." });
+    return;
+  }
+
+  // Pin the month at request start — prevents UTC-midnight drift where
+  // we'd reserve in May but refund/email in June if the request straddles
+  // 00:00 UTC on the 1st.
+  const ym = currentYearMonth();
+  // Atomically RESERVE quota before kicking off any LLM call so we
+  // (a) never burn tokens on an over-quota user and (b) two concurrent
+  // requests at cap-1 can never both pass. If the audit later fails we
+  // refund the reservation so failures on our side don't penalize them.
+  const userPlan = await getUserPlan(req.userId!);
+  const quota = await consumeQuota(req.userId!, userPlan, "audits", ym);
+  if (!quota.allowed) {
+    if (quota.firstDenial) {
+      // Look up email + unsubscribe token to send the limit-reached upsell.
+      // Fire-and-forget — don't block the 429 response on an SMTP round-trip.
+      appDb
+        .select({
+          email: usersTable.email,
+          firstName: usersTable.firstName,
+          unsubscribeToken: usersTable.unsubscribeToken,
+          emailOptOut: usersTable.emailOptOut,
+        })
+        .from(usersTable)
+        .where(sql`id = ${req.userId!}`)
+        .then(([u]) => {
+          if (u?.email && !u.emailOptOut) {
+            const baseUrl = process.env.FRONTEND_URL || "https://aeoimprovement.com";
+            const unsubscribeUrl = `${baseUrl}/unsubscribe?token=${u.unsubscribeToken}`;
+            return EmailService.sendLimitReached(u.email, u.firstName || "", "audits", quota.cap, unsubscribeUrl);
+          }
+        })
+        .catch((err) => req.log.error({ err, userId: req.userId }, "limit-reached email failed"));
+    }
+    res.status(429).json({
+      error: `You've used all ${quota.cap} free audits this month. Upgrade to Pro for 100 audits/mo.`,
+      upgradeRequired: true,
+      limitType: "audits",
+      used: quota.used,
+      cap: quota.cap,
+    });
     return;
   }
 
@@ -177,6 +223,28 @@ Hard rules:
       recommendations: analysis.recommendations,
     }).returning();
 
+    // Quota was already reserved up-front by consumeQuota — nothing to do
+    // here on the success path. Reservation is only refunded if we throw
+    // before this point (see catch block).
+
+    // First-audit milestone email — atomically set firstAuditAt only if
+    // it's still null. The UPDATE returning row count tells us whether
+    // this is genuinely the user's first audit (preventing duplicates if
+    // two audits race to completion).
+    appDb
+      .execute(sql`UPDATE users SET first_audit_at = NOW() WHERE id = ${req.userId!} AND first_audit_at IS NULL RETURNING email, first_name AS "firstName", unsubscribe_token AS "unsubscribeToken", email_opt_out AS "emailOptOut"`)
+      .then((result) => {
+        const u = result.rows[0] as any;
+        if (!u || !u.email || u.emailOptOut) return;
+        const topRec = (analysis.recommendations ?? [])
+          .filter((r: any) => r.priority === "critical" || r.priority === "high")[0];
+        const topRecommendationText = topRec ? `${topRec.title} — ${topRec.detail}` : null;
+        const baseUrl = process.env.FRONTEND_URL || "https://aeoimprovement.com";
+        const unsubscribeUrl = `${baseUrl}/unsubscribe?token=${u.unsubscribeToken}`;
+        return EmailService.sendFirstAudit(u.email, u.firstName || "", url, analysis.geoScore, topRecommendationText, unsubscribeUrl);
+      })
+      .catch((err) => req.log.error({ err, userId: req.userId }, "first-audit email failed"));
+
     res.json({
       ...analysis,
       id: audit.id,
@@ -185,6 +253,11 @@ Hard rules:
     });
   } catch (err) {
     req.log.error({ err }, "GEO analysis failed");
+    // Refund the reservation we made up-front — best-effort, don't leak
+    // the original error if refund itself fails.
+    refundQuota(req.userId!, "audits", ym).catch((refundErr) =>
+      req.log.error({ err: refundErr, userId: req.userId, ym }, "Failed to refund audit quota"),
+    );
     res.status(500).json({ error: "Analysis failed. Please try again." });
   }
 });

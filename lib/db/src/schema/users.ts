@@ -32,6 +32,11 @@ export const usersTable = pgTable("users", {
   // NOT NULL + UNIQUE enforced at the DB level via raw migration; declared
   // here as required so any new code path inserting a user must supply one.
   unsubscribeToken: text("unsubscribe_token").notNull(),
+
+  // First-audit milestone — set when the user completes their very first
+  // audit. Drives the "you ran your first audit, here's how to go deeper"
+  // celebratory email and prevents resending it.
+  firstAuditAt: timestamp("first_audit_at"),
 });
 
 export type User = typeof usersTable.$inferSelect;

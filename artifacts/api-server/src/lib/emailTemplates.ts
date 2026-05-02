@@ -1,6 +1,24 @@
 const BASE_URL = process.env.FRONTEND_URL || "https://aeoimprovement.com";
 const BRAND_COLOR = "#10b981";
 
+/**
+ * HTML-escape a string for safe interpolation into email markup. Use for
+ * ANY value that originates from user input (firstName, url) or LLM
+ * output (recommendations, brand names) before placing it inside HTML.
+ * Without this, a user who signs up with a name like `<script>` or an
+ * LLM that emits stray angle brackets can break our email layout or
+ * inject content into recipients' inboxes.
+ */
+function esc(s: string | null | undefined): string {
+  if (s == null) return "";
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function layout(content: string, preheader: string, unsubscribeUrl?: string): string {
   const unsubscribeLink = unsubscribeUrl
     ? `<a href="${unsubscribeUrl}" style="color:#d1d5db;text-decoration:underline;">Unsubscribe</a> · `
@@ -400,5 +418,108 @@ export function monthlyReportEmail(data: MonthlyReportData, unsubscribeUrl?: str
     unsubscribeUrl,
   );
   const text = `Monthly AEO Report — ${month}\n\nHi ${firstName || "there"},\n\nTotal audits: ${totalAudits}\nAvg AEO score: ${Math.round(avgScore)}\nBest score: ${Math.round(bestScore)}\n${topUrl ? `Best site: ${topUrl}\n` : ""}${quickWins.length > 0 ? `\nTop opportunities:\n${quickWins.slice(0, 5).map(w => `- ${w}`).join("\n")}` : ""}\n\nView dashboard: ${BASE_URL}`;
+  return { subject, html, text };
+}
+
+// ── Email: Limit Reached (free tier upsell) ──────────────────────────────────
+// Sent at most once per kind per month — the caller (usageLimits.checkQuota)
+// uses an atomic "claim" to ensure firstDenial is only true once per month
+// per (user, kind). Crucial for not spamming users who retry repeatedly.
+export function limitReachedEmail(
+  firstName: string,
+  kind: "audits" | "simulations",
+  cap: number,
+  unsubscribeUrl?: string,
+) {
+  const kindLabel = kind === "audits" ? "audit" : "prompt simulation";
+  const safeFirstName = esc(firstName) || "there";
+  const subject = `You've used all ${cap} free ${kindLabel}s this month`;
+  const proBenefit = kind === "audits"
+    ? "100 audits/month, full AI insights, Fix Generator, competitor citation gap reports"
+    : "30 prompt simulations/month with all 4 engines (ChatGPT, Claude, Gemini, Perplexity), 25 prompts each";
+  const html = layout(
+    `${h1(`You hit your free ${kindLabel} limit 🎯`)}
+    ${p(`Hi ${safeFirstName}, nice work — you've used all ${cap} of your free ${kindLabel}s this month. Your quota will refill on the 1st.`)}
+    ${p(`If you don't want to wait, the <strong>Pro plan</strong> unlocks:`)}
+    <ul style="margin:0 0 16px 0;padding:0 0 0 20px;font-size:14px;line-height:1.8;color:#374151;">
+      <li>${proBenefit}</li>
+      <li>Sentiment & tone analysis across all 4 engines</li>
+      <li>1-year visibility trend history</li>
+      <li>Priority email support</li>
+    </ul>
+    <table cellpadding="0" cellspacing="0" width="100%" style="margin:16px 0;background:#ecfdf5;border-radius:8px;border:1px solid #a7f3d0;">
+      <tr><td style="padding:18px 20px;font-size:14px;color:#065f46;text-align:center;">
+        <strong>Pro: $79/mo</strong> · or <strong>$62.50/mo billed annually</strong> (save 21%)
+      </td></tr>
+    </table>
+    <div style="text-align:center;margin:24px 0;">
+      ${btn("Upgrade to Pro →", `${BASE_URL}/pricing`)}
+    </div>
+    ${divider()}
+    ${p(`Not ready to upgrade? Your free quota refills automatically on the 1st of next month.`, "color:#6b7280;font-size:13px;")}`,
+    `You've used all ${cap} free ${kindLabel}s this month. Upgrade to Pro for ${kind === "audits" ? "100 audits" : "30 simulations"}/mo.`,
+    unsubscribeUrl,
+  );
+  const text = `Hi ${firstName || "there"},\n\nYou've used all ${cap} of your free ${kindLabel}s this month. Your quota refills on the 1st.\n\nWant more now? Upgrade to Pro ($79/mo, or $62.50/mo billed annually) for:\n- ${proBenefit}\n- Sentiment analysis\n- 1-year history\n- Priority support\n\nUpgrade: ${BASE_URL}/pricing`;
+  return { subject, html, text };
+}
+
+// ── Email: First Audit Complete (engagement / activation) ─────────────────────
+// Fires exactly once, the first time a user completes any audit. The "first
+// audit" moment is the strongest engagement window — they've experienced
+// value, now we show them what's next.
+export function firstAuditEmail(
+  firstName: string,
+  url: string,
+  geoScore: number,
+  topRecommendation: string | null,
+  unsubscribeUrl?: string,
+) {
+  const hostname = (() => { try { return new URL(url).hostname; } catch { return url; } })();
+  const safeHostname = esc(hostname);
+  const safeFirstName = esc(firstName) || "there";
+  const safeTopRec = esc(topRecommendation);
+  const scoreColor = geoScore >= 75 ? "#10b981" : geoScore >= 50 ? "#f59e0b" : "#ef4444";
+  const scoreVerdict = geoScore >= 75 ? "you're already ahead of most sites" : geoScore >= 50 ? "you've got a solid foundation with clear room to grow" : "there's significant upside available";
+  // Subject is plain text (Postmark handles encoding) but URL/host segment
+  // is bounded to hostname only above to avoid header-injection surface.
+  const subject = `Your first AEO audit is in — ${hostname} scored ${Math.round(geoScore)}/100`;
+  const html = layout(
+    `${h1(`Your first audit is done 🎉`)}
+    ${p(`Hi ${safeFirstName}, you just ran your first AEO audit on <strong>${safeHostname}</strong>. Here's the headline:`)}
+
+    <table cellpadding="0" cellspacing="0" width="100%" style="margin:20px 0;background:#f9fafb;border-radius:12px;">
+      <tr><td style="padding:24px;text-align:center;">
+        <div style="font-size:48px;font-weight:800;color:${scoreColor};line-height:1;">${Math.round(geoScore)}<span style="font-size:24px;color:#9ca3af;">/100</span></div>
+        <div style="font-size:13px;color:#6b7280;margin-top:6px;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;">AEO Score</div>
+      </td></tr>
+    </table>
+
+    ${p(`At ${Math.round(geoScore)}/100, ${scoreVerdict}.`)}
+
+    ${safeTopRec ? `
+      <div style="margin:20px 0;padding:18px 20px;background:#ecfdf5;border-left:4px solid ${BRAND_COLOR};border-radius:6px;">
+        <div style="font-size:12px;font-weight:600;color:${BRAND_COLOR};text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;">Top opportunity</div>
+        <div style="font-size:14px;color:#374151;line-height:1.6;">${safeTopRec}</div>
+      </div>
+    ` : ""}
+
+    ${p("To go deeper, here are the most useful next steps:")}
+    <table cellpadding="0" cellspacing="0" width="100%" style="margin:8px 0 24px;">
+      ${feature("🔬", "Run a prompt simulation", "See how ChatGPT, Claude, Gemini and Perplexity actually answer when someone asks about your brand.")}
+      ${feature("📊", "Compare to competitors", "Run audits on 2–3 competitors to find your AEO gaps.")}
+      ${feature("🛠", "Generate fixes", "Pro users get auto-generated llms.txt, JSON-LD schema, and robots.txt for their site.")}
+    </table>
+
+    <div style="text-align:center;margin:24px 0;">
+      ${btn("Open your audit →", `${BASE_URL}/`)}
+    </div>
+
+    ${divider()}
+    ${p("Hit your free quota? Pro unlocks 100 audits, 30 prompt simulations, and the Fix Generator — $79/mo (or $62.50/mo annual).", "color:#6b7280;font-size:13px;")}`,
+    `Your first audit on ${hostname} scored ${Math.round(geoScore)}/100 — here's what to do next.`,
+    unsubscribeUrl,
+  );
+  const text = `Hi ${firstName || "there"},\n\nYou just ran your first AEO audit on ${hostname}. Score: ${Math.round(geoScore)}/100 — ${scoreVerdict}.\n\n${topRecommendation ? `Top opportunity: ${topRecommendation}\n\n` : ""}Next steps:\n- Run a prompt simulation to see how AI engines answer about your brand\n- Audit 2-3 competitors to find your gaps\n- Pro users get auto-generated llms.txt + JSON-LD schema\n\nOpen your audit: ${BASE_URL}/`;
   return { subject, html, text };
 }

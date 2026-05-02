@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useLocation } from "wouter";
 import { type Plan } from "@/hooks/usePlan";
+import { useStripeProducts } from "@/hooks/useStripe";
 
 interface UpgradePromptProps {
   feature: string;
@@ -20,11 +21,23 @@ const PLAN_COLORS: Record<Plan, string> = {
   agency: "bg-gradient-to-r from-purple-500 to-indigo-500 text-white",
 };
 
-const PLAN_PRICES: Record<Plan, string> = {
+// Fallbacks shown only while products are loading from /api/stripe/products.
+// Real prices are pulled live so a Stripe price change reflects in the UI
+// without redeploying.
+const FALLBACK_PRICES: Record<Plan, string> = {
   free: "Free",
   pro: "$79/mo",
   agency: "$249/mo",
 };
+
+function usePlanPriceLabel(plan: Plan): string {
+  const { data } = useStripeProducts();
+  if (plan === "free") return "Free";
+  const product = data?.data.find((p) => p.metadata?.plan_id === plan);
+  const monthly = product?.prices.find((pr) => pr.recurring?.interval === "month");
+  if (!monthly) return FALLBACK_PRICES[plan];
+  return `$${(monthly.unitAmount / 100).toLocaleString("en-US")}/mo`;
+}
 
 export function UpgradePrompt({
   feature,
@@ -34,6 +47,7 @@ export function UpgradePrompt({
   className = "",
 }: UpgradePromptProps) {
   const [, setLocation] = useLocation();
+  const priceLabel = usePlanPriceLabel(requiredPlan);
 
   if (compact) {
     return (
@@ -44,7 +58,7 @@ export function UpgradePrompt({
         <Lock className="h-4 w-4 text-primary shrink-0" />
         <span className="text-muted-foreground flex-1">{description}</span>
         <Badge className={`text-xs shrink-0 ${PLAN_COLORS[requiredPlan]}`}>
-          {requiredPlan === "pro" ? "Pro" : "Agency"} · {PLAN_PRICES[requiredPlan]}
+          {requiredPlan === "pro" ? "Pro" : "Agency"} · {priceLabel}
         </Badge>
       </div>
     );
@@ -70,7 +84,7 @@ export function UpgradePrompt({
             className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 gap-2"
             onClick={() => setLocation("/pricing")}
           >
-            <Zap className="h-4 w-4" /> Upgrade to {requiredPlan === "pro" ? "Pro" : "Agency"} — {PLAN_PRICES[requiredPlan]}
+            <Zap className="h-4 w-4" /> Upgrade to {requiredPlan === "pro" ? "Pro" : "Agency"} — {priceLabel}
             <ArrowRight className="h-4 w-4" />
           </Button>
         </div>

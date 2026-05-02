@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { customFetch } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
+import { UsageMeter } from "@/components/usage-meter";
 
 function AdminLink() {
   const { isSignedIn } = useAuth();
@@ -71,6 +72,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   <Link href="/" className="hover:text-foreground transition-colors">Audits</Link>
                   <Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
                 </nav>
+                <UsageMeter />
                 <AdminLink />
                 <UserBadge />
               </>
