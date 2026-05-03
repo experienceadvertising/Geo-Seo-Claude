@@ -98,6 +98,58 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <main className="flex-1 flex flex-col">
         {children}
       </main>
+      <SiteFooter />
     </div>
+  );
+}
+
+function SiteFooter() {
+  const year = new Date().getFullYear();
+  return (
+    <footer className="border-t border-border bg-muted/30 mt-12">
+      <div className="container max-w-screen-2xl px-4 sm:px-6 lg:px-8 py-10">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
+          <div className="col-span-2 md:col-span-1">
+            <Link href="/" className="flex items-center gap-2 font-bold tracking-tight">
+              <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-teal-600 to-emerald-700 text-white">
+                <Sparkles className="h-3.5 w-3.5" />
+              </span>
+              <span>AEO Improvement</span>
+            </Link>
+            <p className="text-xs text-muted-foreground mt-3 leading-relaxed">
+              Audit, simulate, and fix how AI search engines see your site.
+            </p>
+          </div>
+          <div>
+            <h3 className="font-semibold text-foreground mb-3 text-xs uppercase tracking-wider">Product</h3>
+            <ul className="space-y-2 text-muted-foreground">
+              <li><Link href="/" className="hover:text-foreground transition-colors">Audit a site</Link></li>
+              <li><Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link></li>
+              <li><Link href="/methodology" className="hover:text-foreground transition-colors">Methodology</Link></li>
+            </ul>
+          </div>
+          <div>
+            <h3 className="font-semibold text-foreground mb-3 text-xs uppercase tracking-wider">Compare</h3>
+            <ul className="space-y-2 text-muted-foreground">
+              <li><Link href="/vs/otterly" className="hover:text-foreground transition-colors">vs Otterly.AI</Link></li>
+              <li><Link href="/vs/athenahq" className="hover:text-foreground transition-colors">vs AthenaHQ</Link></li>
+              <li><Link href="/vs/profound" className="hover:text-foreground transition-colors">vs Profound</Link></li>
+              <li><Link href="/vs/brandlight" className="hover:text-foreground transition-colors">vs Brandlight</Link></li>
+            </ul>
+          </div>
+          <div>
+            <h3 className="font-semibold text-foreground mb-3 text-xs uppercase tracking-wider">Guides</h3>
+            <ul className="space-y-2 text-muted-foreground">
+              <li><Link href="/best-aeo-tools" className="hover:text-foreground transition-colors">Best AEO Tools</Link></li>
+              <li><Link href="/best-geo-optimization-tools" className="hover:text-foreground transition-colors">Best GEO Tools</Link></li>
+            </ul>
+          </div>
+        </div>
+        <div className="mt-8 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
+          <span>© {year} AEO Improvement. All rights reserved.</span>
+          <span>aeoimprovement.com</span>
+        </div>
+      </div>
+    </footer>
   );
 }
