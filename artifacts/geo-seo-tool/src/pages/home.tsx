@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
-import { Search, Loader2, ArrowRight, BarChart3, TrendingUp, Zap, Shield, Lock, Sparkles, CheckCircle2 } from "lucide-react";
+import { Search, Loader2, ArrowRight, BarChart3, TrendingUp, TrendingDown, Minus, Zap, Shield, Lock, Sparkles, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { useAnalyzeUrl, useListAudits } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { ScoreBadge } from "@/components/score-badge";
+import { usePlan } from "@/hooks/usePlan";
 import heroImage from "@/assets/hero.png";
 
 function MarketStats() {
@@ -230,6 +231,157 @@ function AnalysisProgress({ stage }: { stage?: number }) {
   );
 }
 
+// "Your AEO Journey" surface — the first thing a returning user sees on the
+// dashboard once they have ≥1 audit. It does three jobs:
+//   (1) Reflects current state: latest score + delta vs the prior audit on
+//       the same domain, so the dashboard *itself* tells a progression
+//       story instead of being just a launcher form.
+//   (2) Renders a tiny inline sparkline of the last 5 audits — gives a felt
+//       sense of trajectory without requiring users to open results pages.
+//   (3) For free users, embeds a compact "What Pro unlocks for YOUR site"
+//       row showing three locked previews tied to their actual data — much
+//       higher-conversion than abstract feature lists on /pricing.
+function AeoJourneyCard({ audits }: { audits: Array<{ id: number; url: string; geoScore: number; createdAt: string }> }) {
+  const { isFree } = usePlan();
+  // Audits are returned newest-first by /api/geo/audits.
+  const latest = audits[0];
+  // Find the most recent prior audit on the SAME hostname so the delta is
+  // a meaningful "this site moved X" — not "your last audit on a totally
+  // different site scored Y". Falls back to chronological prior if hostname
+  // parse fails.
+  const latestHost = (() => { try { return new URL(latest.url).hostname; } catch { return null; } })();
+  const prior = audits.slice(1).find((a) => {
+    if (!latestHost) return false;
+    try { return new URL(a.url).hostname === latestHost; } catch { return false; }
+  }) ?? audits[1];
+
+  // /api/geo/audits returns geoScore as the DB-stored real value, which is
+  // already on a 0-100 scale (the analyzer does Math.round of the weighted
+  // sub-scores before insert). Display directly — no *100. Note: the
+  // "Recent audits" list below this card multiplies by 100, which is a
+  // pre-existing display bug in that section; tracked separately so this
+  // PR stays scoped to the journey/email work.
+  const currScore = Math.round(latest.geoScore);
+  const priorScore = prior ? Math.round(prior.geoScore) : null;
+  const delta = priorScore != null ? currScore - priorScore : null;
+
+  // Sparkline: last 5 audits, oldest → newest, on this hostname if there
+  // are enough; otherwise the global recency window. Plain inline SVG —
+  // no chart library dependency for a 5-point trendline.
+  const sparkAudits = (() => {
+    if (latestHost) {
+      const sameHost = audits.filter((a) => {
+        try { return new URL(a.url).hostname === latestHost; } catch { return false; }
+      });
+      if (sameHost.length >= 2) return sameHost.slice(0, 5).reverse();
+    }
+    return audits.slice(0, 5).reverse();
+  })();
+  const sparkValues = sparkAudits.map((a) => Math.round(a.geoScore));
+  const sparkMin = Math.min(...sparkValues, 0);
+  const sparkMax = Math.max(...sparkValues, 100);
+  const sparkRange = sparkMax - sparkMin || 1;
+  const sparkPath = sparkValues.length >= 2
+    ? sparkValues.map((v, i) => {
+        const x = (i / (sparkValues.length - 1)) * 100;
+        const y = 30 - ((v - sparkMin) / sparkRange) * 28;
+        return `${i === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`;
+      }).join(" ")
+    : null;
+
+  const DeltaIcon = delta == null ? Minus : delta > 0 ? TrendingUp : delta < 0 ? TrendingDown : Minus;
+  const deltaColor = delta == null || delta === 0
+    ? "text-muted-foreground"
+    : delta > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400";
+
+  return (
+    <Card className="border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 to-transparent">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base flex items-center gap-2">
+          <BarChart3 className="h-4 w-4 text-emerald-600" /> Your AEO journey
+        </CardTitle>
+        <CardDescription className="text-xs">
+          {latestHost ? `Tracking ${latestHost}` : "Latest audit"}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        <div className="flex items-end justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-4">
+            <div>
+              <div className="text-3xl font-bold tabular-nums">{currScore}<span className="text-base text-muted-foreground font-normal">/100</span></div>
+              <div className="text-xs text-muted-foreground uppercase tracking-wider mt-0.5">Current AEO score</div>
+            </div>
+            {delta != null && (
+              <div className={`flex items-center gap-1 text-sm font-semibold ${deltaColor}`}>
+                <DeltaIcon className="h-4 w-4" />
+                {delta > 0 ? `+${delta}` : delta}
+                <span className="text-xs font-normal text-muted-foreground ml-1">
+                  vs prior {priorScore != null ? `(${priorScore})` : ""}
+                </span>
+              </div>
+            )}
+          </div>
+          {sparkPath && (
+            <svg viewBox="0 0 100 30" className="h-10 w-32 overflow-visible" preserveAspectRatio="none" aria-hidden="true">
+              <path d={sparkPath} fill="none" stroke="currentColor" strokeWidth="1.5" className="text-emerald-500" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+              {sparkValues.map((v, i) => {
+                const x = (i / (sparkValues.length - 1)) * 100;
+                const y = 30 - ((v - sparkMin) / sparkRange) * 28;
+                return <circle key={i} cx={x} cy={y} r="1.5" className="fill-emerald-500" vectorEffect="non-scaling-stroke" />;
+              })}
+            </svg>
+          )}
+        </div>
+
+        <Link href={`/results/${latest.id}`}>
+          <Button size="sm" variant="outline" className="border-emerald-500/30 hover:bg-emerald-500/10">
+            Open latest audit <ArrowRight className="ml-1 h-3.5 w-3.5" />
+          </Button>
+        </Link>
+
+        {/* Free-only: compact "what Pro unlocks for YOUR site" preview row.
+            Three locked-state tiles tied to features the user has already
+            seen referenced (multi-engine simulation, Fix Generator,
+            competitor citation gaps). Each tile communicates the value
+            specifically — not as an abstract feature list. */}
+        {isFree && (
+          <div className="pt-4 border-t border-emerald-500/10">
+            <div className="text-xs uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
+              <Lock className="h-3 w-3" /> Pro unlocks for {latestHost || "this site"}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <Link href="/pricing">
+                <div className="rounded-lg border border-dashed border-muted-foreground/20 p-3 hover:border-emerald-500/40 hover:bg-emerald-500/5 transition-colors cursor-pointer h-full">
+                  <div className="text-xs font-semibold mb-1 flex items-center gap-1.5">
+                    <Sparkles className="h-3 w-3 text-emerald-600" /> All 4 engines
+                  </div>
+                  <div className="text-xs text-muted-foreground leading-snug">See how Claude, Gemini & Perplexity cite you — not just ChatGPT.</div>
+                </div>
+              </Link>
+              <Link href="/pricing">
+                <div className="rounded-lg border border-dashed border-muted-foreground/20 p-3 hover:border-emerald-500/40 hover:bg-emerald-500/5 transition-colors cursor-pointer h-full">
+                  <div className="text-xs font-semibold mb-1 flex items-center gap-1.5">
+                    <Zap className="h-3 w-3 text-emerald-600" /> Fix Generator
+                  </div>
+                  <div className="text-xs text-muted-foreground leading-snug">Auto-draft your llms.txt, JSON-LD & robots.txt — copy and ship.</div>
+                </div>
+              </Link>
+              <Link href="/pricing">
+                <div className="rounded-lg border border-dashed border-muted-foreground/20 p-3 hover:border-emerald-500/40 hover:bg-emerald-500/5 transition-colors cursor-pointer h-full">
+                  <div className="text-xs font-semibold mb-1 flex items-center gap-1.5">
+                    <Shield className="h-3 w-3 text-emerald-600" /> Competitor gaps
+                  </div>
+                  <div className="text-xs text-muted-foreground leading-snug">Find which rivals AI engines cite instead of you, and why.</div>
+                </div>
+              </Link>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 function SignedInDashboard() {
   const [url, setUrl] = React.useState("");
   const [, setLocation] = useLocation();
@@ -316,6 +468,10 @@ function SignedInDashboard() {
       </form>
 
       {analyzeUrl.isPending && <AnalysisProgress />}
+
+      {!analyzeUrl.isPending && audits && audits.length > 0 && (
+        <AeoJourneyCard audits={audits} />
+      )}
 
       {!analyzeUrl.isPending && (
         <div className="space-y-4">

@@ -523,3 +523,330 @@ export function firstAuditEmail(
   const text = `Hi ${firstName || "there"},\n\nYou just ran your first AEO audit on ${hostname}. Score: ${Math.round(geoScore)}/100 — ${scoreVerdict}.\n\n${topRecommendation ? `Top opportunity: ${topRecommendation}\n\n` : ""}Next steps:\n- Run a prompt simulation to see how AI engines answer about your brand\n- Audit 2-3 competitors to find your gaps\n- Pro users get auto-generated llms.txt + JSON-LD schema\n\nOpen your audit: ${BASE_URL}/`;
   return { subject, html, text };
 }
+
+// ── Email: Weekly AEO Insights (free + paid) ─────────────────────────────────
+// Sent every Thursday 9 AM UTC to all verified, opted-in users who are past
+// the welcome-series window (>= 8 days old). The goal: deliver real strategy
+// value to free users so they associate this product with weekly insight,
+// not just a tool they used once. Each topic is a self-contained tactic
+// they could implement immediately, with a soft contextual pitch tied to
+// the topic — never a hard pitch decoupled from the content.
+//
+// Topics rotate by ISO week-of-year mod 6 so the same user gets a different
+// tip every week and only sees a repeat after ~6 weeks.
+type InsightTopic = {
+  subject: string;
+  preheader: string;
+  title: string;
+  intro: string;
+  body: string; // raw HTML, already escaped where needed
+  pitch: string; // contextual soft pitch, plain text (no HTML)
+  textBody: string; // plain-text version
+};
+
+const AEO_INSIGHTS: InsightTopic[] = [
+  {
+    subject: "The robots.txt mistake quietly blocking AI from your site",
+    preheader: "GPTBot, ClaudeBot, PerplexityBot — most sites still block at least one.",
+    title: "The robots.txt trap blocking AI from your site",
+    intro:
+      "Most sites still ship the robots.txt they wrote for the SEO era — which routinely blocks the AI crawlers without anyone realising. Each AI engine uses a distinct user-agent and respects an explicit allow.",
+    body: `${p("The four user-agents that matter most right now:")}
+    <ul style="margin:0 0 16px 0;padding:0 0 0 20px;font-size:14px;line-height:1.8;color:#374151;">
+      <li><code style="background:#f3f4f6;padding:1px 6px;border-radius:3px;font-size:13px;">GPTBot</code> — OpenAI / ChatGPT search</li>
+      <li><code style="background:#f3f4f6;padding:1px 6px;border-radius:3px;font-size:13px;">ClaudeBot</code> + <code style="background:#f3f4f6;padding:1px 6px;border-radius:3px;font-size:13px;">Claude-Web</code> — Anthropic / Claude</li>
+      <li><code style="background:#f3f4f6;padding:1px 6px;border-radius:3px;font-size:13px;">PerplexityBot</code> — Perplexity</li>
+      <li><code style="background:#f3f4f6;padding:1px 6px;border-radius:3px;font-size:13px;">Google-Extended</code> — Gemini training &amp; grounding</li>
+    </ul>
+    ${p("Drop this near the top of your <code style='background:#f3f4f6;padding:1px 4px;border-radius:3px;font-size:13px;'>/robots.txt</code> to explicitly welcome them:")}
+    <pre style="background:#0f172a;color:#e2e8f0;padding:14px 16px;border-radius:8px;font-size:12px;line-height:1.5;overflow-x:auto;margin:0 0 16px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;">User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /</pre>
+    ${p("If you have an existing <code style='background:#f3f4f6;padding:1px 4px;border-radius:3px;font-size:13px;'>Disallow: /</code> under <code style='background:#f3f4f6;padding:1px 4px;border-radius:3px;font-size:13px;'>User-agent: *</code>, the per-bot rules above override it for those specific agents — but verify in your audit's Crawler Access section.")}`,
+    pitch:
+      "Run an audit on your site to see exactly which of the four engines are currently blocked, and which are getting through.",
+    textBody:
+      "Most sites still ship the robots.txt they wrote for SEO — which often blocks the AI crawlers.\n\nThe user-agents that matter:\n- GPTBot (OpenAI)\n- ClaudeBot, Claude-Web (Anthropic)\n- PerplexityBot\n- Google-Extended (Gemini)\n\nAdd to /robots.txt:\nUser-agent: GPTBot\nAllow: /\n\nUser-agent: ClaudeBot\nAllow: /\n\n(repeat for each)\n\nRun an audit to see which engines you're currently blocking.",
+  },
+  {
+    subject: "What an actually-good llms.txt looks like (with example)",
+    preheader: "The simplest, highest-ROI thing you can ship for AEO this week.",
+    title: "What an actually-good llms.txt looks like",
+    intro:
+      "An llms.txt is a plain-markdown summary of your site placed at the root — a kind of executive briefing for AI agents that arrive without context. The format is intentionally simple, but the content discipline matters.",
+    body: `${p("Here's a minimal but effective structure to start from:")}
+    <pre style="background:#0f172a;color:#e2e8f0;padding:14px 16px;border-radius:8px;font-size:12px;line-height:1.5;overflow-x:auto;margin:0 0 16px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;"># Acme Robotics
+
+> Industrial robotic arms for high-mix, low-volume manufacturing.
+
+## What we do
+We design and manufacture 6-axis robotic arms with payloads from
+3kg to 25kg, sold direct to small-batch manufacturers in North
+America and the EU.
+
+## Key pages
+- [Product specs](https://acme.example/products)
+- [Documentation](https://acme.example/docs)
+- [Pricing](https://acme.example/pricing)
+- [Contact](https://acme.example/contact)
+
+## Optional
+- Founded 2018, headquartered in Boston MA
+- Press inquiries: press@acme.example</pre>
+    ${p("A few things this gets right that many drafts miss:")}
+    <ul style="margin:0 0 16px 0;padding:0 0 0 20px;font-size:14px;line-height:1.8;color:#374151;">
+      <li>The <strong>blockquote one-liner</strong> directly under the H1 — this is the line a model will quote when summarising you.</li>
+      <li>It says <strong>what you sell, to whom, where</strong>. Most llms.txt files describe the product but skip the audience and geography.</li>
+      <li>Linked URLs use the <strong>fully-qualified absolute path</strong>, not relative — agents that fetch this file standalone need the absolute reference.</li>
+    </ul>`,
+    pitch:
+      "On Pro, the Fix Generator drafts a complete llms.txt for your site using your real content — copy, paste, ship.",
+    textBody:
+      "An llms.txt is a plain-markdown summary at /llms.txt — an executive briefing for AI agents.\n\nMinimal structure:\n# Brand Name\n> One-line description of what you do.\n\n## What we do\n2-3 sentences: product, audience, geography.\n\n## Key pages\n- Absolute URLs to the most important pages.\n\nThe blockquote line under H1 is what models quote when summarising you. Make it specific.\n\nPro's Fix Generator drafts a complete llms.txt for your site automatically.",
+  },
+  {
+    subject: "FAQ schema: the highest-ROI structured data for AEO",
+    preheader: "AI engines lift Q&A pairs straight into their answers. Here's how.",
+    title: "FAQ schema is the highest-ROI structured data for AEO",
+    intro:
+      "Of all the JSON-LD types you could add, FAQPage routinely earns the most direct lift in AI answers — because the format mirrors exactly how an answer engine wants to consume your content: question, then answer, plain prose, no fluff.",
+    body: `${p("Here's a complete example you can adapt — drop it in a <code style='background:#f3f4f6;padding:1px 4px;border-radius:3px;font-size:13px;'>&lt;script type=\"application/ld+json\"&gt;</code> tag in the &lt;head&gt; of any page that already has a Q&amp;A section:")}
+    <pre style="background:#0f172a;color:#e2e8f0;padding:14px 16px;border-radius:8px;font-size:12px;line-height:1.5;overflow-x:auto;margin:0 0 16px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;">{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "How much does Acme cost?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Acme is sold on a monthly subscription, with a discounted annual option. See our pricing page for current rates."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does Acme integrate with Salesforce?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes — Acme has a native Salesforce integration that syncs contacts, accounts, and opportunities bidirectionally."
+      }
+    }
+  ]
+}</pre>
+    ${p("Three rules that materially affect lift:")}
+    <ul style="margin:0 0 16px 0;padding:0 0 0 20px;font-size:14px;line-height:1.8;color:#374151;">
+      <li>The <code style="background:#f3f4f6;padding:1px 4px;border-radius:3px;font-size:13px;">name</code> must be the exact natural-language question someone would ask. Not a slug, not a heading fragment.</li>
+      <li>The <code style="background:#f3f4f6;padding:1px 4px;border-radius:3px;font-size:13px;">text</code> must be a complete, self-contained answer. Avoid pronouns that reference earlier context ("it", "this") — assume the answer is excerpted in isolation.</li>
+      <li>Mirror the same Q&amp;A in visible HTML on the page. Schema without matching visible content is a quality-guideline violation.</li>
+    </ul>`,
+    pitch:
+      "Pro's Fix Generator scans your existing pages for Q&A patterns and emits valid FAQPage JSON-LD ready to paste into your <head>.",
+    textBody:
+      "FAQPage JSON-LD is the single highest-ROI structured-data add for AEO.\n\nThree rules that matter:\n1. The 'name' must be a natural-language question, not a slug.\n2. The 'text' must be self-contained — no 'it', no 'this' referencing prior context.\n3. Mirror the Q&A in visible HTML — schema without visible content violates guidelines.\n\nPro's Fix Generator emits this for your existing Q&A sections automatically.",
+  },
+  {
+    subject: "Why direct-answer paragraphs beat listicles for AI citations",
+    preheader: "The single content-structure change that lifts citation rate.",
+    title: "Why direct-answer paragraphs beat listicles for AI citations",
+    intro:
+      "Practitioners running citation tracking across the four major engines consistently report the same pattern: pages that lead with a complete, prose answer in the first paragraph get cited far more often than pages that bury the answer inside a numbered list.",
+    body: `${p("The structural pattern that works:")}
+    <table cellpadding="0" cellspacing="0" width="100%" style="margin:8px 0 20px;">
+      <tr><td style="padding:8px 0;font-size:14px;color:#374151;">
+        <strong>H2:</strong> the question, written exactly as a user would ask it<br/>
+        <strong>First paragraph:</strong> a 2–4 sentence complete answer with the key facts<br/>
+        <strong>Following paragraphs:</strong> the supporting detail, examples, edge cases<br/>
+      </td></tr>
+    </table>
+    ${p("This is the inverted-pyramid structure newsrooms have used for a century, and it maps almost perfectly onto how an answer engine extracts a citable snippet — the model wants a bounded, complete fragment that stands alone outside the page.")}
+    ${p("<strong>Before</strong> (listicle, hard to extract):")}
+    <pre style="background:#fff7ed;border-left:3px solid #fb923c;padding:12px 16px;border-radius:0 6px 6px 0;font-size:13px;line-height:1.6;color:#7c2d12;margin:0 0 12px;">## How to set up SSO
+1. Go to settings
+2. Click integrations
+3. Pick your provider
+4. Paste the metadata URL
+5. Test the login</pre>
+    ${p("<strong>After</strong> (direct answer first, list as supporting detail):")}
+    <pre style="background:#f0fdf4;border-left:3px solid #10b981;padding:12px 16px;border-radius:0 6px 6px 0;font-size:13px;line-height:1.6;color:#064e3b;margin:0 0 16px;">## How do I set up SSO?
+
+You set up SSO in Acme by going to Settings → Integrations,
+selecting your identity provider (Okta, Azure AD, or Google
+Workspace), pasting your provider's metadata URL, and running
+the test login. It typically takes 5–10 minutes.
+
+The full step-by-step:
+1. Navigate to Settings → Integrations
+2. ...</pre>`,
+    pitch:
+      "Run a prompt simulation on a few of your top pages — you'll see immediately whether engines are extracting your answer or skipping past it.",
+    textBody:
+      "Pages that lead with a complete prose answer get cited more than pages that bury the answer in a list.\n\nThe pattern:\n- H2: the question as a user would ask it\n- First paragraph: 2-4 sentence complete answer\n- Following paragraphs: supporting detail\n\nThis is inverted-pyramid structure — newsrooms have used it for a century. It maps onto how answer engines extract a citable snippet.\n\nRun a prompt simulation on your top pages to see whether engines are extracting your answers or skipping past them.",
+  },
+  {
+    subject: "Brand entity disambiguation — the AEO foundation everyone skips",
+    preheader: "If models can't tell who you are, they can't cite you.",
+    title: "Brand entity disambiguation: the AEO foundation everyone skips",
+    intro:
+      "Before an AI engine can cite your site, it has to be confident your brand is a discrete, well-defined entity — distinguishable from companies with similar names, common-noun collisions, and the general noise of the open web. This is the part of AEO most teams skip entirely.",
+    body: `${p("The three signals that materially improve entity confidence:")}
+    <table cellpadding="0" cellspacing="0" width="100%" style="margin:8px 0 20px;">
+      ${feature("①", "A Wikidata Q-item", "Even a stub Q-item with your name, founding date, headquarters, and official website creates a stable identifier the major engines reconcile against. You can create one yourself at wikidata.org — no Wikipedia article required.")}
+      ${feature("②", "schema.org/Organization with sameAs", "On your homepage, ship Organization JSON-LD with a sameAs array pointing to your LinkedIn, Crunchbase, GitHub, Wikipedia (if any), and Wikidata Q-item. This explicitly cross-references your identity across the graph.")}
+      ${feature("③", "Consistent name across the open web", "Pick exactly one canonical brand name and use it identically — same casing, same spacing, same suffix (Inc., Ltd., or none) — across your homepage title, footer, social bios, and press releases. Name drift is the single biggest cause of failed entity reconciliation.")}
+    </table>
+    ${p("These three together let an engine answer 'who are they?' with confidence — which is the prerequisite for ever answering 'what do they do?' or 'should I recommend them?' in a citable way.")}`,
+    pitch:
+      "Your audit's Brand Signals section flags entity-disambiguation gaps the first time around — start there.",
+    textBody:
+      "Before an AI engine can cite you, it must be confident your brand is a discrete entity. Most teams skip this entirely.\n\nThree signals that improve entity confidence:\n1. A Wikidata Q-item (even a stub) — wikidata.org, no Wikipedia article needed\n2. schema.org/Organization with sameAs[] linking your LinkedIn, Crunchbase, GitHub, Wikidata\n3. One canonical brand name, used identically across homepage, footer, social, press\n\nName drift is the #1 cause of failed entity reconciliation.\n\nYour audit's Brand Signals section flags these gaps.",
+  },
+  {
+    subject: "AI bots have a crawl budget too — make your pages light",
+    preheader: "If your hero text only loads after JavaScript, AI engines see an empty page.",
+    title: "AI bots have a crawl budget too — make your pages light",
+    intro:
+      "Most AI crawlers do not execute JavaScript, or execute it only partially and inconsistently. If the substantive content of your page only appears after a client-side render, an AI bot may see a near-empty document — even though the page looks fine in your browser.",
+    body: `${p("Two diagnostics worth running today:")}
+    <table cellpadding="0" cellspacing="0" width="100%" style="margin:8px 0 20px;">
+      ${feature("🔍", "View source vs. inspect element", "Right-click → View Source on your top page. If the body is mostly empty divs, your content is JS-rendered. If you see your headlines and paragraph text right there in the HTML, you're fine.")}
+      ${feature("⚡", "Curl the page and grep for content", "<code style='background:#f3f4f6;padding:1px 6px;border-radius:3px;font-size:13px;'>curl -s https://yoursite.com | grep -i 'a key phrase from your hero'</code> — if it returns nothing, AI bots see nothing either.")}
+    </table>
+    ${p("If your stack is React/Vue/Angular SPA-only, the fix is a server-side render or static pre-render of at least the first viewport's worth of content. Frameworks: Next.js, Nuxt, Astro, Remix, SvelteKit. The bar is low — AI bots are happy with old-fashioned, server-rendered HTML.")}
+    ${p("And keep page weight reasonable. Heavy pages with long third-party script chains can be abandoned mid-fetch by crawlers operating under tight time budgets — strip what you can from the critical render path.")}`,
+    pitch:
+      "Your audit reports both raw-HTML word count and rendered word count — a big gap between the two is the smoking gun for JS-rendering issues.",
+    textBody:
+      "Most AI crawlers don't execute JavaScript, or do so unreliably. If your content only appears after a client-side render, AI bots may see an empty page.\n\nTwo quick diagnostics:\n1. View Source on your top page — if body is mostly empty divs, content is JS-rendered.\n2. curl -s https://yoursite.com | grep 'a key phrase' — if nothing returns, AI bots see nothing.\n\nFix: SSR or static pre-render at least the first viewport. Use Next.js, Nuxt, Astro, Remix, SvelteKit.\n\nYour audit reports raw-HTML word count vs rendered word count — a big gap is the smoking gun.",
+  },
+];
+
+export function aeoInsightsEmail(firstName: string, weekIndex: number, unsubscribeUrl?: string) {
+  // Pick topic by week-of-year so a user receives a different topic every
+  // week and only sees a repeat after the full library cycles. Modulo
+  // guards against any negative or out-of-range week index.
+  const idx = ((weekIndex % AEO_INSIGHTS.length) + AEO_INSIGHTS.length) % AEO_INSIGHTS.length;
+  const topic = AEO_INSIGHTS[idx];
+  const safeFirstName = esc(firstName) || "there";
+  const html = layout(
+    `${h1(topic.title)}
+    ${p(`Hi ${safeFirstName},`)}
+    ${p(topic.intro)}
+    ${topic.body}
+    ${divider()}
+    <div style="background:#f0fdf4;border:1px solid #a7f3d0;border-radius:8px;padding:16px 20px;margin:0 0 20px;">
+      <div style="font-size:12px;font-weight:600;color:${BRAND_COLOR};text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;">Try it on your site</div>
+      <div style="font-size:14px;color:#374151;line-height:1.6;">${esc(topic.pitch)}</div>
+    </div>
+    <div style="text-align:center;margin:24px 0;">
+      ${btn("Open AEO Improvement →", `${BASE_URL}/`)}
+    </div>
+    ${p("Reply with what you'd like to read about next week — we curate these from real questions.", "color:#6b7280;font-size:13px;")}`,
+    topic.preheader,
+    unsubscribeUrl,
+  );
+  const text = `Hi ${firstName || "there"},\n\n${topic.title}\n\n${topic.textBody}\n\n— Try it on your site: ${topic.pitch}\n\nOpen AEO Improvement: ${BASE_URL}/\n\nReply with what you'd like to read about next week.`;
+  return { subject: topic.subject, html, text };
+}
+
+// ── Email: Score Changed (re-audit triggered, ±5 pts) ────────────────────────
+// Fires after any audit insert when a prior audit on the same domain exists
+// for the same user. The signal: someone re-audited their site, which is
+// the strongest engagement moment we get outside of first-audit. Improved
+// scores get a celebration; declined scores get a diagnostic frame.
+export function scoreChangedEmail(
+  firstName: string,
+  url: string,
+  previousScore: number, // 0-100
+  currentScore: number,  // 0-100
+  topRecommendation: string | null,
+  unsubscribeUrl?: string,
+) {
+  const hostname = (() => { try { return new URL(url).hostname; } catch { return url; } })();
+  const safeHostname = esc(hostname);
+  const safeFirstName = esc(firstName) || "there";
+  const safeTopRec = esc(topRecommendation);
+  const prev = Math.round(previousScore);
+  const curr = Math.round(currentScore);
+  const delta = curr - prev;
+  const improved = delta > 0;
+  const arrow = improved ? "↑" : "↓";
+  const accent = improved ? "#10b981" : "#f59e0b"; // celebrate vs amber-warn (not red — we don't want it to feel punitive)
+
+  const subject = improved
+    ? `${safeHostname.replace(/&[^;]+;/g, "")} → +${delta} AEO points (${prev} → ${curr})`
+    : `${safeHostname.replace(/&[^;]+;/g, "")} dropped ${Math.abs(delta)} AEO points — let's diagnose`;
+  // (Subject string above will be re-escaped by Postmark; the .replace strips
+  // any HTML-escape entities we accidentally introduced via esc() since
+  // headers don't decode them.)
+  const cleanSubject = improved
+    ? `${hostname} → +${delta} AEO points (${prev} → ${curr})`
+    : `${hostname} dropped ${Math.abs(delta)} AEO points — let's diagnose`;
+
+  const headline = improved ? "Your AEO score went up 🎉" : "Your AEO score dropped";
+  const lede = improved
+    ? `Nice — your latest audit on <strong>${safeHostname}</strong> came back <strong style="color:${accent};">+${delta} points</strong> higher than the previous one. Whatever you changed, it's working.`
+    : `Heads up — your latest audit on <strong>${safeHostname}</strong> came back <strong style="color:${accent};">${delta} points</strong> lower than the previous run. Most score drops trace back to one of three causes (below) and are quick to reverse.`;
+
+  const diagnosticBlock = improved
+    ? `${p("To keep the momentum:")}
+    <table cellpadding="0" cellspacing="0" width="100%" style="margin:8px 0 16px;">
+      ${feature("🔬", "Run a prompt simulation", "Confirm the gain is showing up in actual AI answers — not just the audit score.")}
+      ${feature("📈", "Audit again in 2 weeks", "Most improvements take a fresh crawl cycle to fully propagate. The next audit will show the durable change.")}
+      ${feature("🎯", "Tackle one more recommendation", "Compounding small wins is how the leaderboards on this score are built.")}
+    </table>`
+    : `${p("The three most common causes of a score drop:")}
+    <table cellpadding="0" cellspacing="0" width="100%" style="margin:8px 0 16px;">
+      ${feature("①", "A robots.txt change blocked an AI bot", "Check the Crawler Access section of the new audit — if any of the four engines flipped from green to red, that's it.")}
+      ${feature("②", "Schema markup was removed or broke", "JSON-LD that used to validate may have broken on a recent deploy. Check the Schema Types section against the prior audit.")}
+      ${feature("③", "Hero / above-fold content changed", "A redesign that moved key content below the fold or into JS-only renders will tank citability score even though the page looks fine.")}
+    </table>`;
+
+  const recBlock = safeTopRec
+    ? `<div style="margin:20px 0;padding:18px 20px;background:${improved ? "#ecfdf5" : "#fef3c7"};border-left:4px solid ${accent};border-radius:6px;">
+        <div style="font-size:12px;font-weight:600;color:${accent};text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;">${improved ? "Top opportunity to keep going" : "Top fix to recover"}</div>
+        <div style="font-size:14px;color:#374151;line-height:1.6;">${safeTopRec}</div>
+      </div>`
+    : "";
+
+  const html = layout(
+    `${h1(headline)}
+    ${p(lede)}
+
+    <table cellpadding="0" cellspacing="0" width="100%" style="margin:20px 0;background:#f9fafb;border-radius:12px;">
+      <tr><td style="padding:24px;text-align:center;">
+        <div style="display:inline-block;font-size:32px;font-weight:700;color:#9ca3af;line-height:1;">${prev}</div>
+        <div style="display:inline-block;font-size:32px;font-weight:700;color:${accent};line-height:1;padding:0 16px;">${arrow}</div>
+        <div style="display:inline-block;font-size:48px;font-weight:800;color:${accent};line-height:1;">${curr}<span style="font-size:24px;color:#9ca3af;">/100</span></div>
+        <div style="font-size:13px;color:#6b7280;margin-top:8px;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;">${improved ? `+${delta} points` : `${delta} points`}</div>
+      </td></tr>
+    </table>
+
+    ${recBlock}
+    ${diagnosticBlock}
+
+    <div style="text-align:center;margin:24px 0;">
+      ${btn("Open the new audit →", `${BASE_URL}/`)}
+    </div>
+    ${divider()}
+    ${p(improved
+      ? "Pro unlocks unlimited audits, the Fix Generator that drafts your llms.txt and JSON-LD, and 1-year score history so you can see the full arc of your improvements."
+      : "Pro's Fix Generator can re-draft your llms.txt and schema in minutes if a deploy broke them, and 1-year history shows you exactly when the drop started.",
+      "color:#6b7280;font-size:13px;")}`,
+    improved
+      ? `Your score on ${hostname} went from ${prev} to ${curr} — nice work.`
+      : `Your score on ${hostname} dropped from ${prev} to ${curr} — three common causes inside.`,
+    unsubscribeUrl,
+  );
+  const text = improved
+    ? `Hi ${firstName || "there"},\n\nYour latest audit on ${hostname} came back +${delta} points higher (${prev} → ${curr}). Whatever you changed, it's working.\n\n${topRecommendation ? `Top opportunity to keep going: ${topRecommendation}\n\n` : ""}To keep momentum:\n- Run a prompt simulation to confirm the gain shows in real AI answers\n- Audit again in 2 weeks (improvements take a crawl cycle to propagate)\n- Tackle one more recommendation\n\nOpen the new audit: ${BASE_URL}/`
+    : `Hi ${firstName || "there"},\n\nYour latest audit on ${hostname} came back ${delta} points lower (${prev} → ${curr}). Most score drops trace to one of three causes:\n\n1. A robots.txt change blocked an AI bot — check Crawler Access\n2. Schema markup was removed or broke on a recent deploy\n3. Hero / above-fold content moved below fold or into JS-only renders\n\n${topRecommendation ? `Top fix to recover: ${topRecommendation}\n\n` : ""}Open the new audit: ${BASE_URL}/`;
+  return { subject: cleanSubject, html, text };
+}

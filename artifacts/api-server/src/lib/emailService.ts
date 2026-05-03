@@ -13,6 +13,8 @@ import {
   subscriptionCanceledEmail,
   limitReachedEmail,
   firstAuditEmail,
+  aeoInsightsEmail,
+  scoreChangedEmail,
   type WeeklyDigestData,
   type MonthlyReportData,
 } from "./emailTemplates";
@@ -146,5 +148,44 @@ export const EmailService = {
   ): Promise<boolean> {
     const { subject, html, text } = firstAuditEmail(firstName, url, geoScore, topRecommendation, unsubscribeUrl);
     return send(email, subject, html, text, "first-audit", unsubscribeUrl);
+  },
+
+  // Weekly AEO Insights — value-delivery email shipped to every active user
+  // (free + paid) on Thursdays. Different content from the Pro weekly digest:
+  // the digest summarises the user's own audits; insights teach broadly
+  // applicable AEO/LLM strategy and contextually pitch Pro for whichever
+  // topic-specific feature would help (Fix Generator, prompt simulator, etc).
+  async sendWeeklyInsights(
+    email: string,
+    firstName: string,
+    weekIndex: number,
+    unsubscribeUrl?: string,
+  ): Promise<boolean> {
+    const { subject, html, text } = aeoInsightsEmail(firstName, weekIndex, unsubscribeUrl);
+    return send(email, subject, html, text, "aeo-insights", unsubscribeUrl);
+  },
+
+  // Score-Changed — fires after a re-audit when the score moves ±5 pts on
+  // the same domain. Improved = celebration; declined = diagnostic. Strong
+  // engagement signal because the user just opted in to running the audit
+  // again of their own volition.
+  async sendScoreChanged(
+    email: string,
+    firstName: string,
+    url: string,
+    previousScore: number,
+    currentScore: number,
+    topRecommendation: string | null,
+    unsubscribeUrl?: string,
+  ): Promise<boolean> {
+    const { subject, html, text } = scoreChangedEmail(
+      firstName,
+      url,
+      previousScore,
+      currentScore,
+      topRecommendation,
+      unsubscribeUrl,
+    );
+    return send(email, subject, html, text, "score-changed", unsubscribeUrl);
   },
 };

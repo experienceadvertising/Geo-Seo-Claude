@@ -216,6 +216,62 @@ async function runMonthlyReports() {
   }
 }
 
+// ── Weekly AEO Insights for ALL users (Thursdays 9:00 AM UTC) ────────────────
+// Free users get nothing weekly otherwise — this is the one recurring
+// touchpoint that delivers educational value rather than asking for the
+// upgrade. Paid users get it too: it's distinct content from their personal
+// weekly digest, and it keeps engagement up between audits.
+//
+// Topic rotates by ISO week-of-year so a recipient sees a different topic
+// each week and only repeats after the full library cycles (~6 weeks).
+//
+// Gated to users who are >= 8 days past account creation so the welcome
+// series (D0/D3/D7) finishes before the recurring cadence kicks in —
+// otherwise a Wednesday signup would receive their D3 and an Insights
+// email on the same Thursday.
+function isoWeekOfYear(d: Date): number {
+  // Stable per-week index; uses UTC so cron timezone shifts don't reorder topics.
+  const target = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+  const dayNum = (target.getUTCDay() + 6) % 7;
+  target.setUTCDate(target.getUTCDate() - dayNum + 3);
+  const firstThursday = new Date(Date.UTC(target.getUTCFullYear(), 0, 4));
+  const firstThursdayDayNum = (firstThursday.getUTCDay() + 6) % 7;
+  firstThursday.setUTCDate(firstThursday.getUTCDate() - firstThursdayDayNum + 3);
+  return 1 + Math.round((target.getTime() - firstThursday.getTime()) / (7 * 24 * 60 * 60 * 1000));
+}
+
+async function runWeeklyInsights() {
+  logger.info("Email scheduler: running weekly AEO insights");
+
+  const eightDaysAgo = daysAgo(8);
+  const users = await db
+    .select()
+    .from(usersTable)
+    .where(
+      and(
+        eq(usersTable.emailOptOut, false),
+        eq(usersTable.emailVerified, true),
+        isNotNull(usersTable.email),
+        lte(usersTable.createdAt, eightDaysAgo),
+      ),
+    );
+
+  const weekIndex = isoWeekOfYear(new Date());
+  let sent = 0;
+  for (const user of users) {
+    if (!user.email) continue;
+    const firstName = getFirstName(user);
+    const ok = await EmailService.sendWeeklyInsights(
+      user.email,
+      firstName,
+      weekIndex,
+      unsubUrl(user.unsubscribeToken),
+    );
+    if (ok) sent++;
+  }
+  logger.info({ sent, weekIndex, total: users.length }, "Weekly insights complete");
+}
+
 // ── Start all schedules ───────────────────────────────────────────────────────
 export function startEmailScheduler() {
   if (!process.env.POSTMARK_API_TOKEN) {
@@ -241,5 +297,13 @@ export function startEmailScheduler() {
     );
   });
 
-  logger.info("Email scheduler started (welcome series, weekly digest, monthly report)");
+  // Thursdays 9:00 AM UTC — far enough from the Monday digest to feel like
+  // a separate touchpoint, mid-week so it lands during planning windows.
+  cron.schedule("0 9 * * 4", () => {
+    runWeeklyInsights().catch((err) =>
+      logger.error({ err }, "Weekly insights cron error")
+    );
+  });
+
+  logger.info("Email scheduler started (welcome series, weekly digest, monthly report, weekly insights)");
 }

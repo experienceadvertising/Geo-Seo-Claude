@@ -260,19 +260,87 @@ Hard rules:
     // it's still null. The UPDATE returning row count tells us whether
     // this is genuinely the user's first audit (preventing duplicates if
     // two audits race to completion).
-    appDb
+    const isFirstAuditPromise = appDb
       .execute(sql`UPDATE users SET first_audit_at = NOW() WHERE id = ${req.userId!} AND first_audit_at IS NULL RETURNING email, first_name AS "firstName", unsubscribe_token AS "unsubscribeToken", email_opt_out AS "emailOptOut"`)
       .then((result) => {
         const u = result.rows[0] as any;
-        if (!u || !u.email || u.emailOptOut) return;
+        if (!u || !u.email || u.emailOptOut) return false;
         const topRec = (analysis.recommendations ?? [])
           .filter((r: any) => r.priority === "critical" || r.priority === "high")[0];
         const topRecommendationText = topRec ? `${topRec.title} — ${topRec.detail}` : null;
         const baseUrl = process.env.FRONTEND_URL || "https://aeoimprovement.com";
         const unsubscribeUrl = `${baseUrl}/unsubscribe?token=${u.unsubscribeToken}`;
-        return EmailService.sendFirstAudit(u.email, u.firstName || "", url, analysis.geoScore, topRecommendationText, unsubscribeUrl);
+        EmailService.sendFirstAudit(u.email, u.firstName || "", url, analysis.geoScore, topRecommendationText, unsubscribeUrl)
+          .catch((err) => req.log.error({ err, userId: req.userId }, "first-audit email failed"));
+        return true; // genuinely first audit — skip score-changed
       })
-      .catch((err) => req.log.error({ err, userId: req.userId }, "first-audit email failed"));
+      .catch((err) => {
+        req.log.error({ err, userId: req.userId }, "first-audit milestone update failed");
+        return false;
+      });
+
+    // Score-Changed milestone email — fires when a user re-audits the same
+    // domain and the score moves by >= 5 points. We compare against the
+    // most recent prior audit on the same hostname (excluding the one we
+    // just inserted). Skip if this was the user's very first audit (no
+    // prior history) or if the prior audit happened in the last 6 hours
+    // (treat near-simultaneous re-runs as iteration noise, not signal).
+    isFirstAuditPromise.then(async (wasFirst) => {
+      if (wasFirst) return;
+      try {
+        const hostname = (() => { try { return new URL(url).hostname; } catch { return null; } })();
+        if (!hostname) return;
+        // Find the most recent PRIOR audit on this hostname for this user,
+        // excluding the one we just inserted. LIKE %hostname% mirrors how
+        // /geo/audits/history matches.
+        const priors = await appDb
+          .select({ geoScore: auditsTable.geoScore, createdAt: auditsTable.createdAt })
+          .from(auditsTable)
+          .where(and(
+            eq(auditsTable.userId, req.userId!),
+            like(auditsTable.url, `%${hostname}%`),
+          ))
+          .orderBy(desc(auditsTable.createdAt))
+          .limit(2);
+        // priors[0] is the just-inserted one; priors[1] is the actual prior.
+        const prior = priors[1];
+        if (!prior) return;
+        const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
+        if (prior.createdAt > sixHoursAgo) return; // iteration noise
+
+        // Both sides are stored on the same 0-100 scale: the analyzer emits
+        // a Math.round'd weighted score in [0,100] and the audits.geo_score
+        // column is `real` storing that value verbatim. No scale conversion
+        // needed — pass raw to the email template.
+        const prev = prior.geoScore;
+        const curr = analysis.geoScore;
+        const delta = Math.round(curr) - Math.round(prev);
+        if (Math.abs(delta) < 5) return;
+
+        // Look up the user for email + unsubscribe token. Skip if opted out.
+        const [u] = await appDb
+          .select({
+            email: usersTable.email,
+            firstName: usersTable.firstName,
+            unsubscribeToken: usersTable.unsubscribeToken,
+            emailOptOut: usersTable.emailOptOut,
+          })
+          .from(usersTable)
+          .where(eq(usersTable.id, req.userId!));
+        if (!u || !u.email || u.emailOptOut) return;
+
+        const topRec = (analysis.recommendations ?? [])
+          .filter((r: any) => r.priority === "critical" || r.priority === "high")[0];
+        const topRecommendationText = topRec ? `${topRec.title} — ${topRec.detail}` : null;
+        const baseUrl = process.env.FRONTEND_URL || "https://aeoimprovement.com";
+        const unsubscribeUrl = `${baseUrl}/unsubscribe?token=${u.unsubscribeToken}`;
+        await EmailService.sendScoreChanged(
+          u.email, u.firstName || "", url, prev, curr, topRecommendationText, unsubscribeUrl,
+        );
+      } catch (err) {
+        req.log.error({ err, userId: req.userId }, "score-changed email failed");
+      }
+    });
 
     res.json({
       ...analysis,
