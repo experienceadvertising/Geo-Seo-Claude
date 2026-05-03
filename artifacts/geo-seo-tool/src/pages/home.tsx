@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAnalyzeUrl, useListAudits } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { ScoreBadge } from "@/components/score-badge";
 import heroImage from "@/assets/hero.png";
@@ -238,6 +239,27 @@ function SignedInDashboard() {
 
   const { data: audits, isLoading: auditsLoading } = useListAudits();
   const analyzeUrl = useAnalyzeUrl();
+  const queryClient = useQueryClient();
+
+  // Post-checkout success handling. Stripe redirects successful upgrades to
+  // `/?checkout=success` so users land on their dashboard (where they can
+  // immediately use what they just paid for) instead of back on /pricing.
+  // We invalidate the plan/me/subscription queries so the new entitlement
+  // shows up without a manual refresh, fire a confirmation toast, then strip
+  // the query param so a refresh doesn't re-trigger the toast.
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("checkout") !== "success") return;
+    queryClient.invalidateQueries({ queryKey: ["me", "plan"] });
+    queryClient.invalidateQueries({ queryKey: ["stripe", "subscription"] });
+    queryClient.invalidateQueries({ queryKey: ["me"] });
+    toast({
+      title: "You're upgraded — welcome aboard",
+      description: "Your new plan is active. All engines, deeper audits, and the full recommendation set are unlocked.",
+    });
+    setLocation("/", { replace: true });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

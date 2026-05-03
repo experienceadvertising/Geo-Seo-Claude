@@ -120,7 +120,14 @@ router.post("/stripe/checkout", requireAuth, async (req, res): Promise<void> => 
       mode: "subscription",
       client_reference_id: userId,
       metadata: { userId, price_id: priceId, plan: plan ?? "" },
-      success_url: `${baseUrl}/pricing?checkout=success`,
+      // Land successful upgrades on the dashboard, NOT back on /pricing —
+      // returning a paying user to the pricing page after they just paid is
+      // jarring (it implies the purchase didn't take). Home renders a
+      // success toast, invalidates the plan query so new entitlements show
+      // immediately, then strips the query param. Cancel stays on /pricing
+      // because the user is mid-comparison and likely wants to pick a
+      // different tier.
+      success_url: `${baseUrl}/?checkout=success`,
       cancel_url: `${baseUrl}/pricing?checkout=cancel`,
     });
 
