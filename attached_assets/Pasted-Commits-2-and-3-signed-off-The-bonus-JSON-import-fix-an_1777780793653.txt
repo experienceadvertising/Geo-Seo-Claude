@@ -1,0 +1,25 @@
+Commits 2 and 3 signed off. The bonus JSON import fix and the .some() legacy detection both look like the right calls. Re-audit confirming only prescriptive page-authoring numbers remain in trigger details is the line we wanted to hold.
+Two quick verifications before commit 4 lands — not blockers, just sanity checks:
+
+Confirm expectedLift: null is explicitly serialized in the API response, not stripped. Grep a POST /api/geo/analyze response body for "expectedLift":null — should appear on every rec. If your serializer drops nulls, switch it or use undefined differently from null in the type.
+Verify recommendationsSchemaVersion: "v1" and the source field survive the PDF export pipeline. Download a PDF after re-running an audit and confirm source attribution appears in the same places badges would in the web UI. If the PDF reads from the audit row directly rather than the enriched API response, fix that path before commit 4.
+
+For commit 4, here's what I'll be reviewing against:
+Badge styling. Four visual states must be distinguishable at a glance, not just on hover. Visual weight should map honestly to confidence:
+
+research + verified — strongest, solid badge, paper icon, hover shows full citation + lastVerifiedAt.
+internal_benchmark + verified — comparable strength but visually distinct (chart/bench icon vs. paper icon).
+research + unverified — outlined rather than solid, hover notes verification is stale.
+practitioner_consensus — muted styling, no checkmark, hover notes "industry consensus, no controlled study."
+
+Don't make practitioner_consensus look as authoritative as research+verified — that defeats the purpose.
+Methodology page. Must include:
+
+"What the research actually says" section with 41%/29% PAWC/SI headline honestly framed.
+SERP-position note (rank-1 −30.3% / rank-5 +115.1% for Cite Sources) as a separate insight, framed as a future product feature.
+134–167 word passage range with audited-corpus benchmark provenance.
+Editorial note explaining what practitioner_consensus means and why we use it.
+Pointer to the source-of-truth file — a "this catalog is open and version-controlled" sentence. Transparency itself is a credibility signal.
+
+Client-side fork. Old audits (no recommendationsSchemaVersion) render exactly as today, no badges. Add a small notice on old audit pages: "This audit was generated before our source-tracking system was added. Re-scan to see updated provenance metadata." Don't strand users on stale reports without a clear path forward.
+When ready, ship commit 4 to dev and re-run the Stripe scan one more time. I'll do a final review on the live /results/[next_id] covering all four UI states, the methodology page, the legacy fork, and the PDF export.
