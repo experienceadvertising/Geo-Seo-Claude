@@ -232,7 +232,12 @@ export default function SimulatePage() {
             </div>
             <div>
               <label className="text-sm font-medium mb-1.5 block">Domain</label>
-              <Input value={domain} disabled />
+              <Input
+                value={domain}
+                placeholder={audit?.url ? getDomain(audit.url) : "loading…"}
+                readOnly
+                className="bg-muted/40 text-foreground"
+              />
             </div>
           </div>
 
@@ -417,9 +422,9 @@ export default function SimulatePage() {
                         <span className="font-mono font-semibold">{pct(e.citationRate)}</span>
                       </div>
                       {e.avgFirstPosition !== null && e.avgFirstPosition !== undefined && (
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Avg position</span>
-                          <span className="font-mono">{pct(e.avgFirstPosition)} in</span>
+                        <div className="flex justify-between text-sm" title="Where in the response your brand first appears, on average. 0% = top of the response, 100% = end. Lower is better.">
+                          <span className="text-muted-foreground">Avg depth</span>
+                          <span className="font-mono">{pct(e.avgFirstPosition)}</span>
                         </div>
                       )}
                       {e.errorRate > 0 && (
@@ -482,8 +487,8 @@ export default function SimulatePage() {
                         </thead>
                         <tbody>
                           {sorted.map((row, i) => {
-                            const isLeading = !row.isYou && row.overallCitationRate > you.overallCitationRate;
                             const gap = row.overallCitationRate - you.overallCitationRate;
+                            const noData = !row.isYou && row.overallCitationRate === 0 && you.overallCitationRate === 0;
                             return (
                               <tr key={row.domain} className={`border-b last:border-0 ${row.isYou ? "bg-primary/5" : ""}`}>
                                 <td className="py-3 pr-4">
@@ -494,9 +499,13 @@ export default function SimulatePage() {
                                         {row.isYou ? `${row.domain} (you)` : row.domain}
                                       </div>
                                       {!row.isYou && (
-                                        <div className={`text-[10px] font-mono font-semibold ${gap > 0 ? "text-red-500" : "text-green-500"}`}>
-                                          {gap > 0 ? `↑ ${Math.round(gap * 100)}% ahead` : `↓ ${Math.round(Math.abs(gap) * 100)}% behind`}
-                                        </div>
+                                        noData ? (
+                                          <div className="text-[10px] font-mono text-muted-foreground italic">insufficient data</div>
+                                        ) : (
+                                          <div className={`text-[10px] font-mono font-semibold ${gap > 0 ? "text-red-500" : "text-green-500"}`}>
+                                            {gap > 0 ? `↑ ${Math.round(gap * 100)}pp ahead` : `↓ ${Math.round(Math.abs(gap) * 100)}pp behind`}
+                                          </div>
+                                        )
                                       )}
                                     </div>
                                   </div>

@@ -103,6 +103,13 @@ JSON-LD blocks emitted: FAQPage + BreadcrumbList on /vs/* pages; ItemList + Arti
 
 `components/authority-signals-card.tsx` — recommends Linkby (paid editorial), Connectively/HARO, Featured.com, PodMatch, Wikipedia, Reddit, YouTube as third-party citation channels that boost AEO. Lives in `DashboardLearningHub` on the home page. No affiliate links — pure recommendations with disclosure.
 
+## Prompt Simulation
+
+- Default auto-generated prompts: 6 (was 8) — 25% fewer queries per simulation, ~6×4=24 queries default. Prompt length constrained to 8–15 words for natural user-style queries.
+- Gemini grounding URLs (vertexaisearch redirects) are resolved to final destinations via HEAD with redirect-follow before citation matching, so stripe.com appears as stripe.com instead of vertexaisearch.cloud.google.com.
+- UI: Avg position relabeled "Avg depth" (was "33% in"). Citation Gap shows "insufficient data" when both you and a competitor have 0 citations (was nonsensical "0% behind"). Domain field is read-only with explicit placeholder.
+- Fix Generator panel auto-scrolls into view on open (was rendering below the fold causing apparent "did nothing" UX).
+
 ## Codegen Note
 
 After running codegen, the barrel file at `lib/api-zod/src/index.ts` is rewritten by the npm script to only export from `./generated/api` (to avoid duplicate export errors from split-mode zod generation).

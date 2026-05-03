@@ -223,6 +223,23 @@ async function queryClaude(prompt: string): Promise<{ text: string; urls: string
   return { text, urls: Array.from(urls) };
 }
 
+// Resolve a vertexaisearch.cloud.google.com/grounding-api-redirect URL to its
+// final destination via HEAD with redirect-follow. Returns the original URL on
+// any failure so we never lose data — but the resolved URL is what we want for
+// citation matching (otherwise every Gemini citation looks like
+// "vertexaisearch.cloud.google.com" and matches nothing).
+async function resolveRedirect(url: string, timeoutMs = 5000): Promise<string> {
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), timeoutMs);
+    const res = await fetch(url, { method: "HEAD", redirect: "follow", signal: ctrl.signal });
+    clearTimeout(t);
+    return res.url || url;
+  } catch {
+    return url;
+  }
+}
+
 async function queryGemini(prompt: string): Promise<{ text: string; urls: string[] }> {
   const baseURL = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL!;
   const apiKey = process.env.AI_INTEGRATIONS_GEMINI_API_KEY!;
@@ -245,11 +262,19 @@ async function queryGemini(prompt: string): Promise<{ text: string; urls: string
   const text = data?.candidates?.[0]?.content?.parts?.map((p: any) => p.text).filter(Boolean).join("") || "";
   const urls = new Set<string>();
   const grounding = data?.candidates?.[0]?.groundingMetadata;
-  if (Array.isArray(grounding?.groundingChunks)) {
-    for (const chunk of grounding.groundingChunks) {
-      if (chunk?.web?.uri) urls.add(chunk.web.uri);
-    }
+
+  // Resolve grounding-api-redirect URLs in parallel so citation matching
+  // sees the real destination (stripe.com/docs/...) instead of the opaque
+  // vertexaisearch host. 5s per URL, capped — this never blocks the engine
+  // beyond ~5s even if some redirects hang.
+  const rawGroundingUris: string[] = Array.isArray(grounding?.groundingChunks)
+    ? grounding.groundingChunks.map((c: any) => c?.web?.uri).filter((u: any): u is string => typeof u === "string")
+    : [];
+  if (rawGroundingUris.length > 0) {
+    const resolved = await Promise.all(rawGroundingUris.map((u) => resolveRedirect(u, 5000)));
+    for (const u of resolved) urls.add(u);
   }
+
   for (const u of extractCitedUrls(text)) urls.add(u);
   return { text, urls: Array.from(urls) };
 }
@@ -450,18 +475,19 @@ export async function generatePromptsForBrand(
     ? contextLines.join("\n")
     : "(no additional context)";
 
-  const sys = `You are an expert in Answer Engine Optimization (AEO). Your task is to generate 8 realistic search prompts that real users type into ChatGPT, Perplexity, Claude, or Google AI Overviews when researching a topic that ${brandName} should ideally be cited for.
+  const sys = `You are an expert in Answer Engine Optimization (AEO). Your task is to generate 6 realistic search prompts that real users type into ChatGPT, Perplexity, Claude, or Google AI Overviews when researching a topic that ${brandName} should ideally be cited for.
 
 IMPORTANT: Read the site context carefully below to understand what ${brandName} actually does — community platform, SaaS tool, marketplace, agency, media brand, etc. — and generate prompts that match those specific use cases, not generic category prompts.
 
 Rules:
-- Generate exactly 8 prompts
-- Mix intent types: 2 informational, 2 comparative, 2 how-to, 2 recommendation
+- Generate exactly 6 prompts
+- Mix funnel stages: 2 top-of-funnel ("best X for Y"), 2 comparison/how-to, 2 specific informational
+- Each prompt must be 8–15 words — short and natural, the way real users actually type queries (NOT a 25-word sentence with multiple sub-clauses)
 - Match the prompts to the ACTUAL product/service/community type inferred from the context
 - Do NOT include the brand name "${brandName}" in any prompt — they must be neutral category prompts the brand could be cited for
-- Write in natural human language (not marketing language)
+- Write in natural human language (not marketing language, not B2B jargon)
 - Target the actual audience inferred from the context (B2B vs B2C, skill level, industry, etc.)
-- Return ONLY the 8 prompts, one per line, no numbering, no bullets, no quotes, no explanation`;
+- Return ONLY the 6 prompts, one per line, no numbering, no bullets, no quotes, no explanation`;
 
   const user = `Brand: ${brandName}\n\n${contextBlock}`;
 
@@ -478,5 +504,5 @@ Rules:
     .split("\n")
     .map((l) => l.replace(/^[\d.\-\)\s"'*]+|["'\s]+$/g, "").trim())
     .filter((l) => l.length > 10 && l.length < 200)
-    .slice(0, 8);
+    .slice(0, 6);
 }

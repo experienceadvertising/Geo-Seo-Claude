@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, Link, useLocation } from "wouter";
 import { useGetAudit, getGetAuditQueryKey, useAnalyzeUrl, customFetch } from "@workspace/api-client-react";
 import { ArrowLeft, CheckCircle2, XCircle, AlertTriangle, Bot, TerminalSquare, FileText, Code2, ShieldAlert, Sparkles, Loader2, Download, Building2, RefreshCw, TrendingUp, Wrench, Lock, ChevronDown, ChevronUp, Copy, Check } from "lucide-react";
@@ -36,6 +36,7 @@ export default function Results() {
   const { isPro } = usePlan();
   const [showFixes, setShowFixes] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const fixesRef = useRef<HTMLDivElement | null>(null);
 
   const { data: audit, isLoading, isError } = useGetAudit(id, {
     query: {
@@ -85,6 +86,15 @@ export default function Results() {
     staleTime: Infinity,
     retry: false,
   });
+
+  // Scroll the Fix Generator panel into view when it opens, so paid users
+  // immediately see the result instead of clicking a button with no apparent
+  // effect (the panel renders ~600px below the click target).
+  useEffect(() => {
+    if (showFixes && isPro && fixesRef.current) {
+      fixesRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [showFixes, isPro]);
 
   const copyToClipboard = async (text: string, key: string) => {
     try {
@@ -161,7 +171,7 @@ export default function Results() {
               onClick={() => setShowFixes(v => !v)}
               data-testid="button-fix-generator"
             >
-              {isPro ? <Wrench className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
+              {isPro && fixesLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : isPro ? <Wrench className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
               Fix Generator {isPro ? (showFixes ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />) : <Badge className="text-[10px] ml-1 px-1 py-0 bg-gradient-to-r from-emerald-500 to-teal-500 text-white">Pro</Badge>}
             </Button>
             <Button
@@ -631,7 +641,7 @@ export default function Results() {
       {/* Fix Generator Panel */}
       {showFixes && (
         isPro ? (
-          <Card className="border-emerald-200 dark:border-emerald-900 shadow-sm">
+          <Card ref={fixesRef} className="border-emerald-200 dark:border-emerald-900 shadow-sm">
             <CardHeader className="border-b bg-emerald-500/5 pb-4">
               <CardTitle className="flex items-center gap-2 text-sm font-mono uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
                 <Wrench className="h-4 w-4" /> Fix Generator
