@@ -61,6 +61,24 @@ export type GeoAuditResultScores = {
   platformOptimization: number;
 };
 
+/**
+ * Version of the recommendations catalog schema this audit's
+recommendations conform to. "v1" means each recommendation carries
+a structured `source` (and a possibly-null `expectedLift`) and the
+client should render source-attribution badges. `null` means the
+audit was stored before source-tracking was added; the client
+should render recommendations without badges and surface a
+"re-scan to get provenance" notice.
+
+ */
+export type GeoAuditResultRecommendationsSchemaVersion =
+  | (typeof GeoAuditResultRecommendationsSchemaVersion)[keyof typeof GeoAuditResultRecommendationsSchemaVersion]
+  | null;
+
+export const GeoAuditResultRecommendationsSchemaVersion = {
+  v1: "v1",
+} as const;
+
 export type BrandSignalState =
   (typeof BrandSignalState)[keyof typeof BrandSignalState];
 
@@ -100,6 +118,60 @@ export const GeoRecommendationCategory = {
   entity: "entity",
 } as const;
 
+export type RecommendationSourceType =
+  (typeof RecommendationSourceType)[keyof typeof RecommendationSourceType];
+
+export const RecommendationSourceType = {
+  research: "research",
+  internal_benchmark: "internal_benchmark",
+  practitioner_consensus: "practitioner_consensus",
+} as const;
+
+/**
+ * Source-attribution metadata for a single recommendation, sourced from
+the @workspace/recommendations catalog. Absent on legacy audits stored
+before the catalog existed.
+
+ */
+export interface RecommendationSource {
+  type: RecommendationSourceType;
+  url: string | null;
+  citation: string;
+  verified: boolean;
+  /** ISO date (YYYY-MM-DD) of last human verification, or null when verified=false. */
+  lastVerifiedAt: string | null;
+  /** Editorial notes safe to render in a tooltip / details panel. */
+  notes?: string;
+}
+
+export type ExpectedLiftKind =
+  (typeof ExpectedLiftKind)[keyof typeof ExpectedLiftKind];
+
+export const ExpectedLiftKind = {
+  percent: "percent",
+  multiplier: "multiplier",
+  positions: "positions",
+} as const;
+
+/**
+ * Structured lift claim. `range` represents the source's reported range
+across the categories or prompt classes the source itself reports on
+(e.g. a paper reporting "30.3% on average across prompts, with
+individual prompt categories ranging 18%-47%"). It is NOT a
+statistical confidence interval.
+
+ */
+export interface ExpectedLift {
+  kind: ExpectedLiftKind;
+  value: number;
+  /**
+   * Source-reported range [min, max]. Not allowed when kind="positions".
+   * @minItems 2
+   * @maxItems 2
+   */
+  range?: number[];
+}
+
 export interface GeoRecommendation {
   id: string;
   title: string;
@@ -107,6 +179,13 @@ export interface GeoRecommendation {
   priority: GeoRecommendationPriority;
   category: GeoRecommendationCategory;
   impact: string;
+  source?: RecommendationSource;
+  /** Structured quantitative lift claim, sourced from the catalog.
+Explicitly `null` when no defensible precise number exists for this
+recommendation; in that case the qualitative wording in `detail`
+is the only claim made. Absent on legacy audits.
+ */
+  expectedLift?: ExpectedLift | null;
 }
 
 export interface GeoAuditResult {
@@ -140,6 +219,15 @@ export interface GeoAuditResult {
   brandName?: string;
   brandSignals?: BrandSignal[];
   recommendations?: GeoRecommendation[];
+  /** Version of the recommendations catalog schema this audit's
+recommendations conform to. "v1" means each recommendation carries
+a structured `source` (and a possibly-null `expectedLift`) and the
+client should render source-attribution badges. `null` means the
+audit was stored before source-tracking was added; the client
+should render recommendations without badges and surface a
+"re-scan to get provenance" notice.
+ */
+  recommendationsSchemaVersion?: GeoAuditResultRecommendationsSchemaVersion;
 }
 
 export interface SuggestPromptsBody {

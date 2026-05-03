@@ -1,0 +1,17 @@
+Verifications cleared. The expectedLift/notes serialization distinction is exactly right — keep that pattern. Catching the PDF rendering gap pre-launch saves a credibility leak on the export path.
+Three refinements on the PDF additions before commit 4 ships:
+
+Watch the visual noise across 22+ recs in the PDF. For practitioner_consensus recs, render just a short [industry consensus] tag inline and aggregate the full citation text into a numbered footnotes section at the end of the recommendations block. For research + verified and internal_benchmark + verified, keep the inline italic citation — those are the high-signal entries readers most want context on. Mirrors how academic papers handle it.
+Subtitle reword. Use "Each recommendation is labeled with its source — peer-reviewed research, internal benchmark, or practitioner consensus. Apply top items first." The word "labeled" is honest about what's actually happening; "includes its source and confidence" reads slightly markety.
+Legacy notice consistency. Word-for-word identical between web and PDF so users who see both formats don't get two framings of the same situation.
+
+One additional sweep to add to commit 4 scope: grep the entire codebase (web + PDF + any email templates) for hardcoded references to "Princeton," "KDD 2024," "GEO research," and similar blanket research claims. Anything asserting research-backing at the whole report level — like the line you found at pdfReport.ts:209 — is now inaccurate and needs to be either removed or contextualized. Five-minute search, prevents a second round of finding misleading copy after launch.
+Go. Ship commit 4 to dev, run the Stripe scan, post the new /results/[id] URL. I'll do a final review covering:
+
+4 badge states render distinguishably on web with correct hover content
+Methodology page covers all 5 required sections (research framing, SERP-position note, 134–167 word benchmark, practitioner_consensus editorial note, source-of-truth pointer)
+Client-side fork works — old audits render cleanly with legacy notice
+PDF reflects all four PDF additions + the hardcoded-claims sweep
+Practitioner_consensus weights visually lighter than research+verified in both web and PDF
+
+If all five pass, this goes to production. If anything fails, we patch in place rather than reverting.

@@ -40,7 +40,33 @@ interface Schema { type: string; present: boolean }
 interface Platform { platform: string; score: number; status: string; recommendations: string[] }
 interface CitBlock { heading: string | null; wordCount: number; score: number; grade: string; preview: string }
 interface BrandSignal { source: string; found: boolean; detail: string | null; state?: string }
-interface GeoRec { id: string; title: string; detail: string; priority: "critical"|"high"|"medium"|"low"; category: string; impact: string }
+
+type RecSourceType = "research" | "internal_benchmark" | "practitioner_consensus";
+interface RecSource {
+  type: RecSourceType;
+  url: string | null;
+  citation: string;
+  verified: boolean;
+  lastVerifiedAt: string | null;
+  notes?: string;
+}
+interface ExpectedLift {
+  kind: "percent" | "multiplier" | "positions";
+  value: number;
+  range?: [number, number];
+}
+interface GeoRec {
+  id: string;
+  title: string;
+  detail: string;
+  priority: "critical" | "high" | "medium" | "low";
+  category: string;
+  impact: string;
+  /** Present only on v1 audits (audits generated after source-tracking shipped). */
+  source?: RecSource;
+  /** Explicitly null when no defensible precise number exists for this rec. Absent on legacy. */
+  expectedLift?: ExpectedLift | null;
+}
 
 const COLORS = {
   primary: "#0d9488",
@@ -200,14 +226,35 @@ export function generateAuditPdf(audit: AuditRow, stream: Writable): Promise<voi
     }
   }
 
-  // GEO Recommendations (research-backed, prioritized)
+  // GEO Recommendations — each labeled with its source. For research +
+  // internal_benchmark recs we render the citation inline (academic-paper
+  // style); for practitioner_consensus we show a short [industry consensus]
+  // tag inline and aggregate citations into a numbered footnotes section at
+  // the end of the recommendations block, to keep visual noise low.
   const recs = asArray<GeoRec>(audit.recommendations);
   if (recs.length > 0) {
     if (doc.y > doc.page.height - 250) doc.addPage();
     sectionHeader(doc, "Prioritized GEO Recommendations");
     doc.fontSize(8).fillColor(COLORS.muted).font("Helvetica-Oblique")
-      .text("Grounded in Princeton/IIT Delhi GEO research (KDD 2024). Apply top items first.");
+      .text("Each recommendation is labeled with its source — peer-reviewed research, internal benchmark, or practitioner consensus. Apply top items first.");
+
+    // Detect v1 schema (any rec carries a `source` field). Same .some() check
+    // the API uses to compute recommendationsSchemaVersion. Mirrored on the
+    // web client so the user sees one consistent legacy notice across formats.
+    const isV1 = recs.some((r) => r && typeof r === "object" && r.source != null);
+    if (!isV1) {
+      doc.moveDown(0.5);
+      doc.fontSize(8).fillColor(COLORS.warn).font("Helvetica-Oblique")
+        .text("This audit was generated before our source-tracking system was added. Re-scan to see updated provenance metadata.");
+    }
     doc.moveDown(0.4);
+
+    // Collect practitioner_consensus citations as we render — emit numbered
+    // footnotes after the rec list. Map citation→footnote index so the same
+    // citation isn't repeated.
+    const footnoteIndexByCitation = new Map<string, number>();
+    const footnotes: Array<{ n: number; citation: string; url: string | null }> = [];
+
     for (const r of recs.slice(0, 12)) {
       if (doc.y > doc.page.height - 110) doc.addPage();
       const y = doc.y;
@@ -218,13 +265,61 @@ export function generateAuditPdf(audit: AuditRow, stream: Writable): Promise<voi
       doc.roundedRect(50, y, 58, 14, 3).fillAndStroke(pColor, pColor);
       doc.fillColor("white").fontSize(8).font("Helvetica-Bold")
         .text(String(r.priority ?? "").toUpperCase(), 50, y + 3, { width: 58, align: "center" });
+
+      // Title is always rendered cleanly in bold — NO source suffix mixed in.
+      // Source attribution is a separate muted/italic 8pt line below, so the
+      // visual hierarchy makes practitioner_consensus clearly lighter than
+      // the bold title (architect fix: previously the [industry consensus]
+      // tag inherited the bold title font, defeating the lightness intent).
       doc.fillColor(COLORS.ink).fontSize(11).font("Helvetica-Bold")
         .text(String(r.title ?? ""), 116, y, { width: doc.page.width - 166 });
+
       doc.fillColor(COLORS.muted).fontSize(8).font("Helvetica-Oblique")
         .text(`${String(r.category ?? "")} · ${String(r.impact ?? "")}`, 116, doc.y, { width: doc.page.width - 166 });
       doc.fillColor(COLORS.ink).fontSize(9).font("Helvetica")
         .text(String(r.detail ?? ""), 116, doc.y + 2, { width: doc.page.width - 166, lineGap: 1 });
+
+      // Source-attribution line. Always muted, oblique, 8pt — lighter than
+      // both the bold title and the regular-weight detail body.
+      const src = r.source;
+      if (src) {
+        if (src.type === "practitioner_consensus") {
+          // Reuse footnote index if this citation has already been numbered,
+          // so the same source isn't repeated in the footnotes block.
+          let n = footnoteIndexByCitation.get(src.citation) ?? null;
+          if (n === null) {
+            n = footnotes.length + 1;
+            footnoteIndexByCitation.set(src.citation, n);
+            footnotes.push({ n, citation: src.citation, url: src.url });
+          }
+          doc.fillColor(COLORS.muted).fontSize(8).font("Helvetica-Oblique")
+            .text(`[industry consensus ${n}]`, 116, doc.y + 2, { width: doc.page.width - 166 });
+        } else {
+          // research (verified or pending) and internal_benchmark — render
+          // the citation inline. Pending-verification gets an explicit flag.
+          const flag = src.type === "research" && !src.verified
+            ? " · pending verification"
+            : "";
+          const verifiedTag = src.verified && src.lastVerifiedAt
+            ? `  ✓ verified ${src.lastVerifiedAt}`
+            : "";
+          doc.fillColor(COLORS.muted).fontSize(8).font("Helvetica-Oblique")
+            .text(`Source${flag}: ${src.citation}${verifiedTag}`, 116, doc.y + 2, { width: doc.page.width - 166 });
+        }
+      }
       doc.moveDown(0.5);
+    }
+
+    // Numbered practitioner_consensus footnotes.
+    if (footnotes.length > 0) {
+      if (doc.y > doc.page.height - 100) doc.addPage();
+      doc.moveDown(0.3);
+      doc.fillColor(COLORS.muted).fontSize(8).font("Helvetica-Bold").text("INDUSTRY-CONSENSUS CITATIONS", 50, doc.y, { characterSpacing: 1 });
+      doc.moveDown(0.2);
+      for (const fn of footnotes) {
+        doc.fillColor(COLORS.muted).fontSize(8).font("Helvetica")
+          .text(`${fn.n}. ${fn.citation}${fn.url ? ` — ${fn.url}` : ""}`, 50, doc.y, { width: doc.page.width - 100, lineGap: 1 });
+      }
     }
   }
 

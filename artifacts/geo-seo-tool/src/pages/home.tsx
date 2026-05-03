@@ -11,36 +11,39 @@ import { ScoreBadge } from "@/components/score-badge";
 import heroImage from "@/assets/hero.png";
 
 function MarketStats() {
+  // Qualitative value-prop trio. Earlier versions of this section displayed
+  // unsourced "+527%", "4.4x", "Top 10% / 90%" stat cards with disclaimers
+  // about being "benchmark estimates" — those numbers had no traceable
+  // primary source and were removed as part of the Phase 2 source-every-claim
+  // migration. The case for AEO holds without them; we make the case
+  // qualitatively here and let the audit itself produce the per-page numbers.
   return (
     <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
       <Card className="bg-card">
         <CardHeader className="pb-2">
-          <CardDescription className="flex items-center gap-2"><TrendingUp className="h-4 w-4 text-primary" /> AI Traffic</CardDescription>
-          <CardTitle className="text-3xl">+527%</CardTitle>
+          <CardDescription className="flex items-center gap-2"><TrendingUp className="h-4 w-4 text-primary" /> Where attention is moving</CardDescription>
+          <CardTitle className="text-xl leading-snug">AI search is becoming a discovery channel</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">YoY growth in traffic from LLMs and AI search engines.</p>
-          <p className="text-[11px] mt-2 text-muted-foreground/80">Benchmark estimate from aggregated 2025–2026 AEO trend reports.</p>
+          <p className="text-sm text-muted-foreground">ChatGPT, Claude, Perplexity, and Google AI Overviews now answer queries that used to start a 10-blue-link search session. If your page isn't shaped to be cited, you're invisible in that flow.</p>
         </CardContent>
       </Card>
       <Card className="bg-card">
         <CardHeader className="pb-2">
-          <CardDescription className="flex items-center gap-2"><Zap className="h-4 w-4 text-primary" /> AI Conversion</CardDescription>
-          <CardTitle className="text-3xl">4.4x</CardTitle>
+          <CardDescription className="flex items-center gap-2"><Zap className="h-4 w-4 text-primary" /> Why the visits matter</CardDescription>
+          <CardTitle className="text-xl leading-snug">AI-referred visitors arrive with intent</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">Higher conversion rate compared to traditional search traffic.</p>
-          <p className="text-[11px] mt-2 text-muted-foreground/80">Benchmark estimate across AI-assistant referral sessions.</p>
+          <p className="text-sm text-muted-foreground">A user clicking a citation inside an AI answer has already read a recommendation about you. They land further down the funnel than someone scanning a list of search results.</p>
         </CardContent>
       </Card>
       <Card className="bg-card">
         <CardHeader className="pb-2">
-          <CardDescription className="flex items-center gap-2"><BarChart3 className="h-4 w-4 text-primary" /> Citability</CardDescription>
-          <CardTitle className="text-3xl">Top 10%</CardTitle>
+          <CardDescription className="flex items-center gap-2"><BarChart3 className="h-4 w-4 text-primary" /> What we measure</CardDescription>
+          <CardTitle className="text-xl leading-snug">A score that maps to citation behavior</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">of pages capture 90% of all AI citations. Optimization matters.</p>
-          <p className="text-[11px] mt-2 text-muted-foreground/80">Illustrative concentration benchmark; validate against your own category.</p>
+          <p className="text-sm text-muted-foreground">Our AEO score is a composite of citability, AI-crawler access, brand authority, schema, and technical SEO — each tied to a recommendation with its source disclosed.</p>
         </CardContent>
       </Card>
     </section>
@@ -109,7 +112,7 @@ function SignedOutLanding() {
               </h1>
               <p className="text-lg md:text-xl text-muted-foreground max-w-[560px]">
                 Score your website's citability across every major AI search engine and get
-                personalized, research-backed recommendations to climb the rankings.
+                personalized recommendations with transparent sources to climb the rankings.
               </p>
 
               <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm text-foreground/80 max-w-md">

@@ -457,7 +457,9 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
   const hasHowToSchema = structuredDataTypes.some((s) => s.present && s.type === "HowTo");
   const brandAuthority = await analyzeBrandAuthority(url, title, hasOrgSchema, hasLlmsTxt, orgSchemaName);
 
-  // Generate research-backed GEO recommendations from extracted content signals
+  // Generate prioritized GEO recommendations from extracted content signals.
+  // Source attribution for each recommendation lives in the @workspace/recommendations
+  // catalog and is composed in by composeRec() in geoRecommendations.ts.
   const blockedAiCrawlers = crawlerStatuses.filter((c) => !c.allowed).map((c) => c.name);
   let recommendations: GeoRecommendation[] = [];
   if ($page) {

@@ -22,6 +22,9 @@ export const AnalyzeUrlBody = zod.object({
   url: zod.string().describe("URL to analyze"),
 });
 
+export const analyzeUrlResponseRecommendationsItemExpectedLiftOneRangeMin = 2;
+export const analyzeUrlResponseRecommendationsItemExpectedLiftOneRangeMax = 2;
+
 export const AnalyzeUrlResponse = zod.object({
   id: zod.number().optional(),
   url: zod.string(),
@@ -126,9 +129,62 @@ export const AnalyzeUrlResponse = zod.object({
           "entity",
         ]),
         impact: zod.string(),
+        source: zod
+          .object({
+            type: zod.enum([
+              "research",
+              "internal_benchmark",
+              "practitioner_consensus",
+            ]),
+            url: zod.string().nullable(),
+            citation: zod.string(),
+            verified: zod.boolean(),
+            lastVerifiedAt: zod
+              .string()
+              .nullable()
+              .describe(
+                "ISO date (YYYY-MM-DD) of last human verification, or null when verified=false.",
+              ),
+            notes: zod
+              .string()
+              .optional()
+              .describe(
+                "Editorial notes safe to render in a tooltip \/ details panel.",
+              ),
+          })
+          .optional()
+          .describe(
+            "Source-attribution metadata for a single recommendation, sourced from\nthe @workspace\/recommendations catalog. Absent on legacy audits stored\nbefore the catalog existed.\n",
+          ),
+        expectedLift: zod
+          .object({
+            kind: zod.enum(["percent", "multiplier", "positions"]),
+            value: zod.number(),
+            range: zod
+              .array(zod.number())
+              .min(analyzeUrlResponseRecommendationsItemExpectedLiftOneRangeMin)
+              .max(analyzeUrlResponseRecommendationsItemExpectedLiftOneRangeMax)
+              .optional()
+              .describe(
+                'Source-reported range [min, max]. Not allowed when kind=\"positions\".',
+              ),
+          })
+          .describe(
+            'Structured lift claim. `range` represents the source\'s reported range\nacross the categories or prompt classes the source itself reports on\n(e.g. a paper reporting \"30.3% on average across prompts, with\nindividual prompt categories ranging 18%-47%\"). It is NOT a\nstatistical confidence interval.\n',
+          )
+          .nullish()
+          .describe(
+            "Structured quantitative lift claim, sourced from the catalog.\nExplicitly `null` when no defensible precise number exists for this\nrecommendation; in that case the qualitative wording in `detail`\nis the only claim made. Absent on legacy audits.\n",
+          ),
       }),
     )
     .optional(),
+  recommendationsSchemaVersion: zod
+    .enum(["v1"])
+    .nullish()
+    .describe(
+      'Version of the recommendations catalog schema this audit\'s\nrecommendations conform to. \"v1\" means each recommendation carries\na structured `source` (and a possibly-null `expectedLift`) and the\nclient should render source-attribution badges. `null` means the\naudit was stored before source-tracking was added; the client\nshould render recommendations without badges and surface a\n\"re-scan to get provenance\" notice.\n',
+    ),
 });
 
 /**
@@ -154,6 +210,9 @@ export const ListAuditsResponse = zod.array(ListAuditsResponseItem);
 export const GetAuditParams = zod.object({
   id: zod.coerce.number(),
 });
+
+export const getAuditResponseRecommendationsItemExpectedLiftOneRangeMin = 2;
+export const getAuditResponseRecommendationsItemExpectedLiftOneRangeMax = 2;
 
 export const GetAuditResponse = zod.object({
   id: zod.number().optional(),
@@ -259,9 +318,62 @@ export const GetAuditResponse = zod.object({
           "entity",
         ]),
         impact: zod.string(),
+        source: zod
+          .object({
+            type: zod.enum([
+              "research",
+              "internal_benchmark",
+              "practitioner_consensus",
+            ]),
+            url: zod.string().nullable(),
+            citation: zod.string(),
+            verified: zod.boolean(),
+            lastVerifiedAt: zod
+              .string()
+              .nullable()
+              .describe(
+                "ISO date (YYYY-MM-DD) of last human verification, or null when verified=false.",
+              ),
+            notes: zod
+              .string()
+              .optional()
+              .describe(
+                "Editorial notes safe to render in a tooltip \/ details panel.",
+              ),
+          })
+          .optional()
+          .describe(
+            "Source-attribution metadata for a single recommendation, sourced from\nthe @workspace\/recommendations catalog. Absent on legacy audits stored\nbefore the catalog existed.\n",
+          ),
+        expectedLift: zod
+          .object({
+            kind: zod.enum(["percent", "multiplier", "positions"]),
+            value: zod.number(),
+            range: zod
+              .array(zod.number())
+              .min(getAuditResponseRecommendationsItemExpectedLiftOneRangeMin)
+              .max(getAuditResponseRecommendationsItemExpectedLiftOneRangeMax)
+              .optional()
+              .describe(
+                'Source-reported range [min, max]. Not allowed when kind=\"positions\".',
+              ),
+          })
+          .describe(
+            'Structured lift claim. `range` represents the source\'s reported range\nacross the categories or prompt classes the source itself reports on\n(e.g. a paper reporting \"30.3% on average across prompts, with\nindividual prompt categories ranging 18%-47%\"). It is NOT a\nstatistical confidence interval.\n',
+          )
+          .nullish()
+          .describe(
+            "Structured quantitative lift claim, sourced from the catalog.\nExplicitly `null` when no defensible precise number exists for this\nrecommendation; in that case the qualitative wording in `detail`\nis the only claim made. Absent on legacy audits.\n",
+          ),
       }),
     )
     .optional(),
+  recommendationsSchemaVersion: zod
+    .enum(["v1"])
+    .nullish()
+    .describe(
+      'Version of the recommendations catalog schema this audit\'s\nrecommendations conform to. \"v1\" means each recommendation carries\na structured `source` (and a possibly-null `expectedLift`) and the\nclient should render source-attribution badges. `null` means the\naudit was stored before source-tracking was added; the client\nshould render recommendations without badges and surface a\n\"re-scan to get provenance\" notice.\n',
+    ),
 });
 
 /**

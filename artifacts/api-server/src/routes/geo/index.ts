@@ -342,8 +342,16 @@ router.get("/geo/audits/:id", requireAuth, readRateLimiter, async (req, res): Pr
   // recommendations array remains null — there is nothing for the client to
   // badge in that case anyway, so the schema version is not actionable.
   const storedRecs = (audit.recommendations as unknown[]) ?? [];
+  // v1 detection: a stored rec carries a non-null `source` object. We use
+  // `!= null` (not `"source" in r`) so a placeholder rec persisted with
+  // `source: null` does NOT false-positive as v1 — that would mismatch the
+  // PDF exporter (which uses the same `r.source != null` check) and produce
+  // a v1 audit on the web with a legacy notice in the PDF.
   const hasV1Source = storedRecs.some(
-    (r) => typeof r === "object" && r !== null && "source" in (r as Record<string, unknown>),
+    (r) =>
+      typeof r === "object" &&
+      r !== null &&
+      (r as Record<string, unknown>).source != null,
   );
 
   res.json({

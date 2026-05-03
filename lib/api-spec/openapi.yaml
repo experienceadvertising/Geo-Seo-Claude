@@ -411,6 +411,18 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/GeoRecommendation"
+        recommendationsSchemaVersion:
+          type: string
+          enum: [v1]
+          nullable: true
+          description: |
+            Version of the recommendations catalog schema this audit's
+            recommendations conform to. "v1" means each recommendation carries
+            a structured `source` (and a possibly-null `expectedLift`) and the
+            client should render source-attribution badges. `null` means the
+            audit was stored before source-tracking was added; the client
+            should render recommendations without badges and surface a
+            "re-scan to get provenance" notice.
       required:
         - url
         - geoScore
@@ -445,6 +457,17 @@ components:
           enum: [answerability, authority, structure, depth, freshness, technical, entity]
         impact:
           type: string
+        source:
+          $ref: "#/components/schemas/RecommendationSource"
+        expectedLift:
+          allOf:
+            - $ref: "#/components/schemas/ExpectedLift"
+          nullable: true
+          description: |
+            Structured quantitative lift claim, sourced from the catalog.
+            Explicitly `null` when no defensible precise number exists for this
+            recommendation; in that case the qualitative wording in `detail`
+            is the only claim made. Absent on legacy audits.
       required:
         - id
         - title
@@ -452,6 +475,62 @@ components:
         - priority
         - category
         - impact
+
+    RecommendationSource:
+      type: object
+      description: |
+        Source-attribution metadata for a single recommendation, sourced from
+        the @workspace/recommendations catalog. Absent on legacy audits stored
+        before the catalog existed.
+      properties:
+        type:
+          type: string
+          enum: [research, internal_benchmark, practitioner_consensus]
+        url:
+          type: string
+          nullable: true
+        citation:
+          type: string
+        verified:
+          type: boolean
+        lastVerifiedAt:
+          type: string
+          nullable: true
+          description: ISO date (YYYY-MM-DD) of last human verification, or null when verified=false.
+        notes:
+          type: string
+          description: Editorial notes safe to render in a tooltip / details panel.
+      required:
+        - type
+        - url
+        - citation
+        - verified
+        - lastVerifiedAt
+
+    ExpectedLift:
+      type: object
+      description: |
+        Structured lift claim. `range` represents the source's reported range
+        across the categories or prompt classes the source itself reports on
+        (e.g. a paper reporting "30.3% on average across prompts, with
+        individual prompt categories ranging 18%-47%"). It is NOT a
+        statistical confidence interval.
+      properties:
+        kind:
+          type: string
+          enum: [percent, multiplier, positions]
+        value:
+          type: number
+        range:
+          type: array
+          items:
+            type: number
+          minItems: 2
+          maxItems: 2
+          description: Source-reported range [min, max]. Not allowed when kind="positions".
+      required:
+        - kind
+        - value
 
     BrandSignal:
       type: object

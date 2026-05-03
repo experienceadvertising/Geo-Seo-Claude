@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ScoreBadge } from "@/components/score-badge";
+import { SourceBadge } from "@/components/source-badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info } from "lucide-react";
 
@@ -388,10 +389,21 @@ export default function Results() {
               <CheckCircle2 className="h-4 w-4 text-primary" /> Prioritized GEO Recommendations
             </CardTitle>
             <p className="text-xs text-muted-foreground mt-1">
-              Grounded in Princeton/IIT Delhi GEO research (KDD 2024). Apply top items first.
+              Each recommendation is labeled with its source — peer-reviewed research, internal benchmark, or practitioner consensus. Apply top items first.{" "}
+              <Link href="/methodology" className="text-primary hover:underline">
+                Read our methodology
+              </Link>.
             </p>
           </CardHeader>
           <CardContent className="pt-6">
+            {/* Legacy notice: audits stored before source-tracking shipped have no
+                schema version and no per-rec source field. Word-for-word identical
+                with the same notice in the PDF export. */}
+            {audit.recommendationsSchemaVersion !== "v1" && (
+              <div className="mb-4 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                This audit was generated before our source-tracking system was added. Re-scan to see updated provenance metadata.
+              </div>
+            )}
             <ul className="space-y-4">
               {audit.recommendations.slice(0, 12).map((r, i) => {
                 const pStyle =
@@ -399,13 +411,17 @@ export default function Results() {
                   : r.priority === "high" ? "bg-amber-100 text-amber-700 border-amber-200"
                   : r.priority === "medium" ? "bg-teal-100 text-teal-700 border-teal-200"
                   : "bg-slate-100 text-slate-600 border-slate-200";
+                const showBadge = audit.recommendationsSchemaVersion === "v1" && r.source;
                 return (
                   <li key={r.id ?? i} className="flex items-start gap-3 text-sm">
                     <span className={`shrink-0 inline-flex items-center justify-center px-2 py-0.5 rounded border text-[10px] font-mono font-bold uppercase ${pStyle}`}>
                       {r.priority}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-foreground">{r.title}</div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-semibold text-foreground">{r.title}</span>
+                        {showBadge && r.source && <SourceBadge source={r.source} />}
+                      </div>
                       <div className="text-[11px] text-muted-foreground italic mt-0.5">
                         {r.category} · {r.impact}
                       </div>

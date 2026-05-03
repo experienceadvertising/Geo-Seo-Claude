@@ -1,6 +1,6 @@
 # AEO Improvement
 
-> AEO Improvement is a free Answer Engine Optimization (AEO) audit platform that scores any website's citability across ChatGPT, Claude, Perplexity, and Google AI Overviews, then delivers personalized, research-backed recommendations to improve AI search visibility.
+> AEO Improvement is a free Answer Engine Optimization (AEO) audit platform that scores any website's citability across ChatGPT, Claude, Perplexity, and Google AI Overviews, then delivers personalized recommendations — each labeled with its source (peer-reviewed research, internal benchmark, or practitioner consensus) — to improve AI search visibility.
 
 ## What is AEO Improvement?
 
