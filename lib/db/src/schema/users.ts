@@ -37,6 +37,14 @@ export const usersTable = pgTable("users", {
   // audit. Drives the "you ran your first audit, here's how to go deeper"
   // celebratory email and prevents resending it.
   firstAuditAt: timestamp("first_audit_at"),
+
+  // "What you didn't see" upsell email throttle. Fires after free-user
+  // audits to show what their report would look like with all 4 engines
+  // + the Fix Generator output for their actual #1 issue. Throttled to
+  // at most once per 7 days so a power-user free account doesn't get
+  // spammed on every audit. Set to NOW() at send time, checked as
+  // `whatYouMissedSentAt < now() - 7d || IS NULL` before the next send.
+  whatYouMissedSentAt: timestamp("what_you_missed_sent_at"),
 });
 
 export type User = typeof usersTable.$inferSelect;

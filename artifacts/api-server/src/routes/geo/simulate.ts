@@ -5,7 +5,7 @@ import { runPromptSimulation, generatePromptsForBrand, type EngineId, type Promp
 import { requireAuth } from "../../middlewares/auth";
 import { simulateRateLimiter, readRateLimiter } from "../../middlewares/rateLimiters";
 import { getUserPlan, PLAN_LIMITS } from "../../lib/planUtils";
-import { consumeQuota, refundQuota, currentYearMonth } from "../../lib/usageLimits";
+import { consumeQuota, refundQuota, currentYearMonth, markApproachingNotified } from "../../lib/usageLimits";
 import { sql } from "drizzle-orm";
 import { db as appDb, usersTable } from "@workspace/db";
 import { EmailService } from "../../lib/emailService";
@@ -143,6 +143,37 @@ router.post("/geo/simulate", requireAuth, simulateRateLimiter, async (req, res):
       cap: monthQuota.cap,
     });
     return;
+  }
+
+  // Approaching-limit nudge: free user just consumed second-to-last sim
+  // of the month. Atomic flag-claim guarantees one email per (user, kind,
+  // month). Skipped when cap < 4 (free's sim cap is 2, so this branch
+  // is effectively dormant for free sims today — they go straight to
+  // limit-reached. Pro/Agency caps are larger but we only nudge free.)
+  if (plan === "free" && monthQuota.cap >= 4 && monthQuota.used + 1 === monthQuota.cap - 1) {
+    (async () => {
+      try {
+        const claimed = await markApproachingNotified(req.userId!, "simulations", ym);
+        if (!claimed) return;
+        const [u] = await appDb
+          .select({
+            email: usersTable.email,
+            firstName: usersTable.firstName,
+            unsubscribeToken: usersTable.unsubscribeToken,
+            emailOptOut: usersTable.emailOptOut,
+          })
+          .from(usersTable)
+          .where(sql`id = ${req.userId!}`);
+        if (!u?.email || u.emailOptOut) return;
+        const baseUrl = process.env.FRONTEND_URL || "https://aeoimprovement.com";
+        const unsubscribeUrl = `${baseUrl}/unsubscribe?token=${u.unsubscribeToken}`;
+        await EmailService.sendApproachingLimit(
+          u.email, u.firstName || "", "simulations", monthQuota.used + 1, monthQuota.cap, unsubscribeUrl,
+        );
+      } catch (err) {
+        req.log.error({ err, userId: req.userId }, "approaching-limit email failed");
+      }
+    })();
   }
 
   req.log.info({ domain, promptCount: cleanPrompts.length, engines: selectedEngines, plan, userId: req.userId }, "Starting prompt simulation");

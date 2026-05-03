@@ -15,7 +15,7 @@ import { requireAuth } from "../../middlewares/auth";
 import { analyzeRateLimiter, readRateLimiter } from "../../middlewares/rateLimiters";
 import { assertPublicUrl, SsrfError } from "../../lib/safeFetch";
 import { getUserPlan, planAtLeast } from "../../lib/planUtils";
-import { consumeQuota, refundQuota, currentYearMonth } from "../../lib/usageLimits";
+import { consumeQuota, refundQuota, currentYearMonth, markApproachingNotified } from "../../lib/usageLimits";
 import { db as appDb, usersTable } from "@workspace/db";
 import { sql } from "drizzle-orm";
 
@@ -107,6 +107,38 @@ router.post("/geo/analyze", requireAuth, analyzeRateLimiter, async (req, res): P
       cap: quota.cap,
     });
     return;
+  }
+
+  // Approaching-limit nudge: free user just consumed the second-to-last
+  // slot in their monthly cap. Fire ONCE per (user, kind, month) via the
+  // atomic markApproachingNotified flag-claim. Skipped for tiny caps
+  // (< 4) where "you have 1 left" lands too close to first use to feel
+  // useful — those users get the existing limit-reached email instead.
+  // Fire-and-forget — never block the analyze on email plumbing.
+  if (userPlan === "free" && quota.cap >= 4 && quota.used + 1 === quota.cap - 1) {
+    (async () => {
+      try {
+        const claimed = await markApproachingNotified(req.userId!, "audits", ym);
+        if (!claimed) return;
+        const [u] = await appDb
+          .select({
+            email: usersTable.email,
+            firstName: usersTable.firstName,
+            unsubscribeToken: usersTable.unsubscribeToken,
+            emailOptOut: usersTable.emailOptOut,
+          })
+          .from(usersTable)
+          .where(eq(usersTable.id, req.userId!));
+        if (!u?.email || u.emailOptOut) return;
+        const baseUrl = process.env.FRONTEND_URL || "https://aeoimprovement.com";
+        const unsubscribeUrl = `${baseUrl}/unsubscribe?token=${u.unsubscribeToken}`;
+        await EmailService.sendApproachingLimit(
+          u.email, u.firstName || "", "audits", quota.used + 1, quota.cap, unsubscribeUrl,
+        );
+      } catch (err) {
+        req.log.error({ err, userId: req.userId }, "approaching-limit email failed");
+      }
+    })();
   }
 
   req.log.info({ url, userId: req.userId }, "Starting GEO analysis");
@@ -339,6 +371,50 @@ Hard rules:
         );
       } catch (err) {
         req.log.error({ err, userId: req.userId }, "score-changed email failed");
+      }
+    });
+
+    // "What you didn't see" upsell — fires for free users on every audit
+    // EXCEPT their first (firstAuditEmail handles that with a different,
+    // celebratory framing). Throttled to once per 7 days per user via
+    // users.what_you_missed_sent_at so power-user free accounts aren't
+    // spammed. Chains off isFirstAuditPromise so we don't query firstAuditAt
+    // twice — the resolved value already tells us whether this was first.
+    isFirstAuditPromise.then(async (wasFirst) => {
+      if (wasFirst) return;
+      if (userPlan !== "free") return;
+      try {
+        const [u] = await appDb
+          .select({
+            email: usersTable.email,
+            firstName: usersTable.firstName,
+            unsubscribeToken: usersTable.unsubscribeToken,
+            emailOptOut: usersTable.emailOptOut,
+            whatYouMissedSentAt: usersTable.whatYouMissedSentAt,
+          })
+          .from(usersTable)
+          .where(eq(usersTable.id, req.userId!));
+        if (!u?.email || u.emailOptOut) return;
+        const sevenDaysAgo = new Date(Date.now() - 7 * 86_400_000);
+        if (u.whatYouMissedSentAt && u.whatYouMissedSentAt > sevenDaysAgo) return;
+        // Atomic gate on the throttle timestamp — UPDATE only if still null
+        // OR older than 7 days. Prevents two concurrent audits both passing
+        // the read-side check and double-sending.
+        const claim = await appDb.execute(sql`
+          UPDATE users
+          SET what_you_missed_sent_at = NOW()
+          WHERE id = ${req.userId!}
+            AND (what_you_missed_sent_at IS NULL OR what_you_missed_sent_at < ${sevenDaysAgo})
+          RETURNING 1
+        `);
+        if (claim.rows.length === 0) return;
+        const baseUrl = process.env.FRONTEND_URL || "https://aeoimprovement.com";
+        const unsubscribeUrl = `${baseUrl}/unsubscribe?token=${u.unsubscribeToken}`;
+        await EmailService.sendWhatYouMissed(
+          u.email, u.firstName || "", url, analysis.geoScore, unsubscribeUrl,
+        );
+      } catch (err) {
+        req.log.error({ err, userId: req.userId }, "what-you-missed email failed");
       }
     });
 

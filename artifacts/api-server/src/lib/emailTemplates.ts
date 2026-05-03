@@ -850,3 +850,140 @@ export function scoreChangedEmail(
     : `Hi ${firstName || "there"},\n\nYour latest audit on ${hostname} came back ${delta} points lower (${prev} → ${curr}). Most score drops trace to one of three causes:\n\n1. A robots.txt change blocked an AI bot — check Crawler Access\n2. Schema markup was removed or broke on a recent deploy\n3. Hero / above-fold content moved below fold or into JS-only renders\n\n${topRecommendation ? `Top fix to recover: ${topRecommendation}\n\n` : ""}Open the new audit: ${BASE_URL}/`;
   return { subject: cleanSubject, html, text };
 }
+
+// "Approaching limit" — fires once per kind per month for free users when
+// they hit cap-1 (e.g. 4 of 5 audits used). Lower-friction nudge than
+// the wall-hit limit-reached email; most upgrades happen at THIS step,
+// not at the wall. Single, friendly, one CTA.
+export function approachingLimitEmail(
+  firstName: string,
+  kind: "audits" | "simulations",
+  used: number,
+  cap: number,
+  unsubscribeUrl?: string,
+) {
+  const safeFirstName = esc(firstName) || "there";
+  const remaining = Math.max(0, cap - used);
+  const kindLabel = kind === "audits" ? "audits" : "prompt simulations";
+  const KindCap = kind === "audits" ? "audits" : "simulations";
+  const subject = `${used} of ${cap} free ${KindCap} used — ${remaining} left this month`;
+  const preheader = `Heads up — you're one ${kind === "audits" ? "audit" : "simulation"} away from your monthly cap on the free plan.`;
+
+  const proCap = kind === "audits" ? 100 : 30;
+  const pitch = kind === "audits"
+    ? "Pro gives you 100 audits a month — plus all 4 AI engines (Claude, Gemini, Perplexity, ChatGPT), the Fix Generator that auto-drafts your llms.txt and JSON-LD, and competitor citation tracking."
+    : "Pro gives you 30 prompt simulations a month — across all 4 AI engines instead of just ChatGPT, and 25 prompts per simulation instead of 3.";
+
+  // Visual usage bar — pure HTML/CSS table so it renders in every client.
+  const pct = Math.round((used / cap) * 100);
+  const bar = `
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+      <tr>
+        <td style="background:#f3f4f6;border-radius:6px;height:10px;overflow:hidden;">
+          <table width="${pct}%" cellpadding="0" cellspacing="0" style="background:linear-gradient(90deg,#10b981,#f59e0b);border-radius:6px;height:10px;">
+            <tr><td>&nbsp;</td></tr>
+          </table>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding-top:6px;font-size:12px;color:#6b7280;">
+          ${used} of ${cap} ${KindCap} used · <strong style="color:#f59e0b;">${remaining} remaining</strong>
+        </td>
+      </tr>
+    </table>`;
+
+  const content = `
+    ${h1(`You're approaching your monthly ${kind === "audits" ? "audit" : "simulation"} limit`)}
+    ${p(`Hi ${safeFirstName} — quick heads up. You've used ${used} of your ${cap} free ${kindLabel} this month, with ${remaining} left before things pause until next month.`)}
+    ${bar}
+    ${p(pitch)}
+    ${p(`<strong style="color:#111827;">Upgrading takes 30 seconds and you can keep auditing immediately.</strong>`)}
+    <div style="text-align:center;margin:8px 0 0;">
+      ${btn(`Upgrade to Pro — ${proCap}/mo`, `${BASE_URL}/pricing`)}
+    </div>
+    ${p(`If you'd rather wait, your quota resets on the 1st. No charge, no action needed.`, "margin-top:24px;font-size:13px;color:#6b7280;text-align:center;")}
+  `;
+
+  const html = layout(content, preheader, unsubscribeUrl);
+  const text = `Hi ${firstName || "there"},\n\nQuick heads up — you've used ${used} of your ${cap} free ${kindLabel} this month. ${remaining} left before next month's reset.\n\n${pitch}\n\nUpgrade to Pro: ${BASE_URL}/pricing\n\nOr wait — your quota resets on the 1st.`;
+  return { subject, html, text };
+}
+
+// "What you didn't see" — fires after a free user's audit (NOT their first;
+// that's handled by firstAuditEmail). Throttled to once per 7 days. Shows
+// what their actual report would look like with all 4 engines + a teaser
+// of the Fix Generator output for their hostname. Specific to their data,
+// not abstract feature marketing.
+export function whatYouMissedEmail(
+  firstName: string,
+  url: string,
+  geoScore: number,
+  unsubscribeUrl?: string,
+) {
+  const safeFirstName = esc(firstName) || "there";
+  const hostname = (() => { try { return new URL(url).hostname; } catch { return url; } })();
+  const safeHostname = esc(hostname);
+  const subject = `Here's what your ${hostname} audit looks like on Pro`;
+  const preheader = `Free shows ChatGPT only. Pro shows all 4 engines + auto-drafts your llms.txt for ${hostname}.`;
+
+  // Engine row — three locked cards for the engines free users don't get.
+  // We deliberately use real product names; users see them everywhere else
+  // in the AI search ecosystem so they recognize the value gap.
+  const engineCard = (name: string, blurb: string) => `
+    <td width="33%" valign="top" style="padding:0 6px;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;">
+        <tr><td style="padding:14px;text-align:center;">
+          <div style="font-size:14px;font-weight:700;color:#111827;margin-bottom:4px;">🔒 ${name}</div>
+          <div style="font-size:11px;color:#6b7280;line-height:1.4;">${blurb}</div>
+        </td></tr>
+      </table>
+    </td>`;
+
+  // Fix Generator preview — a tailored llms.txt teaser that uses the user's
+  // actual hostname. NOT calling the gated codepath; this is a hand-crafted
+  // template fragment that demonstrates what the real generator produces.
+  const llmsTxtPreview = `# ${hostname}
+
+> [Your one-line company description goes here.]
+
+## Core pages
+- ${hostname}/
+- ${hostname}/about
+- ${hostname}/pricing
+
+## Documentation
+- ${hostname}/docs
+<span style="color:#9ca3af;">... 14 more lines auto-generated for your site</span>`;
+
+  const content = `
+    ${h1(`Your ${safeHostname} audit, on Pro`)}
+    ${p(`Hi ${safeFirstName} — your free audit gave you a GEO score and a recommendation list. Here's what the same audit returns on the Pro plan, against your actual site.`)}
+
+    <div style="margin:24px 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:0.06em;color:#6b7280;font-weight:600;">
+      Engines you didn't see results from
+    </div>
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+      <tr>
+        ${engineCard("Claude", "Anthropic's reasoning model — used by enterprise teams for AI search.")}
+        ${engineCard("Gemini", "Google's AI — directly powers AI Overviews in Google Search.")}
+        ${engineCard("Perplexity", "Citation-first AI search; high-intent commercial queries.")}
+      </tr>
+    </table>
+    ${p(`Free runs prompts against ChatGPT only. Pro runs the same prompts against all four — so you actually see whether ${safeHostname} gets cited where your buyers are searching, not just one of four places.`, "font-size:14px;color:#4b5563;")}
+
+    <div style="margin:32px 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:0.06em;color:#6b7280;font-weight:600;">
+      Your auto-generated llms.txt (preview)
+    </div>
+    <pre style="background:#0f172a;color:#e2e8f0;font-family:'SFMono-Regular',Menlo,Monaco,Consolas,monospace;font-size:12px;line-height:1.65;padding:16px 20px;border-radius:8px;overflow-x:auto;margin:0 0 12px;white-space:pre-wrap;">${llmsTxtPreview}</pre>
+    ${p(`Pro's Fix Generator drafts the full file from your sitemap — copy, paste, ship. Same for FAQPage JSON-LD, Organization schema, and a robots.txt audit pass.`, "font-size:14px;color:#4b5563;")}
+
+    <div style="text-align:center;margin:32px 0 0;">
+      ${btn(`Unlock all 4 engines + Fix Generator`, `${BASE_URL}/pricing`)}
+    </div>
+    ${p(`No commitment — cancel any time from your dashboard. Annual billing saves on the monthly rate.`, "margin-top:16px;font-size:12px;color:#6b7280;text-align:center;")}
+  `;
+
+  const html = layout(content, preheader, unsubscribeUrl);
+  const text = `Hi ${firstName || "there"},\n\nYour free audit on ${hostname} gave you a score (${geoScore}/100) and a recommendation list. Here's what the same audit returns on Pro:\n\nEngines you didn't see:\n- Claude (Anthropic)\n- Gemini (Google — powers AI Overviews)\n- Perplexity (citation-first AI search)\n\nFree = ChatGPT only. Pro = all four, side by side.\n\nPlus, Pro's Fix Generator auto-drafts your llms.txt, FAQPage JSON-LD, and Organization schema from your actual sitemap. Copy, paste, ship.\n\nUpgrade: ${BASE_URL}/pricing\n\nNo commitment — cancel any time.`;
+  return { subject, html, text };
+}

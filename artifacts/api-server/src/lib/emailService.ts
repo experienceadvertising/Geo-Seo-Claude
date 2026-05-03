@@ -15,6 +15,8 @@ import {
   firstAuditEmail,
   aeoInsightsEmail,
   scoreChangedEmail,
+  approachingLimitEmail,
+  whatYouMissedEmail,
   type WeeklyDigestData,
   type MonthlyReportData,
 } from "./emailTemplates";
@@ -163,6 +165,37 @@ export const EmailService = {
   ): Promise<boolean> {
     const { subject, html, text } = aeoInsightsEmail(firstName, weekIndex, unsubscribeUrl);
     return send(email, subject, html, text, "aeo-insights", unsubscribeUrl);
+  },
+
+  // Approaching-limit — fires once per (user, kind, month) when a free
+  // user reaches cap-1. Earlier and softer than sendLimitReached; most
+  // self-serve upgrades happen at this step, not at the wall.
+  async sendApproachingLimit(
+    email: string,
+    firstName: string,
+    kind: "audits" | "simulations",
+    used: number,
+    cap: number,
+    unsubscribeUrl?: string,
+  ): Promise<boolean> {
+    const { subject, html, text } = approachingLimitEmail(firstName, kind, used, cap, unsubscribeUrl);
+    return send(email, subject, html, text, `approaching-limit-${kind}`, unsubscribeUrl);
+  },
+
+  // "What you didn't see" — post-audit upsell for free users (NOT first
+  // audit; that path uses sendFirstAudit). Throttled by caller to at
+  // most once per 7 days via users.whatYouMissedSentAt. Shows what the
+  // same audit looks like on Pro — engines + Fix Generator preview tied
+  // to the user's actual hostname.
+  async sendWhatYouMissed(
+    email: string,
+    firstName: string,
+    url: string,
+    geoScore: number,
+    unsubscribeUrl?: string,
+  ): Promise<boolean> {
+    const { subject, html, text } = whatYouMissedEmail(firstName, url, geoScore, unsubscribeUrl);
+    return send(email, subject, html, text, "what-you-missed", unsubscribeUrl);
   },
 
   // Score-Changed — fires after a re-audit when the score moves ±5 pts on

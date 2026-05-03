@@ -121,6 +121,38 @@ export async function consumeQuota(
 }
 
 /**
+ * Atomically claim the "approaching-limit notification was sent" flag for
+ * (user, kind, current month). Returns true ONCE per month per kind — the
+ * UPDATE only succeeds if the column is still NULL. This guarantees we
+ * email the user at most once per month per kind even under concurrent
+ * requests crossing the threshold.
+ *
+ * The caller decides WHEN to call this (typically: just after a successful
+ * consumeQuota where the new used count == cap - 1). This helper does NOT
+ * decide the threshold — separation of concerns keeps the policy in the
+ * route handler where it can vary by plan.
+ */
+export async function markApproachingNotified(
+  userId: string,
+  kind: UsageKind,
+  ym: string,
+): Promise<boolean> {
+  const flagCol =
+    kind === "audits"
+      ? sql`approaching_audits_at`
+      : sql`approaching_simulations_at`;
+  const r = await db.execute(sql`
+    UPDATE monthly_usage
+    SET ${flagCol} = NOW(), updated_at = NOW()
+    WHERE user_id = ${userId}
+      AND year_month = ${ym}
+      AND ${flagCol} IS NULL
+    RETURNING 1
+  `);
+  return r.rows.length > 0;
+}
+
+/**
  * Release a previously-reserved quota slot. Call when the action that
  * consumed quota failed (e.g. LLM error) so we don't penalize the user
  * for a failure on our side. GREATEST(0, ...) prevents underflow if a
