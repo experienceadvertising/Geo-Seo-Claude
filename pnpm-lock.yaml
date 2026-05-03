@@ -726,6 +726,12 @@ importers:
         specifier: ^7.1.1
         version: 7.1.1
 
+  lib/recommendations:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 25.3.5
+
   scripts:
     dependencies:
       stripe:

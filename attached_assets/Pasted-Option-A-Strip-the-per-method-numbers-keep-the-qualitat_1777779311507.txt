@@ -1,0 +1,15 @@
+Option A. Strip the per-method numbers, keep the qualitative recommendations, cite KDD 2024 as the methodological source on the three content-optimization recs (Statistics, Quotation, Cite Sources). Net result: 0 recommendations with precise research-backed numbers; 3 with sourceType: "research" and expectedLift: null; 5 with sourceType: "practitioner_consensus" and expectedLift: null; queue freshness and answer-capsule lift for internal benchmark.
+Excellent catch on the spot-check. Lock in your stated process rule going forward: any quantitative claim citing a primary source requires a manual paper fetch + grep before it lands in the JSON. No subagent audits for primary-source numbers.
+Schema additions for commit 1, on top of the prior redlines:
+
+updatedAt: string (required, ISO date) — confirmed.
+Document ExpectedLift.range semantics in the type comment — confirmed. Use it for "the source's reported range across reported categories." Not confidence intervals.
+recommendationsSchemaVersion: "v1" on the API response — confirmed.
+New validator: if expectedLift === null and sourceType === "research", then notes must be a non-empty string explaining the absence of a number. Enforce at lib load time so the build fails if someone adds a research-backed qualitative rec without explaining why there's no number. Sample message: "Recommendation 'add-statistics' has sourceType=research with expectedLift=null but no notes field — explain why no number is published for this rec."
+
+Methodology-page content (for commit 4, but draft now so we're ready):
+Add a "What the research actually says" section to /methodology with the paper's actual headline numbers honestly framed: "KDD 2024 reports up to 41% improvement in Position-Adjusted Word Count and 29% in Subjective Impression for the best-performing method overall. The paper identifies Statistics Addition, Quotation Addition, and Cite Sources as top-performing content optimizations but does not publish per-method aggregate lift numbers in a form we'll attribute to individual recommendations. Our internal per-method benchmarks are queued; results will appear here as they complete."
+Also capture the rank-1 / rank-5 SERP-position finding (Cite Sources: −30.3% for rank-1 sites, +115.1% for rank-5 sites) as a separate methodology note. Don't lose it — it's actionable and suggests a future product feature where expected lift is conditioned on the customer's current SERP position. Just a note for now, not a recommendation.
+Greenlight to proceed:
+Execute commits 1–3 (lib + trigger refactor + API enrichment). All invisible to users. Stop before commit 4 (UI badges + /methodology page) and show me both the badge styling and the methodology page draft for review before they go live.
+When commit 1 is done, post the final recommendations.json (all ~22 entries) so I can do a sanity pass on the migration before the trigger refactor lands.
