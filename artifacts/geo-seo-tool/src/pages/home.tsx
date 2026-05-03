@@ -10,6 +10,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { ScoreBadge } from "@/components/score-badge";
 import { usePlan } from "@/hooks/usePlan";
+import { AuthoritySignalsCard } from "@/components/authority-signals-card";
 import heroImage from "@/assets/hero.png";
 
 function MarketStats() {
@@ -552,6 +553,12 @@ function DashboardLearningHub() {
           ))}
         </div>
       </div>
+
+      {/* Authority signals — off-site moves that AI engines weight heavily
+          (Linkby paid placements, HARO, podcasts, Wikipedia, Reddit, YouTube).
+          Lives in the hub because these are evergreen recommendations,
+          not audit-derived. */}
+      <AuthoritySignalsCard />
 
       {/* Quick wins checklist — concrete, ungated by an audit. Every item
           is something a competent operator can do today on their own site. */}

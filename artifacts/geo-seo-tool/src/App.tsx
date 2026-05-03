@@ -1,5 +1,6 @@
 import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { HelmetProvider } from "react-helmet-async";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
@@ -11,6 +12,9 @@ import Admin from "@/pages/admin";
 import Pricing from "@/pages/pricing";
 import Upgrade from "@/pages/upgrade";
 import Methodology from "@/pages/methodology";
+import VsComparison from "@/pages/vs-comparison";
+import BestAeoToolsPage from "@/pages/best-aeo-tools";
+import BestGeoToolsPage from "@/pages/best-geo-tools";
 import SignInPage from "@/pages/sign-in";
 import SignUpPage from "@/pages/sign-up";
 import VerifyEmailPage from "@/pages/verify-email";
@@ -59,6 +63,15 @@ function AppRoutes() {
         <Route path="/pricing" component={Pricing} />
         <Route path="/upgrade" component={Upgrade} />
         <Route path="/methodology" component={Methodology} />
+        {/* SEO comparison pages — public, indexable, drive AEO-category
+            search traffic. /vs/:slug is parameterized; the page reads
+            from src/data/competitors.ts. */}
+        <Route path="/vs/:slug" component={VsComparison} />
+        {/* BestAeoToolsPage takes an optional `variant` prop (aeo|geo) so we
+            use wouter's render-children form instead of the `component` slot,
+            which would otherwise inject RouteComponentProps and conflict. */}
+        <Route path="/best-aeo-tools">{() => <BestAeoToolsPage />}</Route>
+        <Route path="/best-geo-optimization-tools" component={BestGeoToolsPage} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
@@ -67,16 +80,18 @@ function AppRoutes() {
 
 function App() {
   return (
-    <WouterRouter base={basePath}>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <TooltipProvider>
-            <AppRoutes />
-            <Toaster />
-          </TooltipProvider>
-        </AuthProvider>
-      </QueryClientProvider>
-    </WouterRouter>
+    <HelmetProvider>
+      <WouterRouter base={basePath}>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <TooltipProvider>
+              <AppRoutes />
+              <Toaster />
+            </TooltipProvider>
+          </AuthProvider>
+        </QueryClientProvider>
+      </WouterRouter>
+    </HelmetProvider>
   );
 }
 

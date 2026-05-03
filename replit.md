@@ -87,6 +87,22 @@ Custom email+password auth (Clerk was removed — email delivery was unreliable 
 - `pnpm --filter @workspace/api-server run dev` — run API server locally
 - `pnpm --filter @workspace/scripts run seed-products` — create Pro/Agency Stripe products (idempotent)
 
+## SEO Comparison Pages
+
+Public, indexable comparison pages live at:
+- `/vs/:slug` — parameterized (otterly, athenahq, profound, brandlight). Page reads from `artifacts/geo-seo-tool/src/data/competitors.ts`. To add a competitor: append a new entry to `COMPETITORS` array + add corresponding entries to each row in `SHARED_ROWS` + add to sitemap.xml.
+- `/best-aeo-tools` and `/best-geo-optimization-tools` — twin listicle pages (same component, `variant` prop swaps copy). Twin SEO pages with distinct canonicals.
+
+Per-page meta tags via `react-helmet-async` (`HelmetProvider` wraps app in `App.tsx`); `<SEO>` wrapper component in `components/seo.tsx` handles title/description/canonical/OG/Twitter/JSON-LD.
+
+JSON-LD blocks emitted: FAQPage + BreadcrumbList on /vs/* pages; ItemList + Article on listicles. Schema.org compliant.
+
+**Standing rule**: never invent quantitative claims about competitors. All competitor facts in `competitors.ts` are sourced from their public marketing sites. Use "Not advertised" hedge when feature presence is unverifiable.
+
+## Authority Signals Card
+
+`components/authority-signals-card.tsx` — recommends Linkby (paid editorial), Connectively/HARO, Featured.com, PodMatch, Wikipedia, Reddit, YouTube as third-party citation channels that boost AEO. Lives in `DashboardLearningHub` on the home page. No affiliate links — pure recommendations with disclosure.
+
 ## Codegen Note
 
 After running codegen, the barrel file at `lib/api-zod/src/index.ts` is rewritten by the npm script to only export from `./generated/api` (to avoid duplicate export errors from split-mode zod generation).
