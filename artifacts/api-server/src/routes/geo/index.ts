@@ -17,6 +17,31 @@ import { getUserPlan, planAtLeast } from "../../lib/planUtils";
 import { consumeQuota, refundQuota, currentYearMonth } from "../../lib/usageLimits";
 import { db as appDb, usersTable } from "@workspace/db";
 import { sql } from "drizzle-orm";
+
+/** Round absurd-precision percentages in scraped page text to 1 decimal place
+ * before feeding the excerpt to the LLM. Prevents the model from echoing
+ * "1.64735697%" verbatim. Only touches numbers with 3+ decimal places. */
+function roundExcerptStats(text: string): string {
+  return text.replace(/(\d+)\.(\d{3,})(\s*%)/g, (_m, intPart, _dec, pct) => {
+    const n = parseFloat(`${intPart}.${_dec}`);
+    return `${n.toFixed(1)}${pct}`;
+  });
+}
+
+/** Defensive post-process on Claude's executive summary:
+ *  - lowercase the hostname anywhere it appears (e.g. "Stripe.com" → "stripe.com")
+ *  - round any percentages with 3+ decimal places that slipped through
+ *  Note: this does NOT remove invented stats — that's enforced by prompt rules
+ *  (the LLM is instructed not to introduce numbers absent from findings). */
+function sanitizeInsights(text: string, hostname: string): string {
+  let out = text;
+  if (hostname) {
+    const escaped = hostname.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    out = out.replace(new RegExp(escaped, "gi"), hostname.toLowerCase());
+  }
+  out = out.replace(/(\d+)\.(\d{3,})(\s*%)/g, (_m, i, _d, pct) => `${parseFloat(`${i}.${_d}`).toFixed(1)}${pct}`);
+  return out;
+}
 import { EmailService } from "../../lib/emailService";
 
 const router: IRouter = Router();
@@ -104,7 +129,7 @@ router.post("/geo/analyze", requireAuth, analyzeRateLimiter, async (req, res): P
       const headingsList = (analysis.topHeadings ?? []).slice(0, 8).map((h) => `  • ${h}`).join("\n") || "  (no headings detected)";
 
       const brandAuthLines = analysis.brandSignals
-        .map((s) => `  • ${s.platform}: ${s.found ? `FOUND${s.detail ? ` (${s.detail})` : ""}` : "not found"}`)
+        .map((s) => `  • ${s.source}: ${s.found ? `FOUND${s.detail ? ` (${s.detail})` : ""}` : "not found"}`)
         .join("\n");
 
       const presentSchemas = analysis.schemaTypes.filter((s) => s.present).map((s) => s.type);
@@ -138,7 +163,7 @@ ${headingsList}
 
 First ~1500 chars of visible content:
 """
-${analysis.pageExcerpt || "(no content extracted)"}
+${roundExcerptStats(analysis.pageExcerpt || "(no content extracted)")}
 """
 
 === AI VISIBILITY SIGNALS ===
@@ -179,7 +204,10 @@ Hard rules:
 - Reference at least 2 specific headings or phrases from the actual page content above
 - No filler ("In today's AI landscape..." etc.) — every sentence has a fact or instruction
 - Total length 350-500 words
-- NEVER recommend something that is already confirmed satisfied above (e.g. if Has llms.txt: true, do NOT suggest creating llms.txt; if no blocked crawlers, do NOT suggest unblocking them; if HTTPS is true, do NOT mention HTTPS)`;
+- NEVER recommend something that is already confirmed satisfied above (e.g. if Has llms.txt: true, do NOT suggest creating llms.txt; if no blocked crawlers, do NOT suggest unblocking them; if HTTPS is true, do NOT mention HTTPS)
+- DO NOT invent quantitative claims. You may NOT write percentages, multipliers ("4x"), or ranking-position numbers UNLESS that exact figure literally appears in the "TOP RULE-BASED FINDINGS" section above. No "extracted N% more often", no "Nx more reliably", no "deprioritize by N positions" — these are forbidden unless quoted verbatim from the findings.
+- When quoting any statistic that appears in the page content excerpt (e.g. "1.64735697% of GDP"), round to the precision a human would write: 1 decimal place for percentages and ratios, 2 decimal places only when the number is between 0 and 1. Never reproduce more than 4 significant figures from page-derived stats.
+- When you reference the page URL or domain, write the hostname in lowercase (e.g. "stripe.com", not "Stripe.com"), even if the page title or excerpt capitalizes it.`;
 
       const message = await anthropic.messages.create({
         model: "claude-sonnet-4-5",
@@ -189,7 +217,7 @@ Hard rules:
 
       const block = message.content[0];
       if (block.type === "text") {
-        aiInsights = block.text;
+        aiInsights = sanitizeInsights(block.text, hostname);
       }
     } catch (aiErr) {
       req.log.warn({ err: aiErr }, "AI insights generation failed, proceeding without");

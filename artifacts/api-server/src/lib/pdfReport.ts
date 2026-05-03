@@ -73,10 +73,17 @@ function asObj<T>(v: unknown, fallback: T): T {
   return v && typeof v === "object" ? (v as T) : fallback;
 }
 
+/** Lowercase only the hostname; keep path/query/scheme casing. */
+function displayUrl(u: string): string {
+  try { const p = new URL(u); p.hostname = p.hostname.toLowerCase(); return p.toString(); }
+  catch { return u.replace(/^(https?:\/\/)([^/]+)/i, (_, s, h) => s + h.toLowerCase()); }
+}
+
 export function generateAuditPdf(audit: AuditRow, stream: Writable): Promise<void> {
   return new Promise<void>((resolve, reject) => {
+  const displayedUrl = displayUrl(audit.url);
   const doc = new PDFDocument({ size: "LETTER", margin: 50, bufferPages: true, info: {
-    Title: `GEO Audit – ${audit.url}`,
+    Title: `GEO Audit – ${displayedUrl}`,
     Author: "GEO SEO Analyzer",
   }});
   doc.on("error", reject);
@@ -92,7 +99,7 @@ export function generateAuditPdf(audit: AuditRow, stream: Writable): Promise<voi
   doc.fillColor(COLORS.ink).fontSize(22).font("Helvetica-Bold").text("Generative Engine Optimization Audit");
   doc.moveDown(0.3);
   doc.fillColor(COLORS.muted).fontSize(10).font("Helvetica")
-    .text(`URL: ${audit.url}`)
+    .text(`URL: ${displayedUrl}`)
     .text(`Audited: ${audit.createdAt.toUTCString()}`)
     .text(`Audit ID: #${audit.id}${audit.brandName ? `   ·   Brand: ${audit.brandName}` : ""}`);
 

@@ -1,0 +1,58 @@
+Phase 1 is mostly landed — Wikipedia and DuckDuckGo lookups are now correct (Stripe shows Article: "Stripe, Inc." FOUND and Knowledge panel from Wikipedia FOUND), Brand Authority moved from 35 → 90, the composite AEO Score moved 50 → 61, and the keyword-density false positive on the brand's own name is gone. Nice work.
+Before moving to Phase 2, close these Phase 1 gaps and small regressions:
+Phase 1 cleanup
+
+Score transparency was missed. Each of the six score tiles (Citability, Brand Authority, Content Quality, Technical SEO, Structured Data, Platform Opt) still shows only a one-line subtitle. Add either:
+
+A hover tooltip listing the 2–3 underlying signals and their measured values (e.g., for Citability: "Avg passage citability: 33/100 · Question-style headings: 4% · Answer capsules detected: 1"), or
+A /methodology route the score tiles link to, with a short explanation of each signal and how it rolls up.
+
+Either is fine — I just need a user to be able to answer "why is this 39?" without reading source.
+Confirm lookup logging is in place. I asked for structured logs of every Wikipedia / DuckDuckGo / Wikidata lookup with query and raw response. Show me where those logs go (console, file, DB table) and a sample log line from the Stripe run.
+Lowercase the hostname on display. The header and executive summary render https://Stripe.com. Normalize to lowercase before display in: the page header, the executive summary body, and the PDF export. Keep the original casing in storage.
+Round absurd-precision stats when quoting them back. The executive summary quotes "1.64735697% Global GDP" verbatim from the page. When the LLM references on-page stats, round to the precision a human would write (1.6% or 1.65%).
+Stop generating new unsourced stats. The new executive summary contains claims like "AI engines extract this pattern 73% more often than feature lists," "4× more reliably," and "deprioritize stale pages by an average of 43 ranking positions." These were invented by the LLM during summary generation. Until Phase 2 lands the sourcing system, update the executive-summary prompt to forbid quantitative claims that aren't already in our recommendations.json. The summary should describe what to do and why qualitatively, not invent new lift percentages.
+
+When the five items above are done, show me the updated Stripe report and then start Phase 2.
+
+Phase 2 — Source every claim (start after cleanup is verified)
+Every quantitative claim shown in the report must trace to a verifiable source. The goal is that a sophisticated buyer can click any "+30.3%" or "+40%" and see exactly where it came from.
+
+Create a single source of truth for recommendations. Add recommendations.json (or a DB table) where each recommendation has:
+
+   {
+     "id": "lead_with_direct_answer",
+     "title": "Lead with a 40-60 word direct answer",
+     "severity": "critical",
+     "category": "answerability",
+     "claim": "Highest-leverage rewrite per 2026 GEO practitioner data",
+     "expectedLift": null,            // or a number if we have one
+     "sourceType": "research" | "internal_benchmark" | "practitioner_consensus",
+     "sourceUrl": "https://...",
+     "sourceCitation": "Princeton/IIT Delhi, KDD 2024, Table 3",
+     "verified": true | false
+   }
+Migrate every existing recommendation into this structure.
+
+Audit each existing claim against its supposed source. Walk the current set:
+
+"+30.3% AI citation visibility" (outbound links)
+"+32% AI citation visibility" (expert quotes)
+"+40% citation likelihood" (FAQ)
+"+35-40% extraction rate" (answer capsules)
+"83% of commercial AI citations come from sources updated in past 12 months"
+"134-167 word optimal passage length"
+
+For each: open the Princeton/IIT Delhi KDD 2024 paper and confirm whether the figure appears. If it does, set sourceType: "research" with the table/section citation. If it doesn't, downgrade to practitioner_consensus and remove the precise number unless we have our own benchmark to back it. Anything we can't verify and can't benchmark gets the number stripped — keep the qualitative recommendation, drop the false precision.
+Render sources in the UI. Next to every stat in the Prioritized GEO Recommendations and Quick Wins sections, render a small superscript or badge that links to sourceUrl and shows sourceCitation on hover. Use distinct visual styling for the three sourceType values so a user can see at a glance which claims are paper-backed vs. internal vs. consensus.
+Add a "Methodology & Sources" page at /methodology linked from the report footer. List every claim used in reports with its source, last-verified date, and verified boolean. This is the page I'll point skeptical prospects to.
+Constrain the executive-summary LLM prompt. Pass the relevant recommendation objects (with their sources) into the summary prompt and instruct the model: only use stats that appear in the provided objects, do not invent new percentages or multipliers, and quote the source citation inline when using a stat. This is the structural fix for item 5 in the cleanup section above.
+Backfill internal benchmarks where research is thin. For any claim that ends up practitioner_consensus, queue it for an internal benchmark study (a separate task — just create the list and surface it in admin). The list itself becomes our roadmap for converting consensus claims into internal_benchmark claims with a real n.
+
+Constraints (same as Phase 1)
+
+Don't change scoring weights.
+Don't break existing /results/[id] URLs or PDF export.
+Use the existing component library.
+
+Start with the cleanup items 1–5. When those are verified on the Stripe report, begin Phase 2 with item 1 (the data structure) before touching the UI.

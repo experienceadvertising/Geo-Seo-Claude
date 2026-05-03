@@ -9,6 +9,16 @@ import { Separator } from "@/components/ui/separator";
 import { ScoreBadge } from "@/components/score-badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info } from "lucide-react";
+
+/** Lowercase only the hostname portion of a URL while preserving path/query/casing.
+ * "https://Stripe.com/Pricing?Q=A" → "https://stripe.com/Pricing?Q=A". */
+function displayUrl(u: string): string {
+  try {
+    const parsed = new URL(u);
+    parsed.hostname = parsed.hostname.toLowerCase();
+    return parsed.toString().replace(/\/$/, parsed.pathname === "/" && !u.endsWith("/") ? "" : "/");
+  } catch { return u.replace(/^(https?:\/\/)([^/]+)/i, (_, p, h) => p + h.toLowerCase()); }
+}
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip } from "recharts";
 import ReactMarkdown from "react-markdown";
 import { useToast } from "@/hooks/use-toast";
@@ -119,8 +129,8 @@ export default function Results() {
           <Link href="/" className="inline-flex items-center gap-2 text-xs font-mono text-muted-foreground hover:text-foreground transition-colors mb-2 uppercase tracking-wider">
             <ArrowLeft className="h-3 w-3" /> Back to Audits
           </Link>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight break-all leading-tight">{audit.title || audit.url}</h1>
-          <p className="text-sm font-mono text-muted-foreground">{audit.url}</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight break-all leading-tight">{audit.title || displayUrl(audit.url)}</h1>
+          <p className="text-sm font-mono text-muted-foreground">{displayUrl(audit.url)}</p>
           <div className="flex items-center gap-4 text-xs text-muted-foreground mt-2 font-mono flex-wrap">
             <span>Analyzed on {new Date(audit.createdAt).toLocaleDateString()} at {new Date(audit.createdAt).toLocaleTimeString()}</span>
             <span>•</span>
@@ -759,7 +769,10 @@ function ScoreCard({
             {icon}
             <CardTitle className="text-xs font-bold uppercase tracking-wider">{title}</CardTitle>
             {(formula || (signals && signals.length > 0)) && (
-              <Info className="h-3 w-3 text-muted-foreground/60 group-hover:text-primary transition-colors" />
+              <span className="inline-flex items-center gap-0.5 text-[10px] font-mono uppercase tracking-wider text-primary/70 group-hover:text-primary transition-colors border border-primary/20 rounded px-1 py-0.5">
+                <Info className="h-2.5 w-2.5" />
+                <span>How?</span>
+              </span>
             )}
           </div>
           <span className="text-[10px] font-mono text-muted-foreground px-1.5 py-0.5 rounded border bg-muted/30">w:{weight}</span>
