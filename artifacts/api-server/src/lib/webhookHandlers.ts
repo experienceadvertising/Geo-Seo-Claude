@@ -161,6 +161,34 @@ export class WebhookHandlers {
             })
             .catch((e) => logger.error({ err: e?.message, userId }, "Failed to upsert user"));
         }
+
+        // Operational notification — fires once per checkout because the
+        // outer claimEvent() guard prevents duplicate webhook deliveries
+        // from re-triggering this block.
+        if (plan) {
+          const customerEmail =
+            obj?.customer_details?.email ??
+            (await (async () => {
+              try {
+                const [u] = await db
+                  .select({ email: usersTable.email })
+                  .from(usersTable)
+                  .where(eq(usersTable.id, userId));
+                return u?.email ?? null;
+              } catch { return null; }
+            })());
+          const amountTotal = obj?.amount_total != null ? `$${(obj.amount_total / 100).toFixed(2)} ${(obj?.currency || "usd").toUpperCase()}` : "(unknown amount)";
+          EmailService.sendAdminNotification(`[Upgrade] ${customerEmail || userId} → ${planLabel(plan)}`, [
+            `User upgraded`,
+            ``,
+            `Email: ${customerEmail || "(not on session)"}`,
+            `User ID: ${userId}`,
+            `Plan: ${planLabel(plan)}`,
+            `Amount: ${amountTotal}`,
+            `Stripe customer: ${customerId || "(none)"}`,
+            `Time: ${new Date().toISOString()}`,
+          ]).catch((err) => logger.warn({ err, userId }, "Admin upgrade notification failed"));
+        }
       }
     }
 
@@ -173,7 +201,30 @@ export class WebhookHandlers {
       if (user) {
         if (status === "active" || status === "trialing") {
           const plan = priceId ? await getPlanFromPriceId(priceId) : null;
-          if (plan) await updateDbPlan(user.id, plan);
+          if (plan) {
+            await updateDbPlan(user.id, plan);
+            // Admin notification on tier change via the Stripe billing
+            // portal (Pro→Agency upgrade, Agency→Pro downgrade). Skip when
+            // the plan is unchanged — Stripe also fires `updated` for noisy
+            // non-plan events like card-on-file changes, billing-cycle
+            // anchor moves, and proration line items.
+            if (plan !== user.plan) {
+              const direction = planLabel(plan) > planLabel(user.plan) ? "Upgrade" : "Plan change";
+              EmailService.sendAdminNotification(
+                `[${direction}] ${user.email || user.id} ${planLabel(user.plan)} → ${planLabel(plan)}`,
+                [
+                  `User changed plan via Stripe billing portal`,
+                  ``,
+                  `Email: ${user.email || "(unknown)"}`,
+                  `User ID: ${user.id}`,
+                  `Previous plan: ${planLabel(user.plan)}`,
+                  `New plan: ${planLabel(plan)}`,
+                  `Stripe customer: ${customerId}`,
+                  `Time: ${new Date().toISOString()}`,
+                ],
+              ).catch((err) => logger.warn({ err, userId: user.id }, "Admin plan-change notification failed"));
+            }
+          }
         } else if (status === "past_due") {
           // Don't downgrade yet — Stripe will retry the invoice for several
           // days under Smart Retries. Downgrading immediately on past_due
@@ -198,6 +249,19 @@ export class WebhookHandlers {
           EmailService.sendSubscriptionCanceled(user.email, user.firstName || "", planLabel(previousPlan)).catch(
             (err) => logger.error({ err, userId: user.id }, "Subscription-canceled email failed"),
           );
+        }
+        if (previousPlan !== "free") {
+          const reason: string = obj?.cancellation_details?.reason || obj?.cancellation_details?.feedback || "(no reason given)";
+          EmailService.sendAdminNotification(`[Cancel] ${user.email || user.id} (was ${planLabel(previousPlan)})`, [
+            `User canceled subscription`,
+            ``,
+            `Email: ${user.email || "(unknown)"}`,
+            `User ID: ${user.id}`,
+            `Previous plan: ${planLabel(previousPlan)}`,
+            `Reason: ${reason}`,
+            `Stripe customer: ${customerId}`,
+            `Time: ${new Date().toISOString()}`,
+          ]).catch((err) => logger.warn({ err, userId: user.id }, "Admin cancel notification failed"));
         }
       }
     }

@@ -12,6 +12,7 @@ import Admin from "@/pages/admin";
 import Pricing from "@/pages/pricing";
 import Upgrade from "@/pages/upgrade";
 import Methodology from "@/pages/methodology";
+import Contact from "@/pages/contact";
 import VsComparison from "@/pages/vs-comparison";
 import BestAeoToolsPage from "@/pages/best-aeo-tools";
 import BestGeoToolsPage from "@/pages/best-geo-tools";
@@ -63,6 +64,7 @@ function AppRoutes() {
         <Route path="/pricing" component={Pricing} />
         <Route path="/upgrade" component={Upgrade} />
         <Route path="/methodology" component={Methodology} />
+        <Route path="/contact" component={Contact} />
         {/* SEO comparison pages — public, indexable, drive AEO-category
             search traffic. /vs/:slug is parameterized; the page reads
             from src/data/competitors.ts. */}

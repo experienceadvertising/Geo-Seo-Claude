@@ -221,4 +221,106 @@ export const EmailService = {
     );
     return send(email, subject, html, text, "score-changed", unsubscribeUrl);
   },
+
+  // ── Admin notifications ────────────────────────────────────────────────
+  // These go to every address in ADMIN_EMAILS. They are operational alerts
+  // (signups, upgrades, contact-form messages) — NOT marketing — so they
+  // intentionally have no unsubscribe link. Failures are logged but never
+  // bubble up: a Postmark hiccup must not block a user signup or an upgrade
+  // webhook.
+  async sendAdminNotification(subject: string, lines: string[]): Promise<void> {
+    const recipients = (process.env.ADMIN_EMAILS || "")
+      .split(",")
+      .map((e) => e.trim())
+      .filter((e) => e.includes("@"));
+    if (recipients.length === 0) {
+      logger.warn({ subject }, "ADMIN_EMAILS not set — skipping admin notification");
+      return;
+    }
+    const text = lines.join("\n");
+    const html = `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;line-height:1.5;color:#111">
+${lines.map((l) => `<div>${escapeHtml(l)}</div>`).join("\n")}
+</div>`;
+    await Promise.all(
+      recipients.map((to) => send(to, subject, html, text, "admin-notification")),
+    );
+  },
+
+  async sendContactForm(
+    fromEmail: string,
+    fromName: string,
+    message: string,
+    meta: { userId?: string | null; userPlan?: string | null; userAgent?: string | null },
+  ): Promise<void> {
+    const recipients = (process.env.ADMIN_EMAILS || "")
+      .split(",")
+      .map((e) => e.trim())
+      .filter((e) => e.includes("@"));
+    if (recipients.length === 0) {
+      logger.warn({ fromEmail }, "ADMIN_EMAILS not set — skipping contact form forward");
+      return;
+    }
+    const subject = `[Contact] ${fromName || fromEmail}`;
+    const headerLines = [
+      `From: ${fromName ? `${fromName} <${fromEmail}>` : fromEmail}`,
+      meta.userId ? `User ID: ${meta.userId} (${meta.userPlan || "unknown plan"})` : "Not signed in",
+      meta.userAgent ? `User-Agent: ${meta.userAgent}` : "",
+      "",
+      "Message:",
+      message,
+    ].filter(Boolean);
+    const text = headerLines.join("\n");
+    const html = `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;line-height:1.5;color:#111">
+<div><b>From:</b> ${escapeHtml(fromName || "")} &lt;${escapeHtml(fromEmail)}&gt;</div>
+${meta.userId ? `<div><b>User:</b> ${escapeHtml(meta.userId)} (${escapeHtml(meta.userPlan || "unknown")})</div>` : "<div><b>User:</b> not signed in</div>"}
+${meta.userAgent ? `<div><b>UA:</b> ${escapeHtml(meta.userAgent)}</div>` : ""}
+<hr style="border:none;border-top:1px solid #ddd;margin:12px 0" />
+<div style="white-space:pre-wrap">${escapeHtml(message)}</div>
+</div>`;
+    await Promise.all(
+      recipients.map((to) =>
+        // Set ReplyTo via a one-off Postmark call so the admin can reply
+        // straight to the user instead of to info@aeoimprovement.com.
+        sendWithReplyTo(to, subject, html, text, "contact-form", fromEmail),
+      ),
+    );
+  },
 };
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+async function sendWithReplyTo(
+  to: string,
+  subject: string,
+  html: string,
+  text: string,
+  tag: string,
+  replyTo: string,
+): Promise<boolean> {
+  const client = getClient();
+  if (!client) return false;
+  try {
+    await client.sendEmail({
+      From: FROM_EMAIL,
+      To: to,
+      ReplyTo: replyTo,
+      Subject: subject,
+      HtmlBody: html,
+      TextBody: text,
+      MessageStream: "outbound",
+      Tag: tag,
+    });
+    logger.info({ to, tag }, "Email sent");
+    return true;
+  } catch (err: any) {
+    logger.error({ err: err?.message, to, tag }, "Email send failed");
+    return false;
+  }
+}

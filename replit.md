@@ -110,6 +110,16 @@ JSON-LD blocks emitted: FAQPage + BreadcrumbList on /vs/* pages; ItemList + Arti
 - UI: Avg position relabeled "Avg depth" (was "33% in"). Citation Gap shows "insufficient data" when both you and a competitor have 0 citations (was nonsensical "0% behind"). Domain field is read-only with explicit placeholder.
 - Fix Generator panel auto-scrolls into view on open (was rendering below the fold causing apparent "did nothing" UX).
 
+## Admin Notifications + Contact Form
+
+- `EmailService.sendAdminNotification(subject, lines[])` fans an operational email out to every address in `ADMIN_EMAILS`. No unsubscribe link (operational, not marketing). Failures logged, never bubble.
+- Triggered from:
+  - `/auth/register` after successful insert → `[Signup]` email.
+  - `webhookHandlers.checkout.session.completed` after plan resolves → `[Upgrade]` email (with amount + currency). One-time per checkout via existing `claimEvent` idempotency.
+  - `webhookHandlers.customer.subscription.deleted` when previous plan != free → `[Cancel]` email (with cancellation reason if Stripe provided one).
+- Contact form: `POST /api/contact` (unauthenticated, IP rate-limited 5/hr, honeypot `website` field). Forwards to ADMIN_EMAILS via `EmailService.sendContactForm` with `ReplyTo` set to sender so admins can reply directly. Includes user id + plan if signed in.
+- Page at `/contact`; linked from header nav (signed-in users) and footer (everyone).
+
 ## Codegen Note
 
 After running codegen, the barrel file at `lib/api-zod/src/index.ts` is rewritten by the npm script to only export from `./generated/api` (to avoid duplicate export errors from split-mode zod generation).

@@ -157,6 +157,18 @@ router.post("/auth/register", registerRateLimiter, async (req, res): Promise<voi
   // verified their email address. Sending it pre-verification trains people
   // to ignore our mail and risks reputation damage on Postmark.
 
+  // Operational notification to ADMIN_EMAILS — fire-and-forget so a Postmark
+  // hiccup never breaks a signup. Logged on failure inside the service.
+  EmailService.sendAdminNotification(`[Signup] ${normalizedEmail}`, [
+    `New user registered`,
+    ``,
+    `Email: ${normalizedEmail}`,
+    `Name: ${firstName?.trim() || "(not provided)"}`,
+    `User ID: ${userId}`,
+    `Time: ${new Date().toISOString()}`,
+    `Origin: ${baseUrl}`,
+  ]).catch((err) => logger.warn({ err }, "Admin signup notification failed"));
+
   logger.info({ userId, email: normalizedEmail, baseUrl }, "User registered");
   res.status(201).json({
     message: "Account created! Check your email for a verification link.",

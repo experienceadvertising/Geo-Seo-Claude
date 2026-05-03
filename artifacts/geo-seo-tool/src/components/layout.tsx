@@ -79,6 +79,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   <Link href="/" className="hover:text-foreground transition-colors">Audits</Link>
                   <Link href="/methodology" className="hover:text-foreground transition-colors">Methodology</Link>
                   <Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
+                  <Link href="/contact" className="hover:text-foreground transition-colors">Contact</Link>
                 </nav>
                 <UsageMeter />
                 <AdminLink />
@@ -133,6 +134,7 @@ function SiteFooter() {
               <li><Link href="/" className="hover:text-foreground transition-colors">Audit a site</Link></li>
               <li><Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link></li>
               <li><Link href="/methodology" className="hover:text-foreground transition-colors">Methodology</Link></li>
+              <li><Link href="/contact" className="hover:text-foreground transition-colors">Contact</Link></li>
             </ul>
           </div>
           <div>

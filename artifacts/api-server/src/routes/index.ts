@@ -5,6 +5,7 @@ import adminRouter from "./admin";
 import meRouter from "./me";
 import stripeRouter from "./stripe";
 import authRouter from "./auth";
+import contactRouter from "./contact";
 
 const router: IRouter = Router();
 
@@ -14,5 +15,6 @@ router.use(meRouter);
 router.use(stripeRouter);
 router.use(geoRouter);
 router.use(adminRouter);
+router.use(contactRouter);
 
 export default router;
