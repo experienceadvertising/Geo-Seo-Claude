@@ -7,7 +7,12 @@
     ".": "./src/index.ts",
     "./types": "./src/types.ts"
   },
+  "scripts": {
+    "snapshot": "tsx src/scripts/snapshot.ts",
+    "snapshot:update": "tsx src/scripts/snapshot.ts --update"
+  },
   "devDependencies": {
-    "@types/node": "catalog:"
+    "@types/node": "catalog:",
+    "tsx": "catalog:"
   }
 }

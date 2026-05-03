@@ -9,6 +9,7 @@ import {
 import { analyzeUrl } from "../../lib/geoAnalyzer";
 import { generateAuditPdf } from "../../lib/pdfReport";
 import { anthropic } from "@workspace/integrations-anthropic-ai";
+import { RECOMMENDATIONS_SCHEMA_VERSION } from "@workspace/recommendations";
 import simulateRouter from "./simulate";
 import { requireAuth } from "../../middlewares/auth";
 import { analyzeRateLimiter, readRateLimiter } from "../../middlewares/rateLimiters";
@@ -278,6 +279,11 @@ Hard rules:
       id: audit.id,
       createdAt: audit.createdAt.toISOString(),
       aiInsights,
+      // Tells the client which recommendation-metadata schema this audit was
+      // generated under. v1 means each rec has `source` + `expectedLift`
+      // attached; legacy audits stored before this field existed will be
+      // absent it and the client falls back to pre-badge rendering.
+      recommendationsSchemaVersion: RECOMMENDATIONS_SCHEMA_VERSION,
     });
   } catch (err) {
     req.log.error({ err }, "GEO analysis failed");
@@ -326,9 +332,24 @@ router.get("/geo/audits/:id", requireAuth, readRateLimiter, async (req, res): Pr
     return;
   }
 
+  // Detect whether this stored audit was generated under the v1 catalog
+  // (recommendations carry a `source` field). Legacy audits predate the
+  // catalog and render without source badges on the client.
+  //
+  // We scan ALL recommendations rather than just index 0 because a v1 audit
+  // that, by signal coincidence, fired only one rec (or recs were trimmed by
+  // some downstream process) should still be detected correctly. An empty
+  // recommendations array remains null — there is nothing for the client to
+  // badge in that case anyway, so the schema version is not actionable.
+  const storedRecs = (audit.recommendations as unknown[]) ?? [];
+  const hasV1Source = storedRecs.some(
+    (r) => typeof r === "object" && r !== null && "source" in (r as Record<string, unknown>),
+  );
+
   res.json({
     ...audit,
     createdAt: audit.createdAt.toISOString(),
+    recommendationsSchemaVersion: hasV1Source ? RECOMMENDATIONS_SCHEMA_VERSION : null,
   });
 });
 

@@ -191,6 +191,9 @@ importers:
       '@workspace/integrations-anthropic-ai':
         specifier: workspace:*
         version: link:../../lib/integrations-anthropic-ai
+      '@workspace/recommendations':
+        specifier: workspace:*
+        version: link:../../lib/recommendations
       bcryptjs:
         specifier: ^3.0.3
         version: 3.0.3
@@ -731,6 +734,9 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 25.3.5
+      tsx:
+        specifier: 'catalog:'
+        version: 4.21.0
 
   scripts:
     dependencies:

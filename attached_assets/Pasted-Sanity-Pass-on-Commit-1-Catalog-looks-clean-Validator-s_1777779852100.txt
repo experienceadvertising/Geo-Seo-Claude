@@ -1,0 +1,36 @@
+Sanity Pass on Commit 1
+Catalog looks clean. Validator suite is the right shape — particularly happy you tested both directions (clean load passes, malformed entries fail with informative messages). The "research with null lift requires notes" rule firing in tests means the schema is now self-enforcing, which is exactly what we wanted.
+Before I rule on the open question, two pieces of feedback on the four research entries.
+Tightening on the three positive-method entries
+The framing on add-statistics, add-expert-quotes, and add-authoritative-citations is good — qualitative claim, paper as methodological source, notes field acknowledging what was removed and why. One small consistency fix: add-statistics includes the actual headline number in the notes ("up to 41% improvement on Position-Adjusted Word Count"), but add-expert-quotes and add-authoritative-citations don't. Either include the headline in all three notes (with the same caveat that it's best-method best-metric, not per-method), or in none of them. I'd lean toward including it in all three — it gives the methodology page consistent material to surface, and any reader who pulls up the notes will see the same honest framing across the set.
+The add-authoritative-citations notes field does the SERP-position thing correctly. Good — that's the kind of nuance that's easy to drop in migration.
+Ruling on keyword-stuffing as research
+Keep it as the 4th research entry. Your reasoning is sound and it's defensible.
+The integrity test for sourceType: "research" isn't "the paper reports a positive lift number" — it's "the paper supports the recommendation we're making." A paper that explicitly identifies Keyword Stuffing as non-performing supports a "don't do this" recommendation just as rigorously as a paper identifying Statistics Addition as top-performing supports a "do this" recommendation. Both are primary-source-backed claims about what works in generative-engine optimization. The asymmetry would only matter if our schema treated sourceType: "research" as implying "positive lift expected," which it doesn't — expectedLift: null is exactly how we represent the absence of a quantified effect, regardless of direction.
+The framing in the notes field handles the nuance correctly: "negative-signal removal rather than positive-lift intervention." That's honest and it's the right framing for the UI to inherit when commit 4 renders the badge.
+One small refinement: the notes field says "in some configurations it slightly decreases it" — make sure that hedge ("in some configurations," "slightly") accurately reflects what the paper says rather than softening a clearer finding. If the paper is unambiguous that Keyword Stuffing reduces visibility, say so plainly. If the paper is genuinely mixed, the current hedge is fine. Re-check this one line against the paper text.
+Catalog-level observations
+26 entries with 4 research / 1 internal_benchmark / 21 practitioner_consensus is the right honest distribution. The temptation in tools like this is to overclaim research backing; you've gone the other direction, which is the correct posture for an AEO tool whose entire value proposition is rigorous citation hygiene.
+The breakdown by category (answerability=3, authority=4, structure=7, depth=1, freshness=5, technical=5, entity=1) reveals a small imbalance worth noting later — entity=1 and depth=1 are pretty thin. Not a commit-blocker, just a roadmap observation: if those buckets stay sparse after a few rounds of customer feedback, consider whether they should be merged into adjacent categories (entity into authority, depth into structure) to simplify the rubric.
+Two requests for commit 2
+Not blocking, but flag these as you do the trigger refactor:
+Add a sourceCitation length cap to the validator. Right now there's nothing stopping someone from pasting a 2,000-word source description that would render terribly on a badge. Cap at, say, 280 chars and fail the build if exceeded. Forces the citation to be tweet-length, which is the right discipline.
+Snapshot test for the catalog. Before commit 2 modifies the trigger code that pushes to it, add a Jest/Vitest snapshot test that loads all 26 entries and asserts the result matches a stored snapshot. This catches accidental edits to the JSON during the trigger refactor — anyone changing a recommendation's metadata will have to explicitly bless the snapshot diff in code review.
+What to send the agent
+
+Message to paste into Replit Agent
+Catalog approved. keyword-stuffing stays as the 4th research entry — your reasoning is correct. The integrity test for sourceType: "research" is "the paper supports the recommendation," not "the paper reports a positive number." A negative-signal-removal recommendation backed by the paper identifying the method as non-performing is just as valid as a positive-method entry.
+Three small fixes before commit 2 lands:
+
+Consistency on the headline number across the three positive-method research entries. add-statistics notes mention the paper's headline ("up to 41% on Position-Adjusted Word Count, best-method best-metric"); add-expert-quotes and add-authoritative-citations don't. Add the same caveated headline to both so the methodology page has consistent material. Don't promote the number into expectedLift — it stays in notes as context.
+Re-check the keyword-stuffing notes against the paper. The phrase "in some configurations it slightly decreases it" hedges the finding. If the paper is unambiguous about the negative effect, say so plainly. If it's genuinely mixed, current wording is fine. Two-minute spot-check.
+Add sourceCitation length cap to the validator. 280-char limit, build fails if exceeded. Forces tweet-length citation discipline so badges render cleanly.
+
+One addition to commit 2:
+Before refactoring geoRecommendations.ts to compose from the catalog, add a snapshot test that loads all 26 entries and asserts against a stored snapshot. Run it as part of the test suite. This catches accidental JSON edits during the trigger refactor — any change to recommendation metadata will require an explicit --update-snapshots in the same PR, visible in code review.
+Greenlit for commits 2 and 3 once the three fixes above land. Both invisible to users. Stop before commit 4 (UI badges + /methodology page) and show me:
+
+Badge styling in the recommendations panel for each sourceType (research / internal_benchmark / practitioner_consensus, with verified vs. unverified states)
+Methodology page draft including the "What the research actually says" section we discussed and the SERP-position-conditioned lift note for future product reference
+
+Don't ship commit 4 without that review.

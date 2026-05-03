@@ -1,6 +1,4 @@
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { dirname, resolve } from "node:path";
+import rawCatalog from "../data/recommendations.json" with { type: "json" };
 import type { Recommendation, SourceType, Severity, Category } from "./types.js";
 
 export * from "./types.js";
@@ -9,10 +7,10 @@ export * from "./types.js";
 // Load + validate the JSON catalog at module-load time. Validation failures
 // throw, which fails the server boot — preferred over silently shipping a
 // malformed catalog.
+//
+// The JSON is imported via the ESM JSON-modules attribute so it works in both
+// dev (tsx) and bundled (esbuild) modes without runtime fs path resolution.
 // ---------------------------------------------------------------------------
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const DATA_PATH = resolve(__dirname, "../data/recommendations.json");
 
 const VALID_SEVERITIES: ReadonlySet<Severity> = new Set(["critical", "high", "medium", "low"]);
 const VALID_CATEGORIES: ReadonlySet<Category> = new Set([
@@ -54,7 +52,14 @@ function validate(rec: unknown, idx: number): Recommendation {
       `keep \`claim\` qualitative.`
     );
   }
-  requireString("sourceCitation");
+  const sourceCitation = requireString("sourceCitation");
+  // Citation must fit a tweet-length badge. Forces tight, scannable citations.
+  if (sourceCitation.length > 280) {
+    throw new Error(
+      `${where} \`sourceCitation\` is ${sourceCitation.length} chars; max is 280. ` +
+      `Tighten it for badge rendering.`
+    );
+  }
 
   if (!VALID_SEVERITIES.has(r.severity as Severity)) {
     throw new Error(`${where} has invalid \`severity\`: ${JSON.stringify(r.severity)}`);
@@ -143,12 +148,10 @@ function validate(rec: unknown, idx: number): Recommendation {
 }
 
 function loadCatalog(): { byId: Map<string, Recommendation>; all: readonly Recommendation[] } {
-  const raw = readFileSync(DATA_PATH, "utf8");
-  const parsed = JSON.parse(raw) as unknown;
-  if (!Array.isArray(parsed)) {
-    throw new Error(`recommendations.json must be a JSON array, got ${typeof parsed}`);
+  if (!Array.isArray(rawCatalog)) {
+    throw new Error(`recommendations.json must be a JSON array, got ${typeof rawCatalog}`);
   }
-  const all: Recommendation[] = parsed.map((r, i) => validate(r, i));
+  const all: Recommendation[] = (rawCatalog as unknown[]).map((r, i) => validate(r, i));
   const byId = new Map<string, Recommendation>();
   for (const rec of all) {
     if (byId.has(rec.id)) throw new Error(`duplicate recommendation id: ${rec.id}`);

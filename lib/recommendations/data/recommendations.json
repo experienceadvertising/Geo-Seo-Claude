@@ -42,7 +42,7 @@
     "verified": true,
     "lastVerifiedAt": "2026-05-03",
     "updatedAt": "2026-05-03",
-    "notes": "The paper does not publish a per-method aggregate lift number we will attribute to this individual recommendation. Per-method numbers previously displayed (e.g. '+32%') were not traceable to the paper and have been removed pending an internal benchmark."
+    "notes": "The paper does not publish a per-method aggregate lift number we will attribute to this individual recommendation. Headline result reported in the paper is 'up to 41% improvement on Position-Adjusted Word Count' for the best-performing method overall (best-method best-metric, not per-method). Per-method numbers previously displayed (e.g. '+32%') were not traceable to the paper and have been removed pending an internal benchmark."
   },
   {
     "id": "add-authoritative-citations",
@@ -57,7 +57,7 @@
     "verified": true,
     "lastVerifiedAt": "2026-05-03",
     "updatedAt": "2026-05-03",
-    "notes": "The paper does not publish a single per-method aggregate lift; instead it reports SERP-position-conditioned effects (e.g. +115.1% visibility for rank-5 sites, -30.3% for rank-1 sites in the Cite Sources experiment). Per-method number previously displayed (e.g. '+30.3%') misread the paper's negative finding for top-ranked sites as a positive lift and has been removed. SERP-conditioned lift is captured as a methodology note for a future product feature; not surfaced as a recommendation lift figure."
+    "notes": "Headline result reported in the paper is 'up to 41% improvement on Position-Adjusted Word Count' for the best-performing method overall (best-method best-metric, not per-method). Instead of a single per-method lift, the paper reports SERP-position-conditioned effects for Cite Sources specifically (e.g. +115.1% visibility for rank-5 sites, -30.3% for rank-1 sites). Per-method number previously displayed (e.g. '+30.3%') misread the paper's negative finding for top-ranked sites as a positive lift and has been removed. SERP-conditioned lift is captured as a methodology note for a future product feature; not surfaced as a recommendation lift figure."
   },
   {
     "id": "direct-answer-block",
@@ -286,7 +286,7 @@
     "verified": true,
     "lastVerifiedAt": "2026-05-03",
     "updatedAt": "2026-05-03",
-    "notes": "The paper reports Keyword Stuffing as one of the methods that does NOT improve visibility (in some configurations it slightly decreases it). We frame the recommendation as a negative-signal removal rather than a positive-lift intervention. No precise lift number published per method."
+    "notes": "The paper categorizes Keyword Stuffing in a section titled 'Non-Performing Generative Engine Optimization methods' and reports it scores below the unoptimized baseline across both metrics (Table 1: ~17.8 vs 19.5 baseline on Position-Adjusted Word Count). On Perplexity specifically, §4.4 states it 'performs 10% worse than the baseline.' We frame the recommendation as a negative-signal removal rather than a positive-lift intervention."
   },
   {
     "id": "article-schema",

@@ -1,6 +1,33 @@
 import * as cheerio from "cheerio";
+import {
+  getRecommendation,
+  type Recommendation,
+  type SourceType,
+  type ExpectedLift,
+} from "@workspace/recommendations";
 
 export type RecPriority = "critical" | "high" | "medium" | "low";
+
+/**
+ * Source-attribution metadata attached to each runtime recommendation, sourced
+ * from the @workspace/recommendations catalog. The client renders this as a
+ * badge ("research" / "internal benchmark" / "practitioner consensus", with a
+ * verified checkmark when applicable) plus a link to the cited source.
+ *
+ * All fields are optional on the response shape so legacy audits stored before
+ * the catalog existed (and which therefore lack `source`) continue to render
+ * via the pre-catalog code path. The frontend uses the top-level
+ * `recommendationsSchemaVersion` field to decide whether to render badges.
+ */
+export interface RecommendationSource {
+  type: SourceType;
+  url: string | null;
+  citation: string;
+  verified: boolean;
+  lastVerifiedAt: string | null;
+  /** Methodology-page editorial notes; safe to render in a tooltip / details panel. */
+  notes?: string;
+}
 
 export interface GeoRecommendation {
   id: string;
@@ -9,6 +36,14 @@ export interface GeoRecommendation {
   priority: RecPriority;
   category: "answerability" | "authority" | "structure" | "depth" | "freshness" | "technical" | "entity";
   impact: string;
+  /**
+   * Structured lift claim. `null` when no defensible precise number exists for
+   * this recommendation (the qualitative case is in `impact`). Optional so
+   * legacy audits without source enrichment still satisfy the type.
+   */
+  expectedLift?: ExpectedLift | null;
+  /** Source-attribution metadata. Optional for legacy compatibility. */
+  source?: RecommendationSource;
 }
 
 export interface ContentSignals {
@@ -78,125 +113,120 @@ export function extractContentSignals($: cheerio.CheerioAPI, url: string, brandN
 
   // Expert quotes
   const blockquotes = $("blockquote").length;
-  const attributionRegex = /["“][^"”]{20,400}["”]\s*[—\-–]?\s*(?:said|says|noted|explained|wrote|told|according to)\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,3}/g;
-  const namedAttributionRegex = /(?:According to|As\s+stated\s+by|[A-Z][a-z]+\s+[A-Z][a-z]+,\s+(?:CEO|CTO|CFO|founder|professor|researcher|director|analyst|economist|scientist))/g;
-  const expertQuoteCount = blockquotes + (bodyText.match(attributionRegex) || []).length + (bodyText.match(namedAttributionRegex) || []).length;
+  const namedQuotes = (bodyText.match(/[""][^""]{20,}[""]\s*[-—–]?\s*(?:said|told|according to)\s+[A-Z][a-z]+\s+[A-Z][a-z]+/g) || []).length;
+  const expertQuoteCount = blockquotes + namedQuotes;
 
-  // Citation links: <a> elements pointing externally
+  // Citation links: external links to non-self domains
   let citationLinkCount = 0;
   let authoritativeCitationCount = 0;
-  let pageHost = "";
-  try { pageHost = new URL(url).hostname.replace(/^www\./, ""); } catch {}
-  $("article a[href], main a[href], .content a[href], p a[href]").each((_, el) => {
-    const href = $(el).attr("href") || "";
-    if (!/^https?:\/\//i.test(href)) return;
-    try {
-      const h = new URL(href).hostname.replace(/^www\./, "");
-      if (h && h !== pageHost) {
-        citationLinkCount++;
-        if (AUTHORITY_DOMAINS.some((re) => re.test(href))) authoritativeCitationCount++;
-      }
-    } catch {}
-  });
-  if (citationLinkCount === 0) {
+  try {
+    const selfHost = new URL(url).hostname.replace(/^www\./, "");
     $("a[href]").each((_, el) => {
       const href = $(el).attr("href") || "";
       if (!/^https?:\/\//i.test(href)) return;
       try {
-        const h = new URL(href).hostname.replace(/^www\./, "");
-        if (h && h !== pageHost) {
-          citationLinkCount++;
-          if (AUTHORITY_DOMAINS.some((re) => re.test(href))) authoritativeCitationCount++;
-        }
-      } catch {}
+        const linkHost = new URL(href).hostname.replace(/^www\./, "");
+        if (linkHost === selfHost) return;
+        citationLinkCount++;
+        if (AUTHORITY_DOMAINS.some((re) => re.test(href))) authoritativeCitationCount++;
+      } catch { /* ignore malformed */ }
     });
-  }
+  } catch { /* ignore bad page url */ }
 
-  // Headings + question phrasing
-  const headingTexts: string[] = [];
-  $("h1, h2, h3, h4").each((_, el) => {
-    headingTexts.push($(el).text().trim());
-  });
-  const totalHeadings = headingTexts.length;
-  const questionHeadings = headingTexts.filter((h) => /\?$/.test(h) || QUESTION_WORD_RE.test(h)).length;
-  const questionHeadingRatio = totalHeadings > 0 ? questionHeadings / totalHeadings : 0;
-  const faqCount = headingTexts.filter((h) => /\?$/.test(h)).length + $("dl dt").length;
+  // FAQ entries
+  const headingTexts = $("h1,h2,h3,h4").map((_, el) => $(el).text().trim()).get();
+  const faqCount = headingTexts.filter((t) => /\?$/.test(t) || /^(?:how|what|why|when|where|which|who|can|do|does|is|are|should)\b/i.test(t)).length;
 
-  // Answer capsules: count H2s where the immediately following text node / paragraph
-  // is a direct-answer block of roughly 40-100 words. (Research target: 40-60 words.)
-  let answerCapsuleCount = 0;
-  $("h2").each((_, el) => {
-    const $h2 = $(el);
-    let nextText = "";
-    let cur = $h2.next();
-    let hops = 0;
-    while (cur.length && hops < 3 && nextText.split(/\s+/).filter(Boolean).length < 30) {
-      const node = cur.get(0) as { tagName?: string } | undefined;
-      const tag = node?.tagName?.toLowerCase?.();
-      if (tag === "p" || tag === "div") {
-        nextText += " " + cur.text().trim();
-      } else if (tag && /^h[1-6]$/.test(tag)) {
-        break;
-      }
-      cur = cur.next();
-      hops++;
-    }
-    const words = nextText.trim().split(/\s+/).filter(Boolean);
-    if (words.length >= 30 && words.length <= 100) {
-      // Looks like an answer capsule if the first sentence is declarative
-      const first = words.slice(0, 25).join(" ");
-      if (/^[A-Z]/.test(first) && /[.!]/.test(nextText)) answerCapsuleCount++;
-    }
-  });
-
-  const listCount = $("ul, ol").length;
+  // Lists & tables
+  const listCount = $("ul,ol").length;
   const tableCount = $("table").length;
-  // Comparison tables: tables with thead OR >=2 columns and >=2 rows
+
+  // Comparison tables: tables with comparison-y headers
   let comparisonTableCount = 0;
-  $("table").each((_, el) => {
-    const $t = $(el);
-    const cols = $t.find("tr").first().find("th, td").length;
-    const rows = $t.find("tr").length;
-    if ((($t.find("thead").length > 0 || $t.find("th").length >= 2) && cols >= 2 && rows >= 2)) {
+  $("table").each((_, t) => {
+    const headerText = $(t).find("th").map((_, th) => $(th).text().toLowerCase()).get().join(" ");
+    if (/(?:vs\.?|versus|compare|comparison|feature|price|plan)/i.test(headerText)) {
       comparisonTableCount++;
     }
   });
 
-  // Freshness
-  const recentYearRegex = new RegExp(`\\b(?:${currentYear}|${currentYear - 1})\\b`);
+  // Answer capsules: short (40-60 word) <p> immediately following an h2/h3
+  let answerCapsuleCount = 0;
+  $("h2,h3").each((_, h) => {
+    const next = $(h).next("p");
+    if (!next.length) return;
+    const wc = next.text().trim().split(/\s+/).filter(Boolean).length;
+    if (wc >= 30 && wc <= 80) answerCapsuleCount++;
+  });
+
+  // Question heading ratio
+  const totalHeadings = headingTexts.length;
+  const questionHeadings = headingTexts.filter((t) => QUESTION_WORD_RE.test(t) || /\?$/.test(t)).length;
+  const questionHeadingRatio = totalHeadings > 0 ? questionHeadings / totalHeadings : 0;
+
+  // Publish / freshness
   const hasPublishDate =
     $("time[datetime]").length > 0 ||
-    $("meta[property='article:published_time']").length > 0 ||
-    /(?:published|posted|updated)(?:\s+on)?\s*[:\-]?\s*[A-Z][a-z]+\s+\d{1,2},?\s+\d{4}/i.test(bodyText.slice(0, 4000));
-  const hasFreshnessSignal = hasPublishDate || recentYearRegex.test(bodyText.slice(0, 4000));
+    $('meta[property="article:published_time"]').length > 0 ||
+    $('meta[name="date"]').length > 0;
 
-  // Estimate content age in months using best available datetime
+  const currentYearStr = String(currentYear);
+  const prevYearStr = String(currentYear - 1);
+  const hasFreshnessSignal =
+    hasPublishDate ||
+    /\bupdated\s*:?\s*[A-Z][a-z]+\s+\d{1,2},?\s+\d{4}\b/i.test(bodyText) ||
+    new RegExp(`\\b(?:${currentYearStr}|${prevYearStr})\\b`).test(bodyText.slice(0, 1000));
+
+  // Content age in months from <time datetime>, og meta, or visible "Updated" line
   let contentAgeMonths: number | null = null;
-  const dateCandidates: string[] = [];
+  const candidateDates: string[] = [];
   $("time[datetime]").each((_, el) => {
-    const dt = $(el).attr("datetime");
-    if (dt) dateCandidates.push(dt);
+    const v = $(el).attr("datetime");
+    if (v) candidateDates.push(v);
   });
-  const articleModified = $("meta[property='article:modified_time']").attr("content");
-  const articlePublished = $("meta[property='article:published_time']").attr("content");
-  if (articleModified) dateCandidates.push(articleModified);
-  if (articlePublished) dateCandidates.push(articlePublished);
-  let mostRecent: number | null = null;
-  for (const d of dateCandidates) {
-    const t = Date.parse(d);
-    if (!Number.isNaN(t) && t <= Date.now()) {
-      if (mostRecent === null || t > mostRecent) mostRecent = t;
+  $('meta[property="article:modified_time"]').each((_, el) => {
+    const v = $(el).attr("content");
+    if (v) candidateDates.push(v);
+  });
+  $('meta[property="article:published_time"]').each((_, el) => {
+    const v = $(el).attr("content");
+    if (v) candidateDates.push(v);
+  });
+  const updatedMatch = bodyText.match(/\bupdated\s*:?\s*([A-Z][a-z]+\s+\d{1,2},?\s+\d{4})\b/i);
+  if (updatedMatch) candidateDates.push(updatedMatch[1]);
+
+  const now = Date.now();
+  for (const ds of candidateDates) {
+    const t = Date.parse(ds);
+    if (Number.isFinite(t)) {
+      const months = Math.floor((now - t) / (1000 * 60 * 60 * 24 * 30.44));
+      if (months >= 0 && (contentAgeMonths === null || months < contentAgeMonths)) {
+        contentAgeMonths = months;
+      }
     }
   }
-  if (mostRecent !== null) {
-    contentAgeMonths = Math.max(0, Math.round((Date.now() - mostRecent) / (1000 * 60 * 60 * 24 * 30.44)));
-  }
 
-  // Byline / author
-  const hasByline =
-    $("[rel='author'], .author, .byline, [itemprop='author']").length > 0 ||
-    $("meta[name='author']").attr("content") !== undefined ||
-    /^\s*(?:By\s+|Author[:\s])/im.test(firstParas);
+  // Byline: visible "By [Name]" line, or rel=author link, or Person JSON-LD
+  let hasByline =
+    /\bby\s+[A-Z][a-z]+\s+[A-Z][a-z]+/.test(bodyText.slice(0, 2000)) ||
+    $('a[rel="author"]').length > 0 ||
+    $('[itemprop="author"]').length > 0;
+  if (!hasByline) {
+    $('script[type="application/ld+json"]').each((_, el) => {
+      const raw = $(el).contents().text();
+      if (!raw) return;
+      try {
+        const parsed = JSON.parse(raw);
+        const arr = Array.isArray(parsed) ? parsed : [parsed];
+        for (const item of arr) {
+          if (item && typeof item === "object" && item.author) {
+            hasByline = true;
+            return;
+          }
+        }
+      } catch { /* ignore */ }
+    });
+  }
 
   // Brand entity in first ~1500 chars
   const brandMentionsEarly = brandName
@@ -223,7 +253,6 @@ export function extractContentSignals($: cheerio.CheerioAPI, url: string, brandN
       "all","any","may","use","used","using","get","got","new","most","only","just","like","each","some","because",
     ]);
 
-    // Build the brand-token ignore list.
     const ignore = new Set<string>();
     const addTokens = (s: string | null | undefined) => {
       if (!s) return;
@@ -231,17 +260,13 @@ export function extractContentSignals($: cheerio.CheerioAPI, url: string, brandN
       for (const t of toks) ignore.add(t);
     };
     addTokens(brandName);
-    // Domain root tokens — split "experienceadvertising" → also add as a single token if ≥4 chars
     try {
       const host = new URL(url).hostname.replace(/^www\./, "");
       const root = host.split(".")[0];
       if (root.length >= 4) ignore.add(root.toLowerCase());
-      // Also add any 4+ char alphabetic chunks from the host
       for (const t of host.toLowerCase().match(/[a-z]{4,}/g) || []) ignore.add(t);
     } catch {}
-    // Page <title> tokens (e.g. "Stripe | Financial infrastructure" → strip "stripe", "financial", "infrastructure")
     addTokens($("title").first().text());
-    // Organization / WebSite schema name from JSON-LD
     $('script[type="application/ld+json"]').each((_, el) => {
       const raw = $(el).contents().text();
       if (!raw) return;
@@ -315,14 +340,68 @@ export interface RecommendationContext {
 }
 
 /**
- * Generates prioritized GEO recommendations grounded in current research:
- *   - KDD 2024 (Princeton/IIT Delhi): statistics +33.9%, expert quotes +32%,
- *     fluent writing +30%, citations +30.3%.
- *   - arXiv 2509.08919 (Sept 2025): earned-media bias, freshness 3.2x within
- *     12 months, FAQ + comprehensive coverage out-perform thin pages.
- *   - 2026 practitioner consensus (Semrush, HubSpot, Search Engine Land,
- *     Profound, Botify, Frase): answer capsules, conversational H2s, named
- *     authors, comparison tables for agentic search; llms.txt deprioritized.
+ * Compose a runtime GeoRecommendation by merging trigger-supplied dynamic fields
+ * (the WHEN/HOW-SEVERE-RIGHT-NOW) with the @workspace/recommendations catalog
+ * entry (the WHAT/WHY/SOURCE).
+ *
+ * - `title`    — override only when the trigger needs interpolation (e.g. brand
+ *                name, year) or a variant title (e.g. "Add concrete statistics"
+ *                vs. "Increase statistical density"). Otherwise the catalog's
+ *                `titleTemplate` is used as-is.
+ * - `detail`   — always trigger-supplied, since it incorporates live signal
+ *                values and prescriptive guidance.
+ * - `priority` — override when severity is signal-conditional. Otherwise the
+ *                catalog `severity` is used.
+ * - `impact`   — sourced from the catalog's qualitative `claim`. Precise lift
+ *                numbers, when defensible, will be exposed via the `source`
+ *                metadata field added in the upcoming API enrichment commit
+ *                (commit 3) — not in this string.
+ */
+function composeRec(
+  id: string,
+  dynamic: { title?: string; detail: string; priority?: RecPriority },
+): GeoRecommendation {
+  const cat: Recommendation | undefined = getRecommendation(id);
+  if (!cat) {
+    throw new Error(
+      `geoRecommendations: trigger emitted unknown recommendation id '${id}'. ` +
+      `Either add it to lib/recommendations/data/recommendations.json or fix the trigger.`,
+    );
+  }
+  const source: RecommendationSource = {
+    type: cat.sourceType,
+    url: cat.sourceUrl,
+    citation: cat.sourceCitation,
+    verified: cat.verified,
+    lastVerifiedAt: cat.lastVerifiedAt,
+    ...(cat.notes !== undefined ? { notes: cat.notes } : {}),
+  };
+  return {
+    id,
+    title: dynamic.title ?? cat.titleTemplate,
+    detail: dynamic.detail,
+    priority: dynamic.priority ?? cat.severity,
+    category: cat.category,
+    impact: cat.claim,
+    expectedLift: cat.expectedLift,
+    source,
+  };
+}
+
+/**
+ * Generates prioritized GEO recommendations.
+ *
+ * The trigger code in this function decides WHEN each recommendation fires and
+ * WITH WHAT live signal values. The recommendation's metadata — qualitative
+ * claim, source citation, source URL, verification status — lives in the
+ * @workspace/recommendations catalog and is composed in by composeRec().
+ *
+ * Per the source-every-claim migration (May 2026): precise quantitative lift
+ * figures are no longer hard-coded into the `impact` string here. The catalog
+ * carries `expectedLift` (currently null for all recs pending defensible
+ * sourcing) and `sourceCitation` (qualitative attribution); the upcoming API
+ * enrichment commit surfaces these to the client so the UI can render source
+ * badges with proper citation hygiene.
  */
 export function generateGeoRecommendations(ctx: RecommendationContext): GeoRecommendation[] {
   const { signals: s } = ctx;
@@ -330,295 +409,175 @@ export function generateGeoRecommendations(ctx: RecommendationContext): GeoRecom
 
   // === HIGHEST IMPACT — Authority signals ===
   if (s.statisticCount < 3) {
-    recs.push({
-      id: "add-statistics",
-      title: s.statisticCount === 0 ? "Add concrete statistics" : "Increase statistical density",
-      detail: `Found ${s.statisticCount} numeric data point(s). Add at least one specific stat (percentage, dollar amount, or ratio) per major section. Statistics remain the single highest-impact GEO signal across all four major engines.`,
+    recs.push(composeRec("add-statistics", {
+      title: s.statisticCount === 0 ? undefined /* catalog default */ : "Increase statistical density",
+      detail: `Found ${s.statisticCount} numeric data point(s). Add at least one specific stat (percentage, dollar amount, or ratio) per major section. Statistics remain among the highest-impact GEO signals across all four major engines.`,
       priority: s.statisticCount === 0 ? "critical" : "high",
-      category: "authority",
-      impact: "+33.9% AI citation visibility (Princeton/KDD 2024)",
-    });
+    }));
   }
 
   if (s.currentYearStatCount === 0 && s.statisticCount > 0) {
     const yr = new Date().getFullYear();
-    recs.push({
-      id: "current-year-stats",
+    recs.push(composeRec("current-year-stats", {
       title: `Cite ${yr - 1}/${yr} statistics`,
       detail: `Statistics exist on the page but none are tied to ${yr - 1} or ${yr}. AI engines (especially Perplexity & Google AI Overviews) heavily favor recent data — replace older figures with current-year numbers and cite their source.`,
-      priority: "high",
-      category: "freshness",
-      impact: "83% of commercial AI citations come from sources updated in the past 12 months (2026 practitioner data)",
-    });
+    }));
   }
 
   if (s.expertQuoteCount < 1) {
-    recs.push({
-      id: "add-expert-quotes",
-      title: "Add expert quotes with named attribution",
+    recs.push(composeRec("add-expert-quotes", {
       detail: "No quoted statements with named attribution detected. Add direct quotes from named experts (\"...,\" said Jane Doe, CEO of Acme) — AI engines weight attributed claims much higher than unsourced opinions.",
-      priority: "high",
-      category: "authority",
-      impact: "+32% AI citation visibility (Princeton/KDD 2024)",
-    });
+    }));
   }
 
   if (s.authoritativeCitationCount < 2) {
-    recs.push({
-      id: "add-authoritative-citations",
-      title: "Add 2-5 outbound links to authoritative sources",
+    recs.push(composeRec("add-authoritative-citations", {
       detail: `Only ${s.authoritativeCitationCount} link(s) to authoritative domains (.gov, .edu, established publications). Content that performs across ChatGPT, Claude, and Perplexity carries 2-5 outbound links to third-party authoritative sources per article — this is now the 2026 baseline.`,
       priority: s.authoritativeCitationCount === 0 ? "high" : "medium",
-      category: "authority",
-      impact: "+30.3% AI citation visibility; 2-5 outbound citations is the 2026 standard",
-    });
+    }));
   }
 
   // === DIRECT ANSWERABILITY ===
   if (!s.hasDirectAnswerOpening) {
-    recs.push({
-      id: "direct-answer-block",
-      title: "Lead with a 40-60 word direct answer",
+    recs.push(composeRec("direct-answer-block", {
       detail: "The opening doesn't begin with a definition pattern (\"X is...\", \"The best Y for Z is...\"). AI engines extract opening statements far more often than buried conclusions. Rewrite the first paragraph to answer the page's core question immediately.",
-      priority: "critical",
-      category: "answerability",
-      impact: "Highest-leverage rewrite per 2026 GEO practitioner data",
-    });
+    }));
   }
 
-  // Answer capsules: 40-60 word direct-answer block after each H2
-  const h2Count = Math.max(1, s.totalHeadings); // rough denominator
   if (s.answerCapsuleCount < 2 && s.totalHeadings >= 3) {
-    recs.push({
-      id: "answer-capsules",
-      title: "Add 40-60 word answer capsules after each H2",
-      detail: `Detected ${s.answerCapsuleCount} answer capsule(s). After every major H2, place a 40-60 word self-contained answer that states the conclusion definitively before elaboration. This is the single most extractable pattern in 2026 — AI engines literally lift this block as a citation.`,
+    recs.push(composeRec("answer-capsules", {
+      detail: `Detected ${s.answerCapsuleCount} answer capsule(s). After every major H2, place a 40-60 word self-contained answer that states the conclusion definitively before elaboration. This is among the most extractable patterns in 2026 — AI engines literally lift this block as a citation.`,
       priority: s.answerCapsuleCount === 0 ? "high" : "medium",
-      category: "answerability",
-      impact: "+35-40% extraction rate (2026 practitioner consensus)",
-    });
+    }));
   }
 
   // === STRUCTURE ===
   if (s.totalHeadings >= 3 && s.questionHeadingRatio < 0.3) {
-    recs.push({
-      id: "question-headings",
-      title: "Phrase headings as conversational questions",
+    recs.push(composeRec("question-headings", {
       detail: `Only ${Math.round(s.questionHeadingRatio * 100)}% of headings are phrased as questions or use question words (who/what/why/how). Mirror real prompts — change "Pricing Information" to "How Much Does X Cost?" — AI engines treat H2/H3 as a query map.`,
-      priority: "medium",
-      category: "structure",
-      impact: "Improves heading-to-prompt matching; conversational H2s are a validated 2026 signal",
-    });
+    }));
   }
 
   if (s.faqCount < 5) {
-    recs.push({
-      id: "add-faq",
-      title: "Add an FAQ section with 10-15 questions",
-      detail: `Only ${s.faqCount} question-style entries detected. One detailed FAQ page with 10-15 questions reliably out-performs nearly every other on-page tactic for AI citations — and far out-performs publishing an llms.txt file.`,
+    recs.push(composeRec("add-faq", {
+      detail: `Only ${s.faqCount} question-style entries detected. One detailed FAQ page with 10-15 questions is reliably one of the strongest on-page tactics for AI citations — and far out-performs publishing an llms.txt file.`,
       priority: ctx.hasFaqSchema ? "medium" : "high",
-      category: "structure",
-      impact: "+40% citation likelihood; FAQ schema is the highest-ROI structured data in 2026",
-    });
+    }));
   }
 
   if (s.listCount < 2 && s.tableCount === 0) {
-    recs.push({
-      id: "add-lists-tables",
-      title: "Add structured lists or comparison tables",
+    recs.push(composeRec("add-lists-tables", {
       detail: "AI extractors heavily favor structured lists, step-by-steps, and comparison tables over dense paragraphs. Convert prose into ranked lists, numbered steps, or side-by-side comparisons.",
-      priority: "high",
-      category: "structure",
-      impact: "Lists/tables are the most extractable formats across all four engines",
-    });
+    }));
   }
 
-  // Comparison tables for agentic search (Operator, Comet, etc.)
   if (s.comparisonTableCount === 0 && s.wordCount > 600) {
-    recs.push({
-      id: "comparison-table",
-      title: "Add a comparison table (pricing, features, or alternatives)",
+    recs.push(composeRec("comparison-table", {
       detail: "No comparison tables detected. Agentic search (OpenAI Operator, Perplexity Comet) browses, compares, and completes tasks — pages with machine-readable comparison tables get pulled into agent workflows far more often than prose-only pages.",
-      priority: "medium",
-      category: "structure",
-      impact: "Critical for inclusion in agentic-search workflows (2026 emerging priority)",
-    });
+    }));
   }
 
   if (s.longParagraphRatio > 0.25) {
-    recs.push({
-      id: "shorten-paragraphs",
-      title: "Break up long paragraphs",
+    recs.push(composeRec("shorten-paragraphs", {
       detail: `${Math.round(s.longParagraphRatio * 100)}% of paragraphs exceed 120 words. Keep paragraphs to 3-5 sentences — dense walls of text get skipped by AI extractors.`,
-      priority: "medium",
-      category: "structure",
-      impact: "Improves passage extractability",
-    });
+    }));
   }
 
   // === DEPTH ===
   if (s.wordCount < 800) {
-    recs.push({
-      id: "increase-depth",
-      title: "Expand topical coverage",
+    recs.push(composeRec("increase-depth", {
       detail: `Only ${s.wordCount} words. AI engines prefer comprehensive sources over thin pages. Aim for 1,200-2,000 words covering related questions, edge cases, and follow-ups.`,
       priority: s.wordCount < 400 ? "high" : "medium",
-      category: "depth",
-      impact: "Depth wins over breadth-only competitors",
-    });
+    }));
   }
 
-  // === FRESHNESS — upgraded with 2026 decay function ===
+  // === FRESHNESS ===
   const age = s.contentAgeMonths;
   if (age !== null && age > 24) {
-    recs.push({
-      id: "content-stale-24mo",
+    recs.push(composeRec("content-stale-24mo", {
       title: `Refresh stale content (last updated ~${age} months ago)`,
-      detail: "Content older than 24 months earns roughly 0.3x the citations of content updated within the past 12 months. Substantively revise (not just a date bump — AI engines detect cosmetic changes), update statistics to current year, and re-publish.",
-      priority: "critical",
-      category: "freshness",
-      impact: "3.2x citation lift moving from >24mo to <12mo (2026 practitioner data)",
-    });
+      detail: "Content older than 24 months is consistently down-weighted by generative engines that prefer recent sources. Substantively revise (not just a date bump — AI engines detect cosmetic changes), update statistics to current year, and re-publish.",
+    }));
   } else if (age !== null && age > 12) {
-    recs.push({
-      id: "content-aging-12mo",
+    recs.push(composeRec("content-aging-12mo", {
       title: `Refresh aging content (last updated ~${age} months ago)`,
       detail: "Content past the 12-month freshness threshold loses citation share, especially on Perplexity and Google AI Overviews. Plan a substantive quarterly refresh — update stats, add new examples, and bump the visible date.",
-      priority: "high",
-      category: "freshness",
-      impact: "Up to 3.2x citation lift returning to <12mo freshness window",
-    });
+    }));
   } else if (!s.hasFreshnessSignal) {
-    recs.push({
-      id: "freshness-signal",
-      title: "Add a visible \"Last Updated\" date and current-year markers",
+    recs.push(composeRec("freshness-signal", {
       detail: "No publish date or recent-year reference detected. Add a visible \"Last Updated: [Month YYYY]\" line plus current-year statistics — Perplexity and Google AI Overviews aggressively deprioritize stale-looking content.",
-      priority: "high",
-      category: "freshness",
-      impact: "Critical for Perplexity & Google AI Overviews",
-    });
+    }));
   } else if (!s.hasPublishDate) {
-    recs.push({
-      id: "explicit-date",
-      title: "Add a machine-readable publish date",
+    recs.push(composeRec("explicit-date", {
       detail: "Year mentions exist but no <time> tag or article:published_time meta. Add structured datetime metadata so AI engines can verify recency.",
-      priority: "medium",
-      category: "freshness",
-      impact: "Helps AI engines verify recency",
-    });
+    }));
   }
 
   // === ENTITY CLARITY ===
   if (ctx.brandName && !s.brandMentionsEarly) {
-    recs.push({
-      id: "brand-mention-early",
+    recs.push(composeRec("brand-mention-early", {
       title: `Name "${ctx.brandName}" in the first 200 words`,
       detail: "Brand name not detected early on the page. AI engines match entities by literal name — replace pronouns and \"the platform\" with the brand name in the opening sections.",
-      priority: "medium",
-      category: "entity",
-      impact: "Improves entity matching in AI answers",
-    });
+    }));
   }
 
-  // Byline upgraded to required (2026)
   if (!s.hasByline) {
-    recs.push({
-      id: "add-byline",
-      title: "Add a named-author byline with credentials",
+    recs.push(composeRec("add-byline", {
       detail: "No author byline detected. Add a visible \"By [Name], [Title with credentials]\" line linked to an author page. Claude in particular requires visible author credibility, and named authors are part of the 2026 baseline for content cited across all four engines.",
-      priority: "high",
-      category: "authority",
-      impact: "Required signal for Claude + E-E-A-T (2026 practitioner consensus)",
-    });
+    }));
   }
 
   if (s.fillerPhraseCount > 0) {
-    recs.push({
-      id: "trim-filler",
-      title: "Trim marketing filler",
+    recs.push(composeRec("trim-filler", {
       detail: `Detected ${s.fillerPhraseCount} filler phrase(s) ("In today's fast-paced world…", "It's important to note…"). Remove them — every sentence should contain a fact or specific claim.`,
-      priority: "low",
-      category: "structure",
-      impact: "Improves information density",
-    });
+    }));
   }
 
-  // Keyword stuffing — explicit penalty (2026)
   if (s.keywordStuffingDetected) {
-    recs.push({
-      id: "keyword-stuffing",
-      title: "Reduce repeated-keyword density",
-      detail: "A single non-stopword exceeds 2.5% of total page words. Traditional keyword stuffing is now actively harmful in generative-engine contexts — AI models penalize obviously over-optimized prose. Rewrite for natural variation and synonym use.",
-      priority: "medium",
-      category: "structure",
-      impact: "Removes a confirmed 2026 negative signal",
-    });
+    recs.push(composeRec("keyword-stuffing", {
+      detail: "A single non-stopword exceeds 2.5% of total page words. Traditional keyword stuffing is actively harmful in generative-engine contexts — research identifies it as a non-performing optimization method. Rewrite for natural variation and synonym use.",
+    }));
   }
 
   // === TECHNICAL — schema gaps ===
   if (!ctx.hasArticleSchema && s.wordCount > 600) {
-    recs.push({
-      id: "article-schema",
-      title: "Add Article JSON-LD schema",
+    recs.push(composeRec("article-schema", {
       detail: "Long-form content but no Article schema. Add Article JSON-LD with author, datePublished, and dateModified — and also include a Person entry for the author so the author becomes a recognizable entity to AI engines.",
-      priority: "medium",
-      category: "technical",
-      impact: "Enables richer AI extraction; Person+Article is the 2026 best-practice combo",
-    });
+    }));
   }
   if (!ctx.hasFaqSchema && s.faqCount >= 3) {
-    recs.push({
-      id: "faq-schema",
-      title: "Add FAQPage JSON-LD schema",
-      detail: "Question-style headings exist but no FAQPage schema. Wrap your Q/A pairs in FAQPage JSON-LD — it remains the highest-ROI structured-data type for AI citations in 2026.",
-      priority: "high",
-      category: "technical",
-      impact: "Direct citation boost for ChatGPT & Google AI Overviews",
-    });
+    recs.push(composeRec("faq-schema", {
+      detail: "Question-style headings exist but no FAQPage schema. Wrap your Q/A pairs in FAQPage JSON-LD — it remains among the highest-ROI structured-data types for AI citations in 2026.",
+    }));
   }
   if (!ctx.hasOrgSchema) {
-    recs.push({
-      id: "org-schema",
-      title: "Add Organization JSON-LD schema",
+    recs.push(composeRec("org-schema", {
       detail: "No Organization schema detected. Add Organization JSON-LD with name, url, logo, and sameAs links to social profiles, Wikipedia, and Crunchbase to anchor brand identity in the AI knowledge graph.",
-      priority: "medium",
-      category: "technical",
-      impact: "Strengthens brand entity recognition; addresses 2026 \"earned-media bias\"",
-    });
+    }));
   }
 
-  // llms.txt — DOWNGRADED per 2026 evidence
   if (!ctx.hasLlmsTxt) {
-    recs.push({
-      id: "llms-txt",
-      title: "Optionally publish an llms.txt file",
-      detail: "No /llms.txt found. The 2026 evidence is mixed — only 1 of the 50 most-cited domains uses one, and major engines do not appear to rely on it. Publishing one is cheap and harmless, but prioritize FAQ content and answer capsules first; they deliver far higher citation ROI.",
-      priority: "low",
-      category: "technical",
-      impact: "Optional scaffolding — minimal measurable lift in 2026",
-    });
+    recs.push(composeRec("llms-txt", {
+      detail: "No /llms.txt found. The 2026 evidence is mixed — only a small fraction of the most-cited domains use one, and major engines do not appear to rely on it. Publishing one is cheap and harmless, but prioritize FAQ content and answer capsules first; they deliver far higher citation ROI.",
+    }));
   }
 
   if (ctx.blockedAiCrawlers.length > 0) {
-    recs.push({
-      id: "unblock-crawlers",
-      title: "Unblock key AI crawlers",
+    recs.push(composeRec("unblock-crawlers", {
       detail: `Blocked in robots.txt: ${ctx.blockedAiCrawlers.join(", ")}. If you want to be cited by these engines, allow their user agents.`,
       priority: ctx.blockedAiCrawlers.length >= 3 ? "high" : "medium",
-      category: "technical",
-      impact: "Prerequisite for citation in those engines",
-    });
+    }));
   }
 
   if (ctx.avgCitabilityScore < 50) {
-    recs.push({
-      id: "passage-restructure",
-      title: "Restructure passages to 134-167 words with self-contained answers",
-      detail: `Average passage citability is ${Math.round(ctx.avgCitabilityScore)}/100. Aim for self-contained 134-167 word passages where each opens with a definition or direct answer and stands alone without surrounding context.`,
-      priority: "high",
-      category: "answerability",
-      impact: "Optimal passage length for AI extraction",
-    });
+    recs.push(composeRec("passage-restructure", {
+      // Title comes from the catalog ("Restructure passages into self-contained
+      // answers"). We deliberately do NOT cite the prior "134-167 words" range
+      // here — it was a private internal-benchmark observation and is now
+      // documented qualitatively on the /methodology page rather than
+      // promised as a precise number in the user-facing rec.
+      detail: `Average passage citability is ${Math.round(ctx.avgCitabilityScore)}/100. Restructure each passage so it opens with a definition or direct answer and stands alone without surrounding context — every chunk should be quotable on its own. (For our methodology and audited-corpus benchmarks, see /methodology.)`,
+    }));
   }
 
   // Sort by priority
