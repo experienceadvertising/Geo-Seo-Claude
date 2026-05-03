@@ -1,0 +1,32 @@
+Verified /results/16 — all five cleanup items hold up on the fresh report. Lowercase hostname clean throughout, "ⓘ How?" badges visible and tooltips informative (Citability tooltip correctly shows Avg block score 32.8/100 · Blocks analyzed 10 · Grade A/B blocks 0 with the formula), no fabricated 73%/4×/43-positions claims in the executive summary, and the 1.64735697% figure rounds to 1.6% in all three places it appears. Nice work on the defense-in-depth.
+Greenlit for Phase 2. Yes — sketch the recommendations.json schema and migration plan first before touching any UI or migrating data. I want to review and approve the schema before the migration runs.
+In the schema sketch I want to see:
+
+Full TypeScript-style field definitions for a recommendation object, with type annotations and which fields are required vs. optional. Use the structure I outlined in the original Phase 2 prompt as the starting point but flag any fields you want to add or change.
+Three example entries, hand-written to test the schema:
+
+One research-sourced (e.g., the direct-answer or outbound-links recommendation, with the actual KDD 2024 table/section reference filled in after you've verified the claim is in the paper)
+One practitioner_consensus (e.g., one of the FAQ or answer-capsule claims where you couldn't verify the precise number in any paper) — show how the precise number gets stripped or moved to expectedLift: null with a note field
+One internal_benchmark placeholder showing how a future internally-measured claim would be structured
+
+
+The migration plan, specifically:
+
+Where the file lives (/data/recommendations.json? a DB table? both with the file as seed?)
+How existing recommendations get mapped (one-to-one? any consolidation?)
+How the rendering code consumes it (does the recommendations panel read the JSON directly, or does the API enrich findings with source metadata before sending to the client?)
+Backward compatibility — what happens if a recommendation id is referenced in an old report but we've since removed/renamed it?
+
+
+Your audit-against-the-paper results. Before locking the schema, walk through each of these existing claims and tell me what the Princeton/IIT Delhi KDD 2024 paper actually says about them:
+
+"+30.3% AI citation visibility" (outbound links)
+"+32% AI citation visibility" (expert quotes)
+"+40% citation likelihood" (FAQ)
+"+35-40% extraction rate" (answer capsules)
+"83% of commercial AI citations come from sources updated in past 12 months"
+"134-167 word optimal passage length"
+
+For each: paper-verified (give me the table/section), not in the paper but cited elsewhere reputable (give me the URL), or no verifiable source (we'll downgrade to practitioner_consensus and strip the precise number). My strong suspicion is several of these are folklore — that's fine, we just need to label them honestly.
+
+Don't migrate any data or change the UI yet. Just produce: (a) the schema + 3 examples, (b) the migration plan, (c) the source-audit results. I'll review all three together and approve before you proceed.
