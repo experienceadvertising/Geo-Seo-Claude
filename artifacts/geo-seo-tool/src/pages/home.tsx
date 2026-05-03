@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
-import { Search, Loader2, ArrowRight, BarChart3, TrendingUp, TrendingDown, Minus, Zap, Shield, Lock, Sparkles, CheckCircle2 } from "lucide-react";
+import { Search, Loader2, ArrowRight, BarChart3, TrendingUp, TrendingDown, Minus, Zap, Shield, Lock, Sparkles, CheckCircle2, BookOpen, Lightbulb, ExternalLink } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -382,6 +382,206 @@ function AeoJourneyCard({ audits }: { audits: Array<{ id: number; url: string; g
   );
 }
 
+// Curated set of practitioner AEO/GEO tips. Each one is a qualitative,
+// widely-accepted strategy — NO invented numbers, NO fabricated stats. The
+// library is intentionally small (one tip per day-of-year rotation) so each
+// surface is sharp and re-reading is fine. If you add or reorder entries,
+// the rotation index is stable per-day, so users see the same tip across
+// page-loads on the same UTC day.
+const AEO_TIPS: Array<{ icon: string; title: string; body: string }> = [
+  {
+    icon: "🤖",
+    title: "Verify AI crawlers can reach you",
+    body: "GPTBot, ClaudeBot, PerplexityBot, and Google-Extended each obey robots.txt. A single overly-broad Disallow can hide your whole site from AI search. View your robots.txt and explicitly Allow these user-agents on the paths that matter.",
+  },
+  {
+    icon: "📄",
+    title: "Publish an llms.txt at your root",
+    body: "An llms.txt is a plain-text manifest at /llms.txt that tells LLMs which pages to prioritise and how to summarise your brand. It's emerging as a de-facto standard — early adoption is cheap and signals intent to rank in AI answers.",
+  },
+  {
+    icon: "❓",
+    title: "Add FAQPage JSON-LD to high-intent pages",
+    body: "AI answer engines lift FAQ markup directly into responses. Pick your top product or pricing page, write 5–8 questions in your customers' actual phrasing, and wrap them in FAQPage schema. The format is dead simple and the leverage is large.",
+  },
+  {
+    icon: "📝",
+    title: "Lead with the answer, not the build-up",
+    body: "AI engines extract paragraphs that resolve a question in 2–3 sentences. Audit your top pages: does the first paragraph after each H2 directly answer the heading? If it sets up context first, rewrite — answer first, context after.",
+  },
+  {
+    icon: "🏷️",
+    title: "Disambiguate your brand entity",
+    body: "If your brand name is a common word (or shares a name with anything else), AI engines may confuse you with someone else. Add Organization JSON-LD with sameAs links to your Wikipedia, LinkedIn, Crunchbase, and X profiles to anchor the entity.",
+  },
+  {
+    icon: "⚡",
+    title: "Make sure your content survives without JS",
+    body: "Most AI crawlers do not execute JavaScript reliably. Right-click → View Source on your top page. If the body is mostly empty divs, your content is invisible to AI. Server-side render or pre-render at least the first viewport's content.",
+  },
+  {
+    icon: "🔗",
+    title: "Earn citations from sources LLMs already trust",
+    body: "AI engines weight sources their training data already knows. A mention on Wikipedia, a respected industry trade publication, or a well-cited research paper does more for AI visibility than ten link-farm backlinks ever will.",
+  },
+  {
+    icon: "📰",
+    title: "Keep your About page boring and factual",
+    body: "AI engines pull company facts — founders, founding year, HQ location, headcount range, what you do — from About pages. Make them findable in plain text on a single page, not buried in a video or an interactive timeline.",
+  },
+];
+
+// Curated external resources. ONLY include stable, authoritative URLs from
+// publishers we'd be comfortable being seen alongside. No paid blogs, no
+// affiliate links, no rotating "best of" lists. If a URL ever 404s, swap
+// it for a stable doc-root from the same publisher rather than a workaround.
+const TRUSTED_RESOURCES: Array<{ source: string; title: string; description: string; url: string }> = [
+  {
+    source: "Google Search Central",
+    title: "AI features & your website",
+    description: "Google's official guidance on how AI Overviews surface and cite content. The canonical reference.",
+    url: "https://developers.google.com/search/docs/appearance/ai-features",
+  },
+  {
+    source: "OpenAI",
+    title: "Search & GPTBot crawler docs",
+    description: "How ChatGPT search retrieves and cites pages, plus the GPTBot user-agent spec for your robots.txt.",
+    url: "https://platform.openai.com/docs/bots",
+  },
+  {
+    source: "Anthropic",
+    title: "ClaudeBot & web search",
+    description: "Anthropic's docs on how Claude reaches the open web and which user-agents to allow.",
+    url: "https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/web-search-tool",
+  },
+  {
+    source: "Schema.org",
+    title: "Full vocabulary reference",
+    description: "Authoritative source for every schema type AI engines parse — FAQPage, Organization, Product, HowTo, and more.",
+    url: "https://schema.org/docs/schemas.html",
+  },
+  {
+    source: "Search Engine Land",
+    title: "AI search coverage hub",
+    description: "Daily reporting on AI search platforms, ranking shifts, and practitioner tactics.",
+    url: "https://searchengineland.com/library/platforms/ai-search",
+  },
+  {
+    source: "Aleyda Solis",
+    title: "LearningSEO — AI search resources",
+    description: "Curated, vendor-neutral reading list maintained by one of SEO's most respected practitioners.",
+    url: "https://www.learningseo.io/",
+  },
+];
+
+// Quick wins users can do RIGHT NOW without running an audit. Drives
+// engagement on the empty-state dashboard and gives returning users
+// a checklist they can come back to between re-audits. All actions are
+// concrete and verifiable on the user's own site.
+const QUICK_WINS: string[] = [
+  "Open your robots.txt and confirm it doesn't block GPTBot, ClaudeBot, PerplexityBot, or Google-Extended.",
+  "View Source on your homepage — your value prop and key claims should appear in the raw HTML, not after a JS render.",
+  "Add FAQPage JSON-LD to your single highest-traffic page first. Validate with Google's Rich Results Test.",
+  "Create a one-page llms.txt at your root listing your most important URLs. Even a minimal version helps.",
+  "Add Organization schema with sameAs links to your Wikipedia, LinkedIn, Crunchbase, and X profiles.",
+];
+
+// Companion learning surface to the journey card. The dashboard, even for
+// users with audit history, is too utilitarian on its own — this section
+// gives them something to read, do, and click into between audits, and
+// gives empty-state users an actual reason to return tomorrow.
+function DashboardLearningHub() {
+  // Stable per-UTC-day rotation. Index doesn't shift across page-loads on
+  // the same day, so users aren't disoriented by the tip changing under them.
+  const todayTip = React.useMemo(() => {
+    const dayOfYear = Math.floor((Date.now() - Date.UTC(new Date().getUTCFullYear(), 0, 1)) / 86_400_000);
+    return AEO_TIPS[dayOfYear % AEO_TIPS.length];
+  }, []);
+
+  return (
+    <div className="space-y-6">
+      {/* Daily tip — single, focused, scannable. The icon + title alone
+          should communicate the actionable takeaway in <2 seconds. */}
+      <Card className="border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 to-transparent">
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
+            <Lightbulb className="h-3.5 w-3.5 text-emerald-600" />
+            Today's AEO play
+          </div>
+          <CardTitle className="text-lg flex items-center gap-2 mt-1">
+            <span aria-hidden="true">{todayTip.icon}</span>
+            <span>{todayTip.title}</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground leading-relaxed">{todayTip.body}</p>
+        </CardContent>
+      </Card>
+
+      {/* Trusted resources — externally credible and stable. We deliberately
+          surface SOURCE first, then title, so users recognise the publisher
+          (Google, OpenAI, Anthropic) before deciding to click. */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <BookOpen className="h-4 w-4 text-emerald-600" />
+            From the source
+          </h2>
+          <p className="text-xs text-muted-foreground hidden sm:block">High-authority AEO references</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {TRUSTED_RESOURCES.map((r) => (
+            <a
+              key={r.url}
+              href={r.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group block rounded-lg border bg-card p-4 hover:border-emerald-500/40 hover:shadow-sm transition-all"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs uppercase tracking-wider text-emerald-700 dark:text-emerald-400 font-semibold">
+                    {r.source}
+                  </div>
+                  <div className="text-sm font-medium mt-0.5 truncate">{r.title}</div>
+                  <div className="text-xs text-muted-foreground mt-1 leading-snug">{r.description}</div>
+                </div>
+                <ExternalLink className="h-3.5 w-3.5 text-muted-foreground group-hover:text-emerald-600 flex-shrink-0 mt-0.5" />
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+
+      {/* Quick wins checklist — concrete, ungated by an audit. Every item
+          is something a competent operator can do today on their own site. */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+            Quick wins (no audit required)
+          </CardTitle>
+          <CardDescription className="text-xs">
+            Five things you can ship today that move every AEO score we measure.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ul className="space-y-2.5">
+            {QUICK_WINS.map((win, i) => (
+              <li key={i} className="flex items-start gap-2.5 text-sm">
+                <div className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                  {i + 1}
+                </div>
+                <span className="text-muted-foreground leading-relaxed">{win}</span>
+              </li>
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 function SignedInDashboard() {
   const [url, setUrl] = React.useState("");
   const [, setLocation] = useLocation();
@@ -472,6 +672,8 @@ function SignedInDashboard() {
       {!analyzeUrl.isPending && audits && audits.length > 0 && (
         <AeoJourneyCard audits={audits} />
       )}
+
+      {!analyzeUrl.isPending && <DashboardLearningHub />}
 
       {!analyzeUrl.isPending && (
         <div className="space-y-4">
