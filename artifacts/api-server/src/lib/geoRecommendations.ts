@@ -211,18 +211,59 @@ export function extractContentSignals($: cheerio.CheerioAPI, url: string, brandN
   const longParas = paras.filter((n) => n > 120).length;
   const longParagraphRatio = paras.length > 0 ? longParas / paras.length : 0;
 
-  // Keyword stuffing: any non-stopword that occurs > 2.5% of total words
+  // Keyword stuffing: any non-stopword that occurs > 2.5% of total words.
+  // We exclude the brand's own name, domain root, and any tokens drawn from the
+  // page <title> or Organization schema name — repeating your own brand on your
+  // own site is not stuffing, it is expected.
   let keywordStuffingDetected = false;
   if (wordCount >= 300) {
     const stop = new Set([
       "the","and","for","with","that","this","you","your","are","not","but","from","have","has","was","were","they","their","them",
       "our","its","into","over","more","than","such","also","can","will","one","two","other","about","when","what","how","who","why",
-      "all","any","may","use","used","using","get","got","new","most","only","just","like","each","some","because","because",
+      "all","any","may","use","used","using","get","got","new","most","only","just","like","each","some","because",
     ]);
+
+    // Build the brand-token ignore list.
+    const ignore = new Set<string>();
+    const addTokens = (s: string | null | undefined) => {
+      if (!s) return;
+      const toks = s.toLowerCase().match(/[a-z]{4,}/g) || [];
+      for (const t of toks) ignore.add(t);
+    };
+    addTokens(brandName);
+    // Domain root tokens — split "experienceadvertising" → also add as a single token if ≥4 chars
+    try {
+      const host = new URL(url).hostname.replace(/^www\./, "");
+      const root = host.split(".")[0];
+      if (root.length >= 4) ignore.add(root.toLowerCase());
+      // Also add any 4+ char alphabetic chunks from the host
+      for (const t of host.toLowerCase().match(/[a-z]{4,}/g) || []) ignore.add(t);
+    } catch {}
+    // Page <title> tokens (e.g. "Stripe | Financial infrastructure" → strip "stripe", "financial", "infrastructure")
+    addTokens($("title").first().text());
+    // Organization / WebSite schema name from JSON-LD
+    $('script[type="application/ld+json"]').each((_, el) => {
+      const raw = $(el).contents().text();
+      if (!raw) return;
+      try {
+        const parsed = JSON.parse(raw);
+        const arr = Array.isArray(parsed) ? parsed : [parsed];
+        for (const item of arr) {
+          if (!item || typeof item !== "object") continue;
+          const types = ([] as string[]).concat(item["@type"] || []);
+          if (types.some((t) => /^(Organization|LocalBusiness|WebSite|Brand|Corporation)$/i.test(t))) {
+            addTokens(item.name);
+            addTokens(item.alternateName);
+            if (item.legalName) addTokens(item.legalName);
+          }
+        }
+      } catch { /* ignore malformed JSON-LD */ }
+    });
+
     const tokens = bodyText.toLowerCase().match(/[a-z]{4,}/g) || [];
     const counts = new Map<string, number>();
     for (const t of tokens) {
-      if (stop.has(t)) continue;
+      if (stop.has(t) || ignore.has(t)) continue;
       counts.set(t, (counts.get(t) || 0) + 1);
     }
     const total = tokens.length || 1;

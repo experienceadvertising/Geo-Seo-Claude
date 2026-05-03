@@ -7,7 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ScoreBadge } from "@/components/score-badge";
-import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Info } from "lucide-react";
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip } from "recharts";
 import ReactMarkdown from "react-markdown";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
@@ -263,14 +265,109 @@ export default function Results() {
         </Card>
 
         {/* 6 Score Breakdown Cards */}
-        <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          <ScoreCard title="Citability" score={audit.scores.citability} weight="25%" desc="Heading structure & density" icon={<FileText className="h-4 w-4 text-muted-foreground" />} />
-          <ScoreCard title="Brand Authority" score={audit.scores.brandAuthority} weight="20%" desc="Mentions & entity clarity" icon={<ShieldAlert className="h-4 w-4 text-muted-foreground" />} />
-          <ScoreCard title="Content Quality" score={audit.scores.contentQuality} weight="20%" desc="Readability & depth" icon={<FileText className="h-4 w-4 text-muted-foreground" />} />
-          <ScoreCard title="Technical SEO" score={audit.scores.technicalSeo} weight="15%" desc="Performance & access" icon={<Code2 className="h-4 w-4 text-muted-foreground" />} />
-          <ScoreCard title="Structured Data" score={audit.scores.structuredData} weight="10%" desc="Schema.org markup" icon={<Code2 className="h-4 w-4 text-muted-foreground" />} />
-          <ScoreCard title="Platform Opt" score={audit.scores.platformOptimization} weight="10%" desc="LLMs.txt & targeted" icon={<Bot className="h-4 w-4 text-muted-foreground" />} />
-        </div>
+        <TooltipProvider delayDuration={150}>
+          <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {(() => {
+              const blocks = audit.citabilityBlocks ?? [];
+              const abBlocks = blocks.filter(b => b.grade === "A" || b.grade === "B").length;
+              const avgCit = audit.avgCitabilityScore ?? (blocks.length ? Math.round(blocks.reduce((s, b) => s + b.score, 0) / blocks.length) : 0);
+              const wc = audit.wordCount ?? 0;
+              const wcContrib = Math.min(40, wc > 1000 ? 40 : Math.round(wc / 25));
+              const titleContrib = audit.title ? 10 : 0;
+              const descContrib = audit.description ? 15 : 0;
+              const blockContrib = abBlocks * 3;
+              const foundSignals = (audit.brandSignals ?? []).filter(s => s.found).length;
+              const totalSignals = (audit.brandSignals ?? []).length;
+              const presentSchemas = (audit.schemaTypes ?? []).filter(s => s.present).length;
+              const totalSchemas = (audit.schemaTypes ?? []).length;
+              const allowedCrawlers = (audit.crawlers ?? []).filter(c => c.allowed).length;
+              const totalCrawlers = (audit.crawlers ?? []).length;
+              const platformAvg = audit.platforms?.length
+                ? Math.round(audit.platforms.reduce((s, p) => s + p.score, 0) / audit.platforms.length)
+                : 0;
+              return (
+                <>
+                  <ScoreCard
+                    title="Citability"
+                    score={audit.scores.citability}
+                    weight="25%"
+                    desc="Heading structure & density"
+                    icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+                    signals={[
+                      { label: "Avg block score", value: `${avgCit}/100` },
+                      { label: "Blocks analyzed", value: `${blocks.length}` },
+                      { label: "Grade A/B blocks", value: `${abBlocks}` },
+                    ]}
+                    formula="round(avg block score × 1.2), capped at 100"
+                  />
+                  <ScoreCard
+                    title="Brand Authority"
+                    score={audit.scores.brandAuthority}
+                    weight="20%"
+                    desc="Mentions & entity clarity"
+                    icon={<ShieldAlert className="h-4 w-4 text-muted-foreground" />}
+                    signals={[
+                      { label: "Confirmed signals", value: `${foundSignals} of ${totalSignals}` },
+                      { label: "Brand", value: audit.brandName || "—" },
+                    ]}
+                    formula="baseline 10 + Wikipedia(35) + DuckDuckGo(20) + GitHub(6–20) + Org schema(10) + llms.txt(5). See Brand Authority Signals below."
+                  />
+                  <ScoreCard
+                    title="Content Quality"
+                    score={audit.scores.contentQuality}
+                    weight="20%"
+                    desc="Readability & depth"
+                    icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+                    signals={[
+                      { label: `Word count (${wc.toLocaleString()})`, value: `+${wcContrib}` },
+                      { label: `Title tag${audit.title ? "" : " (missing)"}`, value: `+${titleContrib}` },
+                      { label: `Meta description${audit.description ? "" : " (missing)"}`, value: `+${descContrib}` },
+                      { label: `A/B citability blocks (${abBlocks} × 3)`, value: `+${blockContrib}` },
+                    ]}
+                    formula="Sum of contributions, capped at 100. Differs from Citability because it weights word count and on-page metadata as well as block quality."
+                  />
+                  <ScoreCard
+                    title="Technical SEO"
+                    score={audit.scores.technicalSeo}
+                    weight="15%"
+                    desc="Performance & access"
+                    icon={<Code2 className="h-4 w-4 text-muted-foreground" />}
+                    signals={[
+                      { label: "HTTPS", value: audit.hasHttps ? "+10" : "0" },
+                      { label: "Canonical tag", value: audit.hasCanonical ? "+10" : "0" },
+                      { label: "llms.txt", value: audit.hasLlmsTxt ? "+10" : "0" },
+                      { label: "Long-form (>3k words)", value: wc > 3000 ? "+10" : "0" },
+                    ]}
+                    formula="baseline 60 + bonuses listed; minus penalties for SPA-only render or low word count."
+                  />
+                  <ScoreCard
+                    title="Structured Data"
+                    score={audit.scores.structuredData}
+                    weight="10%"
+                    desc="Schema.org markup"
+                    icon={<Code2 className="h-4 w-4 text-muted-foreground" />}
+                    signals={[
+                      { label: "Schemas detected", value: `${presentSchemas} of ${totalSchemas}` },
+                    ]}
+                    formula={`round(${presentSchemas} / ${totalSchemas} × 100)`}
+                  />
+                  <ScoreCard
+                    title="Platform Opt"
+                    score={audit.scores.platformOptimization}
+                    weight="10%"
+                    desc="LLMs.txt & targeted"
+                    icon={<Bot className="h-4 w-4 text-muted-foreground" />}
+                    signals={[
+                      { label: "AI crawlers allowed", value: `${allowedCrawlers} of ${totalCrawlers}` },
+                      { label: "Platform score avg", value: `${platformAvg}/100` },
+                    ]}
+                    formula="Average of the four platform scores (ChatGPT, Claude, Perplexity, Google AI Overviews)."
+                  />
+                </>
+              );
+            })()}
+          </div>
+        </TooltipProvider>
       </div>
 
       {/* Prioritized GEO Recommendations */}
@@ -583,7 +680,7 @@ export default function Results() {
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="date" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))", fontFamily: "var(--font-mono)" }} />
                 <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))", fontFamily: "var(--font-mono)" }} />
-                <Tooltip
+                <RechartsTooltip
                   contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }}
                   formatter={(v: any) => [v, "AEO Score"]}
                 />
@@ -641,31 +738,80 @@ export default function Results() {
   );
 }
 
-function ScoreCard({ title, score, weight, desc, icon }: { title: string, score: number, weight: string, desc: string, icon: React.ReactNode }) {
-  return (
-    <Card className="bg-card border-border shadow-sm flex flex-col hover:border-primary/30 transition-colors group">
+interface ScoreSignal { label: string; value: string; }
+
+function ScoreCard({
+  title, score, weight, desc, icon, formula, signals,
+}: {
+  title: string;
+  score: number;
+  weight: string;
+  desc: string;
+  icon: React.ReactNode;
+  formula?: string;
+  signals?: ScoreSignal[];
+}) {
+  const card = (
+    <Card className="bg-card border-border shadow-sm flex flex-col hover:border-primary/30 transition-colors group h-full">
       <CardHeader className="p-4 pb-2">
         <div className="flex justify-between items-start">
           <div className="flex items-center gap-2">
             {icon}
             <CardTitle className="text-xs font-bold uppercase tracking-wider">{title}</CardTitle>
+            {(formula || (signals && signals.length > 0)) && (
+              <Info className="h-3 w-3 text-muted-foreground/60 group-hover:text-primary transition-colors" />
+            )}
           </div>
           <span className="text-[10px] font-mono text-muted-foreground px-1.5 py-0.5 rounded border bg-muted/30">w:{weight}</span>
         </div>
       </CardHeader>
       <CardContent className="p-4 pt-2 flex-1 flex flex-col justify-end">
         <div className="flex items-end justify-between mt-2 mb-3">
-          <div className="text-3xl font-black font-mono tracking-tighter">{score}</div>
+          <div className="text-3xl font-black font-mono tracking-tighter">
+            {score}<span className="text-base text-muted-foreground/60">/100</span>
+          </div>
           <ScoreBadge score={score} />
         </div>
         <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden mb-2">
-          <div 
-            className={`h-full rounded-full ${score >= 80 ? 'bg-green-500' : score >= 60 ? 'bg-yellow-500' : 'bg-red-500'}`} 
-            style={{ width: `${score}%` }} 
+          <div
+            className={`h-full rounded-full ${score >= 80 ? 'bg-green-500' : score >= 60 ? 'bg-yellow-500' : 'bg-red-500'}`}
+            style={{ width: `${score}%` }}
           />
         </div>
         <p className="text-xs text-muted-foreground line-clamp-1" title={desc}>{desc}</p>
       </CardContent>
     </Card>
+  );
+
+  if (!formula && (!signals || signals.length === 0)) return card;
+
+  return (
+    <Tooltip delayDuration={150}>
+      <TooltipTrigger asChild>
+        <div className="cursor-help h-full" data-testid={`tooltip-trigger-${title.toLowerCase().replace(/\s+/g, '-')}`}>{card}</div>
+      </TooltipTrigger>
+      <TooltipContent
+        side="top"
+        align="start"
+        className="max-w-xs bg-popover text-popover-foreground border shadow-lg p-3 space-y-2"
+      >
+        <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{title} — How it's scored</div>
+        {signals && signals.length > 0 && (
+          <ul className="text-xs space-y-1">
+            {signals.map((s, i) => (
+              <li key={i} className="flex items-baseline justify-between gap-3">
+                <span className="text-foreground/80">{s.label}</span>
+                <span className="font-mono text-foreground tabular-nums">{s.value}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+        {formula && (
+          <div className="text-[11px] font-mono text-muted-foreground border-t border-border/50 pt-2 leading-relaxed">
+            {formula}
+          </div>
+        )}
+      </TooltipContent>
+    </Tooltip>
   );
 }

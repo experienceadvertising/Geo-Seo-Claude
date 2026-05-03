@@ -1,0 +1,61 @@
+I'm improving the audit report output of my AEO/GEO analysis tool (the page rendered at /results/[id]). The report currently has good bones but several accuracy, sourcing, and UX issues that hurt credibility with sophisticated buyers. Work through the following changes in order. After each phase, summarize what you changed and ask before moving to the next phase.
+Phase 1 — Fix data accuracy (highest priority)
+
+Brand Authority entity lookups are returning false negatives. On the Stripe demo, Wikipedia returns "Disambiguation or no article" and DuckDuckGo returns "No knowledge panel" — both are wrong. Fix the lookup logic:
+
+For Wikipedia: query the Wikipedia API using both the brand name and the domain's organization name (from llms.txt, schema, or <title>). Fall back to Wikidata QID lookup. Handle disambiguation pages by following the most relevant link rather than returning "none."
+For DuckDuckGo: use the Instant Answer API (https://api.duckduckgo.com/?q=BRAND&format=json) and check AbstractURL, Heading, and RelatedTopics before declaring "no knowledge panel."
+Add a normalization step that strips suffixes like "Inc.", "Ltd.", ", Inc" when matching.
+Log every lookup with the query used and the raw response so I can debug false negatives.
+
+
+Exclude the analyzed brand's own name from the "Repeated-keyword density" check. Currently it flags "Stripe" on stripe.com as keyword stuffing. Build an ignore-list from: the brand name, domain root, and any tokens that appear in the page's <title> or Organization schema name.
+Reconcile Content Quality vs. Citability scores. Right now they can diverge by 30+ points with no explanation. Either (a) add a tooltip on each score showing the 2–3 underlying signals and their values, or (b) document the formula in a /methodology route the report links to.
+
+Phase 2 — Source every claim
+Every stat currently shown in recommendations (e.g., "+30.3% AI citation visibility," "+40% citation likelihood," "83% of commercial AI citations," "134-167 word optimal passage length," "+32% AI citation visibility") needs a verifiable source.
+
+Create a recommendations.json (or DB table) where each recommendation has fields: id, claim, sourceType ("research" | "internal_benchmark" | "practitioner_consensus"), sourceUrl, sourceCitation.
+For research claims, link to the actual paper section/table.
+For internal benchmarks, label them clearly: "AEO Improvement benchmark, n=[X] sites, [date]."
+Render the source as a small superscript link next to each stat in the report.
+If a stat has no verifiable source, either remove it or relabel as "practitioner_consensus" with that caveat visible.
+
+Phase 3 — Score context and benchmarks
+
+The big "AEO Score 50" headline has no context. Add directly under it: a percentile vs. peers (e.g., "Below average — median SaaS homepage scores 62") and a small sparkline of the 6 sub-scores.
+Compute peer benchmarks by industry/category. If we don't have enough data yet, hardcode reasonable medians per category (SaaS, ecommerce, fintech, media, B2B services) and flag them as "preliminary benchmarks" until we have real data.
+Apply the same treatment to the Platform Scores (ChatGPT, Claude, Perplexity, Google AI Overviews). Either tie each to a real measurement (link to the prompt simulation that produced it) or label as "heuristic estimate" with the inputs shown on hover.
+
+Phase 4 — Restructure the report layout
+The current report has heavy duplication — "Lead with a 40-60 word direct answer" appears in the Executive Summary, Prioritized GEO Recommendations, and Actionable Quick Wins. Restructure into four distinct, non-overlapping sections:
+
+Headline diagnosis — score, percentile, top 3 issues in one sentence each.
+Prompt Simulation results (promote this from a button to the hero section) — show actual prompts tested, which engines cited the brand, and which competitors got cited instead. If simulation hasn't been run yet, show a prominent "Run Simulation" CTA with an example of what the output looks like.
+Diagnostics — the score distribution, citability blocks, schema gaps, brand authority signals, crawler access. Pure data, no prescriptions.
+Prescriptions — a single ranked list of fixes, each with: severity, expected lift (with source), the specific page element affected, and a "Generate fix" button that calls Fix Generator.
+
+Remove the Executive Summary as a separate section; its content now lives split across (1) and (4).
+Phase 5 — Make Citability Blocks the hero feature
+This is the most differentiated part of the tool. Upgrade it:
+
+For each block, show why it scored what it did (e.g., "No definition pattern in first sentence; 22 words is below the 134-word self-contained threshold; no named attribution").
+Add an inline "Rewrite this block" button that invokes Fix Generator and shows the proposed rewrite as a diff against the original.
+Sort blocks by "biggest score lift if fixed" rather than by page order.
+Let the user copy the rewrite or download all rewrites as a single markdown file.
+
+Phase 6 — Polish
+
+Make the score scale consistent everywhere (always /100, never bare numbers).
+Replace the floating "Pro" badge on Fix Generator with a clearer locked-state UI that shows one free example output.
+Add a "Last analyzed" timestamp prominently and a "Re-scan" CTA when the analysis is older than 30 days.
+Ensure the PDF export reflects all the above changes (not just the old layout).
+
+Constraints
+
+Don't change the underlying scoring weights without flagging it — I want to review weight changes separately.
+Keep the Princeton/IIT Delhi KDD 2024 framing but verify the actual claims map to that paper. If a claim isn't in the paper, move it to practitioner_consensus.
+Preserve existing URLs (/results/[id]) and the API contract for any external integrations.
+Use the existing component library and design tokens — don't introduce a new UI kit.
+
+Start with Phase 1. When you're done, show me a diff summary and the updated Stripe demo report before moving to Phase 2.

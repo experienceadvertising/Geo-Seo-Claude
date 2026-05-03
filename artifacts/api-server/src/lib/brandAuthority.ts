@@ -1,3 +1,5 @@
+import { logger } from "./logger";
+
 export type SignalState = "found" | "not_found" | "unavailable";
 
 export interface BrandSignal {
@@ -13,8 +15,25 @@ export interface BrandAuthorityResult {
   signals: BrandSignal[];
 }
 
+const log = logger.child({ module: "brandAuthority" });
+
+const COMPANY_SUFFIX_RE =
+  /[\s,]+(?:inc\.?|llc\.?|ltd\.?|limited|corp\.?|corporation|company|co\.?|gmbh|ag|s\.?a\.?|s\.?l\.?|plc|pty\.?\s*ltd\.?|holdings?|group|technologies|tech)$/i;
+
 function normalize(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+/** Strip common corporate suffixes for entity matching ("Stripe, Inc." -> "Stripe"). */
+function stripCorporateSuffix(s: string): string {
+  let cur = s.trim();
+  // Strip up to two suffixes (e.g. "Foo Holdings Inc.")
+  for (let i = 0; i < 2; i++) {
+    const next = cur.replace(COMPANY_SUFFIX_RE, "").trim().replace(/[,;:.]+$/, "");
+    if (next === cur || next.length < 2) break;
+    cur = next;
+  }
+  return cur;
 }
 
 /** Strip a trailing truncated word (e.g. "Shelving Inc. Mich" → "Shelving Inc.") */
@@ -56,7 +75,7 @@ function deriveBrandName(url: string, title: string | null): string {
   // e.g. "nytimes" is a subsequence-abbreviation of "The New York Times" (thenewyorktimes)
   for (const seg of segments) {
     const n = normalize(seg);
-    if (n.length < target.length) continue; // segment must be longer than abbreviation
+    if (n.length < target.length) continue;
     let ti = 0;
     for (let si = 0; si < n.length && ti < target.length; si++) {
       if (n[si] === target[ti]) ti++;
@@ -66,7 +85,7 @@ function deriveBrandName(url: string, title: string | null): string {
     }
   }
 
-  // Pass 3: pick the shortest segment that looks like a proper name (has at least one uppercase start)
+  // Pass 3: pick the shortest segment that looks like a proper name
   const properNameSegs = segments.filter(
     (s) => s.length >= 3 && s.length <= 40 && /^[A-Z]/.test(s) && !/^(Home|Welcome|Official)$/i.test(s)
   );
@@ -81,96 +100,371 @@ function deriveBrandName(url: string, title: string | null): string {
 interface CheckOpts {
   brand: string;
   domain: string;
+  /** Additional org-name candidates from llms.txt / schema / title. */
+  altNames?: string[];
 }
 
-async function checkWikipedia({ brand, domain }: CheckOpts): Promise<BrandSignal> {
+const UA = "GEOSEOAnalyzer/1.0 (https://aeoimprovement.com; brand-authority-checker)";
+
+/** Fetch JSON with timeout + structured logging. Returns null on failure.
+ * Raw response body is logged at debug level (truncated) so false negatives can be traced. */
+async function fetchJson<T>(
+  url: string,
+  source: string,
+  timeoutMs = 8000
+): Promise<{ data: T | null; raw: string | null; status: number; ok: boolean }> {
   try {
-    const res = await fetch(
-      `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(brand)}`,
-      {
-        headers: { "User-Agent": "GEOSEOAnalyzer/1.0 (educational tool)" },
-        signal: AbortSignal.timeout(8000),
-      }
-    );
-    if (res.status === 404) {
-      return { source: "Wikipedia", found: false, state: "not_found", detail: "No matching article" };
-    }
+    const res = await fetch(url, {
+      headers: { "User-Agent": UA, Accept: "application/json" },
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    const raw = await res.text();
+    // Log raw payload (truncated to 4KB) at debug level for trace.
+    log.debug({ source, url, status: res.status, raw: raw.slice(0, 4096) }, "lookup.raw");
     if (!res.ok) {
-      return { source: "Wikipedia", found: false, state: "unavailable", detail: `Wikipedia API returned HTTP ${res.status}` };
+      log.info({ source, url, status: res.status }, "lookup non-OK");
+      return { data: null, raw, status: res.status, ok: false };
     }
-    const data = (await res.json()) as {
-      type?: string;
-      extract?: string;
-      title?: string;
-      content_urls?: { desktop?: { page?: string } };
-    };
-    if (data.type !== "standard" || !data.extract) {
-      return { source: "Wikipedia", found: false, state: "not_found", detail: "Disambiguation or no article" };
+    let data: T | null = null;
+    try { data = JSON.parse(raw) as T; } catch (e) {
+      log.warn({ source, url, parseErr: (e as Error).message }, "lookup.json parse failed");
+      return { data: null, raw, status: res.status, ok: false };
     }
-    // Confidence check: extract should mention the domain or normalized brand.
-    const haystack = `${data.title || ""} ${data.extract}`.toLowerCase();
-    const confident =
-      haystack.includes(domain.toLowerCase()) ||
-      haystack.includes(brand.toLowerCase());
-    if (!confident) {
+    return { data, raw, status: res.status, ok: true };
+  } catch (err) {
+    log.warn({ source, url, err: err instanceof Error ? err.message : String(err) }, "lookup failed");
+    return { data: null, raw: null, status: 0, ok: false };
+  }
+}
+
+interface WikiSummary {
+  type?: string;
+  extract?: string;
+  title?: string;
+  description?: string;
+  content_urls?: { desktop?: { page?: string } };
+  wikibase_item?: string;
+}
+
+/** Try a single Wikipedia summary lookup. */
+async function wikipediaSummary(query: string): Promise<WikiSummary | null> {
+  const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}?redirect=true`;
+  const { data, ok, status } = await fetchJson<WikiSummary>(url, "Wikipedia.summary");
+  log.info({ q: query, status, type: data?.type, hasExtract: !!data?.extract, title: data?.title }, "wiki.summary");
+  return ok ? data : null;
+}
+
+/** Wikipedia full-text search returning best-matching page titles. */
+async function wikipediaSearch(query: string, limit = 5): Promise<string[]> {
+  const url = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(
+    query
+  )}&srlimit=${limit}&format=json&origin=*`;
+  const { data } = await fetchJson<{ query?: { search?: Array<{ title: string }> } }>(url, "Wikipedia.search");
+  const titles = data?.query?.search?.map((s) => s.title) ?? [];
+  log.info({ q: query, results: titles.length, titles }, "wiki.search");
+  return titles;
+}
+
+/**
+ * Given the title of a Wikipedia disambiguation page, fetch its outgoing links
+ * and return them in priority order, biasing toward "<title> (company)" /
+ * "<title> (software)" / company-flavored entries first. Used so we can resolve
+ * ambiguous brand names (e.g. plain "Stripe", "Apple", "Square") to the right
+ * article instead of giving up.
+ */
+async function wikipediaDisambigLinks(disambigTitle: string, brand: string): Promise<string[]> {
+  // Use action=query&prop=links — returns the page's full wikilink set including
+  // entries like "Stripe, Inc." that have no parenthetical suffix.
+  const url =
+    `https://en.wikipedia.org/w/api.php?action=query` +
+    `&titles=${encodeURIComponent(disambigTitle)}` +
+    `&prop=links&plnamespace=0&pllimit=max&format=json&origin=*`;
+  const { data } = await fetchJson<{
+    query?: { pages?: Record<string, { links?: Array<{ title: string }> }> };
+  }>(url, "Wikipedia.disambig");
+  const pages = Object.values(data?.query?.pages ?? {});
+  const links = (pages[0]?.links ?? []).map((l) => l.title);
+
+  const brandLow = brand.toLowerCase();
+  const COMPANY_RE = /\((company|software|service|brand|payments|technology|platform|app|website|corporation|inc|ltd|llc)\)/i;
+  const CORP_SUFFIX_RE = /,\s*(Inc|Ltd|LLC|GmbH|AG|S\.A\.|S\.p\.A\.|Co|Corp|Corporation|Holdings|Group|plc)\.?$/i;
+  // Score each link: lower is better.
+  const scored = links
+    .map((title) => {
+      const tLow = title.toLowerCase();
+      const startsWithBrand = tLow === brandLow || tLow.startsWith(brandLow + " ") || tLow.startsWith(brandLow + ",");
+      let score = 5;
+      if (startsWithBrand && CORP_SUFFIX_RE.test(title)) score = 0;          // "Stripe, Inc."
+      else if (startsWithBrand && COMPANY_RE.test(title)) score = 1;         // "Stripe (company)"
+      else if (CORP_SUFFIX_RE.test(title)) score = 2;
+      else if (startsWithBrand) score = 3;                                   // "Stripe, County Fermanagh" — risky but try
+      else if (COMPANY_RE.test(title)) score = 4;
+      return { title, score };
+    })
+    .filter((x) => x.score < 5)
+    .sort((a, b) => a.score - b.score || a.title.length - b.title.length);
+  const top = scored.slice(0, 5).map((x) => x.title);
+  log.info({ disambig: disambigTitle, brand, total: links.length, top }, "wiki.disambig.links");
+  return top;
+}
+
+/** Confidence check — does this Wikipedia article actually describe the brand/domain? */
+function isWikiArticleConfident(data: WikiSummary, brand: string, domain: string): boolean {
+  if (!data.extract) return false;
+  const haystack = `${data.title || ""} ${data.description || ""} ${data.extract}`.toLowerCase();
+  const normBrand = normalize(stripCorporateSuffix(brand));
+  const normTitle = normalize(stripCorporateSuffix(data.title || ""));
+  return (
+    haystack.includes(domain.toLowerCase()) ||
+    haystack.includes(brand.toLowerCase()) ||
+    haystack.includes(stripCorporateSuffix(brand).toLowerCase()) ||
+    (!!normBrand && !!normTitle && (normTitle === normBrand || normTitle.startsWith(normBrand) || normBrand.startsWith(normTitle)))
+  );
+}
+
+async function checkWikipedia({ brand, domain, altNames = [] }: CheckOpts): Promise<BrandSignal> {
+  const cleanBrand = stripCorporateSuffix(brand);
+  // Build prioritized candidate query list. Order matters — first confident hit wins.
+  const candidates: string[] = [];
+  const seen = new Set<string>();
+  const push = (q: string | null | undefined) => {
+    const v = (q || "").trim();
+    if (!v) return;
+    const k = v.toLowerCase();
+    if (seen.has(k)) return;
+    seen.add(k);
+    candidates.push(v);
+  };
+  // Disambiguator-first variants greatly improve hit rate for ambiguous brand words
+  // ("Stripe", "Apple", "Amazon", "Square" etc.).
+  push(`${cleanBrand} (company)`);
+  push(`${cleanBrand} (software)`);
+  push(`${cleanBrand} (service)`);
+  push(cleanBrand);
+  push(brand);
+  for (const alt of altNames) {
+    const a = stripCorporateSuffix(alt);
+    push(`${a} (company)`);
+    push(a);
+    push(alt);
+  }
+
+  let lastDetail = "No matching article";
+  const disambigsToFollow: string[] = [];
+
+  for (const q of candidates) {
+    const data = await wikipediaSummary(q);
+    if (!data) continue;
+    if (data.type === "standard" && data.extract && isWikiArticleConfident(data, brand, domain)) {
       return {
         source: "Wikipedia",
-        found: false,
-        state: "not_found",
-        detail: `Article exists for "${data.title}" but does not match the brand`,
+        found: true,
+        state: "found",
+        detail: `Article: "${data.title}"`,
       };
     }
-    return {
-      source: "Wikipedia",
-      found: true,
-      state: "found",
-      detail: `Article: "${data.title}"`,
-    };
-  } catch {
-    return { source: "Wikipedia", found: false, state: "unavailable", detail: "Request failed or timed out" };
+    if (data.type === "disambiguation") {
+      lastDetail = `Disambiguation page for "${data.title}"`;
+      if (data.title) disambigsToFollow.push(data.title);
+    } else if (data.type === "standard" && data.extract) {
+      lastDetail = `Article exists for "${data.title}" but does not match the brand`;
+    }
   }
+
+  // Disambiguation handling: follow the most relevant link from each disambig page.
+  for (const dTitle of disambigsToFollow) {
+    const candidateLinks = await wikipediaDisambigLinks(dTitle, brand);
+    for (const linkTitle of candidateLinks) {
+      const data = await wikipediaSummary(linkTitle);
+      if (data && data.type === "standard" && data.extract && isWikiArticleConfident(data, brand, domain)) {
+        return {
+          source: "Wikipedia",
+          found: true,
+          state: "found",
+          detail: `Article: "${data.title}" (resolved from disambiguation "${dTitle}")`,
+        };
+      }
+    }
+  }
+
+  // Search-API fallback: pick the top hit that mentions domain or has a confident summary.
+  const searchTerm = altNames[0] ? `${cleanBrand} ${altNames[0]}` : cleanBrand;
+  const searchTitles = await wikipediaSearch(searchTerm, 5);
+  for (const t of searchTitles.slice(0, 3)) {
+    const data = await wikipediaSummary(t);
+    if (data && data.type === "standard" && data.extract && isWikiArticleConfident(data, brand, domain)) {
+      return {
+        source: "Wikipedia",
+        found: true,
+        state: "found",
+        detail: `Article: "${data.title}"`,
+      };
+    }
+  }
+
+  // Wikidata fallback — many companies have a QID even when EN Wikipedia article matching is weak.
+  try {
+    const wdUrl = `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(
+      cleanBrand
+    )}&language=en&type=item&limit=5&format=json&origin=*`;
+    const { data } = await fetchJson<{
+      search?: Array<{ id: string; label?: string; description?: string; concepturi?: string }>;
+    }>(wdUrl, "Wikidata.search");
+    const hits = data?.search ?? [];
+    log.info({ q: cleanBrand, results: hits.length }, "wikidata.search");
+    const match = hits.find((h) => {
+      const desc = (h.description || "").toLowerCase();
+      const label = (h.label || "").toLowerCase();
+      const orgish = /(company|corporation|business|firm|enterprise|software|platform|service|brand|payment|technology)/.test(desc);
+      return orgish && (label === cleanBrand.toLowerCase() || normalize(label) === normalize(cleanBrand));
+    });
+    if (match) {
+      return {
+        source: "Wikipedia",
+        found: true,
+        state: "found",
+        detail: `Wikidata entity ${match.id}: ${match.label}${match.description ? ` — ${match.description}` : ""}`,
+      };
+    }
+  } catch (err) {
+    log.warn({ err: err instanceof Error ? err.message : String(err) }, "wikidata fallback failed");
+  }
+
+  return { source: "Wikipedia", found: false, state: "not_found", detail: lastDetail };
 }
 
-async function checkDuckDuckGo({ brand, domain }: CheckOpts): Promise<BrandSignal> {
-  try {
-    const res = await fetch(
-      `https://api.duckduckgo.com/?q=${encodeURIComponent(brand)}&format=json&no_html=1&skip_disambig=1`,
-      { signal: AbortSignal.timeout(8000) }
-    );
-    if (!res.ok) {
-      return { source: "DuckDuckGo", found: false, state: "unavailable", detail: `DuckDuckGo API returned HTTP ${res.status}` };
-    }
-    const data = (await res.json()) as {
-      Abstract?: string;
-      AbstractSource?: string;
-      AbstractURL?: string;
-      Heading?: string;
-    };
-    if (!data.Abstract) {
-      return { source: "DuckDuckGo", found: false, state: "not_found", detail: "No knowledge panel" };
-    }
-    // Confidence: the abstract URL or text should reference the domain.
+interface DDGResponse {
+  Abstract?: string;
+  AbstractSource?: string;
+  AbstractURL?: string;
+  Heading?: string;
+  Definition?: string;
+  DefinitionSource?: string;
+  DefinitionURL?: string;
+  Type?: string; // A=article, D=disambig, C=category, N=name, E=exclusive
+  Entity?: string;
+  Infobox?: { content?: Array<{ label?: string; value?: string }> };
+  RelatedTopics?: Array<{ Text?: string; FirstURL?: string; Topics?: Array<unknown> }>;
+  Results?: Array<{ Text?: string; FirstURL?: string }>;
+}
+
+async function ddgQuery(query: string): Promise<DDGResponse | null> {
+  const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&t=geo-seo-analyzer`;
+  const { data, ok, status } = await fetchJson<DDGResponse>(url, "DuckDuckGo.ia");
+  log.info(
+    {
+      q: query,
+      status,
+      type: data?.Type,
+      hasAbstract: !!data?.Abstract,
+      heading: data?.Heading,
+      relatedCount: data?.RelatedTopics?.length ?? 0,
+      abstractURL: data?.AbstractURL,
+    },
+    "ddg.ia"
+  );
+  return ok ? data : null;
+}
+
+function ddgConfident(data: DDGResponse, brand: string, domain: string): { ok: boolean; detail: string } | null {
+  const cleanBrand = stripCorporateSuffix(brand);
+  const dl = domain.toLowerCase();
+  const bl = cleanBrand.toLowerCase();
+  const headingMatches =
+    !!data.Heading && (normalize(data.Heading) === normalize(cleanBrand) || normalize(data.Heading).includes(normalize(cleanBrand)));
+
+  // 1. Strong: Abstract that references the domain or brand.
+  if (data.Abstract) {
     const refsDomain =
-      (data.AbstractURL && data.AbstractURL.toLowerCase().includes(domain.toLowerCase())) ||
-      (data.Abstract.toLowerCase().includes(domain.toLowerCase())) ||
-      (data.Heading && normalize(data.Heading) === normalize(brand));
-    if (!refsDomain) {
-      return {
-        source: "DuckDuckGo",
-        found: false,
-        state: "not_found",
-        detail: `Found "${data.Heading}" but does not reference ${domain}`,
-      };
+      (data.AbstractURL && data.AbstractURL.toLowerCase().includes(dl)) ||
+      data.Abstract.toLowerCase().includes(dl) ||
+      data.Abstract.toLowerCase().includes(bl) ||
+      headingMatches;
+    if (refsDomain) {
+      return { ok: true, detail: `Knowledge panel from ${data.AbstractSource || "web"}` };
     }
-    return {
-      source: "DuckDuckGo",
-      found: true,
-      state: "found",
-      detail: `Knowledge panel from ${data.AbstractSource || "web"}`,
-    };
-  } catch {
-    return { source: "DuckDuckGo", found: false, state: "unavailable", detail: "Request failed or timed out" };
   }
+
+  // 2. Definition fallback (DDG sometimes returns Wiktionary-style definitions for brand names).
+  if (data.Definition) {
+    const refs =
+      (data.DefinitionURL && data.DefinitionURL.toLowerCase().includes(dl)) ||
+      data.Definition.toLowerCase().includes(dl);
+    if (refs || headingMatches) {
+      return { ok: true, detail: `Definition from ${data.DefinitionSource || "DuckDuckGo"}` };
+    }
+  }
+
+  // 3. RelatedTopics fallback — DDG often returns RelatedTopics[0].FirstURL pointing to the
+  // canonical Wikipedia entry even when Abstract is empty (e.g. for "Stripe").
+  const related = data.RelatedTopics ?? [];
+  for (const rt of related.slice(0, 5)) {
+    const url = rt.FirstURL || "";
+    const text = rt.Text || "";
+    if (!url && !text) continue;
+    const refsDomain = url.toLowerCase().includes(dl) || text.toLowerCase().includes(dl);
+    const looksLikeBrand =
+      text.toLowerCase().startsWith(bl + " ") ||
+      text.toLowerCase().startsWith(bl + ",") ||
+      text.toLowerCase().startsWith(bl + ":") ||
+      text.toLowerCase().startsWith(bl + " is ") ||
+      text.toLowerCase().startsWith(bl + " was ");
+    if (refsDomain && looksLikeBrand) {
+      return { ok: true, detail: `Related entry: ${text.slice(0, 120)}` };
+    }
+  }
+
+  // 4. Heading + Type=A (article) without abstract still indicates a knowledge entity.
+  if (headingMatches && data.Type === "A") {
+    return { ok: true, detail: `Knowledge entity: ${data.Heading}` };
+  }
+
+  return null;
+}
+
+async function checkDuckDuckGo({ brand, domain, altNames = [] }: CheckOpts): Promise<BrandSignal> {
+  const cleanBrand = stripCorporateSuffix(brand);
+  const queries: string[] = [];
+  const seen = new Set<string>();
+  const push = (q: string) => {
+    const k = q.toLowerCase().trim();
+    if (k && !seen.has(k)) {
+      seen.add(k);
+      queries.push(q);
+    }
+  };
+  push(cleanBrand);
+  push(`${cleanBrand} company`);
+  for (const alt of altNames) push(stripCorporateSuffix(alt));
+  push(brand);
+
+  let unavailableHits = 0;
+  let lastHeading = "";
+
+  for (const q of queries) {
+    const data = await ddgQuery(q);
+    if (!data) {
+      unavailableHits++;
+      continue;
+    }
+    if (data.Heading) lastHeading = data.Heading;
+    const verdict = ddgConfident(data, brand, domain);
+    if (verdict?.ok) {
+      return { source: "DuckDuckGo", found: true, state: "found", detail: verdict.detail };
+    }
+  }
+
+  if (unavailableHits === queries.length) {
+    return { source: "DuckDuckGo", found: false, state: "unavailable", detail: "DuckDuckGo API unreachable" };
+  }
+  return {
+    source: "DuckDuckGo",
+    found: false,
+    state: "not_found",
+    detail: lastHeading
+      ? `Knowledge panel for "${lastHeading}" did not reference ${domain}`
+      : "No knowledge panel matched the brand",
+  };
 }
 
 async function checkGitHub({ brand, domain }: CheckOpts): Promise<BrandSignal & { followers?: number }> {
@@ -180,7 +474,7 @@ async function checkGitHub({ brand, domain }: CheckOpts): Promise<BrandSignal & 
     const res = await fetch(`https://api.github.com/users/${slug}`, {
       headers: {
         Accept: "application/vnd.github+json",
-        "User-Agent": "GEOSEOAnalyzer/1.0",
+        "User-Agent": UA,
       },
       signal: AbortSignal.timeout(8000),
     });
@@ -199,8 +493,6 @@ async function checkGitHub({ brand, domain }: CheckOpts): Promise<BrandSignal & 
       name?: string | null;
     };
     const followers = data.followers || 0;
-    // Confidence: prefer Organization with linked website matching the domain, OR
-    // accept high-follower (>=500) accounts as authoritative.
     const blogHost = (() => {
       try {
         return data.blog ? new URL(data.blog.startsWith("http") ? data.blog : `https://${data.blog}`).hostname.replace(/^www\./, "") : "";
@@ -236,11 +528,27 @@ export async function analyzeBrandAuthority(
   url: string,
   title: string | null,
   hasOrgSchema: boolean,
-  hasLlmsTxt: boolean
+  hasLlmsTxt: boolean,
+  orgSchemaName?: string | null
 ): Promise<BrandAuthorityResult> {
   const brandName = deriveBrandName(url, title);
   const domain = new URL(url).hostname.replace(/^www\./, "");
-  const opts: CheckOpts = { brand: brandName, domain };
+
+  // Build alt-name list: organization name from schema, plus the longest title segment.
+  const altNames: string[] = [];
+  if (orgSchemaName) altNames.push(orgSchemaName);
+  if (title) {
+    const titleSegs = title
+      .split(/[|•\-—–·:»]/)
+      .map((s) => s.trim())
+      .filter((s) => s.length >= 3 && s.length <= 60);
+    for (const seg of titleSegs) {
+      if (normalize(seg) !== normalize(brandName)) altNames.push(seg);
+    }
+  }
+
+  const opts: CheckOpts = { brand: brandName, domain, altNames };
+  log.info({ url, brandName, domain, altNames }, "analyzeBrandAuthority.start");
 
   const [wiki, ddg, gh] = await Promise.all([
     checkWikipedia(opts),
@@ -248,8 +556,17 @@ export async function analyzeBrandAuthority(
     checkGitHub(opts),
   ]);
 
-  // Score only on confirmed positives. Unavailable signals don't penalize.
-  let score = 10; // baseline
+  log.info(
+    {
+      url,
+      wiki: { state: wiki.state, detail: wiki.detail },
+      ddg: { state: ddg.state, detail: ddg.detail },
+      gh: { state: gh.state, detail: gh.detail },
+    },
+    "analyzeBrandAuthority.results"
+  );
+
+  let score = 10;
   if (wiki.state === "found") score += 35;
   if (ddg.state === "found") score += 20;
   if (gh.state === "found") {
@@ -261,8 +578,6 @@ export async function analyzeBrandAuthority(
   if (hasOrgSchema) score += 10;
   if (hasLlmsTxt) score += 5;
 
-  // Boost baseline if any external lookup was unavailable, so transient outages don't
-  // unfairly drag the score down.
   const unavailableCount = [wiki, ddg, gh].filter((s) => s.state === "unavailable").length;
   score += unavailableCount * 5;
 

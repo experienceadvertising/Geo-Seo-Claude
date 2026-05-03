@@ -202,6 +202,7 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
   let renderedSuccessfully = false;
   let rawFetchSucceeded = false;
   let structuredDataTypes: SchemaItem[] = [];
+  let orgSchemaName: string | null = null;
   let citabilityBlocks: CitabilityBlock[] = [];
   let $page: cheerio.CheerioAPI | null = null;
 
@@ -253,8 +254,19 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
       schemaScripts.each((_, el) => {
         try {
           const data = JSON.parse($forSchema(el).html() || "{}");
-          const types = Array.isArray(data) ? data.map((d: any) => d["@type"]) : [data["@type"]];
-          types.forEach((t: string) => t && detectedTypes.add(t));
+          const items = Array.isArray(data) ? data : [data];
+          for (const item of items) {
+            if (!item || typeof item !== "object") continue;
+            const types = ([] as string[]).concat(item["@type"] || []);
+            for (const t of types) if (t) detectedTypes.add(String(t));
+            // Extract Organization-like entity name for brand-authority alt-name lookups
+            if (
+              types.some((t: string) => /^(Organization|LocalBusiness|Corporation|Brand|WebSite)$/i.test(String(t))) &&
+              typeof item.name === "string" && item.name.trim().length >= 2
+            ) {
+              if (!orgSchemaName) orgSchemaName = item.name.trim();
+            }
+          }
         } catch {}
       });
       const schemaChecks = ["Organization", "LocalBusiness", "Article", "Product", "WebSite", "FAQPage", "HowTo", "BreadcrumbList"];
@@ -443,7 +455,7 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
   const hasFaqSchema = structuredDataTypes.some((s) => s.present && s.type === "FAQPage");
   const hasArticleSchema = structuredDataTypes.some((s) => s.present && s.type === "Article");
   const hasHowToSchema = structuredDataTypes.some((s) => s.present && s.type === "HowTo");
-  const brandAuthority = await analyzeBrandAuthority(url, title, hasOrgSchema, hasLlmsTxt);
+  const brandAuthority = await analyzeBrandAuthority(url, title, hasOrgSchema, hasLlmsTxt, orgSchemaName);
 
   // Generate research-backed GEO recommendations from extracted content signals
   const blockedAiCrawlers = crawlerStatuses.filter((c) => !c.allowed).map((c) => c.name);
