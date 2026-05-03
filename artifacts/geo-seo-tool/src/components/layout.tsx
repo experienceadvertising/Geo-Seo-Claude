@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Sparkles, LogOut, Shield } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -52,6 +52,13 @@ function UserBadge() {
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { isSignedIn, isLoaded } = useAuth();
+  const [pathname] = useLocation();
+
+  // Scroll to top on every route change so users land at the top of the new
+  // page (default browser behavior is to keep prior scroll position in SPAs).
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [pathname]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col font-sans">
