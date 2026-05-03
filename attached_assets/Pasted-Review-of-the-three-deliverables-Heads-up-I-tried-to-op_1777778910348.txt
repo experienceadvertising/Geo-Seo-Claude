@@ -1,0 +1,61 @@
+Review of the three deliverables
+Heads-up: I tried to open arXiv 2311.09735 to spot-check §4.2 / Table 2 myself but the session doesn't have permission for arxiv.org. So I can't independently verify the agent's three "paper-verified" claims. Either grant arxiv.org access for this session and I'll do the spot-check now, or you do it manually before locking the schema. The agent itself flagged this as a required step, which is a good sign — they're being appropriately humble about a sub-agent's web-search results.
+Everything else I can review on the merits.
+(a) Schema — approve with two small redlines
+The schema is genuinely well thought through. The three additions vs. my original sketch are all correct calls:
+
+titleTemplate instead of title is the right move — the existing code interpolates runtime values like brand age, and pretending otherwise would force render logic into the JSON.
+ExpectedLift as a discriminated union is much better than my flat number | null. The unit/range distinction ("30.3%" vs "3.2×" vs "43 positions" vs [35, 40]) is exactly the kind of thing that becomes painful if you punt on it.
+aliases and retired are essentials for a long-lived data file — good catch.
+
+Keeping trigger conditions out of the JSON is the right architectural call. The JSON describes what each rec means; the trigger code decides when it fires. Don't let those merge.
+Two small redlines:
+Redline 1 — Add an updatedAt field separate from lastVerifiedAt. lastVerifiedAt answers "when did a human confirm the source still says what we say it says?" but doesn't answer "when did this record itself last change?" The two diverge — you can fix a typo in the claim text without re-verifying the source. Add updatedAt: string (ISO date, required, auto-bumped on any change) so the methodology page can show both.
+Redline 2 — Constrain ExpectedLift.range semantics. Right now range?: [number, number] is ambiguous. Is it a confidence interval? A reported min/max across studies? An A/B-test 95% CI? Pick one and document it in the type comment. My suggestion: range represents the source's reported range (e.g., the paper reports "30.3% on average, with individual prompts ranging 18–47%"). If you want CIs later, add a separate field. Otherwise the UI rendering will be inconsistent.
+Otherwise: approved. The notes field staying out of the LLM prompt is exactly right — that's where the hedging and editorial context lives, and it shouldn't leak into customer-facing summaries.
+(b) Migration plan — approved
+The two architectural calls are both right.
+File-only, no DB table is correct for now. This is reference data, edits go through code review, and there's no editor-driven workflow to support yet. Adding a DB table would just create two sources of truth. If you ever build a CMS-style editor for recs, the JSON becomes the seed and the table becomes the live store — that's a clean evolution.
+Server-side enrichment, not client-side join is also correct. PDF export, future webhooks, and any non-web client all need the same enriched payload, and the API contract is the right place to formalize that. Not having to ship a recommendations bundle to the client is a small but real win.
+The 4-commit sequence (lib → trigger refactor → API enrichment → UI) is clean. Reviewability is good. Steps 1–3 are invisible to users, which means you can ship them and validate the data path works before exposing badges in the UI.
+One refinement: in step 3, when you add source to the API response, also add a top-level recommendationsSchemaVersion field on the audit response (e.g., "v1"). Old reports that lack source data will be undefined/null for the version field. This makes the "audit predates source tracking" UI fork explicit and queryable rather than inferred from missing fields.
+(c) Source audit — partial approval, contingent on arXiv spot-check
+This is the deliverable that matters most for credibility. Here's my read.
+The strip-the-numbers calls (5 claims) are all correct. "+40% FAQ," "+35–40% answer capsules," "83% from past 12 months," "134–167 word optimal passage," and "3.2× freshness lift" — these are exactly the kind of stats that proliferate in AEO/GEO blog posts without anyone tracing them back to a primary source. Stripping the precise numbers and keeping the qualitative recommendations is the right move, and queuing freshness for an internal benchmark (since you can A/B it on your own audit corpus) is a high-leverage roadmap item.
+The keep-the-numbers calls (3 claims) need verification before locking. The agent is reporting that "+30.3% Citations," "+32% Quotation," and "+33.9% Statistics" all appear in the GEO paper's §4.2 / Table 2. That's plausible — the paper does report per-method lift in a results table, and the methodology (statistics, quotations, citations as content optimizations) matches the paper's framing. But the agent explicitly says "I have NOT personally read every section of the paper — these results need spot-checking." Take that at face value.
+What you (or I, with arxiv.org permission) need to confirm:
+
+The actual numbers in Table 2 — are they 30.3, 32, 33.9 specifically, or is the agent reporting numbers that look plausible but are slightly off? If they're off by even 1–2 points, that's exactly the kind of error a sophisticated reader spots.
+The methodology — what does "AI citation visibility" actually measure in the paper? "Position-adjusted word count visibility" or "subjective impression score"? The unit matters when you're rendering "+30.3%" with a confident source badge. If the paper's metric is named differently than your UI label, harmonize them.
+Whether Table 2 reports a single number or a range across prompt categories. If it's a range, your ExpectedLift.range field should be populated, not just value.
+
+On the two extras the agent flagged for a ruling:
+"+33.9% Statistics" — yes, treat it as paper-verified on the same footing as the other two Table 2 entries, contingent on the same spot-check. If the spot-check passes for one Table 2 entry it almost certainly passes for all three; if it fails for one, all three downgrade.
+"3.2× freshness lift" — strip the number, label practitioner_consensus, and queue for internal benchmark. The agent's reasoning is right: freshness deltas are unusually well-suited to your own A/B testing because you have a corpus of audited URLs and can re-audit a subset after they update content.
+What to send back
+
+Message to paste into Replit Agent
+Schema and migration plan approved with two small redlines. Source audit conditionally approved — locked behind a paper spot-check before commit 1.
+Schema redlines:
+
+Add updatedAt: string (required, ISO date) separate from lastVerifiedAt. lastVerifiedAt tracks "human confirmed the source"; updatedAt tracks "this record was edited." The methodology page should show both.
+Document the semantics of ExpectedLift.range in the type comment. Use it for "the source's reported range" (e.g., paper reports 30.3% mean with 18–47% across prompt categories). Don't conflate with confidence intervals — if we want CIs later, add a separate field.
+
+Migration plan refinement:
+In commit 3 (API enrichment), add a top-level recommendationsSchemaVersion: "v1" field on the audit response. Old reports without source data will read undefined/null. This makes the "predates source tracking" UI fork explicit and queryable.
+Source audit — required before commit 1:
+The 5 strip-the-numbers calls are approved. Strip "+40% FAQ", "+35–40% answer capsules", "83% past-12-months", "134–167 word passage", and "3.2× freshness" — keep the qualitative recommendations, queue freshness and answer-capsule lift for internal benchmark.
+The 3 keep-the-numbers calls (Citations 30.3%, Quotation 32%, Statistics 33.9%) are conditionally approved. Before you commit them as verified: true with sourceType: "research", do this:
+
+Open arXiv 2311.09735 yourself (not via subagent) and read §4.2 + Table 2.
+Confirm the three percentages match exactly — not "approximately" — and report back any deltas. If the paper reports 30.4 instead of 30.3, we use 30.4.
+Confirm what the paper's metric is actually called and what it measures. If it's "position-adjusted visibility" or similar, harmonize our UI label so the badge text matches the paper's terminology rather than our older "AI citation visibility" phrasing.
+Check whether Table 2 reports a single value or a range across prompt categories. If a range, populate ExpectedLift.range not just value.
+
+Report the spot-check findings back to me before committing. If any of the three numbers don't match the paper, downgrade all three to practitioner_consensus for now and we'll cite the paper qualitatively while the actual numbers go to the internal-benchmark queue.
+Rulings on the two extras:
+
+"+33.9% Statistics" — treat as paper-verified on the same footing as the other two Table 2 entries, contingent on the same spot-check passing.
+"3.2× freshness" — strip the number, label practitioner_consensus, queue for internal benchmark. Good candidate for our own A/B since we have an audit corpus.
+
+Once the spot-check is done and reported, you're cleared to execute commits 1–3 (invisible to users). Hold commit 4 (UI source badges + /methodology page) for a separate review — I want to see the badge styling and methodology page layout before they go live.
