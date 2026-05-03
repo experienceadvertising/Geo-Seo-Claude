@@ -183,14 +183,14 @@ export function welcomeD7Email(firstName: string, unsubscribeUrl?: string) {
     </table>
 
     <div style="text-align:center;margin:32px 0;">
-      ${btn("Upgrade to Pro — $79/mo →", `${BASE_URL}/pricing`)}
+      ${btn("Upgrade to Pro — $79/mo →", `${BASE_URL}/upgrade?source=weekly-insights`)}
     </div>
 
     ${p("Cancel anytime. No long-term contracts.", "color:#9ca3af;font-size:13px;text-align:center;")}`,
     "Here's what Pro unlocks for your AEO strategy →",
     unsubscribeUrl,
   );
-  const text = `Hi ${firstName || "there"},\n\nHere's what Pro unlocks:\n- All 4 AI engines (Claude, Gemini, Perplexity)\n- Fix Generator (llms.txt, JSON-LD, robots.txt)\n- Competitor citation gap table\n- 1-year history & sentiment analysis\n\nUpgrade: ${BASE_URL}/pricing\n\nCancel anytime.`;
+  const text = `Hi ${firstName || "there"},\n\nHere's what Pro unlocks:\n- All 4 AI engines (Claude, Gemini, Perplexity)\n- Fix Generator (llms.txt, JSON-LD, robots.txt)\n- Competitor citation gap table\n- 1-year history & sentiment analysis\n\nUpgrade: ${BASE_URL}/upgrade?source=weekly-insights\n\nCancel anytime.`;
   return { subject, html, text };
 }
 
@@ -453,14 +453,14 @@ export function limitReachedEmail(
       </td></tr>
     </table>
     <div style="text-align:center;margin:24px 0;">
-      ${btn("Upgrade to Pro →", `${BASE_URL}/pricing`)}
+      ${btn("Upgrade to Pro →", `${BASE_URL}/upgrade?source=limit-reached-${kind}`)}
     </div>
     ${divider()}
     ${p(`Not ready to upgrade? Your free quota refills automatically on the 1st of next month.`, "color:#6b7280;font-size:13px;")}`,
     `You've used all ${cap} free ${kindLabel}s this month. Upgrade to Pro for ${kind === "audits" ? "100 audits" : "30 simulations"}/mo.`,
     unsubscribeUrl,
   );
-  const text = `Hi ${firstName || "there"},\n\nYou've used all ${cap} of your free ${kindLabel}s this month. Your quota refills on the 1st.\n\nWant more now? Upgrade to Pro ($79/mo, or $62.50/mo billed annually) for:\n- ${proBenefit}\n- Sentiment analysis\n- 1-year history\n- Priority support\n\nUpgrade: ${BASE_URL}/pricing`;
+  const text = `Hi ${firstName || "there"},\n\nYou've used all ${cap} of your free ${kindLabel}s this month. Your quota refills on the 1st.\n\nWant more now? Upgrade to Pro ($79/mo, or $62.50/mo billed annually) for:\n- ${proBenefit}\n- Sentiment analysis\n- 1-year history\n- Priority support\n\nUpgrade: ${BASE_URL}/upgrade?source=limit-reached-${kind}`;
   return { subject, html, text };
 }
 
@@ -899,13 +899,13 @@ export function approachingLimitEmail(
     ${p(pitch)}
     ${p(`<strong style="color:#111827;">Upgrading takes 30 seconds and you can keep auditing immediately.</strong>`)}
     <div style="text-align:center;margin:8px 0 0;">
-      ${btn(`Upgrade to Pro — ${proCap}/mo`, `${BASE_URL}/pricing`)}
+      ${btn(`Upgrade to Pro — ${proCap}/mo`, `${BASE_URL}/upgrade?source=approaching-${kind}`)}
     </div>
     ${p(`If you'd rather wait, your quota resets on the 1st. No charge, no action needed.`, "margin-top:24px;font-size:13px;color:#6b7280;text-align:center;")}
   `;
 
   const html = layout(content, preheader, unsubscribeUrl);
-  const text = `Hi ${firstName || "there"},\n\nQuick heads up — you've used ${used} of your ${cap} free ${kindLabel} this month. ${remaining} left before next month's reset.\n\n${pitch}\n\nUpgrade to Pro: ${BASE_URL}/pricing\n\nOr wait — your quota resets on the 1st.`;
+  const text = `Hi ${firstName || "there"},\n\nQuick heads up — you've used ${used} of your ${cap} free ${kindLabel} this month. ${remaining} left before next month's reset.\n\n${pitch}\n\nUpgrade to Pro: ${BASE_URL}/upgrade?source=approaching-${kind}\n\nOr wait — your quota resets on the 1st.`;
   return { subject, html, text };
 }
 
@@ -978,12 +978,12 @@ export function whatYouMissedEmail(
     ${p(`Pro's Fix Generator drafts the full file from your sitemap — copy, paste, ship. Same for FAQPage JSON-LD, Organization schema, and a robots.txt audit pass.`, "font-size:14px;color:#4b5563;")}
 
     <div style="text-align:center;margin:32px 0 0;">
-      ${btn(`Unlock all 4 engines + Fix Generator`, `${BASE_URL}/pricing`)}
+      ${btn(`Unlock all 4 engines + Fix Generator`, `${BASE_URL}/upgrade?source=what-you-missed`)}
     </div>
     ${p(`No commitment — cancel any time from your dashboard. Annual billing saves on the monthly rate.`, "margin-top:16px;font-size:12px;color:#6b7280;text-align:center;")}
   `;
 
   const html = layout(content, preheader, unsubscribeUrl);
-  const text = `Hi ${firstName || "there"},\n\nYour free audit on ${hostname} gave you a score (${geoScore}/100) and a recommendation list. Here's what the same audit returns on Pro:\n\nEngines you didn't see:\n- Claude (Anthropic)\n- Gemini (Google — powers AI Overviews)\n- Perplexity (citation-first AI search)\n\nFree = ChatGPT only. Pro = all four, side by side.\n\nPlus, Pro's Fix Generator auto-drafts your llms.txt, FAQPage JSON-LD, and Organization schema from your actual sitemap. Copy, paste, ship.\n\nUpgrade: ${BASE_URL}/pricing\n\nNo commitment — cancel any time.`;
+  const text = `Hi ${firstName || "there"},\n\nYour free audit on ${hostname} gave you a score (${geoScore}/100) and a recommendation list. Here's what the same audit returns on Pro:\n\nEngines you didn't see:\n- Claude (Anthropic)\n- Gemini (Google — powers AI Overviews)\n- Perplexity (citation-first AI search)\n\nFree = ChatGPT only. Pro = all four, side by side.\n\nPlus, Pro's Fix Generator auto-drafts your llms.txt, FAQPage JSON-LD, and Organization schema from your actual sitemap. Copy, paste, ship.\n\nUpgrade: ${BASE_URL}/upgrade?source=what-you-missed\n\nNo commitment — cancel any time.`;
   return { subject, html, text };
 }

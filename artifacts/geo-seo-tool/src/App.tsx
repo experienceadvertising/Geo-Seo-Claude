@@ -9,6 +9,7 @@ import Results from "@/pages/results";
 import Simulate from "@/pages/simulate";
 import Admin from "@/pages/admin";
 import Pricing from "@/pages/pricing";
+import Upgrade from "@/pages/upgrade";
 import Methodology from "@/pages/methodology";
 import SignInPage from "@/pages/sign-in";
 import SignUpPage from "@/pages/sign-up";
@@ -56,6 +57,7 @@ function AppRoutes() {
           <RequireAuth><Admin /></RequireAuth>
         </Route>
         <Route path="/pricing" component={Pricing} />
+        <Route path="/upgrade" component={Upgrade} />
         <Route path="/methodology" component={Methodology} />
         <Route component={NotFound} />
       </Switch>

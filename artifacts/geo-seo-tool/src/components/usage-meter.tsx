@@ -30,7 +30,7 @@ export function UsageMeter() {
 
   return (
     <Link
-      href="/pricing"
+      href={`/upgrade?source=${maxPct >= 100 ? "limit-reached-audits" : "approaching-audits"}`}
       className={`hidden md:inline-flex items-center gap-2 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors hover:opacity-90 ${tone.bg} ${tone.fg} ${tone.border}`}
       title="Click to upgrade and unlock higher monthly limits"
     >
