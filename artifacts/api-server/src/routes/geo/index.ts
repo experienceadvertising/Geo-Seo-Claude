@@ -299,10 +299,10 @@ Hard rules:
         if (!u || !u.email || u.emailOptOut) return false;
         const topRec = (analysis.recommendations ?? [])
           .filter((r: any) => r.priority === "critical" || r.priority === "high")[0];
-        const topRecommendationText = topRec ? `${topRec.title} — ${topRec.detail}` : null;
+        const topRecommendationText = topRec ? `${topRec.title}: ${topRec.detail}` : null;
         const baseUrl = process.env.FRONTEND_URL || "https://aeoimprovement.com";
-        const unsubscribeUrl = `${baseUrl}/unsubscribe?token=${u.unsubscribeToken}`;
-        EmailService.sendFirstAudit(u.email, u.firstName || "", url, analysis.geoScore, topRecommendationText, unsubscribeUrl)
+        const unsubscribeUrl = `${baseUrl}/api/auth/unsubscribe?token=${u.unsubscribeToken}`;
+        EmailService.sendFirstAudit(u.email, u.firstName || "", url, analysis.geoScore, String(audit.id), topRecommendationText, unsubscribeUrl)
           .catch((err) => req.log.error({ err, userId: req.userId }, "first-audit email failed"));
         return true; // genuinely first audit — skip score-changed
       })
@@ -363,11 +363,11 @@ Hard rules:
 
         const topRec = (analysis.recommendations ?? [])
           .filter((r: any) => r.priority === "critical" || r.priority === "high")[0];
-        const topRecommendationText = topRec ? `${topRec.title} — ${topRec.detail}` : null;
+        const topRecommendationText = topRec ? `${topRec.title}: ${topRec.detail}` : null;
         const baseUrl = process.env.FRONTEND_URL || "https://aeoimprovement.com";
-        const unsubscribeUrl = `${baseUrl}/unsubscribe?token=${u.unsubscribeToken}`;
+        const unsubscribeUrl = `${baseUrl}/api/auth/unsubscribe?token=${u.unsubscribeToken}`;
         await EmailService.sendScoreChanged(
-          u.email, u.firstName || "", url, prev, curr, topRecommendationText, unsubscribeUrl,
+          u.email, u.firstName || "", url, prev, curr, topRecommendationText, String(audit.id), unsubscribeUrl,
         );
       } catch (err) {
         req.log.error({ err, userId: req.userId }, "score-changed email failed");

@@ -284,8 +284,8 @@ export default function PricingPage() {
     };
   }
 
-  const proDisplay = buildPlanDisplay("pro", proMonthly, proAnnual, 7900, 75000);
-  const agencyDisplay = buildPlanDisplay("agency", agencyMonthly, agencyAnnual, 29900, 287000);
+  const proDisplay = buildPlanDisplay("pro", proMonthly, proAnnual, 4900, 47000);
+  const agencyDisplay = buildPlanDisplay("agency", agencyMonthly, agencyAnnual, 19900, 191000);
 
   const plans = [
     {

@@ -68,19 +68,19 @@ async function createProducts() {
   const plans = [
     {
       name: "Pro Plan",
-      description: "25 prompts, all 4 AI engines (ChatGPT, Claude, Gemini, Perplexity), sentiment analysis, Fix Generator, competitor tracking, 1-year trend history.",
+      description: "25 prompts, all 4 AI engines (ChatGPT, Claude, Gemini, Perplexity), sentiment analysis, Fix Generator, competitor tracking, full audit history.",
       plan_id: "pro",
-      // $79/mo · $750/yr (~21% off)
-      monthly: 7900,
-      yearly: 75000,
+      // $49/mo · $470/yr (~20% off, $39.17/mo)
+      monthly: 4900,
+      yearly: 47000,
     },
     {
       name: "Agency Plan",
       description: "Everything in Pro, plus 2-year history, Agency branding, and priority support for teams managing multiple client sites.",
       plan_id: "agency",
-      // $299/mo · $2,870/yr (~20% off)
-      monthly: 29900,
-      yearly: 287000,
+      // $199/mo · $1,910/yr (~20% off, $159.17/mo)
+      monthly: 19900,
+      yearly: 191000,
     },
   ];
 

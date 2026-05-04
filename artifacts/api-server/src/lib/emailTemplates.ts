@@ -21,7 +21,7 @@ function esc(s: string | null | undefined): string {
 
 function layout(content: string, preheader: string, unsubscribeUrl?: string): string {
   const unsubscribeLink = unsubscribeUrl
-    ? `<a href="${unsubscribeUrl}" style="color:#d1d5db;text-decoration:underline;">Unsubscribe</a> · `
+    ? `<a href="${unsubscribeUrl}" style="color:#94a3b8;text-decoration:underline;">Manage email preferences</a> &middot; `
     : "";
   return `<!DOCTYPE html>
 <html lang="en">
@@ -30,33 +30,45 @@ function layout(content: string, preheader: string, unsubscribeUrl?: string): st
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AEO Improvement</title>
 </head>
-<body style="margin:0;padding:0;background:#f4f6f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-  <span style="display:none;max-height:0;overflow:hidden;">${preheader}</span>
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:32px 16px;">
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <span style="display:none;max-height:0;overflow:hidden;">${preheader}&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;</span>
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:32px 16px;">
     <tr><td align="center">
       <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
 
         <tr>
-          <td style="background:linear-gradient(135deg,#064e3b,#065f46);border-radius:12px 12px 0 0;padding:28px 40px;text-align:center;">
-            <span style="font-size:22px;font-weight:700;color:#ffffff;letter-spacing:-0.3px;">
-              ✦ AEO Improvement
-            </span>
+          <td style="background:linear-gradient(140deg,#064e3b 0%,#065f46 55%,#047857 100%);border-radius:16px 16px 0 0;padding:32px 40px 26px;text-align:center;">
+            <table cellpadding="0" cellspacing="0" style="margin:0 auto 10px;">
+              <tr>
+                <td style="vertical-align:middle;padding-right:10px;">
+                  <div style="width:38px;height:38px;background:rgba(255,255,255,0.15);border-radius:10px;text-align:center;line-height:38px;font-size:18px;display:inline-block;">✦</div>
+                </td>
+                <td style="vertical-align:middle;">
+                  <span style="font-size:20px;font-weight:700;color:#ffffff;letter-spacing:-0.2px;">AEO Improvement</span>
+                </td>
+              </tr>
+            </table>
+            <div style="font-size:12px;color:rgba(255,255,255,0.55);letter-spacing:0.04em;text-transform:uppercase;">Answer Engine Optimization</div>
           </td>
         </tr>
 
         <tr>
-          <td style="background:#ffffff;padding:40px;border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb;">
+          <td style="height:3px;background:linear-gradient(90deg,#10b981,#06b6d4);"></td>
+        </tr>
+
+        <tr>
+          <td style="background:#ffffff;padding:44px 40px 36px;border-left:1px solid #e2e8f0;border-right:1px solid #e2e8f0;">
             ${content}
           </td>
         </tr>
 
         <tr>
-          <td style="background:#f9fafb;border:1px solid #e5e7eb;border-top:0;border-radius:0 0 12px 12px;padding:24px 40px;text-align:center;">
-            <p style="margin:0 0 8px;font-size:12px;color:#9ca3af;">
-              AEO Improvement · <a href="${BASE_URL}" style="color:${BRAND_COLOR};text-decoration:none;">aeoimprovement.com</a>
+          <td style="background:#f8fafc;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 16px 16px;padding:24px 40px;text-align:center;">
+            <p style="margin:0 0 6px;font-size:12px;color:#94a3b8;">
+              AEO Improvement &middot; <a href="${BASE_URL}" style="color:${BRAND_COLOR};text-decoration:none;">aeoimprovement.com</a>
             </p>
-            <p style="margin:0;font-size:11px;color:#d1d5db;">
-              ${unsubscribeLink}<a href="mailto:info@aeoimprovement.com" style="color:#d1d5db;text-decoration:underline;">Contact support</a>
+            <p style="margin:0;font-size:11px;color:#cbd5e1;">
+              ${unsubscribeLink}<a href="mailto:info@aeoimprovement.com" style="color:#cbd5e1;text-decoration:underline;">Contact support</a>
             </p>
           </td>
         </tr>
@@ -69,7 +81,7 @@ function layout(content: string, preheader: string, unsubscribeUrl?: string): st
 }
 
 function btn(label: string, href: string): string {
-  return `<a href="${href}" style="display:inline-block;background:${BRAND_COLOR};color:#ffffff;font-size:15px;font-weight:600;padding:14px 32px;border-radius:8px;text-decoration:none;margin-top:8px;">${label}</a>`;
+  return `<a href="${href}" style="display:inline-block;background:linear-gradient(135deg,#059669,#10b981);color:#ffffff;font-size:15px;font-weight:600;padding:14px 32px;border-radius:10px;text-decoration:none;margin-top:8px;box-shadow:0 4px 14px rgba(16,185,129,0.3);">${label}</a>`;
 }
 
 function h1(text: string): string {
@@ -81,17 +93,19 @@ function p(text: string, styles = ""): string {
 }
 
 function divider(): string {
-  return `<hr style="border:none;border-top:1px solid #e5e7eb;margin:28px 0;" />`;
+  return `<hr style="border:none;border-top:1px solid #e2e8f0;margin:28px 0;" />`;
 }
 
 function feature(icon: string, title: string, desc: string): string {
   return `<tr>
     <td style="padding:10px 0;">
       <table cellpadding="0" cellspacing="0"><tr>
-        <td style="width:40px;vertical-align:top;font-size:22px;padding-top:2px;">${icon}</td>
-        <td>
-          <div style="font-size:15px;font-weight:600;color:#111827;margin-bottom:2px;">${title}</div>
-          <div style="font-size:14px;color:#6b7280;line-height:1.5;">${desc}</div>
+        <td style="width:46px;vertical-align:top;padding-top:2px;">
+          <div style="width:36px;height:36px;background:#ecfdf5;border-radius:10px;text-align:center;line-height:36px;font-size:18px;">${icon}</div>
+        </td>
+        <td style="padding-left:4px;">
+          <div style="font-size:15px;font-weight:600;color:#111827;margin-bottom:3px;">${title}</div>
+          <div style="font-size:14px;color:#6b7280;line-height:1.55;">${desc}</div>
         </td>
       </tr></table>
     </td>
@@ -178,19 +192,19 @@ export function welcomeD7Email(firstName: string, unsubscribeUrl?: string) {
       ${feature("✦", "All 4 AI engines", "Run simulations against ChatGPT, Claude, Gemini, and Perplexity — not just ChatGPT.")}
       ${feature("🔧", "Fix Generator", "Auto-generate your llms.txt, JSON-LD schema, and robots.txt patches. Copy and deploy in minutes.")}
       ${feature("📊", "Competitor citation gaps", "See exactly which competitors are being cited instead of you — and why.")}
-      ${feature("📈", "1-year trend history", "Track your AEO score over time and see the impact of every improvement.")}
+      ${feature("📈", "Full audit history and score trending", "Track your AEO score over time and see the full arc of every improvement.")}
       ${feature("💬", "Sentiment analysis", "Understand how AI engines perceive your brand — positive, neutral, or negative.")}
     </table>
 
     <div style="text-align:center;margin:32px 0;">
-      ${btn("Upgrade to Pro — $79/mo →", `${BASE_URL}/upgrade?source=weekly-insights`)}
+      ${btn("Upgrade to Pro — $49/mo →", `${BASE_URL}/upgrade?source=weekly-insights`)}
     </div>
 
     ${p("Cancel anytime. No long-term contracts.", "color:#9ca3af;font-size:13px;text-align:center;")}`,
     "Here's what Pro unlocks for your AEO strategy →",
     unsubscribeUrl,
   );
-  const text = `Hi ${firstName || "there"},\n\nHere's what Pro unlocks:\n- All 4 AI engines (Claude, Gemini, Perplexity)\n- Fix Generator (llms.txt, JSON-LD, robots.txt)\n- Competitor citation gap table\n- 1-year history & sentiment analysis\n\nUpgrade: ${BASE_URL}/upgrade?source=weekly-insights\n\nCancel anytime.`;
+  const text = `Hi ${firstName || "there"},\n\nHere's what Pro unlocks:\n- All 4 AI engines (Claude, Gemini, Perplexity)\n- Fix Generator (llms.txt, JSON-LD, robots.txt)\n- Competitor citation gap table\n- Full audit history and sentiment analysis\n\nUpgrade: ${BASE_URL}/upgrade?source=weekly-insights\n\nCancel anytime.`;
   return { subject, html, text };
 }
 
@@ -213,7 +227,7 @@ export function weeklyDigestEmail(data: WeeklyDigestData, unsubscribeUrl?: strin
     ? `${divider()}
       <div style="margin-bottom:16px;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6b7280;">Latest Audit Score</div>
       <table cellpadding="0" cellspacing="0" width="100%">
-        ${scoreBar("AEO Score", latestAudit.geoScore * 100)}
+        ${scoreBar("AEO Score", latestAudit.geoScore)}
       </table>
       ${latestAudit.quickWins.length > 0 ? `
         <div style="margin:20px 0 8px;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6b7280;">Top Quick Wins</div>
@@ -243,7 +257,7 @@ export function weeklyDigestEmail(data: WeeklyDigestData, unsubscribeUrl?: strin
     `Your weekly AEO Improvement digest — ${auditCount} audit${auditCount !== 1 ? "s" : ""} this week`,
     unsubscribeUrl,
   );
-  const text = `Hi ${firstName || "there"}, your AEO weekly digest:\n\nAudits this week: ${auditCount}\n${latestAudit ? `Latest AEO score: ${Math.round(latestAudit.geoScore * 100)}\nTop quick win: ${latestAudit.quickWins[0] || "none"}\n` : ""}\nView your dashboard: ${BASE_URL}`;
+  const text = `Hi ${firstName || "there"}, your AEO weekly digest:\n\nAudits this week: ${auditCount}\n${latestAudit ? `Latest AEO score: ${Math.round(latestAudit.geoScore)}\nTop quick win: ${latestAudit.quickWins[0] || "none"}\n` : ""}\nView your dashboard: ${BASE_URL}`;
   return { subject, html, text };
 }
 
@@ -444,12 +458,12 @@ export function limitReachedEmail(
     <ul style="margin:0 0 16px 0;padding:0 0 0 20px;font-size:14px;line-height:1.8;color:#374151;">
       <li>${proBenefit}</li>
       <li>Sentiment & tone analysis across all 4 engines</li>
-      <li>1-year visibility trend history</li>
+      <li>Full audit history and score trending</li>
       <li>Priority email support</li>
     </ul>
     <table cellpadding="0" cellspacing="0" width="100%" style="margin:16px 0;background:#ecfdf5;border-radius:8px;border:1px solid #a7f3d0;">
       <tr><td style="padding:18px 20px;font-size:14px;color:#065f46;text-align:center;">
-        <strong>Pro: $79/mo</strong> · or <strong>$62.50/mo billed annually</strong> (save 21%)
+        <strong>Pro: $49/mo</strong> · or <strong>$39/mo billed annually</strong> (save 20%)
       </td></tr>
     </table>
     <div style="text-align:center;margin:24px 0;">
@@ -460,7 +474,7 @@ export function limitReachedEmail(
     `You've used all ${cap} free ${kindLabel}s this month. Upgrade to Pro for ${kind === "audits" ? "100 audits" : "30 simulations"}/mo.`,
     unsubscribeUrl,
   );
-  const text = `Hi ${firstName || "there"},\n\nYou've used all ${cap} of your free ${kindLabel}s this month. Your quota refills on the 1st.\n\nWant more now? Upgrade to Pro ($79/mo, or $62.50/mo billed annually) for:\n- ${proBenefit}\n- Sentiment analysis\n- 1-year history\n- Priority support\n\nUpgrade: ${BASE_URL}/upgrade?source=limit-reached-${kind}`;
+  const text = `Hi ${firstName || "there"},\n\nYou've used all ${cap} of your free ${kindLabel}s this month. Your quota refills on the 1st.\n\nWant more now? Upgrade to Pro ($49/mo, or $39/mo billed annually) for:\n- ${proBenefit}\n- Sentiment analysis\n- Full audit history\n- Priority support\n\nUpgrade: ${BASE_URL}/upgrade?source=limit-reached-${kind}`;
   return { subject, html, text };
 }
 
@@ -472,6 +486,7 @@ export function firstAuditEmail(
   firstName: string,
   url: string,
   geoScore: number,
+  auditId: string | null | undefined,
   topRecommendation: string | null,
   unsubscribeUrl?: string,
 ) {
@@ -512,15 +527,15 @@ export function firstAuditEmail(
     </table>
 
     <div style="text-align:center;margin:24px 0;">
-      ${btn("Open your audit →", `${BASE_URL}/`)}
+      ${btn("Open your audit →", auditId ? `${BASE_URL}/results/${auditId}` : BASE_URL)}
     </div>
 
     ${divider()}
-    ${p("Hit your free quota? Pro unlocks 100 audits, 30 prompt simulations, and the Fix Generator — $79/mo (or $62.50/mo annual).", "color:#6b7280;font-size:13px;")}`,
+    ${p("Hit your free quota? Pro unlocks 100 audits, 30 prompt simulations, and the Fix Generator — $49/mo (or $39/mo annual).", "color:#6b7280;font-size:13px;")}`,
     `Your first audit on ${hostname} scored ${Math.round(geoScore)}/100 — here's what to do next.`,
     unsubscribeUrl,
   );
-  const text = `Hi ${firstName || "there"},\n\nYou just ran your first AEO audit on ${hostname}. Score: ${Math.round(geoScore)}/100 — ${scoreVerdict}.\n\n${topRecommendation ? `Top opportunity: ${topRecommendation}\n\n` : ""}Next steps:\n- Run a prompt simulation to see how AI engines answer about your brand\n- Audit 2-3 competitors to find your gaps\n- Pro users get auto-generated llms.txt + JSON-LD schema\n\nOpen your audit: ${BASE_URL}/`;
+  const text = `Hi ${firstName || "there"},\n\nYou just ran your first AEO audit on ${hostname}. Score: ${Math.round(geoScore)}/100 — ${scoreVerdict}.\n\n${topRecommendation ? `Top opportunity: ${topRecommendation}\n\n` : ""}Next steps:\n- Run a prompt simulation to see how AI engines answer about your brand\n- Audit 2-3 competitors to find your gaps\n- Pro users get auto-generated llms.txt + JSON-LD schema\n\nOpen your audit: ${auditId ? `${BASE_URL}/results/${auditId}` : BASE_URL}`;
   return { subject, html, text };
 }
 
@@ -767,6 +782,7 @@ export function scoreChangedEmail(
   previousScore: number, // 0-100
   currentScore: number,  // 0-100
   topRecommendation: string | null,
+  auditId?: string | null,
   unsubscribeUrl?: string,
 ) {
   const hostname = (() => { try { return new URL(url).hostname; } catch { return url; } })();
@@ -781,14 +797,14 @@ export function scoreChangedEmail(
   const accent = improved ? "#10b981" : "#f59e0b"; // celebrate vs amber-warn (not red — we don't want it to feel punitive)
 
   const subject = improved
-    ? `${safeHostname.replace(/&[^;]+;/g, "")} → +${delta} AEO points (${prev} → ${curr})`
-    : `${safeHostname.replace(/&[^;]+;/g, "")} dropped ${Math.abs(delta)} AEO points — let's diagnose`;
+    ? `${safeHostname.replace(/&[^;]+;/g, "")} +${delta} AEO points (${prev} to ${curr})`
+    : `${safeHostname.replace(/&[^;]+;/g, "")} dropped ${Math.abs(delta)} AEO points: let's find the cause`;
   // (Subject string above will be re-escaped by Postmark; the .replace strips
   // any HTML-escape entities we accidentally introduced via esc() since
   // headers don't decode them.)
   const cleanSubject = improved
-    ? `${hostname} → +${delta} AEO points (${prev} → ${curr})`
-    : `${hostname} dropped ${Math.abs(delta)} AEO points — let's diagnose`;
+    ? `${hostname} +${delta} AEO points (${prev} to ${curr})`
+    : `${hostname} dropped ${Math.abs(delta)} AEO points: let's find the cause`;
 
   const headline = improved ? "Your AEO score went up 🎉" : "Your AEO score dropped";
   const lede = improved
@@ -833,12 +849,12 @@ export function scoreChangedEmail(
     ${diagnosticBlock}
 
     <div style="text-align:center;margin:24px 0;">
-      ${btn("Open the new audit →", `${BASE_URL}/`)}
+      ${btn("Open the new audit →", auditId ? `${BASE_URL}/results/${auditId}` : BASE_URL)}
     </div>
     ${divider()}
     ${p(improved
-      ? "Pro unlocks unlimited audits, the Fix Generator that drafts your llms.txt and JSON-LD, and 1-year score history so you can see the full arc of your improvements."
-      : "Pro's Fix Generator can re-draft your llms.txt and schema in minutes if a deploy broke them, and 1-year history shows you exactly when the drop started.",
+      ? "Pro unlocks unlimited audits, the Fix Generator that drafts your llms.txt and JSON-LD, and full score history so you can see the arc of every improvement."
+      : "Pro's Fix Generator can re-draft your llms.txt and schema in minutes if a deploy broke them, and full audit history shows you exactly when the drop started.",
       "color:#6b7280;font-size:13px;")}`,
     improved
       ? `Your score on ${hostname} went from ${prev} to ${curr} — nice work.`
@@ -846,8 +862,8 @@ export function scoreChangedEmail(
     unsubscribeUrl,
   );
   const text = improved
-    ? `Hi ${firstName || "there"},\n\nYour latest audit on ${hostname} came back +${delta} points higher (${prev} → ${curr}). Whatever you changed, it's working.\n\n${topRecommendation ? `Top opportunity to keep going: ${topRecommendation}\n\n` : ""}To keep momentum:\n- Run a prompt simulation to confirm the gain shows in real AI answers\n- Audit again in 2 weeks (improvements take a crawl cycle to propagate)\n- Tackle one more recommendation\n\nOpen the new audit: ${BASE_URL}/`
-    : `Hi ${firstName || "there"},\n\nYour latest audit on ${hostname} came back ${delta} points lower (${prev} → ${curr}). Most score drops trace to one of three causes:\n\n1. A robots.txt change blocked an AI bot — check Crawler Access\n2. Schema markup was removed or broke on a recent deploy\n3. Hero / above-fold content moved below fold or into JS-only renders\n\n${topRecommendation ? `Top fix to recover: ${topRecommendation}\n\n` : ""}Open the new audit: ${BASE_URL}/`;
+    ? `Hi ${firstName || "there"},\n\nYour latest audit on ${hostname} came back +${delta} points higher (${prev} to ${curr}). Whatever you changed, it's working.\n\n${topRecommendation ? `Top opportunity to keep going: ${topRecommendation}\n\n` : ""}To keep momentum:\n- Run a prompt simulation to confirm the gain shows in real AI answers\n- Audit again in 2 weeks (improvements take a crawl cycle to propagate)\n- Tackle one more recommendation\n\nOpen the new audit: ${auditId ? `${BASE_URL}/results/${auditId}` : BASE_URL}`
+    : `Hi ${firstName || "there"},\n\nYour latest audit on ${hostname} came back ${delta} points lower (${prev} to ${curr}). Most score drops trace to one of three causes:\n\n1. A robots.txt change blocked an AI bot — check Crawler Access\n2. Schema markup was removed or broke on a recent deploy\n3. Hero / above-fold content moved below fold or into JS-only renders\n\n${topRecommendation ? `Top fix to recover: ${topRecommendation}\n\n` : ""}Open the new audit: ${auditId ? `${BASE_URL}/results/${auditId}` : BASE_URL}`;
   return { subject: cleanSubject, html, text };
 }
 

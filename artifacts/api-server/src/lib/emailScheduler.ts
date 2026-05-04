@@ -186,7 +186,7 @@ async function runMonthlyReports() {
     if (monthAudits.length === 0) continue;
 
     const avgScore =
-      monthAudits.reduce((s, a) => s + a.geoScore * 100, 0) / monthAudits.length;
+      monthAudits.reduce((s, a) => s + a.geoScore, 0) / monthAudits.length;
     const best = monthAudits[0];
     const allWins = monthAudits.flatMap((a) => (a.quickWins as string[]) ?? []);
     const uniqueWins = [...new Set(allWins)];
@@ -200,7 +200,7 @@ async function runMonthlyReports() {
         month: label,
         totalAudits: monthAudits.length,
         avgScore,
-        bestScore: best.geoScore * 100,
+        bestScore: best.geoScore,
         topUrl: best.url,
         quickWins: uniqueWins,
       },

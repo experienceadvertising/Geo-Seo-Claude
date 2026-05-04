@@ -145,10 +145,11 @@ export const EmailService = {
     firstName: string,
     url: string,
     geoScore: number,
+    auditId: string | null | undefined,
     topRecommendation: string | null,
     unsubscribeUrl?: string,
   ): Promise<boolean> {
-    const { subject, html, text } = firstAuditEmail(firstName, url, geoScore, topRecommendation, unsubscribeUrl);
+    const { subject, html, text } = firstAuditEmail(firstName, url, geoScore, auditId, topRecommendation, unsubscribeUrl);
     return send(email, subject, html, text, "first-audit", unsubscribeUrl);
   },
 
@@ -209,6 +210,7 @@ export const EmailService = {
     previousScore: number,
     currentScore: number,
     topRecommendation: string | null,
+    auditId?: string | null,
     unsubscribeUrl?: string,
   ): Promise<boolean> {
     const { subject, html, text } = scoreChangedEmail(
@@ -217,6 +219,7 @@ export const EmailService = {
       previousScore,
       currentScore,
       topRecommendation,
+      auditId,
       unsubscribeUrl,
     );
     return send(email, subject, html, text, "score-changed", unsubscribeUrl);
