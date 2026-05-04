@@ -1092,3 +1092,24 @@ export function whatYouMissedEmail(
   const text = `Hi ${firstName || "there"},\n\nYour free audit on ${hostname} gave you a score (${geoScore}/100) and a recommendation list. Here's what the same audit returns on Pro:\n\nEngines you didn't see:\n- Claude (Anthropic)\n- Gemini (Google — powers AI Overviews)\n- Perplexity (citation-first AI search)\n\nFree = ChatGPT only. Pro = all four, side by side.\n\nPlus, Pro's Fix Generator auto-drafts your llms.txt, FAQPage JSON-LD, and Organization schema from your actual sitemap. Copy, paste, ship.\n\nUpgrade: ${BASE_URL}/upgrade?source=what-you-missed\n\nNo commitment — cancel any time.`;
   return { subject, html, text };
 }
+
+export function referralRewardEmail(firstName: string, amountDollars: number, unsubscribeUrl?: string) {
+  const safeName = esc(firstName || "there");
+  const subject = `You earned $${amountDollars} — someone you referred just upgraded`;
+  const preheader = `Your $${amountDollars} referral credit has been applied to your account.`;
+  const content = `
+    ${h1(`You earned $${amountDollars}`)}
+    ${p(`Hi ${safeName} — someone you referred just upgraded to a paid AEO Improvement plan. We have applied a $${amountDollars} credit to your account. It will be deducted automatically from your next invoice.`)}
+    <div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;padding:24px 28px;margin:24px 0;text-align:center;">
+      <div style="font-size:40px;font-weight:800;color:#059669;">$${amountDollars}</div>
+      <div style="font-size:14px;color:#065f46;margin-top:4px;">applied to your account</div>
+    </div>
+    ${p(`Keep sharing your referral link to earn more. There is no cap on how many referral credits you can earn.`)}
+    <div style="text-align:center;margin:28px 0 0;">
+      ${btn("View your dashboard", `${BASE_URL}/`)}
+    </div>
+  `;
+  const html = layout(content, preheader, unsubscribeUrl);
+  const text = `Hi ${firstName || "there"},\n\nSomeone you referred just upgraded to a paid plan. We have applied a $${amountDollars} credit to your account. It will be deducted from your next invoice automatically.\n\nKeep sharing your referral link to earn more.\n\nView your dashboard: ${BASE_URL}/`;
+  return { subject, html, text };
+}

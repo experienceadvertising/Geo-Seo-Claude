@@ -98,10 +98,11 @@ function baseUrlFromReq(req: Request): string {
 
 // ── Register ──────────────────────────────────────────────────────────────────
 router.post("/auth/register", registerRateLimiter, async (req, res): Promise<void> => {
-  const { email, password, firstName } = req.body as {
+  const { email, password, firstName, referralCode: refCode } = req.body as {
     email?: string;
     password?: string;
     firstName?: string;
+    referralCode?: string;
   };
 
   if (!email || !password) {
@@ -136,6 +137,17 @@ router.post("/auth/register", registerRateLimiter, async (req, res): Promise<voi
   const verExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
   const userId = randomUUID();
   const unsubToken = token();
+  const myReferralCode = randomBytes(4).toString("hex").toUpperCase();
+
+  const cleanRef = refCode?.trim().toUpperCase() || null;
+  let referredBy: string | null = null;
+  if (cleanRef) {
+    const [referrer] = await db
+      .select({ id: usersTable.id })
+      .from(usersTable)
+      .where(eq(usersTable.referralCode, cleanRef));
+    if (referrer) referredBy = cleanRef;
+  }
 
   await db.insert(usersTable).values({
     id: userId,
@@ -147,6 +159,8 @@ router.post("/auth/register", registerRateLimiter, async (req, res): Promise<voi
     verificationExpires: verExpires,
     plan: "free",
     unsubscribeToken: unsubToken,
+    referralCode: myReferralCode,
+    referredBy,
   });
 
   const baseUrl = baseUrlFromReq(req);

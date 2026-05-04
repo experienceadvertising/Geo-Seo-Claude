@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ScoreBadge } from "@/components/score-badge";
 import { usePlan } from "@/hooks/usePlan";
 import { AuthoritySignalsCard } from "@/components/authority-signals-card";
+import { ReferralCard } from "@/components/referral-card";
 import heroImage from "@/assets/hero.png";
 
 function MarketStats() {
@@ -780,6 +781,10 @@ function SignedInDashboard() {
 
       {!analyzeUrl.isPending && audits && audits.length > 0 && (
         <AeoJourneyCard audits={audits} />
+      )}
+
+      {!analyzeUrl.isPending && (
+        <ReferralCard />
       )}
 
       {!analyzeUrl.isPending && <DashboardLearningHub />}

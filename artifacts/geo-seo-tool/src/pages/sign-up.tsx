@@ -20,6 +20,10 @@ export default function SignUpPage() {
   const { isLoaded, isSignedIn } = useAuth();
   const [, setLocation] = useLocation();
 
+  const referralCode = typeof window !== "undefined"
+    ? new URLSearchParams(window.location.search).get("ref") ?? undefined
+    : undefined;
+
   // If the user is already signed in, send them to the dashboard rather than
   // showing the sign-up form.
   useEffect(() => {
@@ -46,7 +50,7 @@ export default function SignUpPage() {
     try {
       await customFetch("/api/auth/register", {
         method: "POST",
-        body: JSON.stringify({ firstName, email, password }),
+        body: JSON.stringify({ firstName, email, password, referralCode }),
       });
       setDone(true);
     } catch (err: any) {

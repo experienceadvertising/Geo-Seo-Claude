@@ -21,3 +21,4 @@ export * from "./audits";
 export * from "./promptSimulations";
 export * from "./users";
 export * from "./monthlyUsage";
+export * from "./referralRewards";

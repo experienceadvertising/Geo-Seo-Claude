@@ -19,6 +19,7 @@ import {
   scoreChangedEmail,
   approachingLimitEmail,
   whatYouMissedEmail,
+  referralRewardEmail,
   type WeeklyDigestData,
   type MonthlyReportData,
 } from "./emailTemplates";
@@ -278,6 +279,16 @@ ${lines.map((l) => `<div>${escapeHtml(l)}</div>`).join("\n")}
     await Promise.all(
       recipients.map((to) => send(to, subject, html, text, "admin-notification")),
     );
+  },
+
+  async sendReferralReward(
+    to: string,
+    firstName: string,
+    amountDollars: number,
+    unsubscribeUrl?: string,
+  ): Promise<boolean> {
+    const { subject, html, text } = referralRewardEmail(firstName, amountDollars, unsubscribeUrl);
+    return send(to, subject, html, text, "referral-reward", unsubscribeUrl);
   },
 
   async sendContactForm(

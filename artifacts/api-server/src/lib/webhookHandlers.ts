@@ -5,6 +5,7 @@ import { randomBytes } from "crypto";
 import { getUncachableStripeClient, getStripeSync } from "./stripeClient";
 import { EmailService } from "./emailService";
 import { logger } from "./logger";
+import { creditReferralIfEligible } from "../routes/referral";
 
 function newUnsubToken(): string {
   return randomBytes(32).toString("hex");
@@ -161,6 +162,11 @@ export class WebhookHandlers {
             })
             .catch((e) => logger.error({ err: e?.message, userId }, "Failed to upsert user"));
         }
+
+        // Credit the referrer $25 if this user was referred
+        creditReferralIfEligible(userId).catch((err) =>
+          logger.error({ err, userId }, "creditReferralIfEligible failed"),
+        );
 
         // Operational notification — fires once per checkout because the
         // outer claimEvent() guard prevents duplicate webhook deliveries

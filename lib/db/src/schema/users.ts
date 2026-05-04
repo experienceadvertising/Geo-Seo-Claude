@@ -33,6 +33,10 @@ export const usersTable = pgTable("users", {
   // here as required so any new code path inserting a user must supply one.
   unsubscribeToken: text("unsubscribe_token").notNull(),
 
+  // Referral program
+  referralCode: text("referral_code").unique(),
+  referredBy: text("referred_by"),
+
   // First-audit milestone — set when the user completes their very first
   // audit. Drives the "you ran your first audit, here's how to go deeper"
   // celebratory email and prevents resending it.
