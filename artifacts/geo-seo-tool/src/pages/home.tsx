@@ -180,7 +180,7 @@ function SignedOutLanding() {
                 icon: Bot,
                 gradient: "from-violet-500 to-purple-600",
                 title: "Live AI prompt simulation",
-                body: "Real prompts run against ChatGPT, Claude, Gemini, and Perplexity. See whether each engine cites you, how it describes you, and the sentiment it returns.",
+                body: "Type the queries your buyers actually use — \"best project management tool for agencies\", \"alternatives to X\" — and find out whether ChatGPT, Claude, Gemini, and Perplexity name you, cite your site, and what they say when they do.",
               },
               {
                 icon: BarChart3,
@@ -429,11 +429,18 @@ function AeoJourneyCard({ audits }: { audits: Array<{ id: number; url: string; g
           )}
         </div>
 
-        <Link href={`/results/${latest.id}`}>
-          <Button size="sm" variant="outline" className="border-emerald-500/30 hover:bg-emerald-500/10">
-            Open latest audit <ArrowRight className="ml-1 h-3.5 w-3.5" />
-          </Button>
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link href={`/results/${latest.id}`}>
+            <Button size="sm" variant="outline" className="border-emerald-500/30 hover:bg-emerald-500/10">
+              Open latest audit <ArrowRight className="ml-1 h-3.5 w-3.5" />
+            </Button>
+          </Link>
+          <Link href={`/simulate/${latest.id}`}>
+            <Button size="sm" variant="outline" className="border-violet-500/30 hover:bg-violet-500/10 text-violet-700 dark:text-violet-400">
+              <Sparkles className="h-3.5 w-3.5 mr-1.5" /> Simulate AI responses
+            </Button>
+          </Link>
+        </div>
 
         {/* Free-only: compact "what Pro unlocks for YOUR site" preview row.
             Three locked-state tiles tied to features the user has already
@@ -451,7 +458,7 @@ function AeoJourneyCard({ audits }: { audits: Array<{ id: number; url: string; g
                   <div className="text-xs font-semibold mb-1 flex items-center gap-1.5">
                     <Sparkles className="h-3 w-3 text-emerald-600" /> All 4 engines
                   </div>
-                  <div className="text-xs text-muted-foreground leading-snug">See how Claude, Gemini & Perplexity cite you — not just ChatGPT.</div>
+                  <div className="text-xs text-muted-foreground leading-snug">Gemini answers 40% of Google searches with AI now. Find out if it names you.</div>
                 </div>
               </Link>
               <Link href="/pricing">
@@ -741,7 +748,7 @@ function SignedInDashboard() {
     <div className="flex-1 w-full max-w-4xl mx-auto px-4 md:px-8 py-10 md:py-14 space-y-10">
       <div className="space-y-1">
         <h1 className="text-3xl font-bold tracking-tight">{greeting}</h1>
-        <p className="text-muted-foreground">Run an AEO audit to see how your site performs in AI search.</p>
+        <p className="text-muted-foreground">Audit your site, then run a simulation to see if AI engines name you when real buyers search.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="flex gap-2 max-w-2xl">

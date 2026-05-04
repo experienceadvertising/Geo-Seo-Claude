@@ -519,11 +519,11 @@ export function firstAuditEmail(
       </div>
     ` : ""}
 
-    ${p("To go deeper, here are the most useful next steps:")}
+    ${p("Your audit score measures whether you <em>can</em> be cited. A prompt simulation shows whether you <em>are</em> — here's what to do next:")}
     <table cellpadding="0" cellspacing="0" width="100%" style="margin:8px 0 24px;">
-      ${feature("🔬", "Run a prompt simulation", "See how ChatGPT, Claude, Gemini and Perplexity actually answer when someone asks about your brand.")}
-      ${feature("📊", "Compare to competitors", "Run audits on 2–3 competitors to find your AEO gaps.")}
-      ${feature("🛠", "Generate fixes", "Pro users get auto-generated llms.txt, JSON-LD schema, and robots.txt for their site.")}
+      ${feature("🔬", "Run a prompt simulation", "Type the queries your buyers actually use and see whether ChatGPT, Claude, Gemini, and Perplexity name you, cite your site, or recommend a competitor instead.")}
+      ${feature("📊", "Compare to competitors", "Run audits on 2–3 competitors to find your AEO gaps and see who the engines are citing in your place.")}
+      ${feature("🛠", "Generate fixes", "Pro users get auto-generated llms.txt, JSON-LD schema, and robots.txt entries based on your specific gaps — copy and ship.")}
     </table>
 
     <div style="text-align:center;margin:24px 0;">
@@ -573,7 +573,13 @@ export function auditCompleteEmail(
     </div>
 
     ${divider()}
-    ${p("Want to go deeper? Run a prompt simulation to see how ChatGPT, Claude, Gemini, and Perplexity answer when someone searches in your category.", "color:#6b7280;font-size:13px;")}`,
+    <div style="background:#f5f3ff;border-radius:10px;padding:18px 20px;margin:0;">
+      <div style="font-size:13px;font-weight:700;color:#5b21b6;margin-bottom:6px;">Next step: run a prompt simulation</div>
+      <div style="font-size:13px;color:#374151;line-height:1.6;">Your score tells you whether you <em>can</em> be cited. A simulation tells you whether you <em>are</em> — enter the queries your buyers actually use and see which engines name you, which cite your domain, and which recommend a competitor instead.</div>
+      <div style="margin-top:12px;">
+        <a href="${BASE_URL}/simulate/${auditId || ""}" style="font-size:13px;font-weight:600;color:#5b21b6;text-decoration:underline;">Run a simulation for this audit →</a>
+      </div>
+    </div>`,
     `Your AEO audit for ${hostname} scored ${Math.round(geoScore)}/100 — view the full breakdown.`,
     unsubscribeUrl,
   );

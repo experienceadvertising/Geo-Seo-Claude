@@ -228,11 +228,45 @@ export default function SimulatePage() {
         <Link href={`/results/${auditId}`} className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-2">
           <ArrowLeft className="h-4 w-4 mr-1" /> Back to audit
         </Link>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Prompt Simulation</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">AI Prompt Simulation</h1>
         <p className="text-muted-foreground mt-1 text-sm sm:text-base">
-          See how AI search engines respond when users search for your category
+          Find out if AI engines name you when buyers search for what you sell
           {audit && <> · <span className="font-medium text-foreground">{domain}</span></>}
         </p>
+      </div>
+
+      {/* Value proposition explainer */}
+      <div className="rounded-xl border border-violet-500/20 bg-gradient-to-br from-violet-500/5 via-transparent to-transparent p-5">
+        <p className="text-xs font-semibold uppercase tracking-wider text-violet-700 dark:text-violet-400 mb-4">What this answers</p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+          <div className="flex gap-3">
+            <div className="h-8 w-8 rounded-lg bg-violet-500/10 flex items-center justify-center shrink-0">
+              <Sparkles className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold">Am I being named?</p>
+              <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">When a buyer asks who solves their problem, does each engine mention your brand — or only competitors?</p>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <div className="h-8 w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
+              <LinkIcon className="h-4 w-4 text-emerald-600" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold">Am I being cited?</p>
+              <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">Citation = a source link to your domain. It drives traffic and signals to the engine that your site is authoritative.</p>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <div className="h-8 w-8 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
+              <BarChart3 className="h-4 w-4 text-amber-600" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold">Who's getting the mentions I'm not?</p>
+              <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">See which competitors each engine recommends instead — so you know exactly who to close the gap on.</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Configuration card */}
@@ -240,7 +274,7 @@ export default function SimulatePage() {
         <CardHeader>
           <CardTitle>Configure simulation</CardTitle>
           <CardDescription>
-            Enter prompts a typical user would search for in your category. We'll query each AI engine and report whether your brand is mentioned and your domain is cited.
+            Write the prompts your buyers actually type — category questions, comparison searches, "best X for Y" queries. Run them across AI engines and see where you stand.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
