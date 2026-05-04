@@ -109,17 +109,23 @@ function SignedOutLanding() {
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.05]">
                 Get cited by{" "}
                 <span className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 bg-clip-text text-transparent">
-                  ChatGPT, Claude
+                  the AI engines
                 </span>
-                {" "}& Perplexity.
+                {" "}that matter.
               </h1>
               <p className="text-lg md:text-xl text-muted-foreground max-w-[560px]">
-                Score your website's citability across every major AI search engine and get
-                personalized recommendations with transparent sources to climb the rankings.
+                Audit your site's citability across ChatGPT, Claude, Gemini, and Perplexity.
+                Get a 6-dimension AEO score, live prompt simulations, and 29 evidence-backed
+                fixes you can ship today.
               </p>
 
               <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm text-foreground/80 max-w-md">
-                {["Real AI engine prompts", "Schema & crawler audits", "Personalized fixes", "Free to start"].map(item => (
+                {[
+                  "Live prompts across 4 AI engines",
+                  "6 AI crawler bots audited",
+                  "Fix Generator for llms.txt & JSON-LD",
+                  "Free to start, no credit card",
+                ].map(item => (
                   <li key={item} className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-shrink-0" />
                     <span>{item}</span>
@@ -157,16 +163,28 @@ function SignedOutLanding() {
         <MarketStats />
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="border-emerald-500/10 hover:border-emerald-500/30 transition-colors">
-            <CardHeader><CardTitle className="text-base flex items-center gap-2"><Shield className="h-4 w-4 text-primary"/>Crawler & schema audits</CardTitle></CardHeader>
-            <CardContent className="text-sm text-muted-foreground">See exactly which AI bots can read your site and which schema types you're missing.</CardContent>
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><Bot className="h-4 w-4 text-primary"/>Live AI prompt simulation</CardTitle></CardHeader>
+            <CardContent className="text-sm text-muted-foreground">Real prompts run against ChatGPT, Claude, Gemini, and Perplexity. See whether each engine cites you, how it describes you, and the sentiment it returns.</CardContent>
           </Card>
           <Card className="border-emerald-500/10 hover:border-emerald-500/30 transition-colors">
-            <CardHeader><CardTitle className="text-base flex items-center gap-2"><Zap className="h-4 w-4 text-primary"/>JavaScript rendering check</CardTitle></CardHeader>
-            <CardContent className="text-sm text-muted-foreground">Detects SPA-only content that AI crawlers can't see.</CardContent>
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><BarChart3 className="h-4 w-4 text-primary"/>6-dimension AEO score</CardTitle></CardHeader>
+            <CardContent className="text-sm text-muted-foreground">Citability, AI Crawler Access, Brand Authority, Schema, Technical SEO, and Platform Optimization — scored 0 to 100 and visualized as a radar chart so you know exactly where to focus.</CardContent>
           </Card>
           <Card className="border-emerald-500/10 hover:border-emerald-500/30 transition-colors">
-            <CardHeader><CardTitle className="text-base flex items-center gap-2"><BarChart3 className="h-4 w-4 text-primary"/>Live prompt simulation</CardTitle></CardHeader>
-            <CardContent className="text-sm text-muted-foreground">Run real prompts through 4 AI engines to see if and how your brand gets mentioned.</CardContent>
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><Zap className="h-4 w-4 text-primary"/>Fix Generator</CardTitle></CardHeader>
+            <CardContent className="text-sm text-muted-foreground">Auto-drafts your llms.txt, JSON-LD schema blocks, and robots.txt entries based on your specific audit gaps. Copy and ship — no guessing required.</CardContent>
+          </Card>
+          <Card className="border-emerald-500/10 hover:border-emerald-500/30 transition-colors">
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><Shield className="h-4 w-4 text-primary"/>AI crawler access audit</CardTitle></CardHeader>
+            <CardContent className="text-sm text-muted-foreground">Checks all six major AI bots — GPTBot, ClaudeBot, PerplexityBot, Google-Extended, Applebot, and meta-externalagent — against your robots.txt and site headers.</CardContent>
+          </Card>
+          <Card className="border-emerald-500/10 hover:border-emerald-500/30 transition-colors">
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><Building2 className="h-4 w-4 text-primary"/>Brand authority footprint</CardTitle></CardHeader>
+            <CardContent className="text-sm text-muted-foreground">Scans Wikipedia, Wikidata, LinkedIn, GitHub, X, and Crunchbase for your brand. These are the signals AI engines use to decide whether to trust and cite you.</CardContent>
+          </Card>
+          <Card className="border-emerald-500/10 hover:border-emerald-500/30 transition-colors">
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><TrendingUp className="h-4 w-4 text-primary"/>Score trending over time</CardTitle></CardHeader>
+            <CardContent className="text-sm text-muted-foreground">Every audit is stored. Track your AEO score across runs and see exactly how each change you ship moves the needle on citability.</CardContent>
           </Card>
         </section>
       </div>
