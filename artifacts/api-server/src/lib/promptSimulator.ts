@@ -359,7 +359,11 @@ async function runEngineForPrompt(
 ): Promise<EngineResult> {
   const start = Date.now();
   try {
-    const { text, urls } = await withTimeout(fn(prompt), ENGINE_TIMEOUT_MS, engineLabel);
+    const { text, urls } = await withTimeout(
+      withRetry(() => fn(prompt), engineLabel),
+      ENGINE_TIMEOUT_MS,
+      engineLabel,
+    );
     const { mentioned, firstPosition } = detectBrandMention(text, brandName);
     const domainCited = detectDomainCitation(urls, domain);
     const competitorMentions = detectCompetitors(urls, brandName, domain);

@@ -13,6 +13,8 @@ import {
   subscriptionCanceledEmail,
   limitReachedEmail,
   firstAuditEmail,
+  auditCompleteEmail,
+  simulationCompleteEmail,
   aeoInsightsEmail,
   scoreChangedEmail,
   approachingLimitEmail,
@@ -151,6 +153,35 @@ export const EmailService = {
   ): Promise<boolean> {
     const { subject, html, text } = firstAuditEmail(firstName, url, geoScore, auditId, topRecommendation, unsubscribeUrl);
     return send(email, subject, html, text, "first-audit", unsubscribeUrl);
+  },
+
+  // Transactional: fires on every completed audit except the first (that gets
+  // the richer firstAudit email). Lets users close the tab and get back to
+  // their results via a direct link.
+  async sendAuditComplete(
+    email: string,
+    firstName: string,
+    url: string,
+    geoScore: number,
+    auditId: string | null | undefined,
+    unsubscribeUrl?: string,
+  ): Promise<boolean> {
+    const { subject, html, text } = auditCompleteEmail(firstName, url, geoScore, auditId, unsubscribeUrl);
+    return send(email, subject, html, text, "audit-complete", unsubscribeUrl);
+  },
+
+  // Transactional: fires after every completed prompt simulation so users who
+  // closed the tab during a long run can come back and view their results.
+  async sendSimulationComplete(
+    email: string,
+    firstName: string,
+    domain: string,
+    visibilityScore: number,
+    auditId: number | null | undefined,
+    unsubscribeUrl?: string,
+  ): Promise<boolean> {
+    const { subject, html, text } = simulationCompleteEmail(firstName, domain, visibilityScore, auditId, unsubscribeUrl);
+    return send(email, subject, html, text, "simulation-complete", unsubscribeUrl);
   },
 
   // Weekly AEO Insights — value-delivery email shipped to every active user

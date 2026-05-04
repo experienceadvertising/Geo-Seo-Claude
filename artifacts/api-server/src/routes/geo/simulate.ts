@@ -200,6 +200,33 @@ router.post("/geo/simulate", requireAuth, simulateRateLimiter, async (req, res):
     // Quota already reserved up-front — nothing to increment here.
     // (See consumeQuota at top of handler; refunded in catch below if we throw.)
 
+    // Simulation-complete notification — fires after every successful run so
+    // the user can close the tab during a long simulation and get back to
+    // their results via a direct link. Fire-and-forget; never blocks the response.
+    appDb
+      .select({
+        email: usersTable.email,
+        firstName: usersTable.firstName,
+        unsubscribeToken: usersTable.unsubscribeToken,
+        emailOptOut: usersTable.emailOptOut,
+      })
+      .from(usersTable)
+      .where(sql`id = ${req.userId!}`)
+      .then(([u]) => {
+        if (!u?.email || u.emailOptOut) return;
+        const baseUrl = process.env.FRONTEND_URL || "https://aeoimprovement.com";
+        const unsubscribeUrl = `${baseUrl}/unsubscribe?token=${u.unsubscribeToken}`;
+        return EmailService.sendSimulationComplete(
+          u.email,
+          u.firstName || "",
+          domain,
+          summary.visibilityScore ?? 0,
+          auditId,
+          unsubscribeUrl,
+        );
+      })
+      .catch((err) => req.log.error({ err, userId: req.userId }, "simulation-complete email failed"));
+
     res.json({
       id: saved.id,
       auditId: saved.auditId,

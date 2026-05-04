@@ -374,6 +374,33 @@ Hard rules:
       }
     });
 
+    // Audit-complete notification — fires on every non-first audit so the
+    // user always gets a direct link back to their results even if they
+    // closed the tab while the run was in progress. First audits already
+    // get the richer firstAuditEmail above, so we skip them here.
+    isFirstAuditPromise.then(async (wasFirst) => {
+      if (wasFirst) return;
+      try {
+        const [u] = await appDb
+          .select({
+            email: usersTable.email,
+            firstName: usersTable.firstName,
+            unsubscribeToken: usersTable.unsubscribeToken,
+            emailOptOut: usersTable.emailOptOut,
+          })
+          .from(usersTable)
+          .where(eq(usersTable.id, req.userId!));
+        if (!u?.email || u.emailOptOut) return;
+        const baseUrl = process.env.FRONTEND_URL || "https://aeoimprovement.com";
+        const unsubscribeUrl = `${baseUrl}/unsubscribe?token=${u.unsubscribeToken}`;
+        await EmailService.sendAuditComplete(
+          u.email, u.firstName || "", url, analysis.geoScore, String(audit.id), unsubscribeUrl,
+        );
+      } catch (err) {
+        req.log.error({ err, userId: req.userId }, "audit-complete email failed");
+      }
+    });
+
     // "What you didn't see" upsell — fires for free users on every audit
     // EXCEPT their first (firstAuditEmail handles that with a different,
     // celebratory framing). Throttled to once per 7 days per user via

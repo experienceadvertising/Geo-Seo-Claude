@@ -539,6 +539,89 @@ export function firstAuditEmail(
   return { subject, html, text };
 }
 
+// ── Email: Audit Complete (transactional — fires on every non-first audit) ────
+// The first-audit email covers the first run with richer onboarding content.
+// This email fires for all subsequent audits so the user always gets a
+// "your results are ready" link even if they closed the tab mid-run.
+export function auditCompleteEmail(
+  firstName: string,
+  url: string,
+  geoScore: number,
+  auditId: string | null | undefined,
+  unsubscribeUrl?: string,
+) {
+  const hostname = (() => { try { return new URL(url).hostname; } catch { return url; } })();
+  const safeHostname = esc(hostname);
+  const safeFirstName = esc(firstName) || "there";
+  const scoreColor = geoScore >= 75 ? "#10b981" : geoScore >= 50 ? "#f59e0b" : "#ef4444";
+  const subject = `Your AEO audit for ${hostname} is ready — ${Math.round(geoScore)}/100`;
+  const html = layout(
+    `${h1(`Audit complete`)}
+    ${p(`Hi ${safeFirstName}, your AEO audit for <strong>${safeHostname}</strong> finished. Here's your score:`)}
+
+    <table cellpadding="0" cellspacing="0" width="100%" style="margin:20px 0;background:#f9fafb;border-radius:12px;">
+      <tr><td style="padding:24px;text-align:center;">
+        <div style="font-size:52px;font-weight:800;color:${scoreColor};line-height:1;">${Math.round(geoScore)}<span style="font-size:24px;color:#9ca3af;">/100</span></div>
+        <div style="font-size:13px;color:#6b7280;margin-top:6px;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;">AEO Score</div>
+      </td></tr>
+    </table>
+
+    ${p("Open your full results to see the breakdown, top recommendations, and quick wins you can ship today.")}
+
+    <div style="text-align:center;margin:28px 0;">
+      ${btn("View full results →", auditId ? `${BASE_URL}/results/${auditId}` : `${BASE_URL}/dashboard`)}
+    </div>
+
+    ${divider()}
+    ${p("Want to go deeper? Run a prompt simulation to see how ChatGPT, Claude, Gemini, and Perplexity answer when someone searches in your category.", "color:#6b7280;font-size:13px;")}`,
+    `Your AEO audit for ${hostname} scored ${Math.round(geoScore)}/100 — view the full breakdown.`,
+    unsubscribeUrl,
+  );
+  const text = `Hi ${firstName || "there"},\n\nYour AEO audit for ${hostname} is ready. Score: ${Math.round(geoScore)}/100.\n\nView full results: ${auditId ? `${BASE_URL}/results/${auditId}` : `${BASE_URL}/dashboard`}\n\nRun a prompt simulation to see how AI engines answer in your category.`;
+  return { subject, html, text };
+}
+
+// ── Email: Simulation Complete (transactional — fires after every simulation) ─
+// Simulations can take 1-3 minutes. This email lets users close the tab and
+// come back when the results are in rather than watching a spinner.
+export function simulationCompleteEmail(
+  firstName: string,
+  domain: string,
+  visibilityScore: number,
+  auditId: number | null | undefined,
+  unsubscribeUrl?: string,
+) {
+  const safeDomain = esc(domain);
+  const safeFirstName = esc(firstName) || "there";
+  const scoreColor = visibilityScore >= 60 ? "#10b981" : visibilityScore >= 30 ? "#f59e0b" : "#ef4444";
+  const subject = `Your AI visibility simulation for ${domain} is done`;
+  const simulateUrl = auditId ? `${BASE_URL}/simulate/${auditId}` : `${BASE_URL}/dashboard`;
+  const html = layout(
+    `${h1(`Simulation complete`)}
+    ${p(`Hi ${safeFirstName}, your AI prompt simulation for <strong>${safeDomain}</strong> finished. Here's your visibility score:`)}
+
+    <table cellpadding="0" cellspacing="0" width="100%" style="margin:20px 0;background:#f9fafb;border-radius:12px;">
+      <tr><td style="padding:24px;text-align:center;">
+        <div style="font-size:52px;font-weight:800;color:${scoreColor};line-height:1;">${Math.round(visibilityScore)}<span style="font-size:24px;color:#9ca3af;">/100</span></div>
+        <div style="font-size:13px;color:#6b7280;margin-top:6px;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;">AI Visibility Score</div>
+      </td></tr>
+    </table>
+
+    ${p("The full breakdown shows mention rates, citation rates, and per-prompt results across each AI engine.")}
+
+    <div style="text-align:center;margin:28px 0;">
+      ${btn("View simulation results →", simulateUrl)}
+    </div>
+
+    ${divider()}
+    ${p("Try adjusting your prompts or adding competitor domains to the Citation Gap table to see how you compare.", "color:#6b7280;font-size:13px;")}`,
+    `Your AI visibility simulation for ${domain} scored ${Math.round(visibilityScore)}/100 — see the full breakdown.`,
+    unsubscribeUrl,
+  );
+  const text = `Hi ${firstName || "there"},\n\nYour AI prompt simulation for ${domain} is done. Visibility score: ${Math.round(visibilityScore)}/100.\n\nView full results: ${simulateUrl}\n\nThe breakdown includes mention rates, citation rates, and per-prompt results across each engine.`;
+  return { subject, html, text };
+}
+
 // ── Email: Weekly AEO Insights (free + paid) ─────────────────────────────────
 // Sent every Thursday 9 AM UTC to all verified, opted-in users who are past
 // the welcome-series window (>= 8 days old). The goal: deliver real strategy
