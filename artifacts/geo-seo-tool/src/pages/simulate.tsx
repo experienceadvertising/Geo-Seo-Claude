@@ -32,6 +32,29 @@ function getDomain(url: string): string {
   try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return url; }
 }
 
+/**
+ * Client-side error sanitizer — mirrors the server's sanitizeError logic so
+ * that simulation results stored before the server fix was deployed also show
+ * a human-readable message instead of raw JSON blobs.
+ */
+function friendlyEngineError(raw: string | null): string {
+  if (!raw) return "An unexpected error occurred — try again";
+  if (/timed?\s*out/i.test(raw)) return "Request timed out — the engine took too long to respond";
+  if (/rate.?limit|429|RATELIMIT|too many requests/i.test(raw)) return "Rate limit reached — try again in a few minutes";
+  if (/401|unauthorized|invalid.?key|authentication failed/i.test(raw)) return "Authentication error — service configuration issue";
+  if (/503|502|504|service\s+unavailable|bad\s+gateway/i.test(raw)) return "Service temporarily unavailable — try again later";
+  if (/ECONNREFUSED|ENOTFOUND|fetch\s+failed|network\s+error/i.test(raw)) return "Network error — could not reach the engine";
+  // Strip JSON blobs and credential strings from anything that fell through
+  const cleaned = raw
+    .replace(/\{[^}]*\}/g, "")
+    .replace(/https?:\/\/\S+/g, "")
+    .replace(/Bearer\s+\S+/gi, "")
+    .replace(/\s{2,}/g, " ")
+    .trim()
+    .slice(0, 120);
+  return cleaned || "An unexpected error occurred — try again";
+}
+
 function SentimentBadge({ sentiment }: { sentiment: string | null }) {
   if (!sentiment) return null;
   if (sentiment === "Positive") return (
@@ -597,7 +620,7 @@ export default function SimulatePage() {
                             </div>
                           </div>
                           {er.error ? (
-                            <p className="text-xs text-destructive">{er.error}</p>
+                            <p className="text-xs text-destructive">{friendlyEngineError(er.error)}</p>
                           ) : (
                             <>
                               <p className="text-xs text-muted-foreground line-clamp-4">{er.responseText.slice(0, 400)}{er.responseText.length > 400 ? "…" : ""}</p>
