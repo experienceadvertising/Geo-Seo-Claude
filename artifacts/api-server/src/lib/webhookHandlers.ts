@@ -5,7 +5,7 @@ import { randomBytes } from "crypto";
 import { getUncachableStripeClient, getStripeSync } from "./stripeClient";
 import { EmailService } from "./emailService";
 import { logger } from "./logger";
-import { creditReferralIfEligible } from "../routes/referral";
+import { creditReferralIfEligible, applyPendingReferralRewards } from "../routes/referral";
 
 function newUnsubToken(): string {
   return randomBytes(32).toString("hex");
@@ -167,6 +167,15 @@ export class WebhookHandlers {
         creditReferralIfEligible(userId).catch((err) =>
           logger.error({ err, userId }, "creditReferralIfEligible failed"),
         );
+
+        // If this upgrading user was themselves a referrer with pending rewards
+        // banked while they were on a free plan, apply those now that they have
+        // a Stripe customer ID.
+        if (customerId) {
+          applyPendingReferralRewards(userId, customerId).catch((err) =>
+            logger.error({ err, userId }, "applyPendingReferralRewards failed"),
+          );
+        }
 
         // Operational notification — fires once per checkout because the
         // outer claimEvent() guard prevents duplicate webhook deliveries

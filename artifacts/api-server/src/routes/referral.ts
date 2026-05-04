@@ -153,6 +153,8 @@ export async function creditReferralIfEligible(paidUserId: string): Promise<void
       amountCents: 2500,
     });
 
+    let creditApplied = false;
+
     if (referrer.stripeCustomerId) {
       try {
         const { getUncachableStripeClient } = await import("../lib/stripeClient");
@@ -165,6 +167,7 @@ export async function creditReferralIfEligible(paidUserId: string): Promise<void
           .update(referralRewardsTable)
           .set({ status: "paid", paidAt: new Date(), stripeBalanceTxId: tx.id })
           .where(eq(referralRewardsTable.id, rewardId));
+        creditApplied = true;
         logger.info({ referrerId: referrer.id, paidUserId, txId: tx.id }, "Referral reward credited via Stripe balance");
       } catch (stripeErr: any) {
         logger.warn({ err: stripeErr?.message, referrerId: referrer.id }, "Stripe balance credit failed — reward stays pending");
@@ -173,12 +176,64 @@ export async function creditReferralIfEligible(paidUserId: string): Promise<void
 
     if (referrer.email) {
       const { EmailService } = await import("../lib/emailService");
-      EmailService.sendReferralReward(referrer.email, referrer.firstName || "", 25).catch(
-        (err: any) => logger.error({ err }, "Referral reward email failed"),
-      );
+      if (creditApplied) {
+        EmailService.sendReferralReward(referrer.email, referrer.firstName || "", 25).catch(
+          (err: any) => logger.error({ err }, "Referral reward email failed"),
+        );
+      } else {
+        EmailService.sendReferralRewardPending(referrer.email, referrer.firstName || "", 25).catch(
+          (err: any) => logger.error({ err }, "Referral reward pending email failed"),
+        );
+      }
     }
   } catch (err: any) {
     logger.error({ err }, "creditReferralIfEligible failed");
+  }
+}
+
+export async function applyPendingReferralRewards(userId: string, stripeCustomerId: string): Promise<void> {
+  try {
+    const pendingRewards = await db
+      .select()
+      .from(referralRewardsTable)
+      .where(and(eq(referralRewardsTable.referrerId, userId), eq(referralRewardsTable.status, "pending")));
+
+    if (pendingRewards.length === 0) return;
+
+    const { getUncachableStripeClient } = await import("../lib/stripeClient");
+    const stripe = await getUncachableStripeClient();
+
+    for (const reward of pendingRewards) {
+      try {
+        const tx = await stripe.customers.createBalanceTransaction(
+          stripeCustomerId,
+          { amount: -reward.amountCents, currency: "usd", description: "Referral reward — $25 credit" },
+        );
+        await db
+          .update(referralRewardsTable)
+          .set({ status: "paid", paidAt: new Date(), stripeBalanceTxId: tx.id })
+          .where(eq(referralRewardsTable.id, reward.id));
+        logger.info({ userId, rewardId: reward.id, txId: tx.id }, "Pending referral reward applied on upgrade");
+      } catch (err: any) {
+        logger.warn({ err: err?.message, rewardId: reward.id }, "Failed to apply pending referral reward");
+      }
+    }
+
+    if (pendingRewards.length > 0) {
+      const [referrer] = await db
+        .select({ email: usersTable.email, firstName: usersTable.firstName })
+        .from(usersTable)
+        .where(eq(usersTable.id, userId));
+      if (referrer?.email) {
+        const totalDollars = pendingRewards.reduce((sum, r) => sum + r.amountCents, 0) / 100;
+        const { EmailService } = await import("../lib/emailService");
+        EmailService.sendReferralReward(referrer.email, referrer.firstName || "", totalDollars).catch(
+          (err: any) => logger.error({ err }, "Referral reward applied-on-upgrade email failed"),
+        );
+      }
+    }
+  } catch (err: any) {
+    logger.error({ err }, "applyPendingReferralRewards failed");
   }
 }
 

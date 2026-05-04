@@ -1093,6 +1093,29 @@ export function whatYouMissedEmail(
   return { subject, html, text };
 }
 
+export function referralRewardPendingEmail(firstName: string, amountDollars: number, upgradeUrl?: string, unsubscribeUrl?: string) {
+  const safeName = esc(firstName || "there");
+  const subject = `You earned $${amountDollars} — upgrade to claim your referral credit`;
+  const preheader = `Someone you referred just upgraded. Your $${amountDollars} is waiting.`;
+  const upgradeLink = upgradeUrl || `${BASE_URL}/pricing`;
+  const content = `
+    ${h1(`You earned $${amountDollars}`)}
+    ${p(`Hi ${safeName} — someone you referred just upgraded to a paid AEO Improvement plan. Your $${amountDollars} referral credit is banked and waiting.`)}
+    <div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;padding:24px 28px;margin:24px 0;text-align:center;">
+      <div style="font-size:40px;font-weight:800;color:#059669;">$${amountDollars}</div>
+      <div style="font-size:14px;color:#065f46;margin-top:4px;">ready to apply to your account</div>
+    </div>
+    ${p(`When you upgrade to a paid plan, this credit will be applied automatically to your first invoice. No action needed — it just happens.`)}
+    <div style="text-align:center;margin:28px 0 0;">
+      ${btn("See plans", upgradeLink)}
+    </div>
+    ${p(`No commitment — cancel any time. Annual billing saves on the monthly rate.`, "margin-top:16px;font-size:12px;color:#6b7280;text-align:center;")}
+  `;
+  const html = layout(content, preheader, unsubscribeUrl);
+  const text = `Hi ${firstName || "there"},\n\nSomeone you referred just upgraded to a paid plan. Your $${amountDollars} referral credit is waiting.\n\nWhen you upgrade, this credit applies automatically to your first invoice.\n\nSee plans: ${upgradeLink}`;
+  return { subject, html, text };
+}
+
 export function referralRewardEmail(firstName: string, amountDollars: number, unsubscribeUrl?: string) {
   const safeName = esc(firstName || "there");
   const subject = `You earned $${amountDollars} — someone you referred just upgraded`;
