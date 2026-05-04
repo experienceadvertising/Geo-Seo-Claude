@@ -48,7 +48,7 @@ export const PLAN_LIMITS = {
   pro: {
     simulationPrompts: 25,
     simulationEngines: ["chatgpt", "claude", "gemini", "perplexity"] as string[],
-    // At $79/mo Pro, worst-case cost at these caps ≈ $35-45 → 45-55% gross
+    // At $49/mo Pro, worst-case cost at these caps ≈ $35-45 → 29-41% gross
     // margin floor. Typical use (~10 audits, 8 simulations) ≈ $7 cost →
     // 91% gross margin. Caps protect the worst case, typical use is very
     // profitable.

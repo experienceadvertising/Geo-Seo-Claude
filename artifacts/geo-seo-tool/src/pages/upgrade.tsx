@@ -368,7 +368,7 @@ export default function UpgradePage() {
                 ) : (
                   <>
                     <span className="text-4xl font-extrabold tracking-tight text-slate-900">
-                      {proPrice ? formatPrice(proPrice.unitAmount) : "$79"}
+                      {proPrice ? formatPrice(proPrice.unitAmount) : "$49"}
                     </span>
                     <span className="text-slate-500 text-sm mb-1">/mo</span>
                   </>
@@ -438,7 +438,7 @@ export default function UpgradePage() {
                     500 audits / 150 simulations per month, multi-client management, agency-branded reports, dedicated account manager
                   </p>
                   <p className="text-xs text-slate-500 mt-1.5">
-                    {agencyPrice ? formatPrice(agencyPrice.unitAmount) : "$249"}/mo · for teams managing multiple client sites
+                    {agencyPrice ? formatPrice(agencyPrice.unitAmount) : "$299"}/mo · for teams managing multiple client sites
                   </p>
                 </div>
               </div>

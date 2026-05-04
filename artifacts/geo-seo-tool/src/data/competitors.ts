@@ -50,8 +50,8 @@ export interface ComparisonRow {
 // fabricate a competitor's feature claim.
 export const OUR_FACTS = {
   freeTier: "Free plan: 5 audits + 2 simulations / month, no credit card",
-  proPrice: "$79 / month or $470 / year",
-  agencyPrice: "$249 / month",
+  proPrice: "$49 / month or $470 / year",
+  agencyPrice: "$299 / month",
   proAudits: "100 audits / month",
   proSims: "30 simulations / month, 25 prompts each",
   engines: "ChatGPT, Claude, Gemini, Perplexity (4 engines)",
@@ -102,10 +102,10 @@ export const COMPETITORS: CompetitorMeta[] = [
     theirGaps: [
       "Does not prominently advertise a one-click llms.txt + JSON-LD auto-generator",
       "No publicly advertised competitor citation gap table as a standalone module",
-      "Self-serve plan starts at $95 / month — higher than our $79 Pro tier",
+      "Self-serve plan starts at $95 / month — higher than our $49 Pro tier",
     ],
     whenToPickThem: "You specifically need to monitor across Grok or Copilot in addition to the major engines, and you're comfortable at the $95+/mo price point for the broader engine net.",
-    whenToPickUs: "You want the four engines that drive ~95% of meaningful AI search traffic today (ChatGPT, Claude, Gemini, Perplexity), the technical Fix Generator that drafts your llms.txt and schema, and a $79 starting price.",
+    whenToPickUs: "You want the four engines that drive ~95% of meaningful AI search traffic today (ChatGPT, Claude, Gemini, Perplexity), the technical Fix Generator that drafts your llms.txt and schema, and a $49 starting price.",
   },
   {
     slug: "profound",
@@ -151,7 +151,7 @@ export const COMPETITORS: CompetitorMeta[] = [
       "Smaller monitored engine set (4) than AthenaHQ (7) — same core engines as us",
     ],
     whenToPickThem: "You're a global enterprise brand worried about AI bias and reputation, and you have budget for a platform plus narrative-shaping advisory.",
-    whenToPickUs: "You want a self-serve tool with the same four major engines, automated technical fixes, transparent pricing starting at $79/mo, and the option to start free.",
+    whenToPickUs: "You want a self-serve tool with the same four major engines, automated technical fixes, transparent pricing starting at $49/mo, and the option to start free.",
   },
 ];
 
@@ -197,7 +197,7 @@ export const SHARED_ROWS: SharedRow[] = [
   },
   {
     feature: "Starting paid price",
-    us: "$79 / month (Pro)",
+    us: "$49 / month (Pro)",
     theirAnswers: {
       otterly: "Not published",
       athenahq: "$95 / month",
