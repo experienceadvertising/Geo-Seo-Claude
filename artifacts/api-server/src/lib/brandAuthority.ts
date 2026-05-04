@@ -208,14 +208,33 @@ async function wikipediaDisambigLinks(disambigTitle: string, brand: string): Pro
   return top;
 }
 
+/**
+ * Patterns in the Wikipedia `description` field that indicate a clearly
+ * non-tech entity: music releases, films, people, sports, etc.
+ * Used to reject false-positive article matches like "Notion (EP)".
+ * The domain check overrides this — if the domain literally appears in
+ * the article text, it's always confident regardless of description.
+ */
+const NON_TECH_ENTITY_DESC_RE =
+  /\b(album|ep|single|mixtape|song|soundtrack|film|movie|television|tv[\s-]series|tv[\s-]show|sitcom|miniseries|documentary|novel|book|comic\s+book|manga|anime|musician|singer|rapper|vocalist|band|actor|actress|athlete|politician|sportsperson|footballer|basketball\s+player|baseball\s+player|cricketer|painter|sculptor|visual\s+artist|poet|comedian|presenter|journalist|character|fictional)\b/i;
+
 /** Confidence check — does this Wikipedia article actually describe the brand/domain? */
 function isWikiArticleConfident(data: WikiSummary, brand: string, domain: string): boolean {
   if (!data.extract) return false;
   const haystack = `${data.title || ""} ${data.description || ""} ${data.extract}`.toLowerCase();
+  const domainLow = domain.toLowerCase();
+
+  // If the domain itself appears in the article text, that is definitive — always accept.
+  if (haystack.includes(domainLow)) return true;
+
+  // Reject articles whose description clearly marks them as a non-tech entity
+  // (e.g. "2017 EP by Notion", "English rapper", "2009 film directed by…").
+  // This is the primary fix for the "Notion (EP)" false-positive bug.
+  if (data.description && NON_TECH_ENTITY_DESC_RE.test(data.description)) return false;
+
   const normBrand = normalize(stripCorporateSuffix(brand));
   const normTitle = normalize(stripCorporateSuffix(data.title || ""));
   return (
-    haystack.includes(domain.toLowerCase()) ||
     haystack.includes(brand.toLowerCase()) ||
     haystack.includes(stripCorporateSuffix(brand).toLowerCase()) ||
     (!!normBrand && !!normTitle && (normTitle === normBrand || normTitle.startsWith(normBrand) || normBrand.startsWith(normTitle)))
@@ -467,58 +486,89 @@ async function checkDuckDuckGo({ brand, domain, altNames = [] }: CheckOpts): Pro
   };
 }
 
+interface GitHubUser {
+  type?: string;
+  followers?: number;
+  login?: string;
+  public_repos?: number;
+  blog?: string | null;
+  name?: string | null;
+}
+
+async function fetchGitHubSlug(slug: string): Promise<{ data: GitHubUser | null; status: number }> {
+  const res = await fetch(`https://api.github.com/users/${slug}`, {
+    headers: { Accept: "application/vnd.github+json", "User-Agent": UA },
+    signal: AbortSignal.timeout(8000),
+  });
+  if (!res.ok) return { data: null, status: res.status };
+  return { data: (await res.json()) as GitHubUser, status: res.status };
+}
+
+function blogLinksTo(blog: string | null | undefined, domain: string): boolean {
+  if (!blog) return false;
+  try {
+    const h = new URL(blog.startsWith("http") ? blog : `https://${blog}`).hostname.replace(/^www\./, "");
+    return h === domain || h.endsWith(`.${domain}`);
+  } catch {
+    return false;
+  }
+}
+
 async function checkGitHub({ brand, domain }: CheckOpts): Promise<BrandSignal & { followers?: number }> {
   try {
-    const slug = brand.toLowerCase().replace(/[^a-z0-9-]/g, "");
-    if (!slug) return { source: "GitHub", found: false, state: "not_found", detail: "No valid slug" };
-    const res = await fetch(`https://api.github.com/users/${slug}`, {
-      headers: {
-        Accept: "application/vnd.github+json",
-        "User-Agent": UA,
-      },
-      signal: AbortSignal.timeout(8000),
-    });
-    if (res.status === 404) {
-      return { source: "GitHub", found: false, state: "not_found", detail: "No matching user/org" };
-    }
-    if (!res.ok) {
-      return { source: "GitHub", found: false, state: "unavailable", detail: `GitHub API returned HTTP ${res.status}` };
-    }
-    const data = (await res.json()) as {
-      type?: string;
-      followers?: number;
-      login?: string;
-      public_repos?: number;
-      blog?: string | null;
-      name?: string | null;
-    };
-    const followers = data.followers || 0;
-    const blogHost = (() => {
-      try {
-        return data.blog ? new URL(data.blog.startsWith("http") ? data.blog : `https://${data.blog}`).hostname.replace(/^www\./, "") : "";
-      } catch {
-        return "";
-      }
-    })();
-    const linkedToDomain = blogHost && (blogHost === domain || blogHost.endsWith(`.${domain}`));
-    const isOrgWithRepos = data.type === "Organization" && (data.public_repos || 0) >= 3;
-    const highFollowers = followers >= 500;
+    // Build a ranked list of slugs to try.
+    // Priority: brand-derived → domain-root → domain-with-dashes (e.g. notion-so for notion.so).
+    const slugFromBrand = brand.toLowerCase().replace(/[^a-z0-9-]/g, "");
+    const domainRoot = domain.split(".")[0].replace(/[^a-z0-9-]/g, "");
+    const domainDashes = domain.replace(/\./g, "-").replace(/[^a-z0-9-]/g, "").replace(/-+$/, "");
+    const slugsToTry = [...new Set([slugFromBrand, domainRoot, domainDashes].filter(Boolean))];
 
-    if (!(linkedToDomain || isOrgWithRepos || highFollowers)) {
+    if (slugsToTry.length === 0) {
+      return { source: "GitHub", found: false, state: "not_found", detail: "No valid slug" };
+    }
+
+    let lastStatus = 0;
+
+    for (const slug of slugsToTry) {
+      const { data, status } = await fetchGitHubSlug(slug);
+      lastStatus = status;
+
+      if (status === 404) continue;
+      if (!data) {
+        // Non-404 error (rate-limit, server error) — report unavailable
+        return { source: "GitHub", found: false, state: "unavailable", detail: `GitHub API returned HTTP ${status}` };
+      }
+
+      const followers = data.followers || 0;
+      const linkedToDomain = blogLinksTo(data.blog, domain);
+      const highFollowers = followers >= 500;
+
+      // Accept this account only if it has a strong signal tying it to the domain:
+      // - blog/website field points to the domain, OR
+      // - high follower count (≥500) — indicates a well-known org that is unlikely
+      //   to be a false-positive even without an explicit domain link.
+      // We deliberately drop the old "isOrgWithRepos" condition which matched any
+      // Organization with ≥3 repos regardless of domain affiliation (caused the
+      // "Notion" → wrong @notion org bug).
+      if (!(linkedToDomain || highFollowers)) {
+        log.info({ slug, login: data.login, followers, linkedToDomain }, "github.slug.rejected");
+        continue;
+      }
+
       return {
         source: "GitHub",
-        found: false,
-        state: "not_found",
-        detail: `Account @${data.login} exists but does not appear authoritative for ${domain}`,
+        found: true,
+        state: "found",
+        detail: `${data.type || "Account"} @${data.login} — ${followers} followers, ${data.public_repos || 0} repos${linkedToDomain ? ` (links to ${domain})` : ""}`,
+        followers,
       };
     }
-    return {
-      source: "GitHub",
-      found: true,
-      state: "found",
-      detail: `${data.type || "Account"} @${data.login} — ${followers} followers, ${data.public_repos || 0} repos${linkedToDomain ? ` (links to ${domain})` : ""}`,
-      followers,
-    };
+
+    // All slugs tried and none passed
+    if (lastStatus === 404 || slugsToTry.every((s) => s === slugFromBrand)) {
+      return { source: "GitHub", found: false, state: "not_found", detail: "No matching user/org" };
+    }
+    return { source: "GitHub", found: false, state: "not_found", detail: `No authoritative GitHub account found for ${domain}` };
   } catch {
     return { source: "GitHub", found: false, state: "unavailable", detail: "Request failed or timed out" };
   }

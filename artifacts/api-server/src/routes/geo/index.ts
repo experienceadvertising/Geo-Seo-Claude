@@ -617,7 +617,7 @@ ${brandName} is a website located at ${audit.url}. This llms.txt file is provide
 
 ## What we do
 
-${(audit.aiInsights as string | null)?.split("\n").slice(0, 3).join("\n") || `${brandName} provides services at ${audit.url}.`}
+${description}
 
 ## Key Pages
 
@@ -636,6 +636,25 @@ This site welcomes indexing by AI search crawlers including GPTBot, ClaudeBot, P
   const missingSchema = ((audit.schemaTypes as any[]) || []).filter((s: any) => !s.present).map((s: any) => s.type);
   const schemaBlocks: Record<string, any>[] = [];
 
+  // Build sameAs from verified brand signals stored on the audit
+  const brandSignals = (audit.brandSignals as any[]) || [];
+  const sameAs: string[] = [];
+  const wikiSignal = brandSignals.find((s: any) => s.source === "Wikipedia" && s.found && s.detail);
+  if (wikiSignal?.detail) {
+    // Detail format: 'Article: "Notion (productivity software)"' or 'Wikidata entity Q123: Notion'
+    const articleMatch = (wikiSignal.detail as string).match(/Article:\s+"([^"]+)"/);
+    if (articleMatch) {
+      sameAs.push(`https://en.wikipedia.org/wiki/${encodeURIComponent(articleMatch[1].replace(/ /g, "_"))}`);
+    }
+  }
+  const ghSignal = brandSignals.find((s: any) => s.source === "GitHub" && s.found && s.detail);
+  if (ghSignal?.detail) {
+    const loginMatch = (ghSignal.detail as string).match(/@([A-Za-z0-9_-]+)/);
+    if (loginMatch) {
+      sameAs.push(`https://github.com/${loginMatch[1]}`);
+    }
+  }
+
   // Always include Organization + WebSite
   schemaBlocks.push({
     "@context": "https://schema.org",
@@ -644,7 +663,7 @@ This site welcomes indexing by AI search crawlers including GPTBot, ClaudeBot, P
     "name": brandName,
     "url": audit.url,
     "description": description,
-    "sameAs": [],
+    "sameAs": sameAs,
   });
 
   schemaBlocks.push({

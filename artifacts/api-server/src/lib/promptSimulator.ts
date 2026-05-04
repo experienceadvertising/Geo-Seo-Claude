@@ -12,13 +12,22 @@ function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
 
 function sanitizeError(err: unknown): string {
   const msg = err instanceof Error ? err.message : String(err);
-  // Strip URLs, API keys, and limit length
+  // Return friendly messages for common failure patterns before stripping
+  if (/timed?\s*out/i.test(msg)) return "Request timed out — the engine took too long to respond";
+  if (/rate.?limit|429|RATELIMIT|too many requests/i.test(msg)) return "Rate limit reached — try again in a few minutes";
+  if (/401|unauthorized|invalid.?key|authentication failed/i.test(msg)) return "Authentication error — service configuration issue";
+  if (/503|502|504|service\s+unavailable|bad\s+gateway/i.test(msg)) return "Service temporarily unavailable — try again later";
+  if (/ECONNREFUSED|ENOTFOUND|fetch\s+failed|network\s+error/i.test(msg)) return "Network error — could not reach the engine";
+  // Strip credentials, raw JSON blobs, and URLs before showing remainder
   return msg
     .replace(/https?:\/\/\S+/g, "[url]")
     .replace(/Bearer\s+\S+/gi, "[token]")
     .replace(/sk-[A-Za-z0-9_-]+/g, "[key]")
     .replace(/x-goog-api-key[^,}\n]*/gi, "[key]")
-    .slice(0, 240);
+    .replace(/\{[^}]{0,600}\}/gs, "")
+    .replace(/\s{2,}/g, " ")
+    .trim()
+    .slice(0, 200) || "An unexpected error occurred — try again";
 }
 
 export type EngineId = "chatgpt" | "claude" | "gemini" | "perplexity";

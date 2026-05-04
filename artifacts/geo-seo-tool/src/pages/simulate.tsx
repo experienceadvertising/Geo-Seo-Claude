@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, Sparkles, Play, ArrowLeft, CheckCircle2, XCircle, Link as LinkIcon, AlertTriangle, ExternalLink, Lock, TrendingUp, TrendingDown, Minus, Plus, Trash2, Trophy, BarChart3 } from "lucide-react";
+import { Loader2, Sparkles, Play, ArrowLeft, CheckCircle2, XCircle, Link as LinkIcon, AlertTriangle, ExternalLink, Lock, TrendingUp, TrendingDown, Minus, Plus, Trash2, Trophy, BarChart3, Info } from "lucide-react";
 import { usePlan } from "@/hooks/usePlan";
 import { UpgradePrompt } from "@/components/upgrade-prompt";
 import { Separator } from "@/components/ui/separator";
@@ -422,8 +422,14 @@ export default function SimulatePage() {
                         <span className="font-mono font-semibold">{pct(e.citationRate)}</span>
                       </div>
                       {e.avgFirstPosition !== null && e.avgFirstPosition !== undefined && (
-                        <div className="flex justify-between text-sm" title="Where in the response your brand first appears, on average. 0% = top of the response, 100% = end. Lower is better.">
-                          <span className="text-muted-foreground">Avg depth</span>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground flex items-center gap-1">
+                            Avg depth
+                            <Info
+                              className="h-3 w-3 text-muted-foreground/50 shrink-0"
+                              title="How far into the response your brand first appears, averaged across prompts. 0% = very top, 100% = end of response. Lower is better."
+                            />
+                          </span>
                           <span className="font-mono">{pct(e.avgFirstPosition)}</span>
                         </div>
                       )}
@@ -498,14 +504,10 @@ export default function SimulatePage() {
                                       <div className={`font-semibold truncate max-w-[160px] ${row.isYou ? "text-primary" : ""}`}>
                                         {row.isYou ? `${row.domain} (you)` : row.domain}
                                       </div>
-                                      {!row.isYou && (
-                                        noData ? (
-                                          <div className="text-[10px] font-mono text-muted-foreground italic">insufficient data</div>
-                                        ) : (
-                                          <div className={`text-[10px] font-mono font-semibold ${gap > 0 ? "text-red-500" : "text-green-500"}`}>
-                                            {gap > 0 ? `↑ ${Math.round(gap * 100)}pp ahead` : `↓ ${Math.round(Math.abs(gap) * 100)}pp behind`}
-                                          </div>
-                                        )
+                                      {!row.isYou && !noData && (
+                                        <div className={`text-[10px] font-mono font-semibold ${gap > 0 ? "text-red-500" : "text-green-500"}`}>
+                                          {gap > 0 ? `↑ ${Math.round(gap * 100)}pp ahead` : `↓ ${Math.round(Math.abs(gap) * 100)}pp behind`}
+                                        </div>
                                       )}
                                     </div>
                                   </div>
