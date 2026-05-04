@@ -1,13 +1,11 @@
 import Stripe from "stripe";
 
 async function getStripeClient(): Promise<Stripe> {
-  // Direct env var — used when seeding live account
   if (process.env.STRIPE_SECRET_KEY) {
     console.log("Using STRIPE_SECRET_KEY from environment");
     return new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2025-08-27.basil" as any });
   }
 
-  // Fallback: Replit-managed sandbox
   const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
   const xReplitToken = process.env.REPL_IDENTITY
     ? "repl " + process.env.REPL_IDENTITY
@@ -33,15 +31,46 @@ async function getStripeClient(): Promise<Stripe> {
   return new Stripe(secretKey, { apiVersion: "2025-08-27.basil" as any });
 }
 
+async function upsertPrice(
+  stripe: Stripe,
+  productId: string,
+  interval: "month" | "year",
+  targetAmount: number,
+  planId: string,
+): Promise<void> {
+  const existing = await stripe.prices.list({ product: productId, active: true });
+  const current = existing.data.find(p => p.recurring?.interval === interval);
+
+  if (current) {
+    if (current.unit_amount === targetAmount) {
+      console.log(`  ↳ ${interval}ly price already correct ($${targetAmount / 100})`);
+      return;
+    }
+    // Stripe prices are immutable — archive the old one, create a new one.
+    await stripe.prices.update(current.id, { active: false });
+    console.log(`  ✗ Archived old ${interval}ly price $${(current.unit_amount ?? 0) / 100} (${current.id})`);
+  }
+
+  const price = await stripe.prices.create({
+    product: productId,
+    unit_amount: targetAmount,
+    currency: "usd",
+    recurring: { interval },
+    metadata: { plan_id: planId, billing: interval === "month" ? "monthly" : "yearly" },
+  });
+  console.log(`  ✓ Created ${interval}ly price: $${targetAmount / 100} (${price.id})`);
+}
+
 async function createProducts() {
   const stripe = await getStripeClient();
-  console.log("Creating AEO Improvement plans in Stripe...");
+  console.log("Syncing AEO Improvement plans in Stripe...\n");
 
   const plans = [
     {
       name: "Pro Plan",
       description: "25 prompts, all 4 AI engines (ChatGPT, Claude, Gemini, Perplexity), sentiment analysis, Fix Generator, competitor tracking, 1-year trend history.",
       plan_id: "pro",
+      // $79/mo · $750/yr (~21% off)
       monthly: 7900,
       yearly: 75000,
     },
@@ -49,8 +78,9 @@ async function createProducts() {
       name: "Agency Plan",
       description: "Everything in Pro, plus 2-year history, Agency branding, and priority support for teams managing multiple client sites.",
       plan_id: "agency",
-      monthly: 24900,
-      yearly: 239000,
+      // $299/mo · $2,870/yr (~20% off)
+      monthly: 29900,
+      yearly: 287000,
     },
   ];
 
@@ -62,13 +92,11 @@ async function createProducts() {
     let product: Stripe.Product;
     if (existing.data.length > 0) {
       product = existing.data[0];
-      console.log(`  ↳ ${plan.name} already exists (${product.id})`);
-      // Ensure metadata is set
+      console.log(`${plan.name} (${product.id})`);
       if (!product.metadata?.plan_id) {
         product = await stripe.products.update(product.id, {
           metadata: { plan_id: plan.plan_id },
         });
-        console.log(`  ✓ Updated metadata for ${plan.name}`);
       }
     } else {
       product = await stripe.products.create({
@@ -79,38 +107,12 @@ async function createProducts() {
       console.log(`  ✓ Created product: ${plan.name} (${product.id})`);
     }
 
-    const existingPrices = await stripe.prices.list({ product: product.id, active: true });
-    const hasMonthly = existingPrices.data.some(p => p.recurring?.interval === "month");
-    const hasYearly = existingPrices.data.some(p => p.recurring?.interval === "year");
-
-    if (!hasMonthly) {
-      const price = await stripe.prices.create({
-        product: product.id,
-        unit_amount: plan.monthly,
-        currency: "usd",
-        recurring: { interval: "month" },
-        metadata: { plan_id: plan.plan_id, billing: "monthly" },
-      });
-      console.log(`  ✓ Created monthly price: $${plan.monthly / 100}/mo (${price.id})`);
-    } else {
-      console.log(`  ↳ Monthly price already exists`);
-    }
-
-    if (!hasYearly) {
-      const price = await stripe.prices.create({
-        product: product.id,
-        unit_amount: plan.yearly,
-        currency: "usd",
-        recurring: { interval: "year" },
-        metadata: { plan_id: plan.plan_id, billing: "yearly" },
-      });
-      console.log(`  ✓ Created yearly price: $${plan.yearly / 100}/yr (${price.id})`);
-    } else {
-      console.log(`  ↳ Yearly price already exists`);
-    }
+    await upsertPrice(stripe, product.id, "month", plan.monthly, plan.plan_id);
+    await upsertPrice(stripe, product.id, "year", plan.yearly, plan.plan_id);
+    console.log();
   }
 
-  console.log("\n✅ Done!");
+  console.log("✅ Done!");
 }
 
 createProducts().catch(err => {

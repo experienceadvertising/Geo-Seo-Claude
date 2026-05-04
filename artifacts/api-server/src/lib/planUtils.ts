@@ -63,9 +63,9 @@ export const PLAN_LIMITS = {
   agency: {
     simulationPrompts: 25,
     simulationEngines: ["chatgpt", "claude", "gemini", "perplexity"] as string[],
-    // At $249/mo Agency, worst-case cost ≈ $230 (margin floor 7%) but
+    // At $299/mo Agency, worst-case cost ≈ $230 (margin floor 23%) and
     // typical agency use (~50 audits, 30 simulations across clients) ≈
-    // $50 cost → 80% margin. Caps high enough that legitimate agencies
+    // $50 cost → 83% margin. Caps high enough that legitimate agencies
     // never hit them.
     monthlyAudits: 500,
     monthlySimulations: 150,
