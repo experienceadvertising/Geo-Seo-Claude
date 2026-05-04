@@ -2,12 +2,40 @@ import OpenAI from "openai";
 import Anthropic from "@anthropic-ai/sdk";
 
 const ENGINE_TIMEOUT_MS = 90_000;
+const PER_ATTEMPT_TIMEOUT_MS = 28_000;
 
 function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const t = setTimeout(() => reject(new Error(`${label} timed out after ${ms / 1000}s`)), ms);
     p.then((v) => { clearTimeout(t); resolve(v); }, (e) => { clearTimeout(t); reject(e); });
   });
+}
+
+/**
+ * Retry wrapper for rate-limited engine calls.
+ * Retries up to 2 times on 429 / rate-limit errors with exponential backoff
+ * (6 s then 12 s). Non-rate-limit errors are rethrown immediately.
+ * An outer ENGINE_TIMEOUT_MS hard cap is applied around the whole attempt chain.
+ */
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  label: string,
+): Promise<T> {
+  const RETRY_DELAYS_MS = [6_000, 12_000];
+  const isRateLimit = (err: unknown) =>
+    /rate.?limit|429|RATELIMIT|too many requests/i.test(
+      err instanceof Error ? err.message : String(err),
+    );
+
+  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+    try {
+      return await withTimeout(fn(), PER_ATTEMPT_TIMEOUT_MS, `${label} (attempt ${attempt + 1})`);
+    } catch (err) {
+      if (!isRateLimit(err) || attempt >= RETRY_DELAYS_MS.length) throw err;
+      await new Promise<void>((r) => setTimeout(r, RETRY_DELAYS_MS[attempt]));
+    }
+  }
+  throw new Error(`${label}: all retry attempts exhausted`);
 }
 
 function sanitizeError(err: unknown): string {
