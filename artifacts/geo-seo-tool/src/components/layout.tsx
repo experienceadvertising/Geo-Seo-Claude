@@ -54,8 +54,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { isSignedIn, isLoaded } = useAuth();
   const [pathname] = useLocation();
 
-  // Scroll to top on every route change so users land at the top of the new
-  // page (default browser behavior is to keep prior scroll position in SPAs).
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [pathname]);
@@ -114,49 +112,101 @@ export function Layout({ children }: { children: React.ReactNode }) {
 function SiteFooter() {
   const year = new Date().getFullYear();
   return (
-    <footer className="border-t border-border bg-muted/30 mt-12">
-      <div className="container max-w-screen-2xl px-4 sm:px-6 lg:px-8 py-10">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
-          <div className="col-span-2 md:col-span-1">
-            <Link href="/" className="flex items-center gap-2 font-bold tracking-tight">
-              <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-teal-600 to-emerald-700 text-white">
-                <Sparkles className="h-3.5 w-3.5" />
+    <footer className="relative overflow-hidden bg-gray-950 text-gray-400">
+      <div
+        aria-hidden
+        className="absolute top-0 left-0 right-0 h-px"
+        style={{ background: "linear-gradient(90deg, transparent, rgba(16,185,129,0.6) 40%, rgba(20,184,166,0.6) 60%, transparent)" }}
+      />
+      <div aria-hidden className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-[600px] h-[400px] rounded-full bg-emerald-500/5 blur-[100px]" />
+        <div className="absolute bottom-0 right-1/4 w-[400px] h-[300px] rounded-full bg-teal-500/5 blur-[80px]" />
+      </div>
+
+      <div className="relative container max-w-screen-xl px-6 lg:px-8 pt-16 pb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-10 lg:gap-8 mb-14">
+          <div className="sm:col-span-2 lg:col-span-2">
+            <Link href="/" className="inline-flex items-center gap-2.5 font-bold text-white group">
+              <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-teal-500 to-emerald-600 text-white shadow-lg shadow-emerald-900/40 group-hover:shadow-emerald-700/40 transition-shadow">
+                <Sparkles className="h-4 w-4" />
               </span>
-              <span>AEO Improvement</span>
+              <span className="text-lg tracking-tight">AEO Improvement</span>
             </Link>
-            <p className="text-xs text-muted-foreground mt-3 leading-relaxed">
-              Audit, simulate, and fix how AI search engines see your site.
+            <p className="text-sm leading-relaxed mt-4 mb-6 max-w-xs text-gray-400">
+              Audit, simulate, and fix how AI search engines see your site. Built for marketers who ship.
             </p>
+            <div className="flex items-center gap-2 text-xs text-emerald-400 font-medium">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+              </span>
+              Live audits running now
+            </div>
           </div>
+
           <div>
-            <h3 className="font-semibold text-foreground mb-3 text-xs uppercase tracking-wider">Product</h3>
-            <ul className="space-y-2 text-muted-foreground">
-              <li><Link href="/" className="hover:text-foreground transition-colors">Audit a site</Link></li>
-              <li><Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link></li>
-              <li><Link href="/methodology" className="hover:text-foreground transition-colors">Methodology</Link></li>
-              <li><Link href="/contact" className="hover:text-foreground transition-colors">Contact</Link></li>
+            <h4 className="text-xs font-semibold text-white uppercase tracking-widest mb-5">Product</h4>
+            <ul className="space-y-3 text-sm">
+              {[
+                { label: "Audit a site", href: "/" },
+                { label: "Pricing", href: "/pricing" },
+                { label: "Methodology", href: "/methodology" },
+                { label: "Contact", href: "/contact" },
+              ].map(({ label, href }) => (
+                <li key={href}>
+                  <Link href={href} className="hover:text-white transition-colors">
+                    {label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
+
           <div>
-            <h3 className="font-semibold text-foreground mb-3 text-xs uppercase tracking-wider">Compare</h3>
-            <ul className="space-y-2 text-muted-foreground">
-              <li><Link href="/vs/otterly" className="hover:text-foreground transition-colors">vs Otterly.AI</Link></li>
-              <li><Link href="/vs/athenahq" className="hover:text-foreground transition-colors">vs AthenaHQ</Link></li>
-              <li><Link href="/vs/profound" className="hover:text-foreground transition-colors">vs Profound</Link></li>
-              <li><Link href="/vs/brandlight" className="hover:text-foreground transition-colors">vs Brandlight</Link></li>
+            <h4 className="text-xs font-semibold text-white uppercase tracking-widest mb-5">Compare</h4>
+            <ul className="space-y-3 text-sm">
+              {[
+                { label: "vs Otterly.AI", href: "/vs/otterly" },
+                { label: "vs AthenaHQ", href: "/vs/athenahq" },
+                { label: "vs Profound", href: "/vs/profound" },
+                { label: "vs Brandlight", href: "/vs/brandlight" },
+              ].map(({ label, href }) => (
+                <li key={href}>
+                  <Link href={href} className="hover:text-white transition-colors">
+                    {label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
+
           <div>
-            <h3 className="font-semibold text-foreground mb-3 text-xs uppercase tracking-wider">Guides</h3>
-            <ul className="space-y-2 text-muted-foreground">
-              <li><Link href="/best-aeo-tools" className="hover:text-foreground transition-colors">Best AEO Tools</Link></li>
-              <li><Link href="/best-geo-optimization-tools" className="hover:text-foreground transition-colors">Best GEO Tools</Link></li>
+            <h4 className="text-xs font-semibold text-white uppercase tracking-widest mb-5">Guides</h4>
+            <ul className="space-y-3 text-sm">
+              {[
+                { label: "Best AEO Tools", href: "/best-aeo-tools" },
+                { label: "Best GEO Tools", href: "/best-geo-optimization-tools" },
+              ].map(({ label, href }) => (
+                <li key={href}>
+                  <Link href={href} className="hover:text-white transition-colors">
+                    {label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
         </div>
-        <div className="mt-8 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
+
+        <div
+          className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500"
+          style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}
+        >
           <span>© {year} AEO Improvement. All rights reserved.</span>
-          <span>aeoimprovement.com</span>
+          <div className="flex items-center gap-4">
+            <Link href="/contact" className="hover:text-gray-300 transition-colors">Contact</Link>
+            <span className="text-gray-700">·</span>
+            <span className="text-emerald-500 font-medium">aeoimprovement.com</span>
+          </div>
         </div>
       </div>
     </footer>

@@ -285,7 +285,7 @@ export default function PricingPage() {
   }
 
   const proDisplay = buildPlanDisplay("pro", proMonthly, proAnnual, 4900, 47000);
-  const agencyDisplay = buildPlanDisplay("agency", agencyMonthly, agencyAnnual, 19900, 191000);
+  const agencyDisplay = buildPlanDisplay("agency", agencyMonthly, agencyAnnual, 29900, 287000);
 
   const plans = [
     {

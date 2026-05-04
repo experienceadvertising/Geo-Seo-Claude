@@ -14,41 +14,46 @@ import { AuthoritySignalsCard } from "@/components/authority-signals-card";
 import heroImage from "@/assets/hero.png";
 
 function MarketStats() {
-  // Qualitative value-prop trio. Earlier versions of this section displayed
-  // unsourced "+527%", "4.4x", "Top 10% / 90%" stat cards with disclaimers
-  // about being "benchmark estimates" — those numbers had no traceable
-  // primary source and were removed as part of the Phase 2 source-every-claim
-  // migration. The case for AEO holds without them; we make the case
-  // qualitatively here and let the audit itself produce the per-page numbers.
+  const items = [
+    {
+      icon: TrendingUp,
+      accent: "from-emerald-500 to-teal-500",
+      label: "Where attention is moving",
+      title: "AI search is becoming a discovery channel",
+      body: "ChatGPT, Claude, Perplexity, and Google AI Overviews now answer queries that used to start a 10-blue-link search session. If your page isn't shaped to be cited, you're invisible in that flow.",
+    },
+    {
+      icon: Zap,
+      accent: "from-teal-500 to-cyan-500",
+      label: "Why the visits matter",
+      title: "AI-referred visitors arrive with intent",
+      body: "A user clicking a citation inside an AI answer has already read a recommendation about you. They land further down the funnel than someone scanning a list of search results.",
+    },
+    {
+      icon: BarChart3,
+      accent: "from-cyan-500 to-emerald-500",
+      label: "What we measure",
+      title: "A score that maps to citation behavior",
+      body: "Our AEO score is a composite of citability, AI-crawler access, brand authority, schema, and technical SEO — each tied to a recommendation with its source disclosed.",
+    },
+  ];
+
   return (
     <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <Card className="bg-card">
-        <CardHeader className="pb-2">
-          <CardDescription className="flex items-center gap-2"><TrendingUp className="h-4 w-4 text-primary" /> Where attention is moving</CardDescription>
-          <CardTitle className="text-xl leading-snug">AI search is becoming a discovery channel</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">ChatGPT, Claude, Perplexity, and Google AI Overviews now answer queries that used to start a 10-blue-link search session. If your page isn't shaped to be cited, you're invisible in that flow.</p>
-        </CardContent>
-      </Card>
-      <Card className="bg-card">
-        <CardHeader className="pb-2">
-          <CardDescription className="flex items-center gap-2"><Zap className="h-4 w-4 text-primary" /> Why the visits matter</CardDescription>
-          <CardTitle className="text-xl leading-snug">AI-referred visitors arrive with intent</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">A user clicking a citation inside an AI answer has already read a recommendation about you. They land further down the funnel than someone scanning a list of search results.</p>
-        </CardContent>
-      </Card>
-      <Card className="bg-card">
-        <CardHeader className="pb-2">
-          <CardDescription className="flex items-center gap-2"><BarChart3 className="h-4 w-4 text-primary" /> What we measure</CardDescription>
-          <CardTitle className="text-xl leading-snug">A score that maps to citation behavior</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">Our AEO score is a composite of citability, AI-crawler access, brand authority, schema, and technical SEO — each tied to a recommendation with its source disclosed.</p>
-        </CardContent>
-      </Card>
+      {items.map(({ icon: Icon, accent, label, title, body }) => (
+        <div
+          key={title}
+          className="relative rounded-2xl border border-border bg-card p-6 overflow-hidden group hover:border-emerald-500/30 hover:shadow-lg hover:shadow-emerald-500/5 transition-all duration-300"
+        >
+          <div className={`absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r ${accent} opacity-60`} />
+          <div className={`inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${accent} text-white shadow-md mb-4`}>
+            <Icon className="h-5 w-5" />
+          </div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{label}</p>
+          <h3 className="text-lg font-bold leading-snug mb-3">{title}</h3>
+          <p className="text-sm text-muted-foreground leading-relaxed">{body}</p>
+        </div>
+      ))}
     </section>
   );
 }
@@ -159,33 +164,105 @@ function SignedOutLanding() {
         </div>
       </section>
 
-      <div className="w-full max-w-5xl mx-auto px-4 md:px-8 py-12 md:py-16 space-y-12">
+      <div className="w-full max-w-5xl mx-auto px-4 md:px-8 py-12 md:py-20 space-y-16">
         <MarketStats />
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="border-emerald-500/10 hover:border-emerald-500/30 transition-colors">
-            <CardHeader><CardTitle className="text-base flex items-center gap-2"><Bot className="h-4 w-4 text-primary"/>Live AI prompt simulation</CardTitle></CardHeader>
-            <CardContent className="text-sm text-muted-foreground">Real prompts run against ChatGPT, Claude, Gemini, and Perplexity. See whether each engine cites you, how it describes you, and the sentiment it returns.</CardContent>
-          </Card>
-          <Card className="border-emerald-500/10 hover:border-emerald-500/30 transition-colors">
-            <CardHeader><CardTitle className="text-base flex items-center gap-2"><BarChart3 className="h-4 w-4 text-primary"/>6-dimension AEO score</CardTitle></CardHeader>
-            <CardContent className="text-sm text-muted-foreground">Citability, AI Crawler Access, Brand Authority, Schema, Technical SEO, and Platform Optimization — scored 0 to 100 and visualized as a radar chart so you know exactly where to focus.</CardContent>
-          </Card>
-          <Card className="border-emerald-500/10 hover:border-emerald-500/30 transition-colors">
-            <CardHeader><CardTitle className="text-base flex items-center gap-2"><Zap className="h-4 w-4 text-primary"/>Fix Generator</CardTitle></CardHeader>
-            <CardContent className="text-sm text-muted-foreground">Auto-drafts your llms.txt, JSON-LD schema blocks, and robots.txt entries based on your specific audit gaps. Copy and ship — no guessing required.</CardContent>
-          </Card>
-          <Card className="border-emerald-500/10 hover:border-emerald-500/30 transition-colors">
-            <CardHeader><CardTitle className="text-base flex items-center gap-2"><Shield className="h-4 w-4 text-primary"/>AI crawler access audit</CardTitle></CardHeader>
-            <CardContent className="text-sm text-muted-foreground">Checks all six major AI bots — GPTBot, ClaudeBot, PerplexityBot, Google-Extended, Applebot, and meta-externalagent — against your robots.txt and site headers.</CardContent>
-          </Card>
-          <Card className="border-emerald-500/10 hover:border-emerald-500/30 transition-colors">
-            <CardHeader><CardTitle className="text-base flex items-center gap-2"><Building2 className="h-4 w-4 text-primary"/>Brand authority footprint</CardTitle></CardHeader>
-            <CardContent className="text-sm text-muted-foreground">Scans Wikipedia, Wikidata, LinkedIn, GitHub, X, and Crunchbase for your brand. These are the signals AI engines use to decide whether to trust and cite you.</CardContent>
-          </Card>
-          <Card className="border-emerald-500/10 hover:border-emerald-500/30 transition-colors">
-            <CardHeader><CardTitle className="text-base flex items-center gap-2"><TrendingUp className="h-4 w-4 text-primary"/>Score trending over time</CardTitle></CardHeader>
-            <CardContent className="text-sm text-muted-foreground">Every audit is stored. Track your AEO score across runs and see exactly how each change you ship moves the needle on citability.</CardContent>
-          </Card>
+
+        <section className="space-y-8">
+          <div className="text-center space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">What's inside every audit</p>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Everything you need to rank in AI answers</h2>
+            <p className="text-muted-foreground max-w-xl mx-auto">Six interlocking checks, each mapped to a concrete recommendation you can ship the same day.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {[
+              {
+                icon: Bot,
+                gradient: "from-violet-500 to-purple-600",
+                title: "Live AI prompt simulation",
+                body: "Real prompts run against ChatGPT, Claude, Gemini, and Perplexity. See whether each engine cites you, how it describes you, and the sentiment it returns.",
+              },
+              {
+                icon: BarChart3,
+                gradient: "from-emerald-500 to-teal-600",
+                title: "6-dimension AEO score",
+                body: "Citability, AI Crawler Access, Brand Authority, Schema, Technical SEO, and Platform Optimization — scored 0 to 100 and visualized as a radar chart.",
+              },
+              {
+                icon: Zap,
+                gradient: "from-amber-500 to-orange-500",
+                title: "Fix Generator",
+                body: "Auto-drafts your llms.txt, JSON-LD schema blocks, and robots.txt entries based on your specific audit gaps. Copy and ship — no guessing required.",
+              },
+              {
+                icon: Shield,
+                gradient: "from-blue-500 to-cyan-500",
+                title: "AI crawler access audit",
+                body: "Checks all six major AI bots — GPTBot, ClaudeBot, PerplexityBot, Google-Extended, Applebot, and meta-externalagent — against your robots.txt and headers.",
+              },
+              {
+                icon: Building2,
+                gradient: "from-rose-500 to-pink-500",
+                title: "Brand authority footprint",
+                body: "Scans Wikipedia, Wikidata, LinkedIn, GitHub, X, and Crunchbase for your brand. These are the signals AI engines use to decide whether to trust and cite you.",
+              },
+              {
+                icon: TrendingUp,
+                gradient: "from-teal-500 to-emerald-500",
+                title: "Score trending over time",
+                body: "Every audit is stored. Track your AEO score across runs and see exactly how each change you ship moves the needle on citability.",
+              },
+            ].map(({ icon: Icon, gradient, title, body }) => (
+              <div
+                key={title}
+                className="group relative rounded-2xl border border-border bg-card p-6 hover:border-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/5 transition-all duration-300 overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-emerald-500/3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br ${gradient} text-white shadow-lg mb-5`}>
+                  <Icon className="h-5 w-5" />
+                </div>
+                <h3 className="text-base font-bold mb-2">{title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{body}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="relative overflow-hidden rounded-3xl">
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-900 via-teal-900 to-gray-900" />
+          <div aria-hidden className="absolute inset-0">
+            <div className="absolute top-0 right-0 w-[400px] h-[400px] rounded-full bg-emerald-500/20 blur-[80px]" />
+            <div className="absolute bottom-0 left-1/4 w-[300px] h-[300px] rounded-full bg-teal-500/15 blur-[60px]" />
+            <div
+              className="absolute inset-0 opacity-[0.06]"
+              style={{ backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)", backgroundSize: "20px 20px" }}
+            />
+          </div>
+          <div className="relative px-8 md:px-16 py-14 md:py-20 flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="text-center md:text-left space-y-4 max-w-xl">
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 px-3 py-1 text-xs font-semibold text-emerald-300">
+                <CheckCircle2 className="h-3 w-3" /> Free account, no credit card
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight leading-tight">
+                Find out how AI engines see your site — in 60 seconds.
+              </h2>
+              <p className="text-emerald-100/70 text-base">
+                Get your AEO score, crawler audit, and top fixes. Free to start.
+              </p>
+            </div>
+            <div className="shrink-0 flex flex-col sm:flex-row gap-3">
+              <Link href="/sign-up">
+                <Button size="lg" className="h-13 px-8 font-semibold text-base bg-white text-emerald-900 hover:bg-emerald-50 shadow-xl shadow-black/20">
+                  Audit my site — it's free <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </Link>
+              <Link href="/pricing">
+                <Button size="lg" variant="ghost" className="h-13 px-8 font-semibold text-base text-white border border-white/20 hover:bg-white/10">
+                  See pricing
+                </Button>
+              </Link>
+            </div>
+          </div>
         </section>
       </div>
     </div>

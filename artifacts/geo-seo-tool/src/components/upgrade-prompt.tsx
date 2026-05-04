@@ -27,7 +27,7 @@ const PLAN_COLORS: Record<Plan, string> = {
 const FALLBACK_PRICES: Record<Plan, string> = {
   free: "Free",
   pro: "$49/mo",
-  agency: "$199/mo",
+  agency: "$299/mo",
 };
 
 function usePlanPriceLabel(plan: Plan): string {

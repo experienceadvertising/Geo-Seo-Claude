@@ -78,9 +78,9 @@ async function createProducts() {
       name: "Agency Plan",
       description: "Everything in Pro, plus 2-year history, Agency branding, and priority support for teams managing multiple client sites.",
       plan_id: "agency",
-      // $199/mo · $1,910/yr (~20% off, $159.17/mo)
-      monthly: 19900,
-      yearly: 191000,
+      // $299/mo · $2,870/yr (~20% off, $239.17/mo)
+      monthly: 29900,
+      yearly: 287000,
     },
   ];
 
