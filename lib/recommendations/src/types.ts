@@ -21,6 +21,13 @@
 
 export const RECOMMENDATIONS_SCHEMA_VERSION = "v1" as const;
 
+/**
+ * Human-readable methodology version, updated on each quarterly refresh.
+ * Format: "YYYY.MM" of the review month.
+ * Rendered on the /methodology page and included in audit API responses.
+ */
+export const METHODOLOGY_VERSION = "2026.05" as const;
+
 export type Severity = "critical" | "high" | "medium" | "low";
 
 export type Category =
@@ -102,6 +109,22 @@ export interface Recommendation {
    * Required.
    */
   updatedAt: string;
+
+  /**
+   * ISO date this recommendation was last reviewed for continued relevance,
+   * independent of source verification. Updated on each quarterly methodology
+   * refresh even when no content changes. Optional (null = never explicitly reviewed).
+   */
+  lastReviewedAt?: string | null;
+
+  /**
+   * ISO date after which this recommendation should be re-reviewed.
+   * Policy: research = 24 months, internal_benchmark = 12 months,
+   * practitioner_consensus = 6 months. The freshness audit script
+   * (scripts/src/auditRecommendationFreshness.ts) flags past-expiry entries.
+   * Optional — absence means no expiry set yet.
+   */
+  expiresAt?: string | null;
 
   /**
    * Editorial notes shown on the methodology page. Use for hedging,

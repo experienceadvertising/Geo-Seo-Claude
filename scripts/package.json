@@ -7,9 +7,11 @@
     "hello": "tsx ./src/hello.ts",
     "seed-products": "tsx ./src/seed-products.ts",
     "register-webhook": "tsx ./src/register-webhook.ts",
+    "freshness": "tsx ./src/auditRecommendationFreshness.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@workspace/recommendations": "workspace:*",
     "stripe": "*"
   },
   "devDependencies": {

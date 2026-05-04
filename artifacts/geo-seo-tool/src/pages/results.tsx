@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, Link, useLocation } from "wouter";
 import { useGetAudit, getGetAuditQueryKey, useAnalyzeUrl, customFetch } from "@workspace/api-client-react";
-import { ArrowLeft, CheckCircle2, XCircle, AlertTriangle, Bot, TerminalSquare, FileText, Code2, ShieldAlert, Sparkles, Loader2, Download, Building2, RefreshCw, TrendingUp, Wrench, Lock, ChevronDown, ChevronUp, Copy, Check } from "lucide-react";
+import { ArrowLeft, CheckCircle2, XCircle, AlertTriangle, Bot, TerminalSquare, FileText, Code2, ShieldAlert, Sparkles, Loader2, Download, Building2, RefreshCw, TrendingUp, Wrench, Lock, ChevronDown, ChevronUp, Copy, Check, BookOpen, Users } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -414,14 +414,19 @@ export default function Results() {
                 This audit was generated before our source-tracking system was added. Re-scan to see updated provenance metadata.
               </div>
             )}
-            <ul className="space-y-4">
-              {audit.recommendations.slice(0, 12).map((r, i) => {
+            {(() => {
+              const schemaV1 = audit.recommendationsSchemaVersion === "v1";
+              const allRecs = audit.recommendations.slice(0, 14);
+              const researchRecs = allRecs.filter(r => r.source?.type === "research" || r.source?.type === "internal_benchmark");
+              const consensusRecs = allRecs.filter(r => !r.source || r.source?.type === "practitioner_consensus");
+
+              const renderRec = (r: typeof allRecs[0], i: number) => {
                 const pStyle =
                   r.priority === "critical" ? "bg-red-100 text-red-700 border-red-200"
                   : r.priority === "high" ? "bg-amber-100 text-amber-700 border-amber-200"
                   : r.priority === "medium" ? "bg-teal-100 text-teal-700 border-teal-200"
                   : "bg-slate-100 text-slate-600 border-slate-200";
-                const showBadge = audit.recommendationsSchemaVersion === "v1" && r.source;
+                const showBadge = schemaV1 && r.source;
                 return (
                   <li key={r.id ?? i} className="flex items-start gap-3 text-sm">
                     <span className={`shrink-0 inline-flex items-center justify-center px-2 py-0.5 rounded border text-[10px] font-mono font-bold uppercase ${pStyle}`}>
@@ -439,8 +444,33 @@ export default function Results() {
                     </div>
                   </li>
                 );
-              })}
-            </ul>
+              };
+
+              return (
+                <>
+                  {researchRecs.length > 0 && (
+                    <div className="mb-6">
+                      <p className="text-[11px] font-mono uppercase tracking-wider text-emerald-700 mb-3 flex items-center gap-1.5">
+                        <BookOpen className="h-3 w-3" /> Research & benchmark backed
+                      </p>
+                      <ul className="space-y-4">{researchRecs.map(renderRec)}</ul>
+                    </div>
+                  )}
+                  {consensusRecs.length > 0 && (
+                    <div>
+                      {researchRecs.length > 0 && <Separator className="mb-5" />}
+                      <p className="text-[11px] font-mono uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-1.5">
+                        <Users className="h-3 w-3" /> Industry best practices
+                      </p>
+                      <ul className="space-y-4">{consensusRecs.map(renderRec)}</ul>
+                    </div>
+                  )}
+                  {!schemaV1 && allRecs.length > 0 && (
+                    <ul className="space-y-4">{allRecs.map(renderRec)}</ul>
+                  )}
+                </>
+              );
+            })()}
           </CardContent>
         </Card>
       )}

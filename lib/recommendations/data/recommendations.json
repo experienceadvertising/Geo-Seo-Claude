@@ -11,7 +11,9 @@
     "sourceCitation": "Aggarwal, Murahari, Rajpurohit et al., \"GEO: Generative Engine Optimization\", KDD 2024 — Statistics Addition is highlighted as a top-performing content-optimization method (§4, Table 1).",
     "verified": true,
     "lastVerifiedAt": "2026-05-03",
-    "updatedAt": "2026-05-03",
+    "lastReviewedAt": "2026-05-04",
+    "expiresAt": "2028-05-04",
+    "updatedAt": "2026-05-04",
     "notes": "The paper does not publish a per-method aggregate lift number we will attribute to this individual recommendation. Headline result reported in the paper is 'up to 41% improvement on Position-Adjusted Word Count' for the best-performing method overall. Per-method numbers previously displayed (e.g. '+33.9%') were not traceable to the paper and have been removed pending an internal benchmark."
   },
   {
@@ -26,7 +28,9 @@
     "sourceCitation": "Practitioner consensus 2025-2026 (Profound, Frase, Search Engine Land); no controlled study located that publishes the specific freshness-citation correlation.",
     "verified": false,
     "lastVerifiedAt": null,
-    "updatedAt": "2026-05-03",
+    "lastReviewedAt": "2026-05-04",
+    "expiresAt": "2026-11-04",
+    "updatedAt": "2026-05-04",
     "notes": "Previously displayed as '83% of commercial AI citations come from sources updated in past 12 months' — that figure is widely repeated in industry blog posts but not traceable to a primary source we can cite. Queue for internal benchmark: re-audit a sample of URLs after their statistics are updated to current-year values and measure citation-count delta."
   },
   {
@@ -41,7 +45,9 @@
     "sourceCitation": "Aggarwal, Murahari, Rajpurohit et al., \"GEO: Generative Engine Optimization\", KDD 2024 — Quotation Addition is highlighted as a top-performing content-optimization method (§4, Table 1).",
     "verified": true,
     "lastVerifiedAt": "2026-05-03",
-    "updatedAt": "2026-05-03",
+    "lastReviewedAt": "2026-05-04",
+    "expiresAt": "2028-05-04",
+    "updatedAt": "2026-05-04",
     "notes": "The paper does not publish a per-method aggregate lift number we will attribute to this individual recommendation. Headline result reported in the paper is 'up to 41% improvement on Position-Adjusted Word Count' for the best-performing method overall (best-method best-metric, not per-method). Per-method numbers previously displayed (e.g. '+32%') were not traceable to the paper and have been removed pending an internal benchmark."
   },
   {
@@ -56,7 +62,9 @@
     "sourceCitation": "Aggarwal, Murahari, Rajpurohit et al., \"GEO: Generative Engine Optimization\", KDD 2024 — Cite Sources is highlighted as a top-performing content-optimization method (§4, Table 1); §4.2 / Table 3 reports the effect is strongly conditioned on SERP position.",
     "verified": true,
     "lastVerifiedAt": "2026-05-03",
-    "updatedAt": "2026-05-03",
+    "lastReviewedAt": "2026-05-04",
+    "expiresAt": "2028-05-04",
+    "updatedAt": "2026-05-04",
     "notes": "Headline result reported in the paper is 'up to 41% improvement on Position-Adjusted Word Count' for the best-performing method overall (best-method best-metric, not per-method). Instead of a single per-method lift, the paper reports SERP-position-conditioned effects for Cite Sources specifically (e.g. +115.1% visibility for rank-5 sites, -30.3% for rank-1 sites). Per-method number previously displayed (e.g. '+30.3%') misread the paper's negative finding for top-ranked sites as a positive lift and has been removed. SERP-conditioned lift is captured as a methodology note for a future product feature; not surfaced as a recommendation lift figure."
   },
   {
@@ -71,7 +79,9 @@
     "sourceCitation": "Practitioner consensus 2025-2026 (Frase, Profound, Search Engine Land); aligns with classical featured-snippet optimization literature.",
     "verified": false,
     "lastVerifiedAt": null,
-    "updatedAt": "2026-05-03"
+    "lastReviewedAt": "2026-05-04",
+    "expiresAt": "2026-11-04",
+    "updatedAt": "2026-05-04"
   },
   {
     "id": "answer-capsules",
@@ -85,8 +95,26 @@
     "sourceCitation": "Practitioner consensus 2025-2026 (Frase, Profound, agency case studies); no controlled study located.",
     "verified": false,
     "lastVerifiedAt": null,
-    "updatedAt": "2026-05-03",
+    "lastReviewedAt": "2026-05-04",
+    "expiresAt": "2026-11-04",
+    "updatedAt": "2026-05-04",
     "notes": "Previously displayed as '+35-40% extraction rate' — that figure has no traceable primary source and has been removed. Strong candidate for internal benchmark: A/B test answer-capsule presence against citation-count on our audited corpus."
+  },
+  {
+    "id": "add-tldr-summary",
+    "titleTemplate": "Add a TL;DR or key takeaways section",
+    "claim": "Summary sections at the top of long-form content are among the most extractable patterns for AI engines, which frequently use them as citation openings and for generating quick answers to user queries.",
+    "severity": "high",
+    "category": "answerability",
+    "expectedLift": null,
+    "sourceType": "practitioner_consensus",
+    "sourceUrl": null,
+    "sourceCitation": "Practitioner consensus 2025-2026 (Profound, HubSpot, Search Engine Land); observed in high-citation content across ChatGPT, Claude, and Perplexity.",
+    "verified": false,
+    "lastVerifiedAt": null,
+    "lastReviewedAt": "2026-05-04",
+    "expiresAt": "2026-11-04",
+    "updatedAt": "2026-05-04"
   },
   {
     "id": "question-headings",
@@ -100,7 +128,9 @@
     "sourceCitation": "Practitioner consensus 2025-2026 (Search Engine Land, HubSpot); no controlled study located.",
     "verified": false,
     "lastVerifiedAt": null,
-    "updatedAt": "2026-05-03"
+    "lastReviewedAt": "2026-05-04",
+    "expiresAt": "2026-11-04",
+    "updatedAt": "2026-05-04"
   },
   {
     "id": "add-faq",
@@ -114,7 +144,9 @@
     "sourceCitation": "Practitioner consensus 2025-2026 (Frase, HubSpot, Search Engine Land); no controlled study located.",
     "verified": false,
     "lastVerifiedAt": null,
-    "updatedAt": "2026-05-03",
+    "lastReviewedAt": "2026-05-04",
+    "expiresAt": "2026-11-04",
+    "updatedAt": "2026-05-04",
     "notes": "Previously displayed as '+40% citation likelihood' — that figure has no traceable primary source and has been removed. Recommendation kept because the qualitative case is strong and the cost is low."
   },
   {
@@ -129,7 +161,9 @@
     "sourceCitation": "Practitioner consensus 2025-2026; aligns with featured-snippet extraction patterns documented across SEO literature.",
     "verified": false,
     "lastVerifiedAt": null,
-    "updatedAt": "2026-05-03"
+    "lastReviewedAt": "2026-05-04",
+    "expiresAt": "2026-11-04",
+    "updatedAt": "2026-05-04"
   },
   {
     "id": "comparison-table",
@@ -143,7 +177,9 @@
     "sourceCitation": "Practitioner observation 2025-2026 (early agentic-search era); no controlled study yet.",
     "verified": false,
     "lastVerifiedAt": null,
-    "updatedAt": "2026-05-03"
+    "lastReviewedAt": "2026-05-04",
+    "expiresAt": "2026-11-04",
+    "updatedAt": "2026-05-04"
   },
   {
     "id": "shorten-paragraphs",
@@ -157,7 +193,9 @@
     "sourceCitation": "Practitioner consensus; aligns with classical readability + featured-snippet guidance.",
     "verified": false,
     "lastVerifiedAt": null,
-    "updatedAt": "2026-05-03"
+    "lastReviewedAt": "2026-05-04",
+    "expiresAt": "2026-11-04",
+    "updatedAt": "2026-05-04"
   },
   {
     "id": "increase-depth",
@@ -171,7 +209,25 @@
     "sourceCitation": "Practitioner consensus 2025-2026; aligns with topical-authority SEO literature.",
     "verified": false,
     "lastVerifiedAt": null,
-    "updatedAt": "2026-05-03"
+    "lastReviewedAt": "2026-05-04",
+    "expiresAt": "2026-11-04",
+    "updatedAt": "2026-05-04"
+  },
+  {
+    "id": "add-proprietary-data",
+    "titleTemplate": "Add original research, survey data, or proprietary statistics",
+    "claim": "Content citing original first-party data — brand surveys, internal analyses, customer case studies — is preferentially cited by AI engines because it is a unique source they cannot find elsewhere.",
+    "severity": "high",
+    "category": "authority",
+    "expectedLift": null,
+    "sourceType": "practitioner_consensus",
+    "sourceUrl": null,
+    "sourceCitation": "Practitioner consensus 2025-2026 (Profound, Frase, HubSpot); aligns with GEO paper finding that Statistics Addition is a top-performing method when data is unique and attributed.",
+    "verified": false,
+    "lastVerifiedAt": null,
+    "lastReviewedAt": "2026-05-04",
+    "expiresAt": "2026-11-04",
+    "updatedAt": "2026-05-04"
   },
   {
     "id": "content-stale-24mo",
@@ -185,7 +241,9 @@
     "sourceCitation": "Practitioner consensus 2025-2026 (Profound, Search Engine Land); no controlled study located.",
     "verified": false,
     "lastVerifiedAt": null,
-    "updatedAt": "2026-05-03",
+    "lastReviewedAt": "2026-05-04",
+    "expiresAt": "2026-11-04",
+    "updatedAt": "2026-05-04",
     "notes": "Previously displayed as '3.2x citation lift moving from >24mo to <12mo' — that figure has no traceable primary source and has been removed. Strong candidate for internal benchmark: we have an audit corpus and can re-audit a sample of URLs after their content is refreshed and measure the citation-count delta."
   },
   {
@@ -200,7 +258,9 @@
     "sourceCitation": "Practitioner consensus 2025-2026 (Profound, Search Engine Land); no controlled study located.",
     "verified": false,
     "lastVerifiedAt": null,
-    "updatedAt": "2026-05-03",
+    "lastReviewedAt": "2026-05-04",
+    "expiresAt": "2026-11-04",
+    "updatedAt": "2026-05-04",
     "notes": "Previously displayed as 'up to 3.2x citation lift returning to <12mo' — that figure has no traceable primary source and has been removed. Same internal-benchmark queue as content-stale-24mo."
   },
   {
@@ -215,7 +275,9 @@
     "sourceCitation": "Practitioner consensus 2025-2026; widely observed but not formally measured.",
     "verified": false,
     "lastVerifiedAt": null,
-    "updatedAt": "2026-05-03"
+    "lastReviewedAt": "2026-05-04",
+    "expiresAt": "2026-11-04",
+    "updatedAt": "2026-05-04"
   },
   {
     "id": "explicit-date",
@@ -229,7 +291,9 @@
     "sourceCitation": "Practitioner consensus; aligns with schema.org best practices and Google's guidance on dated content.",
     "verified": false,
     "lastVerifiedAt": null,
-    "updatedAt": "2026-05-03"
+    "lastReviewedAt": "2026-05-04",
+    "expiresAt": "2026-11-04",
+    "updatedAt": "2026-05-04"
   },
   {
     "id": "brand-mention-early",
@@ -243,7 +307,9 @@
     "sourceCitation": "Practitioner consensus 2025-2026; aligns with entity-disambiguation literature.",
     "verified": false,
     "lastVerifiedAt": null,
-    "updatedAt": "2026-05-03"
+    "lastReviewedAt": "2026-05-04",
+    "expiresAt": "2026-11-04",
+    "updatedAt": "2026-05-04"
   },
   {
     "id": "add-byline",
@@ -257,7 +323,9 @@
     "sourceCitation": "Practitioner consensus 2025-2026 (HubSpot, Search Engine Land); aligns with Google's E-E-A-T guidance.",
     "verified": false,
     "lastVerifiedAt": null,
-    "updatedAt": "2026-05-03"
+    "lastReviewedAt": "2026-05-04",
+    "expiresAt": "2026-11-04",
+    "updatedAt": "2026-05-04"
   },
   {
     "id": "trim-filler",
@@ -271,7 +339,9 @@
     "sourceCitation": "Practitioner consensus; aligns with general writing-quality best practices.",
     "verified": false,
     "lastVerifiedAt": null,
-    "updatedAt": "2026-05-03"
+    "lastReviewedAt": "2026-05-04",
+    "expiresAt": "2026-11-04",
+    "updatedAt": "2026-05-04"
   },
   {
     "id": "keyword-stuffing",
@@ -285,7 +355,9 @@
     "sourceCitation": "Aggarwal, Murahari, Rajpurohit et al., \"GEO: Generative Engine Optimization\", KDD 2024 — Keyword Stuffing is identified as a non-performing optimization method (§4, Table 1).",
     "verified": true,
     "lastVerifiedAt": "2026-05-03",
-    "updatedAt": "2026-05-03",
+    "lastReviewedAt": "2026-05-04",
+    "expiresAt": "2028-05-04",
+    "updatedAt": "2026-05-04",
     "notes": "The paper categorizes Keyword Stuffing in a section titled 'Non-Performing Generative Engine Optimization methods' and reports it scores below the unoptimized baseline across both metrics (Table 1: ~17.8 vs 19.5 baseline on Position-Adjusted Word Count). On Perplexity specifically, §4.4 states it 'performs 10% worse than the baseline.' We frame the recommendation as a negative-signal removal rather than a positive-lift intervention."
   },
   {
@@ -300,7 +372,9 @@
     "sourceCitation": "schema.org Article specification + practitioner consensus on AI-engine schema parsing.",
     "verified": false,
     "lastVerifiedAt": null,
-    "updatedAt": "2026-05-03"
+    "lastReviewedAt": "2026-05-04",
+    "expiresAt": "2026-11-04",
+    "updatedAt": "2026-05-04"
   },
   {
     "id": "faq-schema",
@@ -314,7 +388,25 @@
     "sourceCitation": "schema.org FAQPage specification + practitioner consensus.",
     "verified": false,
     "lastVerifiedAt": null,
-    "updatedAt": "2026-05-03"
+    "lastReviewedAt": "2026-05-04",
+    "expiresAt": "2026-11-04",
+    "updatedAt": "2026-05-04"
+  },
+  {
+    "id": "howto-schema",
+    "titleTemplate": "Add HowTo JSON-LD schema for step-by-step sections",
+    "claim": "Procedural content with HowTo JSON-LD enables richer AI extraction and is specifically eligible for distinct step-level rich results in Google AI Overviews on instructional queries.",
+    "severity": "medium",
+    "category": "technical",
+    "expectedLift": null,
+    "sourceType": "practitioner_consensus",
+    "sourceUrl": "https://schema.org/HowTo",
+    "sourceCitation": "schema.org HowTo specification + Google Rich Results documentation + practitioner consensus on AI-engine schema parsing.",
+    "verified": false,
+    "lastVerifiedAt": null,
+    "lastReviewedAt": "2026-05-04",
+    "expiresAt": "2026-11-04",
+    "updatedAt": "2026-05-04"
   },
   {
     "id": "org-schema",
@@ -328,7 +420,9 @@
     "sourceCitation": "schema.org Organization specification + practitioner consensus on entity-disambiguation via sameAs.",
     "verified": false,
     "lastVerifiedAt": null,
-    "updatedAt": "2026-05-03"
+    "lastReviewedAt": "2026-05-04",
+    "expiresAt": "2026-11-04",
+    "updatedAt": "2026-05-04"
   },
   {
     "id": "llms-txt",
@@ -342,7 +436,9 @@
     "sourceCitation": "Practitioner observation 2025-2026; widely surveyed but not formally evaluated.",
     "verified": false,
     "lastVerifiedAt": null,
-    "updatedAt": "2026-05-03"
+    "lastReviewedAt": "2026-05-04",
+    "expiresAt": "2026-11-04",
+    "updatedAt": "2026-05-04"
   },
   {
     "id": "unblock-crawlers",
@@ -356,7 +452,9 @@
     "sourceCitation": "Direct mechanical prerequisite — no source needed beyond the robots.txt specification.",
     "verified": false,
     "lastVerifiedAt": null,
-    "updatedAt": "2026-05-03"
+    "lastReviewedAt": "2026-05-04",
+    "expiresAt": "2026-11-04",
+    "updatedAt": "2026-05-04"
   },
   {
     "id": "passage-restructure",
@@ -370,7 +468,9 @@
     "sourceCitation": "AEO Improvement internal heuristic — passage-citability scoring derived from our own audit corpus. Scoring methodology documented on the methodology page; lift number pending controlled benchmark.",
     "verified": false,
     "lastVerifiedAt": null,
-    "updatedAt": "2026-05-03",
+    "lastReviewedAt": "2026-05-04",
+    "expiresAt": "2027-05-04",
+    "updatedAt": "2026-05-04",
     "notes": "Previously displayed a '134-167 word optimal passage length' figure derived from classical featured-snippet length norms, not from controlled measurement against generative engines. Removed pending an internal benchmark; recommendation framed qualitatively in the meantime."
   }
 ]

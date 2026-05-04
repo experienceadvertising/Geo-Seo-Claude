@@ -1,8 +1,9 @@
 import React from "react";
 import { Link } from "wouter";
-import { ArrowLeft, BookOpen, BarChart3, Users, BadgeCheck } from "lucide-react";
+import { ArrowLeft, BookOpen, BarChart3, Users, BadgeCheck, RefreshCw } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 export default function Methodology() {
   return (
@@ -11,10 +12,15 @@ export default function Methodology() {
         <Link href="/" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
           <ArrowLeft className="h-4 w-4" /> Back
         </Link>
-        <h1 className="mt-3 text-3xl md:text-4xl font-bold tracking-tight">Methodology</h1>
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Methodology</h1>
+          <Badge variant="outline" className="font-mono text-xs gap-1">
+            <RefreshCw className="h-3 w-3" /> v2026.05
+          </Badge>
+        </div>
         <p className="mt-2 text-muted-foreground">
           How AEO Improvement turns a URL into a prioritized list of recommendations,
-          and where each claim comes from.
+          and where each claim comes from. Last reviewed May 2026.
         </p>
       </div>
 

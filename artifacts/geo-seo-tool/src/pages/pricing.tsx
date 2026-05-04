@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/context/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
@@ -14,13 +14,16 @@ import { useToast } from "@/hooks/use-toast";
 
 const PLAN_FEATURES = {
   free: [
+    "5 audits / month",
+    "2 simulations / month",
     "3 prompts per audit",
     "ChatGPT engine only",
     "Basic AEO score",
-    "1 competitor keyword",
     "30-day audit history",
   ],
   pro: [
+    "100 audits / month",
+    "30 simulations / month",
     "25 prompts per audit",
     "ChatGPT, Claude, Gemini & Perplexity",
     "Sentiment & tone analysis",
@@ -30,6 +33,8 @@ const PLAN_FEATURES = {
     "Priority email support",
   ],
   agency: [
+    "500 audits / month",
+    "150 simulations / month",
     "Everything in Pro",
     "2-year visibility trend history",
     "Agency-branded reports",
@@ -47,6 +52,7 @@ interface PlanCardProps {
   planId: "free" | "pro" | "agency";
   name: string;
   price: string;
+  annualMonthlyEquiv?: string;
   priceLoading?: boolean;
   period?: string;
   description: string;
@@ -57,12 +63,14 @@ interface PlanCardProps {
   upgradeLoading?: boolean;
   isSignedIn: boolean;
   badgeLabel?: string;
+  savingsBadge?: string;
 }
 
 function PlanCard({
   planId,
   name,
   price,
+  annualMonthlyEquiv,
   priceLoading,
   period,
   description,
@@ -73,6 +81,7 @@ function PlanCard({
   upgradeLoading,
   isSignedIn,
   badgeLabel,
+  savingsBadge,
 }: PlanCardProps) {
   const gradients: Record<string, string> = {
     free: "from-slate-500 to-slate-600",
@@ -119,13 +128,25 @@ function PlanCard({
           </div>
         </div>
 
-        <div className="flex items-end gap-1">
+        <div className="flex items-end gap-2 flex-wrap">
           {priceLoading ? (
             <Skeleton className="h-10 w-20" />
           ) : (
             <span className="text-4xl font-extrabold tracking-tight">{price}</span>
           )}
-          {period && !priceLoading && <span className="text-muted-foreground text-sm mb-1">{period}</span>}
+          {period && !priceLoading && (
+            <div className="mb-1 flex flex-col items-start gap-0.5">
+              <span className="text-muted-foreground text-sm leading-none">{period}</span>
+              {annualMonthlyEquiv && (
+                <span className="text-[11px] text-muted-foreground leading-none">{annualMonthlyEquiv}</span>
+              )}
+            </div>
+          )}
+          {savingsBadge && !priceLoading && (
+            <Badge className="mb-1 bg-emerald-100 text-emerald-700 border-0 text-xs font-semibold">
+              {savingsBadge}
+            </Badge>
+          )}
         </div>
       </CardHeader>
 
@@ -171,8 +192,11 @@ function PlanCard({
   );
 }
 
+type BillingInterval = "month" | "year";
+
 export default function PricingPage() {
   const [, setLocation] = useLocation();
+  const [billing, setBilling] = useState<BillingInterval>("month");
   const { isSignedIn } = useAuth();
   const { plan: currentPlan } = usePlan();
   const { data: productsData, isLoading: productsLoading } = useStripeProducts();
@@ -203,15 +227,18 @@ export default function PricingPage() {
 
   const products = productsData?.data ?? [];
 
-  function getPriceForPlan(planId: string): { priceId: string; unitAmount: number } | null {
+  function getPriceForPlan(
+    planId: string,
+    interval: BillingInterval,
+  ): { priceId: string; unitAmount: number } | null {
     const product = products.find((p) => p.metadata?.plan_id === planId);
-    const monthlyPrice = product?.prices.find((pr) => pr.recurring?.interval === "month");
-    if (!monthlyPrice) return null;
-    return { priceId: monthlyPrice.id, unitAmount: monthlyPrice.unitAmount };
+    const price = product?.prices.find((pr) => pr.recurring?.interval === interval);
+    if (!price) return null;
+    return { priceId: price.id, unitAmount: price.unitAmount };
   }
 
   function handleUpgrade(planId: "pro" | "agency") {
-    const price = getPriceForPlan(planId);
+    const price = getPriceForPlan(planId, billing);
     if (!price) {
       toast({
         title: "Pricing not available",
@@ -223,9 +250,42 @@ export default function PricingPage() {
     checkout.mutate({ priceId: price.priceId, plan: planId });
   }
 
-  const proPrice = getPriceForPlan("pro");
-  const agencyPrice = getPriceForPlan("agency");
+  const proMonthly = getPriceForPlan("pro", "month");
+  const proAnnual = getPriceForPlan("pro", "year");
+  const agencyMonthly = getPriceForPlan("agency", "month");
+  const agencyAnnual = getPriceForPlan("agency", "year");
   const hasSubscription = !!subData?.subscription;
+
+  // Build display values for each plan based on current billing toggle
+  function buildPlanDisplay(
+    planId: "pro" | "agency",
+    monthlyData: { priceId: string; unitAmount: number } | null,
+    annualData: { priceId: string; unitAmount: number } | null,
+    fallbackMonthly: number,
+    fallbackAnnual: number,
+  ) {
+    if (billing === "year") {
+      const annualTotal = annualData?.unitAmount ?? fallbackAnnual;
+      const monthlyEquiv = Math.round(annualTotal / 12);
+      const monthlyPrice = monthlyData?.unitAmount ?? fallbackMonthly;
+      const savingsPct = Math.round((1 - monthlyEquiv / monthlyPrice) * 100);
+      return {
+        price: formatPrice(annualTotal),
+        period: "/yr",
+        annualMonthlyEquiv: `${formatPrice(monthlyEquiv)}/mo`,
+        savingsBadge: `Save ${savingsPct}%`,
+      };
+    }
+    return {
+      price: monthlyData ? formatPrice(monthlyData.unitAmount) : formatPrice(fallbackMonthly),
+      period: "/mo",
+      annualMonthlyEquiv: undefined,
+      savingsBadge: undefined,
+    };
+  }
+
+  const proDisplay = buildPlanDisplay("pro", proMonthly, proAnnual, 7900, 75000);
+  const agencyDisplay = buildPlanDisplay("agency", agencyMonthly, agencyAnnual, 24900, 239000);
 
   const plans = [
     {
@@ -240,9 +300,8 @@ export default function PricingPage() {
     {
       planId: "pro" as const,
       name: "Pro",
-      price: proPrice ? formatPrice(proPrice.unitAmount) : "$79",
+      ...proDisplay,
       priceLoading: productsLoading,
-      period: "/mo",
       description: "For marketers & SEO professionals",
       features: PLAN_FEATURES.pro,
       isHighlighted: true,
@@ -250,9 +309,8 @@ export default function PricingPage() {
     {
       planId: "agency" as const,
       name: "Agency",
-      price: agencyPrice ? formatPrice(agencyPrice.unitAmount) : "$249",
+      ...agencyDisplay,
       priceLoading: productsLoading,
-      period: "/mo",
       description: "For agencies managing multiple clients",
       features: PLAN_FEATURES.agency,
       isHighlighted: false,
@@ -273,6 +331,33 @@ export default function PricingPage() {
             Start for free. Upgrade when you're ready to unlock all AI engines,
             automated fixes, and competitor intelligence.
           </p>
+
+          {/* Billing interval toggle */}
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <button
+              onClick={() => setBilling("month")}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                billing === "month"
+                  ? "bg-slate-900 text-white"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => setBilling("year")}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center gap-2 ${
+                billing === "year"
+                  ? "bg-slate-900 text-white"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Annual
+              <Badge className="bg-emerald-100 text-emerald-700 border-0 text-[10px] px-1.5 py-0.5 font-semibold">
+                Save ~20%
+              </Badge>
+            </button>
+          </div>
         </div>
 
         {isSignedIn && currentPlan !== "free" && (
@@ -315,7 +400,10 @@ export default function PricingPage() {
         </div>
 
         <div className="text-center space-y-2 text-sm text-muted-foreground">
-          <p>All plans billed monthly. Cancel anytime from your billing portal.</p>
+          <p>
+            Monthly plans cancel anytime.{" "}
+            Annual plans billed as a single payment — no mid-year cancellation refunds.
+          </p>
           <p>
             Questions?{" "}
             <a href="mailto:hello@aeoimprovement.com" className="text-emerald-600 hover:underline">

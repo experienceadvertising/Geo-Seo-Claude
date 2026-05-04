@@ -69,6 +69,12 @@ export interface ContentSignals {
   fillerPhraseCount: number;
   longParagraphRatio: number;
   keywordStuffingDetected: boolean;
+  /** True if the page has a TL;DR, Key Takeaways, or Summary heading. */
+  hasTldr: boolean;
+  /** True if the page cites original first-party data ("our research", "we surveyed", etc.). */
+  hasProprietaryData: boolean;
+  /** True if the page has at least one ordered list with 3+ items (step-by-step candidate). */
+  hasNumberedStepList: boolean;
 }
 
 const FILLER_PHRASES = [
@@ -241,6 +247,17 @@ export function extractContentSignals($: cheerio.CheerioAPI, url: string, brandN
   const longParas = paras.filter((n) => n > 120).length;
   const longParagraphRatio = paras.length > 0 ? longParas / paras.length : 0;
 
+  // TL;DR / key takeaways: any heading matching common summary patterns
+  const hasTldr = $("h1,h2,h3,h4")
+    .toArray()
+    .some((el) => /\b(?:tl[;:]?dr|key\s+takeaways?|summary|quick\s+summary|in\s+brief|bottom\s+line)\b/i.test($(el).text()));
+
+  // Proprietary data: first-party research language in body
+  const hasProprietaryData = /\b(?:our\s+(?:research|study|survey|data|analysis|findings?)|we\s+(?:surveyed|analyzed|studied|found\s+that)|original\s+(?:research|data|study)|proprietary\s+data|internal\s+(?:data|research|analysis))\b/i.test(bodyText);
+
+  // Numbered step list: at least one <ol> with 3+ <li> items
+  const hasNumberedStepList = $("ol").toArray().some((ol) => $(ol).find("li").length >= 3);
+
   // Keyword stuffing: any non-stopword that occurs > 2.5% of total words.
   // We exclude the brand's own name, domain root, and any tokens drawn from the
   // page <title> or Organization schema name — repeating your own brand on your
@@ -323,6 +340,9 @@ export function extractContentSignals($: cheerio.CheerioAPI, url: string, brandN
     fillerPhraseCount,
     longParagraphRatio,
     keywordStuffingDetected,
+    hasTldr,
+    hasProprietaryData,
+    hasNumberedStepList,
   };
 }
 
@@ -437,6 +457,21 @@ export function generateGeoRecommendations(ctx: RecommendationContext): GeoRecom
     }));
   }
 
+  if (!s.hasProprietaryData && s.wordCount > 600) {
+    recs.push(composeRec("add-proprietary-data", {
+      detail: "No original first-party data detected (\"our research\", \"we surveyed\", etc.). Add at least one data point from your own research, a customer survey, or a case study outcome — original data is preferentially cited because AI engines cannot find it elsewhere.",
+      priority: "medium",
+    }));
+  }
+
+  // TL;DR / key takeaways
+  if (s.wordCount > 800 && !s.hasTldr) {
+    recs.push(composeRec("add-tldr-summary", {
+      detail: `Page has ${s.wordCount} words but no TL;DR, Key Takeaways, or Summary heading. Add a 3-5 bullet summary near the top — AI engines frequently extract these as citation openings and for generating quick answers to user queries.`,
+      priority: s.wordCount > 1500 ? "high" : "medium",
+    }));
+  }
+
   // === DIRECT ANSWERABILITY ===
   if (!s.hasDirectAnswerOpening) {
     recs.push(composeRec("direct-answer-block", {
@@ -548,6 +583,11 @@ export function generateGeoRecommendations(ctx: RecommendationContext): GeoRecom
   if (!ctx.hasFaqSchema && s.faqCount >= 3) {
     recs.push(composeRec("faq-schema", {
       detail: "Question-style headings exist but no FAQPage schema. Wrap your Q/A pairs in FAQPage JSON-LD — it remains among the highest-ROI structured-data types for AI citations in 2026.",
+    }));
+  }
+  if (s.hasNumberedStepList && !ctx.hasHowToSchema) {
+    recs.push(composeRec("howto-schema", {
+      detail: "Numbered step-by-step list detected but no HowTo JSON-LD schema. Wrap the steps in HowTo schema — it enables richer AI extraction and distinct step-level rich results in Google AI Overviews for instructional queries.",
     }));
   }
   if (!ctx.hasOrgSchema) {

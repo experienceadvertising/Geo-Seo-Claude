@@ -9,7 +9,7 @@ import {
 import { analyzeUrl } from "../../lib/geoAnalyzer";
 import { generateAuditPdf } from "../../lib/pdfReport";
 import { anthropic } from "@workspace/integrations-anthropic-ai";
-import { RECOMMENDATIONS_SCHEMA_VERSION } from "@workspace/recommendations";
+import { RECOMMENDATIONS_SCHEMA_VERSION, METHODOLOGY_VERSION } from "@workspace/recommendations";
 import simulateRouter from "./simulate";
 import { requireAuth } from "../../middlewares/auth";
 import { analyzeRateLimiter, readRateLimiter } from "../../middlewares/rateLimiters";
@@ -423,11 +423,8 @@ Hard rules:
       id: audit.id,
       createdAt: audit.createdAt.toISOString(),
       aiInsights,
-      // Tells the client which recommendation-metadata schema this audit was
-      // generated under. v1 means each rec has `source` + `expectedLift`
-      // attached; legacy audits stored before this field existed will be
-      // absent it and the client falls back to pre-badge rendering.
       recommendationsSchemaVersion: RECOMMENDATIONS_SCHEMA_VERSION,
+      methodologyVersion: METHODOLOGY_VERSION,
     });
   } catch (err) {
     req.log.error({ err }, "GEO analysis failed");
@@ -502,6 +499,7 @@ router.get("/geo/audits/:id", requireAuth, readRateLimiter, async (req, res): Pr
     ...audit,
     createdAt: audit.createdAt.toISOString(),
     recommendationsSchemaVersion: hasV1Source ? RECOMMENDATIONS_SCHEMA_VERSION : null,
+    methodologyVersion: METHODOLOGY_VERSION,
   });
 });
 

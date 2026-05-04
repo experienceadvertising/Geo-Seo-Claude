@@ -743,6 +743,9 @@ importers:
 
   scripts:
     dependencies:
+      '@workspace/recommendations':
+        specifier: workspace:*
+        version: link:../lib/recommendations
       stripe:
         specifier: '*'
         version: 22.1.0(@types/node@25.3.5)

@@ -2,6 +2,7 @@ import rawCatalog from "../data/recommendations.json" with { type: "json" };
 import type { Recommendation, SourceType, Severity, Category } from "./types.js";
 
 export * from "./types.js";
+export { METHODOLOGY_VERSION } from "./types.js";
 
 // ---------------------------------------------------------------------------
 // Load + validate the JSON catalog at module-load time. Validation failures
@@ -142,6 +143,16 @@ function validate(rec: unknown, idx: number): Recommendation {
 
   if (r.retired !== undefined && typeof r.retired !== "boolean") {
     throw new Error(`${where} \`retired\` must be boolean if present`);
+  }
+
+  // Optional freshness fields — must be ISO date strings or null/absent
+  for (const field of ["lastReviewedAt", "expiresAt"] as const) {
+    const v = r[field];
+    if (v !== undefined && v !== null && !isIsoDate(v)) {
+      throw new Error(
+        `${where} \`${field}\` must be a YYYY-MM-DD ISO date string, null, or absent — got ${JSON.stringify(v)}`
+      );
+    }
   }
 
   return r as unknown as Recommendation;
