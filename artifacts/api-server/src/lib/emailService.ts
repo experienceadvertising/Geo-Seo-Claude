@@ -274,8 +274,26 @@ export const EmailService = {
       return;
     }
     const text = lines.join("\n");
-    const html = `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;line-height:1.5;color:#111">
-${lines.map((l) => `<div>${escapeHtml(l)}</div>`).join("\n")}
+    // Render each line as either a "Key: Value" row (when the line contains
+    // a colon) or a paragraph. Two-column layout makes admins skim 5x faster
+    // than a wall of text and keeps the operational categories (User ID,
+    // Plan, Amount) visually separated from prose.
+    const rows = lines.map((raw) => {
+      if (!raw) return `<tr><td colspan="2" style="height:6px;"></td></tr>`;
+      const idx = raw.indexOf(":");
+      if (idx > 0 && idx < raw.length - 1) {
+        const key = raw.slice(0, idx).trim();
+        const val = raw.slice(idx + 1).trim();
+        return `<tr>
+          <td style="padding:4px 12px 4px 0;color:#6b7280;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap;vertical-align:top;">${escapeHtml(key)}</td>
+          <td style="padding:4px 0;color:#111827;font-size:14px;word-break:break-word;">${escapeHtml(val)}</td>
+        </tr>`;
+      }
+      return `<tr><td colspan="2" style="padding:6px 0;color:#374151;font-size:14px;line-height:1.55;">${escapeHtml(raw)}</td></tr>`;
+    }).join("");
+    const html = `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;line-height:1.5;color:#111;max-width:560px;">
+  <div style="font-size:13px;color:#6b7280;margin-bottom:12px;">${escapeHtml(subject)}</div>
+  <table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;">${rows}</table>
 </div>`;
     await Promise.all(
       recipients.map((to) => send(to, subject, html, text, "admin-notification")),

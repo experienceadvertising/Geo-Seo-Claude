@@ -320,22 +320,29 @@ Hard rules:
     isFirstAuditPromise.then(async (wasFirst) => {
       if (wasFirst) return;
       try {
-        const hostname = (() => { try { return new URL(url).hostname; } catch { return null; } })();
+        const hostname = (() => { try { return new URL(url).hostname.toLowerCase(); } catch { return null; } })();
         if (!hostname) return;
-        // Find the most recent PRIOR audit on this hostname for this user,
-        // excluding the one we just inserted. LIKE %hostname% mirrors how
-        // /geo/audits/history matches.
-        const priors = await appDb
-          .select({ geoScore: auditsTable.geoScore, createdAt: auditsTable.createdAt })
+        // Find recent audits on this hostname for this user, excluding the
+        // one we just inserted. LIKE pre-filters via the index; the parsed-
+        // hostname check below is what makes the match exact (otherwise
+        // `LIKE %stripe.com%` would also match `not-stripe.com`).
+        const recent = await appDb
+          .select({ url: auditsTable.url, geoScore: auditsTable.geoScore, createdAt: auditsTable.createdAt })
           .from(auditsTable)
           .where(and(
             eq(auditsTable.userId, req.userId!),
             like(auditsTable.url, `%${hostname}%`),
           ))
           .orderBy(desc(auditsTable.createdAt))
-          .limit(2);
-        // priors[0] is the just-inserted one; priors[1] is the actual prior.
-        const prior = priors[1];
+          .limit(10);
+        const matches = recent.filter((r) => {
+          try {
+            const h = new URL(r.url).hostname.toLowerCase();
+            return h === hostname || h.endsWith(`.${hostname}`);
+          } catch { return false; }
+        });
+        // matches[0] is the just-inserted one; matches[1] is the actual prior.
+        const prior = matches[1];
         if (!prior) return;
         const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
         if (prior.createdAt > sixHoursAgo) return; // iteration noise
@@ -577,6 +584,9 @@ router.get("/geo/audits/history", requireAuth, readRateLimiter, async (req, res)
   const daysCap = plan === "agency" ? 730 : plan === "pro" ? 365 : 30;
   const since = new Date(Date.now() - daysCap * 24 * 60 * 60 * 1000);
 
+  // Pre-filter with LIKE (uses the index) but be deliberately a touch loose
+  // so we don't miss audits where the URL has a subdomain or a trailing
+  // path. The exact hostname check below is what guarantees correctness.
   const audits = await db
     .select({
       id: auditsTable.id,
@@ -592,9 +602,18 @@ router.get("/geo/audits/history", requireAuth, readRateLimiter, async (req, res)
       )
     )
     .orderBy(asc(auditsTable.createdAt))
-    .limit(100);
+    .limit(200);
 
-  const filtered = audits.filter((a) => a.createdAt >= since);
+  // Exact-host filter — `LIKE %stripe.com%` would otherwise match
+  // `not-stripe.com` and `stripe.com.evil.tld`. Compare against the parsed
+  // hostname (lowercased) and accept either an exact hit or a subdomain
+  // suffix match (audits.stripe.com → stripe.com).
+  const filtered = audits.filter((a) => {
+    if (a.createdAt < since) return false;
+    let host: string;
+    try { host = new URL(a.url).hostname.toLowerCase(); } catch { return false; }
+    return host === domain || host.endsWith(`.${domain}`);
+  });
   res.json({
     domain,
     plan,

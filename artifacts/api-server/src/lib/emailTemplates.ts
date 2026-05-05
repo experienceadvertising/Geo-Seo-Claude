@@ -130,7 +130,12 @@ function scoreBar(label: string, score: number): string {
 
 // ── Email 1: Welcome (Day 0) ─────────────────────────────────────────────────
 export function welcomeEmail(firstName: string, unsubscribeUrl?: string) {
-  const subject = `Welcome to AEO Improvement, ${firstName || "there"}!`;
+  // Subject leads with the value prop ("first audit") rather than a generic
+  // greeting — Gmail truncates after ~50 chars on mobile, so the action
+  // verb has to land in the first words.
+  const subject = firstName
+    ? `${firstName}, run your first AEO audit (free, ~30 sec)`
+    : `Run your first AEO audit (free, ~30 sec)`;
   const html = layout(
     `${h1(`Welcome, ${firstName || "there"} 👋`)}
     ${p("You're now set up to track and improve your website's citability across ChatGPT, Claude, Gemini, and Perplexity.")}
@@ -157,7 +162,10 @@ export function welcomeEmail(firstName: string, unsubscribeUrl?: string) {
 
 // ── Email 2: Day-3 Tips ──────────────────────────────────────────────────────
 export function welcomeD3Email(firstName: string, unsubscribeUrl?: string) {
-  const subject = "3 quick AEO wins you can do this week";
+  // Concrete > clever: name the actions, not the category. "Wins" is empty
+  // calories; "llms.txt + FAQ schema + robots.txt" tells the recipient
+  // exactly what's inside before they open.
+  const subject = "3 fixes for ChatGPT to cite you: llms.txt, FAQ schema, robots.txt";
   const html = layout(
     `${h1("3 quick wins for better AI citations")}
     ${p(`Hi ${firstName || "there"}, it's been a few days since you signed up. Here are three high-impact improvements most sites can make this week:`)}
@@ -222,7 +230,13 @@ export interface WeeklyDigestData {
 
 export function weeklyDigestEmail(data: WeeklyDigestData, unsubscribeUrl?: string) {
   const { firstName, latestAudit, auditCount } = data;
-  const subject = `Your AEO weekly digest`;
+  // Pack the headline numbers into the subject — preheader was already
+  // doing this work; subject is what actually drives opens.
+  const subject = latestAudit
+    ? `Your AEO digest: ${auditCount} audit${auditCount !== 1 ? "s" : ""}, latest score ${Math.round(latestAudit.geoScore)}/100`
+    : auditCount > 0
+      ? `Your AEO digest: ${auditCount} audit${auditCount !== 1 ? "s" : ""} this week`
+      : `Your AEO digest — no audits this week, here's how to start`;
   const scoreSection = latestAudit
     ? `${divider()}
       <div style="margin-bottom:16px;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6b7280;">Latest Audit Score</div>
