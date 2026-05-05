@@ -15,8 +15,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { SEO } from "@/components/seo";
+import { SEO, breadcrumbJsonLd } from "@/components/seo";
 import { COMPETITORS, OUR_FACTS } from "@/data/competitors";
+import { AUTHOR_PERSON_LD, PRIMARY_AUTHOR, PUBLISHER_ORG } from "@/data/author";
 
 /**
  * "Best AEO tools 2026" buyer's guide.
@@ -87,15 +88,17 @@ export default function BestAeoToolsPage({ variant = "aeo" }: BestAeoToolsPagePr
     headline: title,
     description,
     datePublished: "2026-05-03",
-    dateModified: "2026-05-03",
-    author: { "@type": "Organization", name: "AEO Improvement" },
-    publisher: {
-      "@type": "Organization",
-      name: "AEO Improvement",
-      logo: { "@type": "ImageObject", url: "https://aeoimprovement.com/favicon.svg" },
-    },
-    mainEntityOfPage: `https://aeoimprovement.com${path}`,
+    dateModified: "2026-05-05",
+    author: AUTHOR_PERSON_LD,
+    publisher: PUBLISHER_ORG,
+    mainEntityOfPage: { "@type": "WebPage", "@id": `https://aeoimprovement.com${path}` },
   };
+
+  const breadcrumb = breadcrumbJsonLd([
+    { name: "Home", path: "/" },
+    { name: "Comparisons", path: "/best-aeo-tools" },
+    { name: isGeo ? "Best GEO tools" : "Best AEO tools", path },
+  ]);
 
   const categoryPicks: { icon: React.ReactNode; title: string; bestFor: string; pick: string; pickHref: string; reasoning: string }[] = [
     {
@@ -142,7 +145,16 @@ export default function BestAeoToolsPage({ variant = "aeo" }: BestAeoToolsPagePr
 
   return (
     <>
-      <SEO title={title} description={description} path={path} jsonLd={[itemListJsonLd, articleJsonLd]} />
+      <SEO
+        title={title}
+        description={description}
+        path={path}
+        ogType="article"
+        publishedTime="2026-05-03"
+        modifiedTime="2026-05-05"
+        authorName={PRIMARY_AUTHOR.name}
+        jsonLd={[itemListJsonLd, articleJsonLd, breadcrumb]}
+      />
       <div className="min-h-[calc(100vh-4rem)] py-10 px-4 bg-gradient-to-b from-slate-50/60 to-white">
         <div className="max-w-4xl mx-auto space-y-12">
           {/* Hero */}
@@ -153,12 +165,87 @@ export default function BestAeoToolsPage({ variant = "aeo" }: BestAeoToolsPagePr
             <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900 leading-tight max-w-3xl mx-auto">
               The best {acronym} ({fullName}) tools in 2026
             </h1>
+            <p className="text-sm text-slate-500">
+              By <a href={PRIMARY_AUTHOR.url} rel="author" className="text-emerald-700 hover:underline font-medium">{PRIMARY_AUTHOR.name}</a>, {PRIMARY_AUTHOR.jobTitle} · Updated May 5, 2026
+            </p>
             <p className="text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto">
               An honest, category-by-category guide. We make {acronym} software ourselves —
               we'll be transparent about that — but we'll also recommend competitors when
               they're the better fit for your situation.
             </p>
           </header>
+
+          {/* Variant-specific framing — gives this page substantially unique
+              content vs its twin, so Google indexes both rather than picking
+              one and folding the other. */}
+          {isGeo ? (
+            <section className="space-y-4">
+              <h2 className="text-2xl font-bold text-slate-900">Where the term GEO comes from</h2>
+              <p className="text-slate-700 leading-relaxed">
+                "Generative Engine Optimization" was introduced as a research term by Aggarwal,
+                Murahari et al. in their 2024 KDD paper of the same name (Princeton / IIT Delhi).
+                The paper benchmarks ten content-modification methods against generative AI
+                retrievers and reports their effect on a metric called Position-Adjusted Word
+                Count (PAWC) — essentially, how much weighted real-estate your source receives
+                inside the AI's generated answer. Two methods produced repeatable lift across
+                the corpus: <em>Quotation Addition</em> (citing authoritative third-party
+                sources inline) and <em>Statistics Addition</em> (numeric facts with attribution).
+                Eight of ten methods produced weak, mixed, or negative results — including
+                "keyword stuffing" and "fluency optimization."
+              </p>
+              <p className="text-slate-700 leading-relaxed">
+                If you're shopping for a GEO tool, the question to ask vendors is whether their
+                recommendations map to what the academic literature has actually validated, or
+                whether they extrapolate beyond it. Most marketing copy in this category implies
+                a tighter cause-and-effect than the research supports. The honest framing is:
+                two specific content techniques have measurable lift, and a long list of
+                technical fundamentals (crawler access, structured data, server-side rendering,
+                entity recognition) are necessary preconditions but don't have clean per-tactic
+                effect sizes. Tools that label every recommendation with a confidence level —
+                "research-backed," "industry consensus," "internal benchmark" — are easier to
+                trust than tools that claim X% lift across the board.
+              </p>
+              <p className="text-slate-700 leading-relaxed">
+                In practice, "GEO" and "AEO" describe the same work. The vocabulary varies by
+                community (academic and AI-research circles tend to say GEO; in-house SEO teams
+                and agencies tend to say AEO), but the implementation tasks are identical. We
+                evaluate the same five vendors on both pages of this guide because the
+                buyer-decision criteria don't change with the acronym.
+              </p>
+            </section>
+          ) : (
+            <section className="space-y-4">
+              <h2 className="text-2xl font-bold text-slate-900">What AEO actually looks like in practice</h2>
+              <p className="text-slate-700 leading-relaxed">
+                On a typical week, a marketing team running AEO is doing a few specific things:
+                checking their robots.txt allows OAI-SearchBot, ClaudeBot, PerplexityBot, and
+                Google-Extended; running prompt simulations against ChatGPT, Claude, Gemini,
+                and Perplexity to track which competitors get cited for the queries their
+                buyers are asking; updating FAQ schema and answer-capsule paragraphs on their
+                top five pages so AI engines have a clean direct-answer to lift; and watching
+                a small dashboard for week-over-week mention rate. The work is unglamorous and
+                repeatable — closer to ad-account hygiene than content marketing.
+              </p>
+              <p className="text-slate-700 leading-relaxed">
+                A good AEO tool is judged on whether it reduces that weekly cycle from "two
+                people for half a day" to "one person for an hour." That's why we weight the
+                Fix Generator and prompt simulation flows so heavily in this guide — they're
+                the parts of the loop that consume the most time when you're running AEO without
+                tooling. A pure visibility-monitoring dashboard tells you the score is going
+                down; it doesn't help you make the score go up. Look for tools that ship
+                production-ready output (llms.txt drafts, JSON-LD blocks, robots.txt snippets)
+                rather than just charts and exports.
+              </p>
+              <p className="text-slate-700 leading-relaxed">
+                The other practitioner reality worth naming: AEO citation visibility is volatile.
+                Between 40% and 60% of cited sources rotate month-to-month across major engines
+                in 2026. A single audit is a snapshot, not a baseline. Whichever tool you pick,
+                run a recurring monthly check rather than a one-time setup pass. Even the best
+                technical fixes degrade as crawlers, training cutoffs, and retrieval indexes
+                change underneath you.
+              </p>
+            </section>
+          )}
 
           {/* TL;DR */}
           <Card className="border-emerald-200 bg-emerald-50/40">
@@ -167,12 +254,27 @@ export default function BestAeoToolsPage({ variant = "aeo" }: BestAeoToolsPagePr
                 Short answer
               </div>
               <p className="text-slate-800 leading-relaxed">
-                <strong>For most marketers and agencies:</strong> AEO Improvement — self-serve,
-                free to start, automated Fix Generator drafts your llms.txt and schema, transparent
-                pricing at {OUR_FACTS.proPrice}.{" "}
-                <strong>For enterprises with a sales-cycle budget:</strong> Profound or Brandlight,
-                depending on whether you optimize for attribution or narrative shaping.{" "}
-                <strong>For maximum engine coverage:</strong> AthenaHQ.
+                {isGeo ? (
+                  <>
+                    <strong>If you came here from the GEO research paper:</strong> AEO Improvement
+                    explicitly tags recommendations as "research-backed," "industry consensus," or
+                    "internal benchmark" so you can audit which claims actually trace back to the
+                    Aggarwal et al. KDD 2024 corpus.{" "}
+                    <strong>For enterprise narrative-shaping:</strong> Brandlight has the strongest
+                    bias-and-source-impact analysis in the category.{" "}
+                    <strong>For attribution into existing analytics stacks:</strong> Profound.
+                  </>
+                ) : (
+                  <>
+                    <strong>For most marketers and agencies:</strong> AEO Improvement — self-serve,
+                    free to start, automated Fix Generator drafts your llms.txt and schema,
+                    transparent pricing at {OUR_FACTS.proPrice}.{" "}
+                    <strong>For enterprises with a sales-cycle budget:</strong> Profound or
+                    Brandlight, depending on whether you optimize for attribution or narrative
+                    shaping.{" "}
+                    <strong>For maximum engine coverage:</strong> AthenaHQ.
+                  </>
+                )}
               </p>
               <div className="flex flex-wrap gap-2 pt-2">
                 <Button

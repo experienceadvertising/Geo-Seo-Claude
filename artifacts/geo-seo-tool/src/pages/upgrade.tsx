@@ -25,6 +25,7 @@ import { useAuth } from "@/context/AuthContext";
 import { usePlan } from "@/hooks/usePlan";
 import { useStripeProducts, useCheckout } from "@/hooks/useStripe";
 import { useToast } from "@/hooks/use-toast";
+import { Helmet } from "react-helmet-async";
 
 /**
  * Conversion-focused upgrade landing page. The destination for every
@@ -303,6 +304,10 @@ export default function UpgradePage() {
   if (!isLoaded || planLoading) {
     return (
       <div className="min-h-[calc(100vh-4rem)] py-14 px-4">
+        <Helmet>
+          <title>Upgrade — AEO Improvement</title>
+          <meta name="robots" content="noindex,nofollow" />
+        </Helmet>
         <div className="max-w-4xl mx-auto space-y-8">
           <Skeleton className="h-6 w-40 mx-auto" />
           <Skeleton className="h-12 w-3/4 mx-auto" />
@@ -318,6 +323,10 @@ export default function UpgradePage() {
 
   return (
     <div className="min-h-[calc(100vh-4rem)] py-12 px-4 bg-gradient-to-b from-slate-50/60 to-white">
+      <Helmet>
+        <title>Upgrade — AEO Improvement</title>
+        <meta name="robots" content="noindex,nofollow" />
+      </Helmet>
       <div className="max-w-4xl mx-auto space-y-10">
         {/* Hero */}
         <div className="text-center space-y-4">

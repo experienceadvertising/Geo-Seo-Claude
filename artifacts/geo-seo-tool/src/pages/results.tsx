@@ -23,6 +23,7 @@ function displayUrl(u: string): string {
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip } from "recharts";
 import ReactMarkdown from "react-markdown";
 import { useToast } from "@/hooks/use-toast";
+import { Helmet } from "react-helmet-async";
 import { useQuery } from "@tanstack/react-query";
 import { usePlan } from "@/hooks/usePlan";
 import { UpgradePrompt } from "@/components/upgrade-prompt";
@@ -134,6 +135,10 @@ export default function Results() {
 
   return (
     <div className="flex-1 w-full max-w-7xl mx-auto p-4 md:p-8 space-y-8 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <Helmet>
+        <title>Audit results — AEO Improvement</title>
+        <meta name="robots" content="noindex,nofollow" />
+      </Helmet>
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 border-b pb-6">
         <div className="space-y-2">

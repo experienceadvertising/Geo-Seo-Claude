@@ -2,6 +2,7 @@ import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
+import { existsSync } from "node:fs";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
 const rawPort = process.env.PORT ?? "4173";
@@ -18,21 +19,40 @@ const basePath = process.env.BASE_PATH ?? "/";
 // /verify-email or /sign-in would 404. This middleware rewrites those requests
 // to serve index.html while keeping the browser URL intact so the React router
 // can pick up the path + query string (e.g. ?token=...).
+//
+// IMPORTANT: when a prerendered file exists at dist/public/<path>/index.html
+// (written by scripts/prerender.mjs after vite build), we let the static
+// handler serve that file instead of rewriting to the root index.html.
+// Otherwise non-JS crawlers would never see the route-specific title/meta/
+// JSON-LD that the prerender step inlines.
 function spaFallback(): Plugin {
+  const distPublic = path.resolve(import.meta.dirname, "dist", "public");
   return {
     name: "spa-fallback",
     configurePreviewServer(server) {
       server.middlewares.use((req, _res, next) => {
         const url = req.url ?? "/";
-        // Strip query string for extension check
         const pathname = url.split("?")[0];
         const hasFileExtension = /\.[a-zA-Z0-9]{1,10}$/.test(pathname);
         const isViteInternal = pathname.startsWith("/@") || pathname === "/__vite_ping";
-        if (!hasFileExtension && !isViteInternal) {
-          // Preserve the full URL (path + query string) in the browser;
-          // only tell the static server to serve from the root so it finds index.html.
-          req.url = basePath.replace(/\/$/, "") + "/";
+        if (hasFileExtension || isViteInternal) {
+          next();
+          return;
         }
+
+        const trimmed = pathname.replace(/^\/+|\/+$/g, "");
+        if (trimmed) {
+          const prerendered = path.join(distPublic, trimmed, "index.html");
+          if (existsSync(prerendered)) {
+            req.url = "/" + trimmed + "/";
+            next();
+            return;
+          }
+        }
+
+        // No prerendered match — fall back to the root index.html so the
+        // SPA can render the route client-side.
+        req.url = basePath.replace(/\/$/, "") + "/";
         next();
       });
     },

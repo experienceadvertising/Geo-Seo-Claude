@@ -39,12 +39,24 @@
       "@context": "https://schema.org",
       "@graph": [
         {
+          "@type": "Person",
+          "@id": "https://aeoimprovement.com/#evan-weber",
+          "name": "Evan Weber",
+          "jobTitle": "Founder, AEO Improvement",
+          "url": "https://www.linkedin.com/in/worldsgreatestmarketer/",
+          "sameAs": [
+            "https://www.linkedin.com/in/worldsgreatestmarketer/"
+          ],
+          "worksFor": { "@id": "https://aeoimprovement.com/#organization" }
+        },
+        {
           "@type": "Organization",
           "@id": "https://aeoimprovement.com/#organization",
           "name": "AEO Improvement",
           "url": "https://aeoimprovement.com/",
           "logo": "https://aeoimprovement.com/logo.svg",
-          "description": "Answer Engine Optimization (AEO) auditing platform that scores website visibility across ChatGPT, Claude, Perplexity, and Google AI Overviews."
+          "description": "Answer Engine Optimization (AEO) auditing platform that scores website visibility across ChatGPT, Claude, Perplexity, and Google AI Overviews.",
+          "founder": { "@id": "https://aeoimprovement.com/#evan-weber" }
         },
         {
           "@type": "WebSite",
@@ -60,11 +72,24 @@
           "applicationCategory": "BusinessApplication",
           "operatingSystem": "Web",
           "url": "https://aeoimprovement.com/",
-          "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+          "offers": {
+            "@type": "AggregateOffer",
+            "priceCurrency": "USD",
+            "lowPrice": "0",
+            "highPrice": "299",
+            "offerCount": "5",
+            "offers": [
+              { "@type": "Offer", "name": "Free", "price": "0", "priceCurrency": "USD", "url": "https://aeoimprovement.com/sign-up" },
+              { "@type": "Offer", "name": "Pro (monthly)", "price": "49", "priceCurrency": "USD", "url": "https://aeoimprovement.com/pricing" },
+              { "@type": "Offer", "name": "Pro (annual)", "price": "470", "priceCurrency": "USD", "url": "https://aeoimprovement.com/pricing" },
+              { "@type": "Offer", "name": "Agency (monthly)", "price": "299", "priceCurrency": "USD", "url": "https://aeoimprovement.com/pricing" },
+              { "@type": "Offer", "name": "Agency (annual)", "price": "2870", "priceCurrency": "USD", "url": "https://aeoimprovement.com/pricing" }
+            ]
+          },
           "description": "Free AEO/GEO audit tool. Analyze any URL for citability, AI crawler access, brand authority, schema markup, technical SEO, and run live prompt simulations against ChatGPT, Claude, Gemini and Perplexity.",
           "featureList": [
             "Citability scoring across all major AI search engines",
-            "AI crawler access auditing (GPTBot, ClaudeBot, PerplexityBot, Google-Extended)",
+            "AI crawler access auditing (GPTBot, OAI-SearchBot, ClaudeBot, PerplexityBot, Google-Extended)",
             "Brand authority footprint analysis",
             "Schema markup and structured data review",
             "Live prompt simulation against ChatGPT, Claude, Gemini, and Perplexity",

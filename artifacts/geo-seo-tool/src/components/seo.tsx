@@ -13,12 +13,21 @@ interface SEOProps {
   // Override og:image if a page has a more specific share image. Defaults
   // to the global opengraph.jpg referenced in index.html.
   ogImage?: string;
+  // Open Graph type. "article" enables LinkedIn/X to render byline + date
+  // for guide-style pages. Defaults to "website".
+  ogType?: "website" | "article";
+  // Article metadata — only emitted when ogType === "article".
+  publishedTime?: string;
+  modifiedTime?: string;
+  authorName?: string;
   // If false, page won't be indexed (use for thin or duplicate content
   // landing pages). Defaults to true — comparison pages NEED indexing.
   index?: boolean;
 }
 
 const SITE = "https://aeoimprovement.com";
+const OG_IMAGE_W = 1280;
+const OG_IMAGE_H = 720;
 
 /**
  * Per-page SEO component. Wraps react-helmet-async to set <title>,
@@ -28,14 +37,23 @@ const SITE = "https://aeoimprovement.com";
  * The HelmetProvider lives in App.tsx so this component can be dropped
  * into any page. Tags from this component override the defaults in
  * index.html — react-helmet-async handles the merge correctly.
- *
- * Per Google's docs, JSON-LD should live in <head> as a script type
- * application/ld+json. Multiple blocks are allowed.
  */
-export function SEO({ title, description, path, jsonLd, ogImage, index = true }: SEOProps) {
+export function SEO({
+  title,
+  description,
+  path,
+  jsonLd,
+  ogImage,
+  ogType = "website",
+  publishedTime,
+  modifiedTime,
+  authorName,
+  index = true,
+}: SEOProps) {
   const canonical = `${SITE}${path}`;
   const image = ogImage ?? `${SITE}/opengraph.jpg`;
   const ldArray = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
+  const isArticle = ogType === "article";
 
   return (
     <Helmet>
@@ -45,12 +63,25 @@ export function SEO({ title, description, path, jsonLd, ogImage, index = true }:
       {!index && <meta name="robots" content="noindex, follow" />}
 
       {/* OpenGraph */}
-      <meta property="og:type" content="website" />
+      <meta property="og:type" content={ogType} />
       <meta property="og:url" content={canonical} />
       <meta property="og:title" content={title} />
       <meta property="og:description" content={description} />
       <meta property="og:image" content={image} />
+      <meta property="og:image:width" content={String(OG_IMAGE_W)} />
+      <meta property="og:image:height" content={String(OG_IMAGE_H)} />
       <meta property="og:site_name" content="AEO Improvement" />
+      <meta property="og:locale" content="en_US" />
+
+      {isArticle && publishedTime && (
+        <meta property="article:published_time" content={publishedTime} />
+      )}
+      {isArticle && modifiedTime && (
+        <meta property="article:modified_time" content={modifiedTime} />
+      )}
+      {isArticle && authorName && (
+        <meta property="article:author" content={authorName} />
+      )}
 
       {/* Twitter */}
       <meta name="twitter:card" content="summary_large_image" />
@@ -67,4 +98,23 @@ export function SEO({ title, description, path, jsonLd, ogImage, index = true }:
       ))}
     </Helmet>
   );
+}
+
+/**
+ * Build a BreadcrumbList JSON-LD for a page. Pass crumbs in display order;
+ * we'll add the @context, @type, and 1-indexed positions.
+ */
+export function breadcrumbJsonLd(
+  crumbs: Array<{ name: string; path: string }>,
+) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: crumbs.map((c, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: c.name,
+      item: `${SITE}${c.path}`,
+    })),
+  };
 }
