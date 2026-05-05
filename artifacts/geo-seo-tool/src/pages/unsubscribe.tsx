@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { Loader2, MailX, MailCheck, Sparkles } from "lucide-react";
+import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { customFetch } from "@workspace/api-client-react";
@@ -21,9 +22,15 @@ export default function UnsubscribePage() {
     }
     (async () => {
       try {
-        const data = await customFetch<{ email: string; optedOut: boolean }>(
+        const data = await customFetch<{ email: string | null; optedOut: boolean | null }>(
           `/api/auth/unsubscribe-info?token=${encodeURIComponent(token)}`,
         );
+        // Server returns 200 + null for unknown tokens (so scrapers can't
+        // distinguish valid vs invalid tokens by HTTP status).
+        if (!data.email) {
+          setStatus("invalid");
+          return;
+        }
         setEmail(data.email);
         setStatus(data.optedOut ? "unsubscribed" : "subscribed");
       } catch {
@@ -64,6 +71,10 @@ export default function UnsubscribePage() {
 
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4 py-12">
+      <Helmet>
+        <title>Email preferences — AEO Improvement</title>
+        <meta name="robots" content="noindex,nofollow" />
+      </Helmet>
       <Card className="w-full max-w-[480px] shadow-xl border-slate-200">
         <CardHeader className="text-center pb-4">
           <div className="flex justify-center mb-3">

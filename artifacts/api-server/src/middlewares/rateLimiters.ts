@@ -63,3 +63,15 @@ export const passwordEmailRateLimiter = rateLimit({
   keyGenerator: ipKey,
   message: { error: "Too many requests. Please try again in an hour." },
 });
+
+// Unsubscribe / resubscribe / unsubscribe-info: stop bots from brute-forcing
+// the 256-bit token space. Real users hit these endpoints at most a handful
+// of times after clicking a link from email.
+export const unsubscribeRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: ipKey,
+  message: { error: "Too many requests. Please try again later." },
+});

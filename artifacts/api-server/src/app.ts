@@ -57,7 +57,43 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false,
   crossOriginResourcePolicy: { policy: "cross-origin" },
 }));
-app.use(cors({ credentials: true, origin: true }));
+
+// CORS allowlist. Reflecting any Origin (`origin: true`) with credentials is
+// risky — an attacker page on evil.com can't read responses (browser blocks
+// without an allow header), but it also makes us a useful proxy for CSRF
+// reconnaissance. Restrict to hosts we actually serve. Cookie sameSite=lax
+// is the primary CSRF defence; this is defence-in-depth.
+const PRODUCTION_HOST = "aeoimprovement.com";
+function buildAllowedOrigins(): Set<string> {
+  const origins = new Set<string>([
+    `https://${PRODUCTION_HOST}`,
+    `https://www.${PRODUCTION_HOST}`,
+  ]);
+  if (process.env.FRONTEND_URL) {
+    try { origins.add(new URL(process.env.FRONTEND_URL).origin); } catch { /* ignore */ }
+  }
+  for (const d of (process.env.REPLIT_DOMAINS ?? "").split(",").map((s) => s.trim()).filter(Boolean)) {
+    origins.add(`https://${d}`);
+  }
+  if (process.env.REPLIT_DEV_DOMAIN) origins.add(`https://${process.env.REPLIT_DEV_DOMAIN}`);
+  // Local dev — Vite default ports.
+  if (process.env.NODE_ENV !== "production") {
+    origins.add("http://localhost:5173");
+    origins.add("http://127.0.0.1:5173");
+  }
+  return origins;
+}
+const ALLOWED_ORIGINS = buildAllowedOrigins();
+app.use(cors({
+  credentials: true,
+  origin(origin, cb) {
+    // Same-origin requests (no Origin header) and curl/server-to-server hits
+    // bypass the cross-origin path entirely; always allow them.
+    if (!origin) return cb(null, true);
+    if (ALLOWED_ORIGINS.has(origin)) return cb(null, true);
+    return cb(null, false);
+  },
+}));
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 

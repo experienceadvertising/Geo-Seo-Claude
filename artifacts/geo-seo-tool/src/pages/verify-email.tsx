@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { Loader2, CheckCircle2, XCircle, Mail } from "lucide-react";
+import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -56,6 +57,10 @@ export default function VerifyEmailPage() {
 
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4">
+      <Helmet>
+        <title>Verify email — AEO Improvement</title>
+        <meta name="robots" content="noindex,nofollow" />
+      </Helmet>
       <Card className="w-full max-w-[440px] shadow-xl border-slate-200">
         <CardContent className="pt-8 pb-8 text-center space-y-4">
           {status === "loading" && (

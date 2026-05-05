@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Loader2, Sparkles } from "lucide-react";
+import { Helmet } from "react-helmet-async";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,9 +13,11 @@ const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 function getNextPath(): string {
   // Read ?next=... from the URL. Restrict to same-origin paths to avoid open
-  // redirect vulnerabilities — only allow values that start with "/".
+  // redirect vulnerabilities — only allow values that start with "/", reject
+  // protocol-relative ("//evil.com") and backslash variants the URL parser
+  // may treat as path separators on some clients.
   const raw = new URLSearchParams(window.location.search).get("next");
-  if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return "/";
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//") || raw.includes("\\") || /[\r\n]/.test(raw)) return "/";
   // Strip BASE prefix if present so wouter receives a router-relative path.
   if (BASE && raw.startsWith(BASE + "/")) return raw.slice(BASE.length) || "/";
   return raw;
@@ -77,6 +80,10 @@ export default function SignInPage() {
 
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4">
+      <Helmet>
+        <title>Sign in — AEO Improvement</title>
+        <meta name="robots" content="noindex,nofollow" />
+      </Helmet>
       <Card className="w-full max-w-[440px] shadow-xl border-slate-200">
         <CardHeader className="text-center pb-4">
           <div className="flex justify-center mb-3">

@@ -1,11 +1,19 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { Loader2, CheckCircle2 } from "lucide-react";
+import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { customFetch } from "@workspace/api-client-react";
+
+const NoIndex = () => (
+  <Helmet>
+    <title>Reset password — AEO Improvement</title>
+    <meta name="robots" content="noindex,nofollow" />
+  </Helmet>
+);
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -33,6 +41,7 @@ export default function ForgotPasswordPage() {
   if (done) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4">
+        <NoIndex />
         <Card className="w-full max-w-[440px] shadow-xl border-slate-200">
           <CardContent className="pt-8 pb-8 text-center space-y-4">
             <CheckCircle2 className="h-14 w-14 text-emerald-500 mx-auto" />
@@ -51,6 +60,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4">
+      <NoIndex />
       <Card className="w-full max-w-[440px] shadow-xl border-slate-200">
         <CardHeader className="text-center pb-4">
           <CardTitle className="text-2xl font-bold">Reset your password</CardTitle>

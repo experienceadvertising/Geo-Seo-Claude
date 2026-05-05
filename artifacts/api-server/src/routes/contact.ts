@@ -36,9 +36,13 @@ router.post("/contact", contactRateLimiter, async (req, res): Promise<void> => {
     return;
   }
 
-  const cleanEmail = (email || "").trim().toLowerCase();
+  // Strip CR/LF from name + email before they end up in admin email subjects
+  // / From-display headers. Postmark's API doesn't take raw header strings
+  // (so injection isn't possible at the protocol level), but defence in depth
+  // is cheap and keeps the admin UI clean if someone pastes multi-line input.
+  const cleanEmail = (email || "").trim().toLowerCase().replace(/[\r\n]/g, "");
   const cleanMessage = (message || "").trim();
-  const cleanName = (name || "").trim().slice(0, 120);
+  const cleanName = (name || "").trim().replace(/[\r\n]/g, " ").slice(0, 120);
 
   if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
     res.status(400).json({ error: "A valid email address is required." });

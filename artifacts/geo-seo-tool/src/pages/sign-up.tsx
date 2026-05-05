@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Loader2, Sparkles, CheckCircle2 } from "lucide-react";
+import { Helmet } from "react-helmet-async";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -63,6 +64,10 @@ export default function SignUpPage() {
   if (done) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4">
+        <Helmet>
+          <title>Check your email — AEO Improvement</title>
+          <meta name="robots" content="noindex,nofollow" />
+        </Helmet>
         <Card className="w-full max-w-[440px] shadow-xl border-slate-200">
           <CardContent className="pt-8 pb-8 text-center space-y-4">
             <CheckCircle2 className="h-14 w-14 text-emerald-500 mx-auto" />
@@ -97,6 +102,10 @@ export default function SignUpPage() {
 
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4">
+      <Helmet>
+        <title>Sign up — AEO Improvement</title>
+        <meta name="robots" content="noindex,nofollow" />
+      </Helmet>
       <Card className="w-full max-w-[440px] shadow-xl border-slate-200">
         <CardHeader className="text-center pb-4">
           <div className="flex justify-center mb-3">

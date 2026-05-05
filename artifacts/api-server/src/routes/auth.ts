@@ -11,6 +11,7 @@ import {
   loginRateLimiter,
   registerRateLimiter,
   passwordEmailRateLimiter,
+  unsubscribeRateLimiter,
 } from "../middlewares/rateLimiters";
 
 const router = Router();
@@ -544,7 +545,7 @@ router.post("/auth/change-password", requireAuth, async (req, res): Promise<void
 //
 // GET → redirect to friendly frontend confirmation page.
 // POST → flip email_opt_out=true atomically. Idempotent.
-router.get("/auth/unsubscribe", (req, res): void => {
+router.get("/auth/unsubscribe", unsubscribeRateLimiter, (req, res): void => {
   const tok = (req.query.token as string | undefined) ?? "";
   if (!tok) {
     res.status(400).send("Missing token.");
@@ -554,7 +555,7 @@ router.get("/auth/unsubscribe", (req, res): void => {
   res.redirect(`${baseUrl}/unsubscribe?token=${encodeURIComponent(tok)}`);
 });
 
-router.post("/auth/unsubscribe", async (req, res): Promise<void> => {
+router.post("/auth/unsubscribe", unsubscribeRateLimiter, async (req, res): Promise<void> => {
   // Token may arrive in body (frontend POST) or query (Gmail one-click POST).
   const tok =
     (req.body && typeof req.body === "object" && (req.body as any).token) ||
@@ -585,7 +586,9 @@ router.post("/auth/unsubscribe", async (req, res): Promise<void> => {
 // Look up subscription state for the frontend confirmation page so it can
 // render either "You're subscribed → unsubscribe" or "You're already
 // unsubscribed → resubscribe" without revealing the user's full email.
-router.get("/auth/unsubscribe-info", async (req, res): Promise<void> => {
+//
+// Rate-limited so the 256-bit token space can't be probed.
+router.get("/auth/unsubscribe-info", unsubscribeRateLimiter, async (req, res): Promise<void> => {
   const tok = (req.query.token as string | undefined) ?? "";
   if (!tok) {
     res.status(400).json({ error: "Missing token." });
@@ -597,7 +600,10 @@ router.get("/auth/unsubscribe-info", async (req, res): Promise<void> => {
     .where(eq(usersTable.unsubscribeToken, tok));
 
   if (!user || !user.email) {
-    res.status(404).json({ error: "Invalid unsubscribe link." });
+    // Use 200 + null so a scraper can't tell valid tokens from invalid via
+    // status code or response shape. Frontend renders "invalid link" copy
+    // when email is null.
+    res.json({ email: null, optedOut: null });
     return;
   }
 
@@ -610,7 +616,7 @@ router.get("/auth/unsubscribe-info", async (req, res): Promise<void> => {
   res.json({ email: masked, optedOut: user.emailOptOut });
 });
 
-router.post("/auth/resubscribe", async (req, res): Promise<void> => {
+router.post("/auth/resubscribe", unsubscribeRateLimiter, async (req, res): Promise<void> => {
   const tok =
     (req.body && typeof req.body === "object" && (req.body as any).token) ||
     (req.query.token as string | undefined) ||
