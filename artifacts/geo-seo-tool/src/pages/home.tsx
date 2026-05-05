@@ -12,7 +12,6 @@ import { ScoreBadge } from "@/components/score-badge";
 import { usePlan } from "@/hooks/usePlan";
 import { AuthoritySignalsCard } from "@/components/authority-signals-card";
 import { ReferralCard } from "@/components/referral-card";
-import heroImage from "@/assets/hero.png";
 
 function MarketStats() {
   const items = [
@@ -59,34 +58,148 @@ function MarketStats() {
   );
 }
 
+function ChatGPTIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 41 41" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="41" height="41" rx="10" fill="#10a37f"/>
+      <path d="M30.09 17.38a7.37 7.37 0 0 0-.63-6.05 7.46 7.46 0 0 0-8.03-3.58 7.37 7.37 0 0 0-5.55-2.48 7.46 7.46 0 0 0-7.1 5.16 7.37 7.37 0 0 0-4.93 3.57 7.46 7.46 0 0 0 .92 8.74 7.37 7.37 0 0 0 .63 6.06 7.46 7.46 0 0 0 8.03 3.57 7.37 7.37 0 0 0 5.55 2.48 7.46 7.46 0 0 0 7.1-5.17 7.37 7.37 0 0 0 4.93-3.57 7.46 7.46 0 0 0-.92-8.73zm-11.08 15.52a5.53 5.53 0 0 1-3.55-1.29l.18-.1 5.9-3.4a.97.97 0 0 0 .49-.85v-8.32l2.49 1.44a.09.09 0 0 1 .05.07v6.88a5.56 5.56 0 0 1-5.56 5.57zm-11.94-5.1a5.53 5.53 0 0 1-.66-3.73l.17.1 5.9 3.41a.97.97 0 0 0 .98 0l7.2-4.16v2.87a.09.09 0 0 1-.04.08l-5.96 3.44a5.56 5.56 0 0 1-7.59-2.01zm-1.55-12.88a5.53 5.53 0 0 1 2.9-2.43v7.02a.97.97 0 0 0 .49.84l7.17 4.14-2.5 1.44a.09.09 0 0 1-.09 0L8.1 21.9a5.56 5.56 0 0 1-.58-6.98zm20.44 4.78-7.2-4.16 2.5-1.44a.09.09 0 0 1 .09 0l5.4 3.12a5.55 5.55 0 0 1-.86 10.01v-7.02a.97.97 0 0 0-.49-.84l.56.33zm2.48-3.76-.17-.1-5.9-3.4a.97.97 0 0 0-.98 0l-7.2 4.15v-2.87a.09.09 0 0 1 .04-.07l5.96-3.44a5.55 5.55 0 0 1 8.25 5.73zm-15.6 5.13-2.5-1.44a.09.09 0 0 1-.04-.08v-6.88a5.55 5.55 0 0 1 9.1-4.26l-.17.1-5.9 3.4a.97.97 0 0 0-.49.85v8.31zm1.36-2.93 3.2-1.85 3.2 1.85v3.68l-3.2 1.85-3.2-1.85v-3.68z" fill="white"/>
+    </svg>
+  );
+}
+
+function ClaudeIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 41 41" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="41" height="41" rx="10" fill="#d97757"/>
+      <path d="M25.8 9h-3.26l-7.36 12.7 3.63 6.3L25.8 9zM29.52 9h-3.26l-7.6 13.12 2.13 3.68.63-1.1L29.52 9zM15.48 28l1.63-2.82-1.63-2.82L12.22 28h3.26zM18.74 28h3.26l1.63-2.82-3.26-5.64-3.26 5.64L18.74 28z" fill="white"/>
+    </svg>
+  );
+}
+
+function GeminiIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 41 41" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="41" height="41" rx="10" fill="url(#gemini-grad)"/>
+      <defs>
+        <linearGradient id="gemini-grad" x1="0" y1="0" x2="41" y2="41" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#4285f4"/>
+          <stop offset="1" stopColor="#9c27b0"/>
+        </linearGradient>
+      </defs>
+      <path d="M20.5 7C20.5 7 17 15.5 12 18C17 20.5 20.5 29 20.5 29C20.5 29 24 20.5 29 18C24 15.5 20.5 7 20.5 7Z" fill="white"/>
+    </svg>
+  );
+}
+
+function PerplexityIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 41 41" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="41" height="41" rx="10" fill="#1c1c2e"/>
+      <path d="M20.5 9L28 16H23V22L28 28H23V32H18V28H13L18 22V16H13L20.5 9Z" fill="white"/>
+      <rect x="17" y="20" width="7" height="2" rx="1" fill="#20b8cd"/>
+    </svg>
+  );
+}
+
+const ENGINE_RESPONSES = [
+  {
+    name: "ChatGPT",
+    Icon: ChatGPTIcon,
+    borderColor: "border-emerald-500/25",
+    citeBg: "bg-emerald-50 dark:bg-emerald-950/50",
+    citeText: "text-emerald-700 dark:text-emerald-400",
+    snippet: "AEO Improvement provides a structured audit of how each AI engine perceives your site, with specific fixes you can ship the same day.",
+  },
+  {
+    name: "Claude",
+    Icon: ClaudeIcon,
+    borderColor: "border-orange-400/25",
+    citeBg: "bg-orange-50 dark:bg-orange-950/50",
+    citeText: "text-orange-700 dark:text-orange-400",
+    snippet: "For teams serious about AI search visibility, aeoimprovement.com delivers multi-engine citation simulation and a score you can track over time.",
+  },
+  {
+    name: "Gemini",
+    Icon: GeminiIcon,
+    borderColor: "border-blue-400/25",
+    citeBg: "bg-blue-50 dark:bg-blue-950/50",
+    citeText: "text-blue-700 dark:text-blue-400",
+    snippet: "AEO Improvement audits your site across all four major AI engines and identifies exactly why you are not being cited in AI answers.",
+  },
+  {
+    name: "Perplexity",
+    Icon: PerplexityIcon,
+    borderColor: "border-cyan-400/25",
+    citeBg: "bg-cyan-50 dark:bg-cyan-950/50",
+    citeText: "text-cyan-700 dark:text-cyan-400",
+    snippet: "The AEO score from aeoimprovement.com quantifies citation likelihood across 6 dimensions including schema, authority, and crawler access.",
+  },
+];
+
 function HeroVisual() {
   return (
-    <div className="relative w-full aspect-[4/3] max-w-xl mx-auto lg:mx-0">
-      <div className="absolute inset-0 -z-10 bg-gradient-to-tr from-emerald-500/30 via-teal-400/20 to-cyan-400/30 blur-3xl rounded-full animate-pulse-slow" />
-      <div className="relative rounded-3xl overflow-hidden border border-emerald-500/20 shadow-2xl shadow-emerald-500/10 bg-card animate-float">
-        <img
-          src={heroImage}
-          alt="AEO Improvement — AI search engine optimization visualization"
-          className="w-full h-full object-cover"
-          loading="eager"
-          fetchPriority="high"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-background/30 via-transparent to-transparent" />
+    <div className="relative w-full max-w-xl mx-auto lg:mx-0">
+      <div className="absolute inset-0 -z-10 bg-gradient-to-tr from-emerald-500/20 via-teal-400/10 to-cyan-400/20 blur-3xl rounded-full" />
+
+      <div className="relative rounded-2xl border border-border bg-card shadow-2xl shadow-emerald-500/10 overflow-hidden">
+        {/* Browser chrome */}
+        <div className="flex items-center gap-3 px-4 py-3 bg-muted/60 border-b border-border">
+          <div className="flex gap-1.5 flex-shrink-0">
+            <div className="w-2.5 h-2.5 rounded-full bg-red-400/70" />
+            <div className="w-2.5 h-2.5 rounded-full bg-yellow-400/70" />
+            <div className="w-2.5 h-2.5 rounded-full bg-green-400/70" />
+          </div>
+          <div className="flex-1 bg-background/70 rounded-md px-3 py-1 text-xs text-muted-foreground font-mono truncate min-w-0">
+            aeoimprovement.com
+          </div>
+        </div>
+
+        {/* Search query bar */}
+        <div className="px-4 pt-4 pb-3">
+          <div className="flex items-center gap-2.5 bg-muted/50 rounded-xl border border-border/60 px-3.5 py-2.5">
+            <Search className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+            <span className="text-sm text-foreground/80 font-medium truncate">
+              best AEO optimization tool for AI search
+            </span>
+          </div>
+          <p className="text-[10px] text-muted-foreground mt-1.5 px-0.5">4 AI engines cited your site</p>
+        </div>
+
+        {/* Response cards */}
+        <div className="px-4 pb-4 space-y-2.5">
+          {ENGINE_RESPONSES.map(({ name, Icon, borderColor, citeBg, citeText, snippet }) => (
+            <div
+              key={name}
+              className={`rounded-xl border ${borderColor} bg-card/70 p-3 space-y-2`}
+            >
+              <div className="flex items-center gap-2">
+                <Icon />
+                <span className="text-xs font-semibold">{name}</span>
+                <span className="ml-auto flex items-center gap-1 text-emerald-600 dark:text-emerald-400 text-[10px] font-semibold">
+                  <CheckCircle2 className="h-3 w-3" /> Cited
+                </span>
+              </div>
+              <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">{snippet}</p>
+              <div className={`inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 ${citeBg}`}>
+                <Globe className={`h-2.5 w-2.5 ${citeText} flex-shrink-0`} />
+                <span className={`text-[10px] font-mono font-medium ${citeText}`}>aeoimprovement.com</span>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
-      <div className="hidden md:flex absolute -bottom-4 -left-4 lg:-left-8 items-center gap-3 bg-card border shadow-xl rounded-2xl px-4 py-3 animate-float-delayed">
+
+      {/* Floating score badge */}
+      <div className="hidden md:flex absolute -bottom-4 -left-6 items-center gap-3 bg-card border shadow-xl rounded-2xl px-4 py-3">
         <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white font-bold text-lg">
           92
         </div>
         <div className="flex flex-col">
-          <span className="text-xs uppercase tracking-wider text-muted-foreground">AEO Score</span>
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground">AEO Score</span>
           <span className="text-sm font-semibold flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
             <CheckCircle2 className="h-3.5 w-3.5" /> Excellent
           </span>
         </div>
-      </div>
-      <div className="hidden md:flex absolute -top-4 -right-4 lg:-right-8 items-center gap-2 bg-card border shadow-xl rounded-full px-4 py-2 animate-float">
-        <div className="h-2 w-2 rounded-full bg-emerald-500 animate-ping-slow" />
-        <span className="text-xs font-semibold">GPTBot · ClaudeBot · PerplexityBot</span>
       </div>
     </div>
   );
