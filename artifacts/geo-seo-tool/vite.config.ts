@@ -14,15 +14,22 @@ if (Number.isNaN(port) || port <= 0) {
 
 const basePath = process.env.BASE_PATH ?? "/";
 
+// Per-route static HTML for non-JS crawlers (GPTBot, ClaudeBot,
+// PerplexityBot, OAI-SearchBot, Bytespider, CCBot, Twitter/X, LinkedIn,
+// Slack, iMessage). The actual writing happens in scripts/prerender.mjs,
+// invoked from the package "build" script after vite build completes.
+// That script reads scripts/seo-manifest.mjs and writes dist/public/<route>/
+// index.html for every public route with route-specific title, meta,
+// canonical, og:* / article:*, twitter:*, and JSON-LD baked in.
+//
 // SPA fallback: serve index.html for any path that looks like a page route.
 // Vite preview serves built static files literally, so direct navigation to
 // /verify-email or /sign-in would 404. This middleware rewrites those requests
 // to serve index.html while keeping the browser URL intact so the React router
 // can pick up the path + query string (e.g. ?token=...).
 //
-// IMPORTANT: when a prerendered file exists at dist/public/<path>/index.html
-// (written by scripts/prerender.mjs after vite build), we let the static
-// handler serve that file instead of rewriting to the root index.html.
+// When a prerendered file exists at dist/public/<path>/index.html we let the
+// static handler serve that file instead of rewriting to the root index.html.
 // Otherwise non-JS crawlers would never see the route-specific title/meta/
 // JSON-LD that the prerender step inlines.
 function spaFallback(): Plugin {
