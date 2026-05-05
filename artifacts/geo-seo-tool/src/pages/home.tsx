@@ -34,7 +34,7 @@ function MarketStats() {
       accent: "from-cyan-500 to-emerald-500",
       label: "What we measure",
       title: "A score that maps to citation behavior",
-      body: "Our AEO score is a composite of citability, AI-crawler access, brand authority, schema, and technical SEO — each tied to a recommendation with its source disclosed.",
+      body: "Our AEO score is a composite of citability, AI-crawler access, brand authority, schema, and technical SEO. Each dimension is tied to a recommendation with its source disclosed.",
     },
   ];
 
@@ -255,7 +255,7 @@ function SignedOutLanding() {
               <div className="flex flex-col sm:flex-row gap-3 mt-2">
                 <Link href="/sign-up">
                   <Button size="lg" className="h-12 px-8 font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg shadow-emerald-500/25">
-                    Audit my site — it's free <ArrowRight className="ml-2 h-5 w-5" />
+                    Audit my site, free <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
                 <Link href="/sign-in">
@@ -294,25 +294,25 @@ function SignedOutLanding() {
                 icon: Bot,
                 gradient: "from-violet-500 to-purple-600",
                 title: "Live AI prompt simulation",
-                body: "Type the queries your buyers actually use — \"best project management tool for agencies\", \"alternatives to X\" — and find out whether ChatGPT, Claude, Gemini, and Perplexity name you, cite your site, and what they say when they do.",
+                body: "Type the queries your buyers actually use, like \"best project management tool for agencies\" or \"alternatives to X\", and find out whether ChatGPT, Claude, Gemini, and Perplexity name you, cite your site, and what they say when they do.",
               },
               {
                 icon: BarChart3,
                 gradient: "from-emerald-500 to-teal-600",
                 title: "6-dimension AEO score",
-                body: "Citability, AI Crawler Access, Brand Authority, Schema, Technical SEO, and Platform Optimization — scored 0 to 100 and visualized as a radar chart.",
+                body: "Citability, AI Crawler Access, Brand Authority, Schema, Technical SEO, and Platform Optimization. Each dimension is scored 0 to 100 and visualized as a radar chart.",
               },
               {
                 icon: Zap,
                 gradient: "from-amber-500 to-orange-500",
                 title: "Fix Generator",
-                body: "Auto-drafts your llms.txt, JSON-LD schema blocks, and robots.txt entries based on your specific audit gaps. Copy and ship — no guessing required.",
+                body: "Auto-drafts your llms.txt, JSON-LD schema blocks, and robots.txt entries based on your specific audit gaps. Copy and ship. No guessing required.",
               },
               {
                 icon: Shield,
                 gradient: "from-blue-500 to-cyan-500",
                 title: "AI crawler access audit",
-                body: "Checks all six major AI bots — GPTBot, ClaudeBot, PerplexityBot, Google-Extended, Applebot, and meta-externalagent — against your robots.txt and headers.",
+                body: "Checks all six major AI bots (GPTBot, ClaudeBot, PerplexityBot, Google-Extended, Applebot, and meta-externalagent) against your robots.txt and headers.",
               },
               {
                 icon: Building2,
@@ -358,7 +358,7 @@ function SignedOutLanding() {
                 <CheckCircle2 className="h-3 w-3" /> Free account, no credit card
               </div>
               <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight leading-tight">
-                Find out how AI engines see your site — in 60 seconds.
+                Find out how AI engines see your site in 60 seconds.
               </h2>
               <p className="text-emerald-100/70 text-base">
                 Get your AEO score, crawler audit, and top fixes. Free to start.
@@ -367,7 +367,7 @@ function SignedOutLanding() {
             <div className="shrink-0 flex flex-col sm:flex-row gap-3">
               <Link href="/sign-up">
                 <Button size="lg" className="h-13 px-8 font-semibold text-base bg-white text-emerald-900 hover:bg-emerald-50 shadow-xl shadow-black/20">
-                  Audit my site — it's free <ArrowRight className="ml-2 h-5 w-5" />
+                  Audit my site, free <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
               <Link href="/pricing">
@@ -580,7 +580,7 @@ function AeoJourneyCard({ audits }: { audits: Array<{ id: number; url: string; g
                   <div className="text-xs font-semibold mb-1 flex items-center gap-1.5">
                     <Zap className="h-3 w-3 text-emerald-600" /> Fix Generator
                   </div>
-                  <div className="text-xs text-muted-foreground leading-snug">Auto-draft your llms.txt, JSON-LD & robots.txt — copy and ship.</div>
+                  <div className="text-xs text-muted-foreground leading-snug">Auto-draft your llms.txt, JSON-LD & robots.txt. Copy and ship.</div>
                 </div>
               </Link>
               <Link href="/pricing">
@@ -614,7 +614,7 @@ const AEO_TIPS: Array<{ icon: string; title: string; body: string }> = [
   {
     icon: "📄",
     title: "Publish an llms.txt at your root",
-    body: "An llms.txt is a plain-text manifest at /llms.txt that tells LLMs which pages to prioritise and how to summarise your brand. It's emerging as a de-facto standard — early adoption is cheap and signals intent to rank in AI answers.",
+    body: "An llms.txt is a plain-text manifest at /llms.txt that tells LLMs which pages to prioritise and how to summarise your brand. It's emerging as a de-facto standard. Early adoption is cheap and signals intent to rank in AI answers.",
   },
   {
     icon: "❓",
@@ -624,7 +624,7 @@ const AEO_TIPS: Array<{ icon: string; title: string; body: string }> = [
   {
     icon: "📝",
     title: "Lead with the answer, not the build-up",
-    body: "AI engines extract paragraphs that resolve a question in 2–3 sentences. Audit your top pages: does the first paragraph after each H2 directly answer the heading? If it sets up context first, rewrite — answer first, context after.",
+    body: "AI engines extract paragraphs that resolve a question in 2–3 sentences. Audit your top pages: does the first paragraph after each H2 directly answer the heading? If it sets up context first, rewrite it to lead with the answer.",
   },
   {
     icon: "🏷️",
@@ -644,7 +644,7 @@ const AEO_TIPS: Array<{ icon: string; title: string; body: string }> = [
   {
     icon: "📰",
     title: "Keep your About page boring and factual",
-    body: "AI engines pull company facts — founders, founding year, HQ location, headcount range, what you do — from About pages. Make them findable in plain text on a single page, not buried in a video or an interactive timeline.",
+    body: "AI engines pull company facts from About pages: founders, founding year, HQ location, headcount range, what you do. Make them findable in plain text on a single page, not buried in a video or an interactive timeline.",
   },
 ];
 
@@ -697,7 +697,7 @@ const TRUSTED_RESOURCES: Array<{ source: string; title: string; description: str
 // concrete and verifiable on the user's own site.
 const QUICK_WINS: string[] = [
   "Open your robots.txt and confirm it doesn't block GPTBot, ClaudeBot, PerplexityBot, or Google-Extended.",
-  "View Source on your homepage — your value prop and key claims should appear in the raw HTML, not after a JS render.",
+  "View Source on your homepage. Your value prop and key claims should appear in the raw HTML, not after a JS render.",
   "Add FAQPage JSON-LD to your single highest-traffic page first. Validate with Google's Rich Results Test.",
   "Create a one-page llms.txt at your root listing your most important URLs. Even a minimal version helps.",
   "Add Organization schema with sameAs links to your Wikipedia, LinkedIn, Crunchbase, and X profiles.",
@@ -830,7 +830,7 @@ function SignedInDashboard() {
     queryClient.invalidateQueries({ queryKey: ["stripe", "subscription"] });
     queryClient.invalidateQueries({ queryKey: ["me"] });
     toast({
-      title: "You're upgraded — welcome aboard",
+      title: "You're upgraded. Welcome aboard.",
       description: "Your new plan is active. All engines, deeper audits, and the full recommendation set are unlocked.",
     });
     setLocation("/", { replace: true });

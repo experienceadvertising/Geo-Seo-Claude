@@ -105,7 +105,7 @@ export default function SignUpPage() {
             </span>
           </div>
           <CardTitle className="text-2xl font-bold">Create your account</CardTitle>
-          <CardDescription>Free — no credit card required</CardDescription>
+          <CardDescription>Free. No credit card required.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">

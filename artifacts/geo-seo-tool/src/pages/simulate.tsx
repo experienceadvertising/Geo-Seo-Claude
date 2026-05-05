@@ -245,7 +245,7 @@ export default function SimulatePage() {
             </div>
             <div>
               <p className="text-sm font-semibold">Am I being named?</p>
-              <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">When a buyer asks who solves their problem, does each engine mention your brand — or only competitors?</p>
+              <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">When a buyer asks who solves their problem, does each engine mention your brand or only competitors?</p>
             </div>
           </div>
           <div className="flex gap-3">
@@ -263,7 +263,7 @@ export default function SimulatePage() {
             </div>
             <div>
               <p className="text-sm font-semibold">Who's getting the mentions I'm not?</p>
-              <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">See which competitors each engine recommends instead — so you know exactly who to close the gap on.</p>
+              <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">See which competitors each engine recommends instead, so you know exactly who to close the gap on.</p>
             </div>
           </div>
         </div>
@@ -274,7 +274,7 @@ export default function SimulatePage() {
         <CardHeader>
           <CardTitle>Configure simulation</CardTitle>
           <CardDescription>
-            Write the prompts your buyers actually type — category questions, comparison searches, "best X for Y" queries. Run them across AI engines and see where you stand.
+            Write the prompts your buyers actually type: category questions, comparison searches, "best X for Y" queries. Run them across AI engines and see where you stand.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -375,7 +375,7 @@ export default function SimulatePage() {
             </div>
             {isPro ? (
               <div className="space-y-2">
-                <p className="text-xs text-muted-foreground mb-3">Enter up to 3 competitor URLs. After running, we'll show a Citation Gap — how often AI engines cite them vs. you.</p>
+                <p className="text-xs text-muted-foreground mb-3">Enter up to 3 competitor URLs. After running, we'll show a Citation Gap showing how often AI engines cite them vs. you.</p>
                 {competitorUrls.map((url, idx) => (
                   <div key={idx} className="flex gap-2 items-center">
                     <Input
@@ -395,7 +395,7 @@ export default function SimulatePage() {
             ) : (
               <UpgradePrompt
                 feature="Competitor Tracking"
-                description="Track up to 3 competitor domains and see exactly how often AI engines cite them versus your site — per prompt, per engine."
+                description="Track up to 3 competitor domains and see exactly how often AI engines cite them versus your site, per prompt and per engine."
                 requiredPlan="pro"
                 compact
               />

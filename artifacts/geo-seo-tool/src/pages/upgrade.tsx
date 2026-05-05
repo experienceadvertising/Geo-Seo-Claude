@@ -92,7 +92,7 @@ function buildHero(source: Source, isFree: boolean): HeroContent {
       return {
         badge: "Monthly audit cap reached",
         badgeTone: "rose",
-        headline: "Keep auditing today — quota refills next month",
+        headline: "Keep auditing today. Quota refills next month.",
         subhead:
           "You hit your free monthly audit cap. Upgrade to Pro to lift it to 100 audits/mo and unlock everything below.",
         showUsage: true,
@@ -101,7 +101,7 @@ function buildHero(source: Source, isFree: boolean): HeroContent {
       return {
         badge: "Monthly simulation cap reached",
         badgeTone: "rose",
-        headline: "Keep simulating today — quota refills next month",
+        headline: "Keep simulating today. Quota refills next month.",
         subhead:
           "You hit your free monthly simulation cap. Upgrade to Pro for 30 simulations/mo across all 4 AI engines.",
         showUsage: true,
@@ -112,7 +112,7 @@ function buildHero(source: Source, isFree: boolean): HeroContent {
         badgeTone: "indigo",
         headline: "See your site through every AI engine",
         subhead:
-          "You ran an audit against ChatGPT. Here's what the same audit returns when you also see Claude, Gemini, and Perplexity — plus the Fix Generator output for your site.",
+          "You ran an audit against ChatGPT. Here's what the same audit returns when you also see Claude, Gemini, and Perplexity, plus the Fix Generator output for your site.",
         showUsage: false,
       };
     case "weekly-insights":
@@ -139,7 +139,7 @@ function buildHero(source: Source, isFree: boolean): HeroContent {
         badgeTone: "indigo",
         headline: "Track every change across every engine",
         subhead:
-          "You're already iterating on your AEO. Pro multiplies your visibility — 4 engines instead of 1, and a year of trend history instead of 30 days.",
+          "You're already iterating on your AEO. Pro multiplies your visibility: 4 engines instead of 1, and a year of trend history instead of 30 days.",
         showUsage: false,
       };
     default:
