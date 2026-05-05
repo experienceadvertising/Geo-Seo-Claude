@@ -3,6 +3,13 @@
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
 
+/* Self-hosted Inter (variable font). The package bundles woff2 files, so
+   Vite emits hashed assets and there is no Google Fonts round-trip on first
+   paint. font-display: swap is set inside @fontsource-variable/inter, so
+   text is visible immediately with the system fallback while the variable
+   weight loads. */
+@import "@fontsource-variable/inter";
+
 .cl-formFieldInput::placeholder { color: hsl(var(--muted-foreground)); opacity: 1; }
 
 @custom-variant dark (&:is(.dark *));

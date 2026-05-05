@@ -7,7 +7,7 @@
 AEO Improvement is a web-based auditing tool built for marketers, SEOs, and website owners who want their content to be cited inside AI-generated answers. It analyzes any public URL across six pillars:
 
 1. **Citability** — How well-structured and extractable is the page content for AI systems?
-2. **AI Crawler Access** — Is the site allowing GPTBot, ClaudeBot, PerplexityBot, Google-Extended, Applebot, and meta-externalagent to crawl and index it?
+2. **AI Crawler Access** — Is the site allowing GPTBot, OAI-SearchBot, ClaudeBot, PerplexityBot, Google-Extended, Applebot, and meta-externalagent to crawl and index it?
 3. **Brand Authority** — Does the brand have a clear digital footprint on Wikipedia, Wikidata, LinkedIn, GitHub, Twitter/X, and other authoritative sources?
 4. **Schema Markup** — Is structured data (JSON-LD) present and correctly applied (Organization, WebSite, Article, FAQ, etc.)?
 5. **Technical SEO** — Core technical health: HTTPS, meta tags, canonical URL, Open Graph, page speed indicators.
@@ -21,6 +21,7 @@ AEO Improvement is a web-based auditing tool built for marketers, SEOs, and webs
 - **Personalized Recommendations**: Prioritized, actionable fixes ranked by AEO impact — not generic checklists.
 - **Prompt Simulation**: Test how real AI engines answer queries your brand should be cited for.
 - **Auto-Generated Prompts**: Smart prompt suggestions based on the site's actual topic, audience, and content.
+- **Fix Generator (Pro)**: Ready-to-copy llms.txt, JSON-LD schema, and robots.txt snippets tailored to the audited site.
 
 ## What is AEO (Answer Engine Optimization)?
 
@@ -28,7 +29,7 @@ Answer Engine Optimization is the discipline of making website content citable i
 
 - **Content extractability**: Clear headings, direct-answer paragraphs, factual density, and statistics
 - **Schema markup**: JSON-LD structured data that helps AI understand content type, author, and entity relationships
-- **Crawler access**: Explicit allowance for AI training and search crawlers in robots.txt
+- **Crawler access**: Explicit allowance for AI training and search crawlers in robots.txt (note: GPTBot is for OpenAI training, OAI-SearchBot is for live ChatGPT citations — they are independent)
 - **Brand authority**: Presence on structured knowledge sources (Wikipedia, Wikidata, LinkedIn, Crunchbase)
 - **llms.txt**: A plain-text briefing file (this file) that helps LLMs understand the site without executing JavaScript
 
@@ -51,11 +52,34 @@ The AEO score (0–100) is a weighted composite:
 
 Scores below 40 are rated Poor (high priority to fix). Scores 40–69 are Moderate. Scores 70+ are Good.
 
+## Pricing
+
+- **Free**: 5 audits/month, 2 simulations/month, ChatGPT engine, basic AEO score, 30-day history
+- **Pro ($49/mo or $470/yr)**: 100 audits/month, 30 simulations/month, all four engines (ChatGPT, Claude, Gemini, Perplexity), Fix Generator, sentiment analysis, competitor citation gap, 1-year trend history
+- **Agency ($299/mo or $2,870/yr)**: 500 audits/month, 150 simulations/month, agency-branded reports, multi-client management, 2-year trend history, dedicated account manager
+
 ## Technology
 
-AEO Improvement is built on a Node.js/Express API backend with a React + Vite frontend. AI insights are powered by Claude Sonnet (Anthropic). Prompt simulation uses live API calls to ChatGPT (OpenAI), Claude (Anthropic), Perplexity, and Gemini (Google). User authentication is handled by Clerk.
+AEO Improvement is built on a Node.js/Express API backend with a React + Vite frontend. AI insights are powered by Claude Sonnet (Anthropic). Prompt simulation uses live API calls to ChatGPT (OpenAI), Claude (Anthropic), Perplexity, and Gemini (Google). User authentication is custom email-and-password with Postmark for transactional email; sessions are stored in PostgreSQL.
+
+## Pages
+
+- Home and audit entry: https://aeoimprovement.com/
+- Pricing: https://aeoimprovement.com/pricing
+- Methodology and research basis: https://aeoimprovement.com/methodology
+- What is AEO?: https://aeoimprovement.com/what-is-answer-engine-optimization
+- How to rank in ChatGPT: https://aeoimprovement.com/how-to-rank-in-chatgpt
+- How to appear in AI search: https://aeoimprovement.com/how-to-appear-in-ai-search
+- Best AEO tools (2026 buyer's guide): https://aeoimprovement.com/best-aeo-tools
+- Best GEO optimization tools (2026 buyer's guide): https://aeoimprovement.com/best-geo-optimization-tools
+- AEO Improvement vs Otterly.AI: https://aeoimprovement.com/vs/otterly
+- AEO Improvement vs AthenaHQ: https://aeoimprovement.com/vs/athenahq
+- AEO Improvement vs Profound: https://aeoimprovement.com/vs/profound
+- AEO Improvement vs Brandlight: https://aeoimprovement.com/vs/brandlight
+- Contact: https://aeoimprovement.com/contact
 
 ## Contact and Access
 
 - Website: https://aeoimprovement.com/
 - Sign up for a free account to run audits: https://aeoimprovement.com/sign-up
+- Contact form: https://aeoimprovement.com/contact

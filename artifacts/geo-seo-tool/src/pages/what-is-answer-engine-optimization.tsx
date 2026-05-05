@@ -3,7 +3,8 @@ import { CheckCircle2, ArrowRight, BookOpen, BarChart3, Zap, Globe, TrendingUp }
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { SEO } from "@/components/seo";
+import { SEO, breadcrumbJsonLd } from "@/components/seo";
+import { AUTHOR_PERSON_LD, PRIMARY_AUTHOR, PUBLISHER_ORG } from "@/data/author";
 
 const PAGE_TITLE = "What is Answer Engine Optimization (AEO)? The 2026 Guide";
 const PAGE_DESC =
@@ -63,14 +64,16 @@ const articleJsonLd = {
   description: PAGE_DESC,
   datePublished: "2026-05-05",
   dateModified: "2026-05-05",
-  author: { "@type": "Organization", name: "AEO Improvement" },
-  publisher: {
-    "@type": "Organization",
-    name: "AEO Improvement",
-    logo: { "@type": "ImageObject", url: "https://aeoimprovement.com/favicon.svg" },
-  },
-  mainEntityOfPage: "https://aeoimprovement.com/what-is-answer-engine-optimization",
+  author: AUTHOR_PERSON_LD,
+  publisher: PUBLISHER_ORG,
+  mainEntityOfPage: { "@type": "WebPage", "@id": "https://aeoimprovement.com/what-is-answer-engine-optimization" },
 };
+
+const breadcrumb = breadcrumbJsonLd([
+  { name: "Home", path: "/" },
+  { name: "Guides", path: "/what-is-answer-engine-optimization" },
+  { name: "What is Answer Engine Optimization?", path: "/what-is-answer-engine-optimization" },
+]);
 
 function Bullet({ children }: { children: React.ReactNode }) {
   return (
@@ -121,7 +124,11 @@ export default function WhatIsAEO() {
         title={PAGE_TITLE}
         description={PAGE_DESC}
         path="/what-is-answer-engine-optimization"
-        jsonLd={[articleJsonLd, faqJsonLd]}
+        ogType="article"
+        publishedTime="2026-05-05"
+        modifiedTime="2026-05-05"
+        authorName={PRIMARY_AUTHOR.name}
+        jsonLd={[articleJsonLd, faqJsonLd, breadcrumb]}
       />
       <div className="min-h-[calc(100vh-4rem)] py-10 px-4 bg-gradient-to-b from-slate-50/60 to-white">
         <div className="max-w-3xl mx-auto space-y-12">
@@ -134,6 +141,9 @@ export default function WhatIsAEO() {
             <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 leading-tight">
               What is Answer Engine Optimization (AEO)?
             </h1>
+            <p className="text-sm text-slate-500">
+              By <a href={PRIMARY_AUTHOR.url} rel="author" className="text-emerald-700 hover:underline font-medium">{PRIMARY_AUTHOR.name}</a>, {PRIMARY_AUTHOR.jobTitle} · Updated May 5, 2026
+            </p>
             <p className="text-lg text-slate-600 leading-relaxed">
               AEO is the practice of making your website more likely to be cited and recommended
               when people ask AI engines questions in your space. Here is how it works, why it matters

@@ -11,6 +11,133 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { usePlan } from "@/hooks/usePlan";
 import { useStripeProducts, useStripeSubscription, useCheckout, useCustomerPortal } from "@/hooks/useStripe";
 import { useToast } from "@/hooks/use-toast";
+import { SEO, breadcrumbJsonLd } from "@/components/seo";
+
+const PRICING_TITLE = "Pricing — AEO Improvement | Free, Pro, Agency plans for AI search optimization";
+const PRICING_DESC =
+  "Free AEO audits forever. Pro from $49/mo unlocks ChatGPT, Claude, Gemini, and Perplexity coverage plus the Fix Generator. Agency plan for multi-client teams. Transparent pricing, no demo required.";
+
+const pricingProductJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Product",
+  name: "AEO Improvement",
+  description:
+    "Answer Engine Optimization auditing platform that scores website visibility across ChatGPT, Claude, Perplexity, and Google AI Overviews.",
+  brand: { "@type": "Organization", name: "AEO Improvement" },
+  offers: {
+    "@type": "AggregateOffer",
+    priceCurrency: "USD",
+    lowPrice: "0",
+    highPrice: "299",
+    offerCount: "5",
+    offers: [
+      {
+        "@type": "Offer",
+        name: "Free",
+        price: "0",
+        priceCurrency: "USD",
+        url: "https://aeoimprovement.com/sign-up",
+        category: "Free",
+      },
+      {
+        "@type": "Offer",
+        name: "Pro (monthly)",
+        price: "49",
+        priceCurrency: "USD",
+        url: "https://aeoimprovement.com/pricing",
+        priceSpecification: {
+          "@type": "UnitPriceSpecification",
+          price: "49",
+          priceCurrency: "USD",
+          billingDuration: "P1M",
+        },
+      },
+      {
+        "@type": "Offer",
+        name: "Pro (annual)",
+        price: "470",
+        priceCurrency: "USD",
+        url: "https://aeoimprovement.com/pricing",
+        priceSpecification: {
+          "@type": "UnitPriceSpecification",
+          price: "470",
+          priceCurrency: "USD",
+          billingDuration: "P1Y",
+        },
+      },
+      {
+        "@type": "Offer",
+        name: "Agency (monthly)",
+        price: "299",
+        priceCurrency: "USD",
+        url: "https://aeoimprovement.com/pricing",
+        priceSpecification: {
+          "@type": "UnitPriceSpecification",
+          price: "299",
+          priceCurrency: "USD",
+          billingDuration: "P1M",
+        },
+      },
+      {
+        "@type": "Offer",
+        name: "Agency (annual)",
+        price: "2870",
+        priceCurrency: "USD",
+        url: "https://aeoimprovement.com/pricing",
+        priceSpecification: {
+          "@type": "UnitPriceSpecification",
+          price: "2870",
+          priceCurrency: "USD",
+          billingDuration: "P1Y",
+        },
+      },
+    ],
+  },
+};
+
+const pricingFaqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    {
+      "@type": "Question",
+      name: "Is there a free plan?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes. The Free plan includes 5 audits per month, 2 prompt simulations per month, ChatGPT engine coverage, the basic AEO score, and 30-day audit history. No credit card is required to sign up.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "What's the difference between Pro and Agency?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Pro ($49/mo or $470/yr) is built for one site or one in-house team: 100 audits/month, 30 simulations/month, all four engines (ChatGPT, Claude, Gemini, Perplexity), the Fix Generator, sentiment analysis, and 1-year trend history. Agency ($299/mo or $2,870/yr) is for teams managing many client sites: 500 audits/month, 150 simulations/month, agency-branded reports, multi-client management, 2-year trend history, and a dedicated account manager.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Can I cancel anytime?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes. Pro and Agency are month-to-month or annual; you can cancel at any time from the customer portal and your plan stays active until the end of the current billing period.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Do annual plans have a discount?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Annual plans are priced at roughly two months free vs paying monthly: $470/year for Pro (vs $588 if billed monthly) and $2,870/year for Agency (vs $3,588 if billed monthly).",
+      },
+    },
+  ],
+};
+
+const pricingBreadcrumb = breadcrumbJsonLd([
+  { name: "Home", path: "/" },
+  { name: "Pricing", path: "/pricing" },
+]);
 
 const PLAN_FEATURES = {
   free: [
@@ -319,6 +446,12 @@ export default function PricingPage() {
 
   return (
     <div className="min-h-[calc(100vh-4rem)] py-14 px-4">
+      <SEO
+        title={PRICING_TITLE}
+        description={PRICING_DESC}
+        path="/pricing"
+        jsonLd={[pricingProductJsonLd, pricingFaqJsonLd, pricingBreadcrumb]}
+      />
       <div className="max-w-5xl mx-auto space-y-12">
         <div className="text-center space-y-3">
           <Badge className="bg-emerald-100 text-emerald-700 border-0 px-3 py-1 text-xs font-medium">

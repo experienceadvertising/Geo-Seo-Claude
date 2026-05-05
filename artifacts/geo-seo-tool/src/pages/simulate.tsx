@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2, Sparkles, Play, ArrowLeft, CheckCircle2, XCircle, Link as LinkIcon, AlertTriangle, ExternalLink, Lock, TrendingUp, TrendingDown, Minus, Plus, Trash2, Trophy, BarChart3, Info } from "lucide-react";
+import { Helmet } from "react-helmet-async";
 import { usePlan } from "@/hooks/usePlan";
 import { UpgradePrompt } from "@/components/upgrade-prompt";
 import { Separator } from "@/components/ui/separator";
@@ -224,6 +225,10 @@ export default function SimulatePage() {
 
   return (
     <div className="container max-w-6xl px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+      <Helmet>
+        <title>Prompt simulation — AEO Improvement</title>
+        <meta name="robots" content="noindex,nofollow" />
+      </Helmet>
       <div>
         <Link href={`/results/${auditId}`} className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-2">
           <ArrowLeft className="h-4 w-4 mr-1" /> Back to audit

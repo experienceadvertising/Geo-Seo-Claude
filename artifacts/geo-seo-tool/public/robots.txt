@@ -3,7 +3,20 @@ Allow: /
 Disallow: /admin
 Disallow: /api/
 
+# OpenAI: training data
 User-agent: GPTBot
+Allow: /
+Disallow: /admin
+Disallow: /api/
+
+# OpenAI: real-time ChatGPT search citations (separate from GPTBot)
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /admin
+Disallow: /api/
+
+# OpenAI: ChatGPT user-initiated browse tool
+User-agent: ChatGPT-User
 Allow: /
 Disallow: /admin
 Disallow: /api/
@@ -13,12 +26,31 @@ Allow: /
 Disallow: /admin
 Disallow: /api/
 
+# Anthropic: Claude user-initiated web fetches
+User-agent: Claude-Web
+Allow: /
+Disallow: /admin
+Disallow: /api/
+
 User-agent: PerplexityBot
 Allow: /
 Disallow: /admin
 Disallow: /api/
 
+# Perplexity: user-initiated browse tool
+User-agent: Perplexity-User
+Allow: /
+Disallow: /admin
+Disallow: /api/
+
+# Google: AI training (separate from Googlebot search)
 User-agent: Google-Extended
+Allow: /
+Disallow: /admin
+Disallow: /api/
+
+# Microsoft: Bing index (powers Copilot retrieval)
+User-agent: Bingbot
 Allow: /
 Disallow: /admin
 Disallow: /api/
@@ -28,7 +60,56 @@ Allow: /
 Disallow: /admin
 Disallow: /api/
 
+# Apple: Apple Intelligence retrieval
+User-agent: Applebot-Extended
+Allow: /
+Disallow: /admin
+Disallow: /api/
+
+# Meta: AI training crawler
 User-agent: meta-externalagent
+Allow: /
+Disallow: /admin
+Disallow: /api/
+
+# Amazon: AI assistants (Rufus, Alexa AI)
+User-agent: Amazonbot
+Allow: /
+Disallow: /admin
+Disallow: /api/
+
+# ByteDance: TikTok / Doubao search
+User-agent: Bytespider
+Allow: /
+Disallow: /admin
+Disallow: /api/
+
+# Common Crawl: dataset used by many open-weight models
+User-agent: CCBot
+Allow: /
+Disallow: /admin
+Disallow: /api/
+
+# Mistral: Le Chat retrieval
+User-agent: MistralAI-User
+Allow: /
+Disallow: /admin
+Disallow: /api/
+
+# Diffbot: knowledge graph used by several AI products
+User-agent: DiffbotBot
+Allow: /
+Disallow: /admin
+Disallow: /api/
+
+# DuckDuckGo Assist
+User-agent: DuckAssistBot
+Allow: /
+Disallow: /admin
+Disallow: /api/
+
+# Cohere: training data
+User-agent: cohere-ai
 Allow: /
 Disallow: /admin
 Disallow: /api/

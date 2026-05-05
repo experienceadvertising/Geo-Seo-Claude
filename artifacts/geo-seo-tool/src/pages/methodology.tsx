@@ -4,10 +4,51 @@ import { ArrowLeft, BookOpen, BarChart3, Users, BadgeCheck, RefreshCw } from "lu
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { SEO, breadcrumbJsonLd } from "@/components/seo";
+import { AUTHOR_PERSON_LD, PRIMARY_AUTHOR, PUBLISHER_ORG } from "@/data/author";
+
+const PAGE_TITLE = "Methodology — How the AEO Improvement audit score works";
+const PAGE_DESC =
+  "How AEO Improvement scores a URL: the six pillars, where each recommendation comes from (Princeton/IIT Delhi GEO research, internal benchmarks, practitioner consensus), and exactly which claims we will and won't make.";
+
+const articleJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  headline: PAGE_TITLE,
+  description: PAGE_DESC,
+  datePublished: "2026-05-05",
+  dateModified: "2026-05-05",
+  author: AUTHOR_PERSON_LD,
+  publisher: PUBLISHER_ORG,
+  mainEntityOfPage: { "@type": "WebPage", "@id": "https://aeoimprovement.com/methodology" },
+  citation: [
+    {
+      "@type": "ScholarlyArticle",
+      name: "GEO: Generative Engine Optimization",
+      author: "Aggarwal, Murahari et al.",
+      publisher: "Princeton University / IIT Delhi (KDD 2024)",
+    },
+  ],
+};
+
+const methodologyBreadcrumb = breadcrumbJsonLd([
+  { name: "Home", path: "/" },
+  { name: "Methodology", path: "/methodology" },
+]);
 
 export default function Methodology() {
   return (
     <div className="container max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+      <SEO
+        title={PAGE_TITLE}
+        description={PAGE_DESC}
+        path="/methodology"
+        ogType="article"
+        publishedTime="2026-05-05"
+        modifiedTime="2026-05-05"
+        authorName={PRIMARY_AUTHOR.name}
+        jsonLd={[articleJsonLd, methodologyBreadcrumb]}
+      />
       <div>
         <Link href="/" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
           <ArrowLeft className="h-4 w-4" /> Back
@@ -18,9 +59,12 @@ export default function Methodology() {
             <RefreshCw className="h-3 w-3" /> v2026.05
           </Badge>
         </div>
+        <p className="mt-2 text-sm text-muted-foreground">
+          By <a href={PRIMARY_AUTHOR.url} rel="author" className="text-emerald-700 hover:underline font-medium">{PRIMARY_AUTHOR.name}</a>, {PRIMARY_AUTHOR.jobTitle} · Last reviewed May 5, 2026
+        </p>
         <p className="mt-2 text-muted-foreground">
           How AEO Improvement turns a URL into a prioritized list of recommendations,
-          and where each claim comes from. Last reviewed May 2026.
+          and where each claim comes from.
         </p>
       </div>
 

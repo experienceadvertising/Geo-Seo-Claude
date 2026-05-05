@@ -3,6 +3,16 @@ import { useQuery } from "@tanstack/react-query";
 import { customFetch } from "@workspace/api-client-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, BarChart3, Clock, AlertCircle, ShieldAlert } from "lucide-react";
+import { Helmet } from "react-helmet-async";
+
+function AdminHelmet() {
+  return (
+    <Helmet>
+      <title>Admin — AEO Improvement</title>
+      <meta name="robots" content="noindex,nofollow" />
+    </Helmet>
+  );
+}
 
 interface AdminUser {
   id: string;
@@ -73,6 +83,7 @@ export default function Admin() {
   if (query.isLoading) {
     return (
       <div className="flex-1 w-full max-w-6xl mx-auto p-4 md:p-8 space-y-6">
+        <AdminHelmet />
         <div className="h-8 w-40 bg-muted/50 rounded animate-pulse" />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[1,2,3,4].map(i => <div key={i} className="h-24 bg-muted/50 rounded-lg animate-pulse" />)}
@@ -86,6 +97,7 @@ export default function Admin() {
     const status = (query.error as { status?: number } | null)?.status;
     return (
       <div className="flex-1 w-full max-w-md mx-auto p-8 mt-16 text-center space-y-4">
+        <AdminHelmet />
         <ShieldAlert className="h-12 w-12 text-destructive mx-auto" />
         <h1 className="text-2xl font-bold">{status === 403 ? "Admin access required" : "Could not load admin"}</h1>
         <p className="text-muted-foreground text-sm">
@@ -101,6 +113,7 @@ export default function Admin() {
 
   return (
     <div className="flex-1 w-full max-w-6xl mx-auto p-4 md:p-8 space-y-8">
+      <AdminHelmet />
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Admin</h1>
         <p className="text-sm text-muted-foreground mt-1">User accounts and audit activity</p>
