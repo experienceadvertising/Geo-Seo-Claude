@@ -989,7 +989,7 @@ function SignedInDashboard() {
                           {new Date(audit.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
                         </span>
                       </div>
-                      <ScoreBadge score={Math.round(audit.geoScore * 100)} size="sm" />
+                      <ScoreBadge score={Math.round(audit.geoScore * 100)} />
                     </CardContent>
                   </Card>
                 </Link>
