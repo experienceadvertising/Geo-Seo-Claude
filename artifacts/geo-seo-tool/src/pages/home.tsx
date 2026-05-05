@@ -342,6 +342,21 @@ function SignedOutLanding() {
           </div>
         </section>
 
+        <section className="relative rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 to-teal-500/5 px-8 md:px-14 py-10 md:py-14">
+          <div className="absolute top-6 left-8 text-emerald-500/20 select-none" aria-hidden>
+            <svg width="64" height="48" viewBox="0 0 64 48" fill="currentColor"><path d="M0 48V29.333C0 12.8 10.667 3.2 32 0l4.267 6.4C24.533 8.533 18.133 13.867 16 22.4H28.8V48H0zm35.2 0V29.333C35.2 12.8 45.867 3.2 67.2 0L71.467 6.4C59.733 8.533 53.333 13.867 51.2 22.4H64V48H35.2z"/></svg>
+          </div>
+          <div className="relative max-w-3xl mx-auto text-center space-y-6">
+            <p className="text-xl md:text-2xl font-semibold leading-snug text-foreground">
+              "Twenty years in digital marketing and I have never seen a category move this fast. AEO Improvement is the only tool that shows you exactly where your site stands with ChatGPT, Claude, Gemini, and Perplexity, diagnoses why you are not being cited, and hands you a prioritized fix list you can act on the same day. Every agency and in-house team needs this right now."
+            </p>
+            <div className="flex flex-col items-center gap-1">
+              <span className="font-bold text-sm text-foreground">Evan Weber</span>
+              <span className="text-xs text-muted-foreground">Digital Marketing Expert, Experience Advertising</span>
+            </div>
+          </div>
+        </section>
+
         <section className="relative overflow-hidden rounded-3xl">
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-900 via-teal-900 to-gray-900" />
           <div aria-hidden className="absolute inset-0">
