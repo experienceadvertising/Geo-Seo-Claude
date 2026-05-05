@@ -484,7 +484,7 @@ export default function SimulatePage() {
                             Avg depth
                             <Info
                               className="h-3 w-3 text-muted-foreground/50 shrink-0"
-                              title="How far into the response your brand first appears, averaged across prompts. 0% = very top, 100% = end of response. Lower is better."
+                              aria-label="How far into the response your brand first appears, averaged across prompts. 0% = very top, 100% = end of response. Lower is better."
                             />
                           </span>
                           <span className="font-mono">{pct(e.avgFirstPosition)}</span>
