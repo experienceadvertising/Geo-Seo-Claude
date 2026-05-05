@@ -23,7 +23,7 @@ const AUTHOR = {
   "@id": `${SITE}/#evan-weber`,
   name: "Evan Weber",
   jobTitle: "Founder, AEO Improvement",
-  url: "https://www.linkedin.com/in/worldsgreatestmarketer/",
+  url: `${SITE}/about`,
   sameAs: ["https://www.linkedin.com/in/worldsgreatestmarketer/"],
 };
 
@@ -83,6 +83,41 @@ export const ROUTES = [
     ],
   },
 
+  {
+    path: "/about",
+    title: "About — AEO Improvement, founded by Evan Weber",
+    description:
+      "AEO Improvement is an Answer Engine Optimization auditing platform built by Evan Weber to help marketing teams measure and improve how AI search engines like ChatGPT, Claude, Gemini, and Perplexity describe their brands.",
+    ogType: "website",
+    jsonLd: [
+      {
+        "@context": "https://schema.org",
+        "@type": "AboutPage",
+        url: `${SITE}/about`,
+        name: "About — AEO Improvement, founded by Evan Weber",
+        description:
+          "AEO Improvement is an Answer Engine Optimization auditing platform built by Evan Weber.",
+        mainEntity: { "@id": `${SITE}/#evan-weber` },
+        publisher: PUBLISHER,
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "Person",
+        "@id": `${SITE}/#evan-weber`,
+        name: AUTHOR.name,
+        jobTitle: AUTHOR.jobTitle,
+        url: `${SITE}/about`,
+        sameAs: AUTHOR.sameAs,
+        worksFor: PUBLISHER,
+        description:
+          "Founder of AEO Improvement. Marketer focused on how brands get cited in AI-generated search answers.",
+      },
+      breadcrumbLd([
+        { name: "Home", path: "/" },
+        { name: "About", path: "/about" },
+      ]),
+    ],
+  },
   {
     path: "/methodology",
     title: "Methodology — How the AEO Improvement audit score works",

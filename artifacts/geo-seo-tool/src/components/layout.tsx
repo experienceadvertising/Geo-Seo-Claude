@@ -151,6 +151,7 @@ function SiteFooter() {
                 { label: "Audit a site", href: "/" },
                 { label: "Pricing", href: "/pricing" },
                 { label: "Methodology", href: "/methodology" },
+                { label: "About", href: "/about" },
                 { label: "Contact", href: "/contact" },
               ].map(({ label, href }) => (
                 <li key={href}>

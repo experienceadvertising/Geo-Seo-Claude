@@ -6,7 +6,9 @@
 export const PRIMARY_AUTHOR = {
   name: "Evan Weber",
   jobTitle: "Founder, AEO Improvement",
-  url: "https://www.linkedin.com/in/worldsgreatestmarketer/",
+  // Canonical entity URL is the on-domain about page; LinkedIn lives in sameAs.
+  url: "https://aeoimprovement.com/about",
+  linkedin: "https://www.linkedin.com/in/worldsgreatestmarketer/",
   sameAs: ["https://www.linkedin.com/in/worldsgreatestmarketer/"],
 } as const;
 
