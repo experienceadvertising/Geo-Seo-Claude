@@ -26,15 +26,15 @@ function MarketStats() {
       icon: Zap,
       accent: "from-teal-500 to-cyan-500",
       label: "Why the visits matter",
-      title: "AI-referred visitors arrive with intent",
-      body: "A user clicking a citation inside an AI answer has already read a recommendation about you. They land further down the funnel than someone scanning a list of search results.",
+      title: "AI-referred visitors convert at a different rate",
+      body: "A user who clicks a citation inside an AI answer has already read a recommendation about your brand. Research from major publishers shows AI-referred visitors convert at 4 to 5 times the rate of visitors from traditional search.",
     },
     {
       icon: BarChart3,
       accent: "from-cyan-500 to-emerald-500",
       label: "What we measure",
-      title: "A score that maps to citation behavior",
-      body: "Our AEO score is a composite of citability, AI-crawler access, brand authority, schema, and technical SEO. Each dimension is tied to a recommendation with its source disclosed.",
+      title: "AI citation is volatile. Track it regularly.",
+      body: "Between 40% and 60% of cited sources change month-to-month across major AI platforms. Our AEO score tracks the six dimensions that predict whether you get picked and flags when your standing shifts.",
     },
   ];
 
@@ -661,6 +661,26 @@ const AEO_TIPS: Array<{ icon: string; title: string; body: string }> = [
     title: "Keep your About page boring and factual",
     body: "AI engines pull company facts from About pages: founders, founding year, HQ location, headcount range, what you do. Make them findable in plain text on a single page, not buried in a video or an interactive timeline.",
   },
+  {
+    icon: "🎯",
+    title: "Optimize for attribution, not just traffic",
+    body: "If an AI overview quotes your data without naming your brand, you've been mined, not cited. Use clear entity markup, FAQPage schema, and quotable summaries so LLMs attribute the insight to you rather than summarizing it anonymously.",
+  },
+  {
+    icon: "🔓",
+    title: "Don't gate the research AI needs to cite you",
+    body: "A white paper behind a form wall earns nothing from AI discovery. If you have original data or research, publish a crawlable version. AI credits whoever it can read, not whoever wrote the original.",
+  },
+  {
+    icon: "🤝",
+    title: "Treat robots.txt as a strategic decision",
+    body: "OAI-SearchBot powers real-time ChatGPT citations. GPTBot feeds model training data. They are different bots with different consequences. Most sites have never made a deliberate choice about which to allow. Make one.",
+  },
+  {
+    icon: "💬",
+    title: "Build presence where LLMs were trained",
+    body: "LLMs are trained heavily on Reddit, Wikipedia, and YouTube. Your absence from those platforms is not neutral. It creates a gap that competitors or critics will fill. Earned presence in these communities shapes what AI says about you before any crawler visits your site.",
+  },
 ];
 
 // Curated external resources. ONLY include stable, authoritative URLs from
@@ -694,9 +714,9 @@ const TRUSTED_RESOURCES: Array<{ source: string; title: string; description: str
   },
   {
     source: "Search Engine Land",
-    title: "AI search coverage hub",
-    description: "Daily reporting on AI search platforms, ranking shifts, and practitioner tactics.",
-    url: "https://searchengineland.com/library/platforms/ai-search",
+    title: "AI visibility starts before search ends with citations",
+    description: "How entity signals, community presence, and original data determine who AI systems cite — and why adding more content is rarely the first fix.",
+    url: "https://searchengineland.com/ai-visibility-starts-before-search-ends-with-citations-476308",
   },
   {
     source: "Aleyda Solis",
@@ -716,6 +736,8 @@ const QUICK_WINS: string[] = [
   "Add FAQPage JSON-LD to your single highest-traffic page first. Validate with Google's Rich Results Test.",
   "Create a one-page llms.txt at your root listing your most important URLs. Even a minimal version helps.",
   "Add Organization schema with sameAs links to your Wikipedia, LinkedIn, Crunchbase, and X profiles.",
+  "Check whether your best original data or research is behind a form or paywall. AI credits whoever it can read, not whoever wrote it. Publish a crawlable version.",
+  "Search your brand name on Reddit and Wikipedia right now. LLM training data draws heavily from both. A gap there is a gap in how AI describes you.",
 ];
 
 // Companion learning surface to the journey card. The dashboard, even for

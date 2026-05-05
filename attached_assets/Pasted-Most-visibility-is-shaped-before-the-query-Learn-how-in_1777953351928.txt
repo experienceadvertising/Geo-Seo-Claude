@@ -1,0 +1,143 @@
+Most visibility is shaped before the query. Learn how influence, entity signals, and original data determine who AI systems cite.
+The conversation has shifted. We’re spending less time optimizing for clicks and more time trying to fix the AI ROI story. AI now sits at the center of discovery, shaping what gets seen, summarized, and cited.
+
+Here’s what’s working right now, what your peers are doing, and why SMX Advanced will feel different this year.
+
+The SparkToro wake-up call: Influence happens everywhere
+The foundation of any serious 2026 content strategy has to start with Rand Fishkin’s landmark March 2026 study, “Influence Happens Everywhere,” an analysis of the 5,000 most-visited sites on both mobile and desktop.
+
+The finding that rattled the industry: while Google still commands 73% of search traffic, search itself is merely a response to influence created elsewhere.
+
+People don’t wake up and search for a brand in a vacuum. They read, watch, and listen across a fragmented web of news, social media, and niche communities before they ever hit a search bar.
+
+AI tools, despite their rapid growth, still account for a fraction of total web visits compared to the “big incumbents.” But the trajectory is unmistakable.
+
+The fundamental problem with attribution in 2026 is that search gets over-credited because it captures demand at the finish line, while the fragmented channels — email, news, specialized content — get under-credited for creating that demand in the first place. 
+
+When creating content, your job is to win the influence phase so thoroughly that when a user eventually turns to an AI assistant or a search bar, your brand is the only logical answer.
+
+That framing is the strategic backbone behind sessions at the upcoming SMX Advanced in Boston, June 3-5, and the lens through which your entire editorial calendar should be rewritten.
+
+Your customers search everywhere. Make sure your brand shows up.
+The SEO toolkit you know, plus the AI visibility data you need.
+
+Start Free Trial
+Get started with
+Semrush One Logo
+What your Search Engine Land colleagues are already doing
+Before we discuss tactics, it’s worth pausing to note that this publication’s own contributor base has been sounding the alarm in complementary ways. Read them together and a clear picture emerges.
+
+Dave Davies, principal SEO manager at Weights & Biases and a regular SMX Advanced speaker, published a rigorous piece in December 2025, “Mentions, citations, and clicks: Your 2026 content strategy.” 
+
+Drawing on Siege Media’s two-year content performance study covering more than 7.2 million sessions, Grow and Convert’s conversion research, and Seer Interactive’s AI Overview findings, Davies made the case that the metrics we’ve lived by — impressions, sessions, CTR — “no longer tell the full story.” 
+
+Mentions, citations, and structured visibility signals, he argued, are becoming the new levers of trust and the path to revenue.
+
+Carolyn Shelby, who appeared in a recent SMX Munich 2026 recap for her session “Inside Google’s Head,” crystallized what many of us have only half-articulated: AI doesn’t discover new brands — it selects from known entities. 
+
+The implications are stark. If you haven’t built entity recognition across the web’s key reference points — Wikipedia, Reddit, LinkedIn, authoritative press coverage — you don’t get selected. 
+
+My own October 2025 piece for this publication compared how ChatGPT, Perplexity, Gemini, Claude, and DeepSeek differ in their data sources, live web use, and citation rules. The conclusion I reached then is truer today: a single-platform AI strategy isn’t a strategy. Each model has different retrieval logic, different trust signals, and different recency weighting. 
+
+Jordan Koene made the same point in January 2026, noting that different LLMs win different jobs. This heterogeneity is the fundamental reason why “write good content” is both correct and insufficient as advice.
+
+What ‘full-stack content’ actually means
+In 2024, we were impressed if an AI tool could write a decent 500-word blog post. Today, writing is the least interesting thing AI does.
+
+Jasper’s 2026 Enterprise Suite is a useful illustration. It doesn’t just draft text, it:
+
+Pulls real-time performance data from Google Search Console.
+Identifies content gaps where competitors are gaining ground.
+Generates a multimodal package: a 1,500-word deep dive, three vertical videos for YouTube Shorts, and custom infographics, all calibrated to a brand-voice model trained on your last five years of successful campaigns.
+We have moved from “Help me write this” to “Help me dominate this topic.”
+
+But tools don’t solve strategy problems. The harder question is “what should the content actually say?” AI can’t produce the original research, the proprietary case study, or the hard-won perspective that makes an LLM choose you over a dozen lookalike alternatives.
+
+This is why the most interesting SMX Advanced session on content this year may be the one by Purna Virji of LinkedIn, who opens the conference with a keynote on fixing the broken AI ROI story before budgets get cut. 
+
+Her argument — that AI investment must generate measurable business outcomes “at the P&L level,” not just activity, efficiency, or content volume — is a direct challenge to teams that have been celebrating output metrics while their revenue dashboards flatline.
+
+Google Vids and the democratization of video: A genuine inflection point
+Perhaps the most significant platform shift for content creators in 2026 was Google moving Google Vids out of its Workspace-only silo. You can now create, edit, and share videos at no cost directly within the Google ecosystem, powered by the Veo 3 generative model.
+
+For years, video production was protected by a high barrier to entry: expensive tools, specialist skills, and days of editing time. Google Vids collapses that barrier. Drop a Google Doc or a URL into the “Help me create” prompt, and you get a full-motion storyboard with AI-generated voiceovers, licensed music, and transitions in minutes.
+
+The practical consequences are arriving fast:
+
+Small agencies are now producing video-first content calendars that previously required five-figure budgets. The “if only we had video” excuse has expired.
+Hyper-localization is becoming a baseline expectation. Using Vids’ automated dubbing and visual swapping, a single “hero” video can be localized for 20 different markets in an afternoon.
+AI-generated summaries are already threatening video metadata. YouTube recently tested swapping video titles for AI-generated summaries. Brands that have not invested in clear entity signals and structured descriptions may soon find their video content renamed by an algorithm — not a person.
+The strategic implication is the same as it was for text: AI tools lower the floor but raise the bar. Every competitor now has access to cheap video. But who has something worth saying in that video?
+
+GEO, AEO, and the language problem
+Depending on which Search Engine Land article you read in the past few weeks, the dominant framework for surviving this shift is either generative engine optimization (GEO) or answer engine optimization (AEO).
+
+A growing number of contributors argue these terms are marketing noise for what is, at bottom, just good search everywhere optimization plus structured data plus earned media.
+
+That debate is genuinely worth having, and it will be had at SMX Advanced. But for the practitioner who needs to make decisions next week, here’s what the evidence actually supports:
+
+eMarketer’s Nate Elliott put it plainly in a recent FAQ: “Almost every GEO response is different from every other GEO response.” Between 40% and 60% of cited sources change month-to-month across Google AI Mode and ChatGPT, making AI visibility far less stable than organic search rankings. That volatility is the real risk, not the terminology debate.
+Similarweb’s 2026 GenAI Brand Visibility Index, reported by Digiday, found that major publishers like Reuters and The Guardian receive less than 1% of referral traffic from AI platforms despite being frequently cited. Yet, The Washington Post found that visitors arriving from AI platforms convert to subscriptions at four to five times the rate of traditional search visitors. The volume-versus-value tension has never been more acute.
+The practical translation of all of this:
+
+In 2006, we optimized press releases for keyword density: In 2026, optimize for entity association: linking your brand to specific solutions in the AI’s knowledge graph.
+Long-form blogs become modular content: Snippets, FAQs, and data tables designed for “chunk-level” ingestion by fetcher bots.
+Gated white papers become open data: Making unique research crawlable so AI credits you as the source in an overview, not a competitor who summarized your findings.
+Your robots.txt file now has strategic consequences: Allowing OAI-SearchBot but blocking GPTBot is a choice — one that determines whether you show up in real-time AI search citations versus model training data.
+Get the newsletter search marketers rely on.
+
+Enter your email here.
+Sign me up!
+See terms.
+
+The human premium isn’t a platitude
+As AI-generated content reaches its peak volume, the value of the human voice has skyrocketed — but not for the reasons most think-piece writers suggest.
+
+The standard argument runs like this: 
+
+Audiences can smell AI slop.
+Authentic human writing wins. 
+That’s partially true, but it understates the mechanism. The deeper reason human-authored content is winning in AI-mediated search is structural. 
+
+Human authors who’ve built genuine reputations across years of bylined, cited, and cross-referenced work have, in effect, built entity graphs that AI systems can navigate. That isn’t something a prompt can replicate.
+
+The classic example: an AI-generated 2026 review of a new electric vehicle might be factually flawless, listing every spec and battery range. But it loses to a human-authored piece that says, “I drove this through a New England blizzard and the door handle froze shut.” 
+
+AI can’t freeze. It can’t feel frustration. It can’t have a bad morning. Those human frictions are now genuinely valuable SEO assets — not because they’re charming, but because no language model can fabricate them with any credibility.
+
+Readers, trained by years of exposure to AI content, have developed a reliable instinct for the difference.
+
+The Siege Media data Davies cited adds a quantitative dimension: across 7.2 million sessions, the content that earned sustained citations and conversions shared a consistent profile — original data, expert voice, and clear structure that an AI system could extract and attribute. Volume without those properties is, as the headline puts it, just noise.
+
+What to watch at SMX Advanced 2026 — and what it tells us about where this is going
+The SMX Advanced agenda is the clearest available signal of where the practitioner community thinks the critical problems are right now. A few sessions deserve particular attention from anyone focused on content creation.
+
+Virji’s keynote, “Your AI ROI story is broken: How to fix it before budgets get cut,” opens Day 2. Virji isn’t arguing that AI investment is wrong. She’s arguing that almost every organization is measuring it incorrectly — and that the correction required is organizational, not tactical.
+
+Davies’ session, “Predicting and influencing AI citations with retrieval signals,” on June 4, is the direct technical counterpart to the strategic framing above. If Virji is asking “what does success mean,” Davies is asking “how do you engineer it.” 
+
+SMX Master Classes ran in April, and SMX Next follows in November. If there’s a throughline across the entire 2026 SMX calendar, it’s this: the search marketing community has collectively decided that the era of isolated channel optimization is over. Content, paid, technical, and brand are now one discipline, or they are failing disciplines.
+
+What you need to actually do in the second half of 2026
+Broad strategic advice is easy to nod at and ignore. Here is the specific and uncomfortable version:
+
+Audit your AI visibility before you touch your content: Query ChatGPT, Claude, Copilot, Gemini, and Perplexity with the prompts your customers actually use. Note which brands appear. Note which sources get cited. If you’re not among them, adding more content isn’t the first fix — fixing your entity signals is.
+Stop treating your unique research as a lead-generation gate: Crawlable, citable original data earns AI attribution. A PDF behind a form wall earns nothing except a diminishing number of direct downloads as discovery migrates to AI interfaces.
+Invest in community platforms as a first-party strategy, not an afterthought: LLMs pull heavily from Reddit, YouTube, and Wikipedia. eMarketer’s Max Willens has noted that Reddit alone has 100 million daily active users generating brand conversations. Your brand’s absence from those conversations isn’t neutral. It creates a vacuum that your competitors or your critics will fill.
+Optimize for citatability, not just rankability: The new KPI isn’t the visit — it’s the attribution. If an AI Overview uses your data but doesn’t name your brand, you’ve been mined, not cited. Use clear entity markup, structured FAQ sections, and “quotable” conclusions that make it easy for an LLM to attribute rather than anonymize.
+Diversify your robots.txt strategy intentionally: Different bots serve different purposes. Allowing OAI-SearchBot (real-time citation) while blocking GPTBot (model training) is a legitimate strategic choice. Most organizations have not made it deliberately. Make it deliberately.
+Measure differently: The eMarketer-recommended framework allocates 40% of your optimization budget to core SEO fundamentals, 25% to digital PR, 20% to data and reporting, 10% to training, and 5% to experimentation. If your current allocation looks nothing like that, the gap explains more about your AI visibility struggles than any content audit will. So, combining SEO and PR is even more important today than it was back in the old days when I started speaking and writing about search.
+See the complete picture of your search visibility.
+Track, optimize, and win in Google and AI search from one platform.
+
+Start Free Trial
+Get started with
+Semrush One Logo
+The bots are crawling: Are you worth citing?
+The age of the proxy is over. You can no longer hide behind a ghostwriter or a simple prompt and expect to build a brand. But the deeper truth — the one that doesn’t make it into most AI content trend pieces — is that this transformation benefits people who’ve been doing the hard work all along.
+
+If you’ve been building genuine expertise, publishing original data, earning bylines in authoritative publications, and cultivating real presence in the communities where your customers actually talk — then you already have most of what you need. The AI infrastructure of 2026 is, in many ways, a system that rewards exactly the things good content has always required.
+
+The difference is that the competition is now generating plausible-sounding content on a scale that would have been impossible to imagine four years ago. Being good isn’t enough to stand out. 
+
+You have to be citable, structured, and present in all the right places at precisely the right time — which is a harder, more interesting, and ultimately more durable strategic problem than keyword density ever was.

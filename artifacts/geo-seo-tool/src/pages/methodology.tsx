@@ -162,7 +162,42 @@ export default function Methodology() {
         </CardContent>
       </Card>
 
-      {/* ── Section 5: Source of truth pointer ─────────────────────────────── */}
+      {/* ── Section 5: Entity recognition and citation volatility ──────────── */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Users className="h-4 w-4 text-emerald-600" /> Why entity recognition comes before content
+          </CardTitle>
+          <CardDescription>The distinction between being discoverable and being citable.</CardDescription>
+        </CardHeader>
+        <CardContent className="text-sm leading-relaxed space-y-3">
+          <p>
+            A recurring finding in practitioner research is that AI engines do not
+            discover new brands — they select from brands they already recognize.
+            Citation behavior is downstream of entity recognition: if the model's
+            knowledge graph does not associate your brand with a specific problem
+            space, additional content on your site produces little lift because
+            the retrieval step never reaches you.
+          </p>
+          <p>
+            The practical consequence is that off-site signals — mentions on
+            Wikipedia, industry publications, Reddit, LinkedIn, and authoritative
+            directories — often move the needle faster than on-page changes for
+            brands with low existing AI visibility. Our audit surfaces your current
+            brand authority footprint precisely because this is where the gap is
+            most likely to be.
+          </p>
+          <p>
+            A second finding worth understanding: cited sources are not stable.
+            Industry analysis of major AI platforms shows that between 40% and 60%
+            of cited sources rotate month-to-month. This is why a single audit
+            taken as a permanent baseline is misleading. Our AEO score is designed
+            to be tracked over time, not read once.
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* ── Section 6: Source of truth pointer ─────────────────────────────── */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Source of truth</CardTitle>
