@@ -16,6 +16,9 @@ import Contact from "@/pages/contact";
 import VsComparison from "@/pages/vs-comparison";
 import BestAeoToolsPage from "@/pages/best-aeo-tools";
 import BestGeoToolsPage from "@/pages/best-geo-tools";
+import HowToRankInChatGPT from "@/pages/how-to-rank-in-chatgpt";
+import WhatIsAEO from "@/pages/what-is-answer-engine-optimization";
+import HowToAppearInAISearch from "@/pages/how-to-appear-in-ai-search";
 import SignInPage from "@/pages/sign-in";
 import SignUpPage from "@/pages/sign-up";
 import VerifyEmailPage from "@/pages/verify-email";
@@ -74,6 +77,9 @@ function AppRoutes() {
             which would otherwise inject RouteComponentProps and conflict. */}
         <Route path="/best-aeo-tools">{() => <BestAeoToolsPage />}</Route>
         <Route path="/best-geo-optimization-tools" component={BestGeoToolsPage} />
+        <Route path="/how-to-rank-in-chatgpt" component={HowToRankInChatGPT} />
+        <Route path="/what-is-answer-engine-optimization" component={WhatIsAEO} />
+        <Route path="/how-to-appear-in-ai-search" component={HowToAppearInAISearch} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

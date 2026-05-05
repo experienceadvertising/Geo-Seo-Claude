@@ -184,6 +184,9 @@ function SiteFooter() {
             <h4 className="text-xs font-semibold text-white uppercase tracking-widest mb-5">Guides</h4>
             <ul className="space-y-3 text-sm">
               {[
+                { label: "What is AEO?", href: "/what-is-answer-engine-optimization" },
+                { label: "Rank in ChatGPT", href: "/how-to-rank-in-chatgpt" },
+                { label: "Appear in AI Search", href: "/how-to-appear-in-ai-search" },
                 { label: "Best AEO Tools", href: "/best-aeo-tools" },
                 { label: "Best GEO Tools", href: "/best-geo-optimization-tools" },
               ].map(({ label, href }) => (
