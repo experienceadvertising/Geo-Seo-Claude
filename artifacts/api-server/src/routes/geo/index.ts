@@ -19,6 +19,13 @@ import { consumeQuota, refundQuota, currentYearMonth, markApproachingNotified } 
 import { db as appDb, usersTable } from "@workspace/db";
 import { sql } from "drizzle-orm";
 
+/** Escape LIKE metacharacters (%, _, \) so a user-supplied domain/host is
+ * matched literally and can't turn into a wildcard scan. Postgres LIKE treats
+ * backslash as the default escape character. */
+function escapeLike(s: string): string {
+  return s.replace(/[\\%_]/g, (c) => `\\${c}`);
+}
+
 /** Round absurd-precision percentages in scraped page text to 1 decimal place
  * before feeding the excerpt to the LLM. Prevents the model from echoing
  * "1.64735697%" verbatim. Only touches numbers with 3+ decimal places. */
@@ -331,7 +338,7 @@ Hard rules:
           .from(auditsTable)
           .where(and(
             eq(auditsTable.userId, req.userId!),
-            like(auditsTable.url, `%${hostname}%`),
+            like(auditsTable.url, `%${escapeLike(hostname)}%`),
           ))
           .orderBy(desc(auditsTable.createdAt))
           .limit(10);
@@ -598,7 +605,7 @@ router.get("/geo/audits/history", requireAuth, readRateLimiter, async (req, res)
     .where(
       and(
         eq(auditsTable.userId, req.userId!),
-        like(auditsTable.url, `%${domain}%`),
+        like(auditsTable.url, `%${escapeLike(domain)}%`),
       )
     )
     .orderBy(asc(auditsTable.createdAt))

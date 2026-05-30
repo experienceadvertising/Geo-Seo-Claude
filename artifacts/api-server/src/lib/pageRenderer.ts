@@ -57,15 +57,16 @@ export async function renderPage(url: string, timeoutMs = 25000): Promise<Render
       viewport: { width: 1280, height: 900 },
     });
     const page = await context.newPage();
-    await page.route("**/*", (route) => {
-      const reqUrl = route.request().url();
+    // Re-validate EVERY sub-resource / navigation request through the same
+    // SSRF control as the top-level URL. assertPublicUrl rejects non-http(s)
+    // schemes, credentialed URLs, private/link-local IP literals, and — via a
+    // DNS resolve — any hostname that resolves to a private/internal address
+    // (cloud metadata 169.254.169.254, 10/8, 172.16/12, 192.168/16, ::1, ULAs,
+    // etc.). This closes the gap where a navigated page could redirect or pull
+    // a sub-resource straight to an internal host.
+    await page.route("**/*", async (route) => {
       try {
-        const u = new URL(reqUrl);
-        if (u.protocol !== "http:" && u.protocol !== "https:") return route.abort();
-        const host = u.hostname.toLowerCase();
-        if (host === "localhost" || host === "127.0.0.1" || host === "0.0.0.0" || host === "::1" || host.endsWith(".internal") || host.endsWith(".local")) {
-          return route.abort();
-        }
+        await assertPublicUrl(route.request().url());
       } catch {
         return route.abort();
       }

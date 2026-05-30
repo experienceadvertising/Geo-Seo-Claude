@@ -122,15 +122,20 @@ export default function SimulatePage() {
 
   const handleSuggest = async () => {
     if (!brandName) return;
-    const res = await suggest.mutateAsync({
-      data: {
-        brandName,
-        description: audit?.description || undefined,
-        ...(audit?.title ? { title: audit.title } : {}),
-        ...(audit?.aiInsights ? { aiInsights: audit.aiInsights } : {}),
-      } as any,
-    });
-    setPromptsText((res as any).prompts.join("\n"));
+    try {
+      const res = await suggest.mutateAsync({
+        data: {
+          brandName,
+          description: audit?.description || undefined,
+          ...(audit?.title ? { title: audit.title } : {}),
+          ...(audit?.aiInsights ? { aiInsights: audit.aiInsights } : {}),
+        } as any,
+      });
+      setPromptsText((res as any).prompts.join("\n"));
+    } catch {
+      // Surfaced to the user via suggest.isError below — swallow here so a
+      // failed suggestion doesn't become an unhandled promise rejection.
+    }
   };
 
   const handleRun = async () => {
@@ -325,6 +330,11 @@ export default function SimulatePage() {
               value={promptsText}
               onChange={(e) => setPromptsText(e.target.value)}
             />
+            {suggest.isError && (
+              <p className="text-xs text-destructive font-medium mt-1" role="alert">
+                Couldn't generate prompts right now. Please try again or type your own below.
+              </p>
+            )}
             <div className="flex items-center justify-between mt-1">
               <p className="text-xs text-muted-foreground">{prompts.length} valid prompt{prompts.length === 1 ? "" : "s"}</p>
               {invalidPromptCount > 0 && (
@@ -346,8 +356,11 @@ export default function SimulatePage() {
                 return (
                   <button
                     key={e.id}
+                    type="button"
                     onClick={() => !locked && toggleEngine(e.id)}
                     disabled={locked}
+                    aria-pressed={!locked && selectedEngines.includes(e.id)}
+                    aria-label={locked ? `${e.label} (Pro only)` : `${e.label} engine`}
                     title={locked ? `Upgrade to Pro to use ${e.label}` : undefined}
                     className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-md border text-sm transition-colors ${
                       locked
@@ -365,7 +378,7 @@ export default function SimulatePage() {
               })}
             </div>
             {!isPro && (
-              <p className="text-xs text-muted-foreground mt-2">Free plan: ChatGPT only · <span className="text-primary cursor-pointer hover:underline">Upgrade to Pro</span> for all 4 engines</p>
+              <p className="text-xs text-muted-foreground mt-2">Free plan: ChatGPT only · <Link href="/upgrade" className="text-primary hover:underline">Upgrade to Pro</Link> for all 4 engines</p>
             )}
           </div>
 

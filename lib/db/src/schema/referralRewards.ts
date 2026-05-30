@@ -1,4 +1,4 @@
-import { pgTable, text, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, timestamp, index } from "drizzle-orm/pg-core";
 
 export const referralRewardsTable = pgTable("referral_rewards", {
   id: text("id").primaryKey(),
@@ -9,6 +9,9 @@ export const referralRewardsTable = pgTable("referral_rewards", {
   stripeBalanceTxId: text("stripe_balance_tx_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   paidAt: timestamp("paid_at"),
-});
+}, (table) => ({
+  referrerIdx: index("referral_rewards_referrer_idx").on(table.referrerId),
+  referredUserIdx: index("referral_rewards_referred_user_idx").on(table.referredUserId),
+}));
 
 export type ReferralReward = typeof referralRewardsTable.$inferSelect;

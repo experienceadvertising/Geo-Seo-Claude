@@ -1,4 +1,6 @@
-import dns from "node:dns/promises";
+import dns from "node:dns";
+import http from "node:http";
+import https from "node:https";
 import ipaddr from "ipaddr.js";
 
 const MAX_REDIRECTS = 4;
@@ -35,7 +37,7 @@ async function assertPublicHost(hostname: string): Promise<void> {
   }
   let records: { address: string; family: number }[];
   try {
-    records = await dns.lookup(hostname, { all: true, verbatim: true });
+    records = await dns.promises.lookup(hostname, { all: true, verbatim: true });
   } catch {
     throw new SsrfError(`DNS lookup failed for ${hostname}`);
   }
@@ -63,6 +65,47 @@ export async function assertPublicUrl(rawUrl: string): Promise<URL> {
   return parsed;
 }
 
+/**
+ * A DNS lookup that validates every resolved address against the private/
+ * internal block-list and only hands a vetted public IP back to the socket
+ * layer. Because the HTTP(S) agent connects to *this* address (rather than
+ * re-resolving the hostname itself), there is no TOCTOU/DNS-rebinding window
+ * between the SSRF check and the actual connection — the address that was
+ * validated is the address that gets connected to.
+ */
+const pinnedLookup: NonNullable<https.AgentOptions["lookup"]> = (hostname, options, callback) => {
+  // `options` may be a number (legacy family arg) or an object.
+  const opts = typeof options === "number" ? { family: options } : (options ?? {});
+  dns.lookup(hostname, { ...opts, all: true, verbatim: true }, (err, addresses) => {
+    if (err) {
+      callback(err, "", 4);
+      return;
+    }
+    const list = Array.isArray(addresses) ? addresses : [];
+    if (list.length === 0) {
+      callback(new SsrfError(`DNS lookup returned no records for ${hostname}`), "", 4);
+      return;
+    }
+    // Strict: reject the whole connection if ANY resolved record is private,
+    // matching assertPublicHost's behaviour and preventing a mixed
+    // public/private answer from sneaking a private hop through.
+    for (const a of list) {
+      if (isPrivateIp(a.address)) {
+        callback(new SsrfError(`Resolved IP is private/internal: ${a.address}`), "", a.family);
+        return;
+      }
+    }
+    if ((opts as { all?: boolean }).all) {
+      callback(null, list as never, 0 as never);
+    } else {
+      callback(null, list[0].address, list[0].family);
+    }
+  });
+};
+
+const httpAgent = new http.Agent({ keepAlive: false, lookup: pinnedLookup });
+const httpsAgent = new https.Agent({ keepAlive: false, lookup: pinnedLookup });
+
 export interface SafeFetchOptions {
   headers?: Record<string, string>;
   timeoutMs?: number;
@@ -79,63 +122,101 @@ export interface SafeFetchResult {
   bytes(): Uint8Array;
 }
 
+interface RawResponse {
+  status: number;
+  headers: Headers;
+  location: string | null;
+  body: Uint8Array;
+}
+
+function requestOnce(
+  parsed: URL,
+  method: string,
+  headers: Record<string, string>,
+  timeoutMs: number,
+  maxBytes: number,
+): Promise<RawResponse> {
+  return new Promise<RawResponse>((resolve, reject) => {
+    const isHttps = parsed.protocol === "https:";
+    const lib = isHttps ? https : http;
+    const req = lib.request(
+      parsed,
+      {
+        method,
+        agent: isHttps ? httpsAgent : httpAgent,
+        // Identity encoding keeps response bytes equal to the decoded body
+        // (Node's http does not auto-decompress) and side-steps gzip/br
+        // decompression bombs — the byte cap below then bounds memory.
+        headers: { "accept-encoding": "identity", ...headers },
+      },
+      (res) => {
+        const status = res.statusCode ?? 0;
+        const outHeaders = new Headers();
+        for (const [k, v] of Object.entries(res.headers)) {
+          if (Array.isArray(v)) outHeaders.set(k, v.join(", "));
+          else if (v != null) outHeaders.set(k, v);
+        }
+        const location = typeof res.headers.location === "string" ? res.headers.location : null;
+
+        const chunks: Buffer[] = [];
+        let total = 0;
+        let aborted = false;
+        res.on("data", (chunk: Buffer) => {
+          if (aborted) return;
+          total += chunk.byteLength;
+          if (total > maxBytes) {
+            aborted = true;
+            req.destroy();
+            reject(new SsrfError(`Response exceeded ${maxBytes} bytes`, 413));
+            return;
+          }
+          chunks.push(chunk);
+        });
+        res.on("end", () => {
+          if (aborted) return;
+          resolve({ status, headers: outHeaders, location, body: new Uint8Array(Buffer.concat(chunks)) });
+        });
+        res.on("error", (err) => {
+          if (!aborted) reject(err);
+        });
+      },
+    );
+
+    req.setTimeout(timeoutMs, () => {
+      req.destroy(new SsrfError("Request timed out", 504));
+    });
+    req.on("error", (err) => {
+      reject(err instanceof SsrfError ? err : new SsrfError(`Fetch failed: ${err.message}`, 502));
+    });
+    req.end();
+  });
+}
+
 export async function safeFetch(rawUrl: string, opts: SafeFetchOptions = {}): Promise<SafeFetchResult> {
   const timeoutMs = opts.timeoutMs ?? 15000;
   const maxBytes = opts.maxBytes ?? DEFAULT_MAX_BYTES;
+  const method = opts.method ?? "GET";
+  const headers = opts.headers ?? {};
   let currentUrl = rawUrl;
 
   for (let i = 0; i <= MAX_REDIRECTS; i++) {
     const parsed = await assertPublicUrl(currentUrl);
-    const res = await fetch(parsed.toString(), {
-      method: opts.method ?? "GET",
-      headers: opts.headers,
-      redirect: "manual",
-      signal: AbortSignal.timeout(timeoutMs),
-    });
+    const res = await requestOnce(parsed, method, headers, timeoutMs, maxBytes);
 
-    if (res.status >= 300 && res.status < 400) {
-      const loc = res.headers.get("location");
-      if (!loc) {
-        return wrap(res, parsed.toString(), maxBytes);
-      }
-      currentUrl = new URL(loc, parsed).toString();
+    if (res.status >= 300 && res.status < 400 && res.location) {
+      currentUrl = new URL(res.location, parsed).toString();
       continue;
     }
-    return wrap(res, parsed.toString(), maxBytes);
+
+    const body = res.body;
+    return {
+      ok: res.status >= 200 && res.status < 300,
+      status: res.status,
+      headers: res.headers,
+      finalUrl: parsed.toString(),
+      text: async () => new TextDecoder().decode(body),
+      bytes: () => body,
+    };
   }
   throw new SsrfError("Too many redirects");
-}
-
-async function wrap(res: Response, finalUrl: string, maxBytes: number): Promise<SafeFetchResult> {
-  const reader = res.body?.getReader();
-  const chunks: Uint8Array[] = [];
-  let total = 0;
-  if (reader) {
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      if (value) {
-        total += value.byteLength;
-        if (total > maxBytes) {
-          await reader.cancel();
-          throw new SsrfError(`Response exceeded ${maxBytes} bytes`, 413);
-        }
-        chunks.push(value);
-      }
-    }
-  }
-  const buf = new Uint8Array(total);
-  let offset = 0;
-  for (const c of chunks) {
-    buf.set(c, offset);
-    offset += c.byteLength;
-  }
-  return {
-    ok: res.ok,
-    status: res.status,
-    headers: res.headers,
-    finalUrl,
-    text: async () => new TextDecoder().decode(buf),
-    bytes: () => buf,
-  };
 }

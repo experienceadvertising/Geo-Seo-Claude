@@ -13,8 +13,13 @@ const PgStore = connectPg(session);
 export function createSessionMiddleware() {
   const isProd = process.env.NODE_ENV === "production";
   const secret = process.env.SESSION_SECRET;
-  if (isProd && !secret) {
-    throw new Error("SESSION_SECRET is required in production.");
+  // Only allow the predictable local fallback secret when NODE_ENV is
+  // explicitly "development" or "test". Any other environment (including an
+  // unset NODE_ENV on an internet-reachable preview/staging deploy) must
+  // provide a real secret — otherwise sessions would be forgeable.
+  const isLocalDev = process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test";
+  if (!secret && !isLocalDev) {
+    throw new Error("SESSION_SECRET is required outside of development/test environments.");
   }
   return session({
     store: new PgStore({

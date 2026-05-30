@@ -482,10 +482,7 @@ function AeoJourneyCard({ audits }: { audits: Array<{ id: number; url: string; g
 
   // /api/geo/audits returns geoScore as the DB-stored real value, which is
   // already on a 0-100 scale (the analyzer does Math.round of the weighted
-  // sub-scores before insert). Display directly — no *100. Note: the
-  // "Recent audits" list below this card multiplies by 100, which is a
-  // pre-existing display bug in that section; tracked separately so this
-  // PR stays scoped to the journey/email work.
+  // sub-scores before insert). Display directly — no *100.
   const currScore = Math.round(latest.geoScore);
   const priorScore = prior ? Math.round(prior.geoScore) : null;
   const delta = priorScore != null ? currScore - priorScore : null;
@@ -989,7 +986,7 @@ function SignedInDashboard() {
                           {new Date(audit.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
                         </span>
                       </div>
-                      <ScoreBadge score={Math.round(audit.geoScore * 100)} />
+                      <ScoreBadge score={Math.round(audit.geoScore)} />
                     </CardContent>
                   </Card>
                 </Link>
