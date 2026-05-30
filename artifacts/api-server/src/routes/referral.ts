@@ -5,6 +5,7 @@ import { eq, and, count, sum } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
 import { readRateLimiter } from "../middlewares/rateLimiters";
 import { logger } from "../lib/logger";
+import { safeBaseUrl } from "../lib/publicUrl";
 
 const router: IRouter = Router();
 
@@ -13,9 +14,7 @@ function generateReferralCode(): string {
 }
 
 function getReferralLink(code: string, req: any): string {
-  const domain = process.env.REPLIT_DOMAINS?.split(",")[0];
-  const base = domain ? `https://${domain}` : `${req.protocol}://${req.get("host")}`;
-  return `${base}/sign-up?ref=${code}`;
+  return `${safeBaseUrl(req)}/sign-up?ref=${code}`;
 }
 
 router.get("/referral", requireAuth, readRateLimiter, async (req, res): Promise<void> => {
@@ -162,6 +161,10 @@ export async function creditReferralIfEligible(paidUserId: string): Promise<void
         const tx = await stripe.customers.createBalanceTransaction(
           referrer.stripeCustomerId,
           { amount: -2500, currency: "usd", description: "Referral reward — $25 credit" },
+          // Idempotency key bound to the referred user guarantees Stripe
+          // applies at most ONE balance credit for this referral even if this
+          // path runs twice (webhook retry / concurrent delivery).
+          { idempotencyKey: `referral-credit-${paidUserId}` },
         );
         await db
           .update(referralRewardsTable)
@@ -204,10 +207,22 @@ export async function applyPendingReferralRewards(userId: string, stripeCustomer
     const stripe = await getUncachableStripeClient();
 
     for (const reward of pendingRewards) {
+      // Atomically claim the reward (pending → processing) BEFORE charging
+      // Stripe. If another concurrent run (or a webhook retry) already claimed
+      // it, the UPDATE matches 0 rows and we skip — preventing a double credit.
+      const claim = await db
+        .update(referralRewardsTable)
+        .set({ status: "processing" })
+        .where(and(eq(referralRewardsTable.id, reward.id), eq(referralRewardsTable.status, "pending")))
+        .returning({ id: referralRewardsTable.id });
+      if (claim.length === 0) continue;
       try {
         const tx = await stripe.customers.createBalanceTransaction(
           stripeCustomerId,
           { amount: -reward.amountCents, currency: "usd", description: "Referral reward — $25 credit" },
+          // Second layer of protection: even if the row claim somehow races,
+          // Stripe will not duplicate a transaction with the same key.
+          { idempotencyKey: `referral-${reward.id}` },
         );
         await db
           .update(referralRewardsTable)
@@ -215,6 +230,12 @@ export async function applyPendingReferralRewards(userId: string, stripeCustomer
           .where(eq(referralRewardsTable.id, reward.id));
         logger.info({ userId, rewardId: reward.id, txId: tx.id }, "Pending referral reward applied on upgrade");
       } catch (err: any) {
+        // Release the claim so a later run can retry this reward.
+        await db
+          .update(referralRewardsTable)
+          .set({ status: "pending" })
+          .where(and(eq(referralRewardsTable.id, reward.id), eq(referralRewardsTable.status, "processing")))
+          .catch(() => { /* best-effort release */ });
         logger.warn({ err: err?.message, rewardId: reward.id }, "Failed to apply pending referral reward");
       }
     }

@@ -94,10 +94,14 @@ async function claimEvent(eventId: string, eventType: string): Promise<boolean> 
     );
     return result.rows.length > 0;
   } catch (err) {
-    // If the dedupe table itself is unavailable, fall back to processing
-    // (better to risk a duplicate than to silently drop an event).
-    logger.error({ err, eventId }, "Webhook idempotency check failed — processing anyway");
-    return true;
+    // Fail CLOSED. The side effects guarded by this dedupe are financial
+    // (plan transitions, real Stripe balance credits for referrals). If the
+    // dedupe table is unavailable we must NOT process without it — re-throw
+    // so the webhook returns a non-2xx and Stripe redelivers (it retries for
+    // ~3 days). Processing-anyway here risks double-applying those effects on
+    // every routine Stripe retry.
+    logger.error({ err, eventId }, "Webhook idempotency check failed — failing closed for retry");
+    throw err;
   }
 }
 

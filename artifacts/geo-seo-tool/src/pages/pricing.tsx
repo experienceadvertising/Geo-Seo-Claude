@@ -466,9 +466,11 @@ export default function PricingPage() {
           </p>
 
           {/* Billing interval toggle */}
-          <div className="flex items-center justify-center gap-3 pt-2">
+          <div className="flex items-center justify-center gap-3 pt-2" role="group" aria-label="Billing interval">
             <button
+              type="button"
               onClick={() => setBilling("month")}
+              aria-pressed={billing === "month"}
               className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
                 billing === "month"
                   ? "bg-slate-900 text-white"
@@ -478,7 +480,9 @@ export default function PricingPage() {
               Monthly
             </button>
             <button
+              type="button"
               onClick={() => setBilling("year")}
+              aria-pressed={billing === "year"}
               className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center gap-2 ${
                 billing === "year"
                   ? "bg-slate-900 text-white"

@@ -1,9 +1,9 @@
 import { Router } from "express";
 import type { Request } from "express";
-import { randomBytes, randomUUID } from "crypto";
+import { randomBytes, randomUUID, createHash } from "crypto";
 import bcrypt from "bcryptjs";
 import { db, usersTable } from "@workspace/db";
-import { eq, and, isNull } from "drizzle-orm";
+import { eq, and, or, isNull } from "drizzle-orm";
 import { EmailService } from "../lib/emailService";
 import { logger } from "../lib/logger";
 import { requireAuth } from "../middlewares/auth";
@@ -24,6 +24,16 @@ const DUMMY_HASH = bcrypt.hashSync("__dummy_password_for_timing__", SALT_ROUNDS)
 
 function token() {
   return randomBytes(32).toString("hex");
+}
+
+// Email-verification and password-reset tokens are one-time secrets that only
+// ever travel in an email link — they are never re-read from the DB to build
+// a URL. We therefore store only their SHA-256 hash: a DB/backup/log leak then
+// yields hashes, not working tokens. The raw token from the link is hashed and
+// matched at lookup time. (The unsubscribe token is intentionally NOT hashed —
+// it is re-read from the DB to construct unsubscribe links in every email.)
+function hashToken(raw: string): string {
+  return createHash("sha256").update(raw).digest("hex");
 }
 
 /**
@@ -156,7 +166,7 @@ router.post("/auth/register", registerRateLimiter, async (req, res): Promise<voi
     firstName: firstName?.trim() || null,
     passwordHash,
     emailVerified: false,
-    verificationToken: verToken,
+    verificationToken: hashToken(verToken),
     verificationExpires: verExpires,
     plan: "free",
     unsubscribeToken: unsubToken,
@@ -267,10 +277,12 @@ router.get("/auth/verify-email", async (req, res): Promise<void> => {
     return;
   }
 
+  // Match the hashed token; also accept a legacy plaintext match so links
+  // already sent before tokens were hashed at rest keep working.
   const [user] = await db
     .select()
     .from(usersTable)
-    .where(eq(usersTable.verificationToken, verToken));
+    .where(or(eq(usersTable.verificationToken, hashToken(verToken)), eq(usersTable.verificationToken, verToken)));
 
   if (!user) {
     res.status(400).json({
@@ -361,7 +373,7 @@ router.post("/auth/resend-verification", passwordEmailRateLimiter, async (req, r
 
   await db
     .update(usersTable)
-    .set({ verificationToken: verToken, verificationExpires: verExpires })
+    .set({ verificationToken: hashToken(verToken), verificationExpires: verExpires })
     .where(eq(usersTable.id, user.id));
 
   const baseUrl = baseUrlFromReq(req);
@@ -391,7 +403,7 @@ router.post("/auth/forgot-password", passwordEmailRateLimiter, async (req, res):
 
     await db
       .update(usersTable)
-      .set({ resetToken: resetTok, resetExpires: resetExp })
+      .set({ resetToken: hashToken(resetTok), resetExpires: resetExp })
       .where(eq(usersTable.id, user.id));
 
     const baseUrl = baseUrlFromReq(req);
@@ -417,10 +429,12 @@ router.post("/auth/reset-password", passwordEmailRateLimiter, async (req, res): 
     return;
   }
 
+  // Match the hashed token; also accept a legacy plaintext match so reset
+  // links already in flight before tokens were hashed at rest keep working.
   const [user] = await db
     .select()
     .from(usersTable)
-    .where(eq(usersTable.resetToken, resetTok));
+    .where(or(eq(usersTable.resetToken, hashToken(resetTok)), eq(usersTable.resetToken, resetTok)));
 
   if (!user) {
     res.status(400).json({ error: "Invalid or expired reset link." });

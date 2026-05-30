@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, jsonb, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, integer, jsonb, timestamp, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -13,7 +13,10 @@ export const promptSimulationsTable = pgTable("prompt_simulations", {
   summary: jsonb("summary").notNull(),
   status: text("status").notNull().default("complete"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  userCreatedIdx: index("prompt_simulations_user_created_idx").on(table.userId, table.createdAt),
+  auditIdx: index("prompt_simulations_audit_idx").on(table.auditId),
+}));
 
 export const insertPromptSimulationSchema = createInsertSchema(promptSimulationsTable).omit({
   id: true,

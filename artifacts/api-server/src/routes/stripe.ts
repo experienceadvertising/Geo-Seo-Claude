@@ -3,14 +3,15 @@ import { requireAuth } from "../middlewares/auth";
 import { getUncachableStripeClient, getStripePublishableKey } from "../lib/stripeClient";
 import { stripeStorage } from "../lib/stripeStorage";
 import { getUserPlan } from "../lib/planUtils";
+import { safeBaseUrl } from "../lib/publicUrl";
+import { logger } from "../lib/logger";
 import { db, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 
 const router: IRouter = Router();
 
 function getBaseUrl(req: any): string {
-  const domain = process.env.REPLIT_DOMAINS?.split(",")[0];
-  return domain ? `https://${domain}` : `${req.protocol}://${req.get("host")}`;
+  return safeBaseUrl(req);
 }
 
 router.get("/stripe/config", async (_req, res): Promise<void> => {
@@ -55,7 +56,8 @@ router.get("/stripe/products", async (_req, res): Promise<void> => {
 
     res.json({ data: Array.from(map.values()) });
   } catch (err: any) {
-    res.status(500).json({ error: err.message ?? "Failed to list products" });
+    logger.error({ err: err?.message }, "Failed to list Stripe products");
+    res.status(500).json({ error: "Failed to list products" });
   }
 });
 
@@ -78,7 +80,8 @@ router.get("/stripe/subscription", requireAuth, async (req, res): Promise<void> 
     const plan = await getUserPlan(userId);
     res.json({ subscription, plan });
   } catch (err: any) {
-    res.status(500).json({ error: err.message ?? "Failed to get subscription" });
+    logger.error({ err: err?.message, userId: req.userId }, "Failed to get subscription");
+    res.status(500).json({ error: "Failed to get subscription" });
   }
 });
 
@@ -133,7 +136,8 @@ router.post("/stripe/checkout", requireAuth, async (req, res): Promise<void> => 
 
     res.json({ url: session.url });
   } catch (err: any) {
-    res.status(500).json({ error: err.message ?? "Failed to create checkout session" });
+    logger.error({ err: err?.message, userId: req.userId }, "Failed to create checkout session");
+    res.status(500).json({ error: "Failed to create checkout session" });
   }
 });
 
@@ -156,7 +160,8 @@ router.post("/stripe/portal", requireAuth, async (req, res): Promise<void> => {
 
     res.json({ url: session.url });
   } catch (err: any) {
-    res.status(500).json({ error: err.message ?? "Failed to create billing portal session" });
+    logger.error({ err: err?.message, userId: req.userId }, "Failed to create billing portal session");
+    res.status(500).json({ error: "Failed to create billing portal session" });
   }
 });
 

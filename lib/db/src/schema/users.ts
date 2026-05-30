@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, index } from "drizzle-orm/pg-core";
 
 export const usersTable = pgTable("users", {
   id: text("id").primaryKey(),
@@ -49,6 +49,13 @@ export const usersTable = pgTable("users", {
   // spammed on every audit. Set to NOW() at send time, checked as
   // `whatYouMissedSentAt < now() - 7d || IS NULL` before the next send.
   whatYouMissedSentAt: timestamp("what_you_missed_sent_at"),
-});
+}, (table) => ({
+  // Login and every "find user by email" path filter on email; the
+  // verify-email and reset-password flows look rows up by their token.
+  // Without these, each is a full table scan that worsens as users grow.
+  emailIdx: index("users_email_idx").on(table.email),
+  verificationTokenIdx: index("users_verification_token_idx").on(table.verificationToken),
+  resetTokenIdx: index("users_reset_token_idx").on(table.resetToken),
+}));
 
 export type User = typeof usersTable.$inferSelect;

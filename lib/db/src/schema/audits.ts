@@ -1,4 +1,4 @@
-import { pgTable, serial, text, real, integer, jsonb, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, real, integer, jsonb, timestamp, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -30,7 +30,12 @@ export const auditsTable = pgTable("audits", {
   brandSignals: jsonb("brand_signals"),
   recommendations: jsonb("recommendations"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  // The dashboard lists a user's audits newest-first and the history/score-
+  // changed paths filter by user then scan recent rows; a composite
+  // (user_id, created_at) index serves both without a full table scan.
+  userCreatedIdx: index("audits_user_created_idx").on(table.userId, table.createdAt),
+}));
 
 export const insertAuditSchema = createInsertSchema(auditsTable).omit({ id: true, createdAt: true });
 export type InsertAudit = z.infer<typeof insertAuditSchema>;
