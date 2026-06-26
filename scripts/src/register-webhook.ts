@@ -10,18 +10,28 @@ async function run() {
     "checkout.session.completed",
     "customer.subscription.updated",
     "customer.subscription.deleted",
+    "customer.source.expiring",
   ];
 
   const existing = await stripe.webhookEndpoints.list({ limit: 20 });
   const existingHook = existing.data.find(w => w.url === WEBHOOK_URL);
 
   if (existingHook) {
-    console.log("Webhook already registered:");
-    console.log("  ID:     " + existingHook.id);
-    console.log("  Status: " + existingHook.status);
-    console.log("  Events: " + existingHook.enabled_events.join(", "));
-    console.log("\nNOTE: Stripe does not re-expose the signing secret after creation.");
-    console.log("If you need the secret, delete this webhook in the Stripe Dashboard and re-run this script.");
+    const missing = EVENTS.filter(e => !existingHook.enabled_events.includes(e));
+    if (missing.length === 0) {
+      console.log("✅ Webhook already up to date:");
+      console.log("  ID:     " + existingHook.id);
+      console.log("  Events: " + existingHook.enabled_events.join(", "));
+    } else {
+      const updated = await stripe.webhookEndpoints.update(existingHook.id, {
+        enabled_events: EVENTS,
+      });
+      console.log("✅ Webhook updated with new events:");
+      console.log("  ID:     " + updated.id);
+      console.log("  Events: " + updated.enabled_events.join(", "));
+      console.log("\nNOTE: Stripe does not re-expose the signing secret after creation.");
+      console.log("Your existing STRIPE_WEBHOOK_SECRET is still valid.");
+    }
   } else {
     const hook = await stripe.webhookEndpoints.create({ url: WEBHOOK_URL, enabled_events: EVENTS });
     console.log("✅ Webhook registered successfully!");
