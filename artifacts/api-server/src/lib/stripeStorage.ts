@@ -3,12 +3,12 @@ import { eq, sql } from "drizzle-orm";
 import { randomBytes } from "crypto";
 
 export class StripeStorage {
-  async getUser(clerkUserId: string) {
-    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, clerkUserId));
+  async getUser(userId: string) {
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
     return user ?? null;
   }
 
-  async upsertUser(clerkUserId: string, email: string | null, stripeCustomerId?: string) {
+  async upsertUser(userId: string, email: string | null, stripeCustomerId?: string) {
     // unsubscribe_token is NOT NULL — supply one on the INSERT branch. The
     // ON CONFLICT update path does NOT touch it, so existing users keep
     // their original token (any rotation here would invalidate previously
@@ -16,7 +16,7 @@ export class StripeStorage {
     const [user] = await db
       .insert(usersTable)
       .values({
-        id: clerkUserId,
+        id: userId,
         email,
         stripeCustomerId: stripeCustomerId ?? null,
         unsubscribeToken: randomBytes(32).toString("hex"),

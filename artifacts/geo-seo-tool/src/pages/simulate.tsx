@@ -232,15 +232,20 @@ export default function SimulatePage() {
 
   const handleRun = async () => {
     if (!brandName || prompts.length === 0 || !domain) return;
-    await run.mutateAsync({
-      data: {
-        auditId,
-        domain,
-        brandName,
-        prompts,
-        engines: selectedEngines as any,
-      },
-    });
+    try {
+      await run.mutateAsync({
+        data: {
+          auditId,
+          domain,
+          brandName,
+          prompts,
+          engines: selectedEngines as any,
+        },
+      });
+    } catch {
+      // Error is surfaced via run.isError / run.error — swallow here so
+      // the Vite dev overlay doesn't pop up for expected API errors (403, 429, etc.)
+    }
   };
 
   const toggleEngine = (id: string) => {
@@ -448,6 +453,11 @@ export default function SimulatePage() {
             {suggestMode === "fanout" && (
               <p className="text-xs text-violet-700 dark:text-violet-400 bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-900 rounded-md px-3 py-2 mb-2">
                 <strong>Fan-out cluster mode:</strong> generates 8 queries covering all topic angles (definitions, comparisons, how-tos, troubleshooting) that AI engines internally search when researching your category. Running these gives a truer picture of your topical breadth.
+                {!isPro && (
+                  <span className="block mt-1 text-amber-700 dark:text-amber-400">
+                    ⚠️ Free plan is limited to {maxPrompts} prompts per run — delete down to {maxPrompts} before running, or <a href="/pricing" className="underline font-medium">upgrade to Pro</a> to run all 8.
+                  </span>
+                )}
               </p>
             )}
             <Textarea
