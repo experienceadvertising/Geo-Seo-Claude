@@ -202,6 +202,7 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
   let rawHtml = "";
   let renderedHtml = "";
   let title: string | null = null;
+  let ogSiteName: string | null = null;
   let description: string | null = null;
   let hasCanonical = false;
   let hasNoSnippet = false;
@@ -260,6 +261,10 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
         $("meta[name='description']").attr("content") ||
         $("meta[property='og:description']").attr("content") ||
         null;
+      ogSiteName =
+        ($("meta[property='og:site_name']").attr("content") || "").trim() ||
+        ($("meta[name='application-name']").attr("content") || "").trim() ||
+        null;
       hasCanonical = $("link[rel='canonical']").length > 0;
 
       // Detect nosnippet / preview-restriction directives in meta robots tags.
@@ -268,7 +273,7 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
       if (!hasNoSnippet) {
         $("meta[name='robots'], meta[name='googlebot']").each((_, el) => {
           const content = ($(el).attr("content") || "").toLowerCase();
-          if (/nosnippet/.test(content) || /max-snippet\s*:\s*(-1|0)\b/.test(content)) {
+          if (/\bnosnippet\b/.test(content) || /max-snippet\s*:\s*0\b/.test(content)) {
             hasNoSnippet = true;
           }
         });
@@ -500,7 +505,7 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
   const hasFaqSchema = structuredDataTypes.some((s) => s.present && s.type === "FAQPage");
   const hasArticleSchema = structuredDataTypes.some((s) => s.present && s.type === "Article");
   const hasHowToSchema = structuredDataTypes.some((s) => s.present && s.type === "HowTo");
-  const brandAuthority = await analyzeBrandAuthority(url, title, hasOrgSchema, hasLlmsTxt, orgSchemaName);
+  const brandAuthority = await analyzeBrandAuthority(url, title, hasOrgSchema, hasLlmsTxt, orgSchemaName, ogSiteName);
 
   // Generate prioritized GEO recommendations from extracted content signals.
   // Source attribution for each recommendation lives in the @workspace/recommendations
@@ -508,7 +513,7 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
   const blockedAiCrawlers = crawlerStatuses.filter((c) => !c.allowed).map((c) => c.name);
   let recommendations: GeoRecommendation[] = [];
   if ($page) {
-    const signals = extractContentSignals($page, url, brandAuthority.brandName || null);
+    const signals = extractContentSignals($page, url, brandAuthority.brandName || null, wordCount);
     recommendations = generateGeoRecommendations({
       signals,
       hasFaqSchema,

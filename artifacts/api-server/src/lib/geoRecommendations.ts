@@ -93,9 +93,10 @@ const AUTHORITY_DOMAINS = [
 
 const QUESTION_WORD_RE = /^(?:who|what|when|where|why|how|which|is|are|do|does|can|should|will)\b/i;
 
-export function extractContentSignals($: cheerio.CheerioAPI, url: string, brandName: string | null): ContentSignals {
+export function extractContentSignals($: cheerio.CheerioAPI, url: string, brandName: string | null, canonicalWordCount?: number): ContentSignals {
   const bodyText = $("body").text().replace(/\s+/g, " ").trim();
-  const wordCount = bodyText.split(/\s+/).filter(Boolean).length;
+  const localWordCount = bodyText.split(/\s+/).filter(Boolean).length;
+  const wordCount = typeof canonicalWordCount === "number" && canonicalWordCount > 0 ? canonicalWordCount : localWordCount;
 
   // Direct answer opening: first <p> after first heading begins with definition pattern
   const firstParas = $("p").slice(0, 3).map((_, el) => $(el).text().trim()).get().join(" ");

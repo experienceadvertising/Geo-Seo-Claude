@@ -819,7 +819,7 @@ function DashboardLearningHub() {
             Quick wins (no audit required)
           </CardTitle>
           <CardDescription className="text-xs">
-            Five things you can ship today that move every AEO score we measure.
+            {QUICK_WINS.length} things you can ship today that move every AEO score we measure.
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -27,6 +27,11 @@ function buildAllowedHosts(): Set<string> {
 const ALLOWED_HOSTS = buildAllowedHosts();
 const PRODUCTION_BASE_URL = `https://${PRODUCTION_HOST}`;
 
+export function canonicalBaseUrl(): string {
+  if (process.env.FRONTEND_URL) return process.env.FRONTEND_URL.replace(/\/$/, "");
+  return PRODUCTION_BASE_URL;
+}
+
 export function safeBaseUrl(req: Request): string {
   // Explicit env override always wins (single source of truth in prod).
   if (process.env.FRONTEND_URL) return process.env.FRONTEND_URL.replace(/\/$/, "");

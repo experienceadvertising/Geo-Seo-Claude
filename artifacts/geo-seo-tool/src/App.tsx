@@ -50,6 +50,7 @@ function AppRoutes() {
     <Layout>
       <Switch>
         <Route path="/" component={Home} />
+        <Route path="/dashboard"><Redirect to="/" /></Route>
         <Route path="/sign-in" component={SignInPage} />
         <Route path="/sign-up" component={SignUpPage} />
         <Route path="/verify-email" component={VerifyEmailPage} />
