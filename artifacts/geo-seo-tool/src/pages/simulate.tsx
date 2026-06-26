@@ -142,15 +142,20 @@ export default function SimulatePage() {
 
   const handleRun = async () => {
     if (!brandName || prompts.length === 0 || !domain) return;
-    await run.mutateAsync({
-      data: {
-        auditId,
-        domain,
-        brandName,
-        prompts,
-        engines: selectedEngines as any,
-      },
-    });
+    try {
+      await run.mutateAsync({
+        data: {
+          auditId,
+          domain,
+          brandName,
+          prompts,
+          engines: selectedEngines as any,
+        },
+      });
+    } catch {
+      // Error is surfaced via run.isError / run.error — swallow here so
+      // the Vite dev overlay doesn't pop up for expected API errors (403, 429, etc.)
+    }
   };
 
   const toggleEngine = (id: string) => {
