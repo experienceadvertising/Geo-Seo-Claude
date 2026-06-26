@@ -1,0 +1,266 @@
+import { useState } from "react";
+import { Link } from "wouter";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { customFetch } from "@workspace/api-client-react";
+import {
+  Loader2, Plus, Play, Pause, Trash2, ExternalLink, Bell, Sparkles, Clock,
+} from "lucide-react";
+import { SEO } from "@/components/seo";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScoreBadge } from "@/components/score-badge";
+import { useToast } from "@/hooks/use-toast";
+
+type Frequency = "daily" | "weekly";
+
+interface MonitoredSite {
+  id: number;
+  url: string;
+  label: string | null;
+  active: boolean;
+  frequency: Frequency;
+  lastAuditId: number | null;
+  lastScore: number | null;
+  lastRunAt: string | null;
+  nextRunAt: string | null;
+  createdAt: string;
+}
+
+interface ListResponse {
+  sites: MonitoredSite[];
+  limit: number;
+  plan: string;
+}
+
+const QUERY_KEY = ["geo", "monitored-sites"];
+
+function fmtDate(iso: string | null): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime()) || d.getTime() === 0) return "—";
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
+
+function displayUrl(raw: string): string {
+  try {
+    const u = new URL(raw);
+    return u.hostname.replace(/^www\./, "") + (u.pathname !== "/" ? u.pathname.replace(/\/$/, "") : "");
+  } catch {
+    return raw;
+  }
+}
+
+export default function ProjectsPage() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [url, setUrl] = useState("");
+  const [label, setLabel] = useState("");
+  const [frequency, setFrequency] = useState<Frequency>("weekly");
+
+  const { data, isLoading } = useQuery<ListResponse>({
+    queryKey: QUERY_KEY,
+    queryFn: () => customFetch<ListResponse>("/api/geo/monitored-sites"),
+  });
+
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+
+  const addSite = useMutation({
+    mutationFn: (payload: { url: string; label?: string; frequency: Frequency }) =>
+      customFetch<MonitoredSite>("/api/geo/monitored-sites", { method: "POST", body: JSON.stringify(payload) }),
+    onSuccess: () => {
+      setUrl(""); setLabel("");
+      invalidate();
+      toast({ title: "Site added", description: "We'll re-audit it on schedule and alert you when its score moves." });
+    },
+    onError: (err: any) => {
+      toast({ title: "Couldn't add site", description: err?.body?.error || err?.message || "Please try again.", variant: "destructive" });
+    },
+  });
+
+  const runNow = useMutation({
+    mutationFn: (id: number) => customFetch(`/api/geo/monitored-sites/${id}/run`, { method: "POST" }),
+    onSuccess: () => { invalidate(); toast({ title: "Re-audit complete", description: "The latest score is in." }); },
+    onError: (err: any) => toast({ title: "Run failed", description: err?.body?.error || err?.message || "Please try again.", variant: "destructive" }),
+  });
+
+  const toggleActive = useMutation({
+    mutationFn: ({ id, active }: { id: number; active: boolean }) =>
+      customFetch(`/api/geo/monitored-sites/${id}`, { method: "PATCH", body: JSON.stringify({ active }) }),
+    onSuccess: invalidate,
+  });
+
+  const setFreq = useMutation({
+    mutationFn: ({ id, frequency }: { id: number; frequency: Frequency }) =>
+      customFetch(`/api/geo/monitored-sites/${id}`, { method: "PATCH", body: JSON.stringify({ frequency }) }),
+    onSuccess: invalidate,
+  });
+
+  const removeSite = useMutation({
+    mutationFn: (id: number) => customFetch(`/api/geo/monitored-sites/${id}`, { method: "DELETE" }),
+    onSuccess: () => { invalidate(); toast({ title: "Removed from monitoring" }); },
+    onError: (err: any) => toast({ title: "Couldn't remove", description: err?.body?.error || err?.message || "Please try again.", variant: "destructive" }),
+  });
+
+  const sites = data?.sites ?? [];
+  const limit = data?.limit ?? 0;
+  const plan = data?.plan ?? "free";
+  const atLimit = limit > 0 && sites.length >= limit;
+  const monitoringLocked = limit === 0;
+
+  function handleAdd(e: React.FormEvent) {
+    e.preventDefault();
+    if (!url.trim()) return;
+    addSite.mutate({ url: url.trim(), label: label.trim() || undefined, frequency });
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto px-4 py-10 space-y-8">
+      <SEO title="Projects — Monitored sites | AEO Improvement" description="Track your sites' AEO scores continuously with scheduled re-audits and score-change alerts." path="/projects" index={false} />
+
+      <div className="space-y-2">
+        <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+          <Bell className="h-6 w-6 text-emerald-600" /> Projects
+        </h1>
+        <p className="text-muted-foreground text-sm max-w-2xl">
+          Add the sites you want to watch. We re-audit each one on schedule and email you when its AEO score moves by
+          5 points or more — so you find out before your competitors do.
+        </p>
+      </div>
+
+      {monitoringLocked ? (
+        <Card className="border-emerald-500/30 bg-emerald-500/5">
+          <CardContent className="py-8 text-center space-y-4">
+            <Sparkles className="h-8 w-8 text-emerald-600 mx-auto" />
+            <div className="space-y-1">
+              <p className="font-semibold">Continuous monitoring is a Pro feature</p>
+              <p className="text-sm text-muted-foreground">
+                Upgrade to track up to 10 sites with weekly auto-audits and score-change alerts. Agency tracks 50.
+              </p>
+            </div>
+            <Link href="/pricing">
+              <Button className="bg-emerald-600 hover:bg-emerald-700">Upgrade to Pro</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Add a site to monitor</CardTitle>
+            <CardDescription>
+              {sites.length}/{limit} sites used on your {plan} plan.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleAdd} className="flex flex-col sm:flex-row gap-2">
+              <Input
+                placeholder="https://example.com"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                className="flex-1"
+                disabled={atLimit}
+              />
+              <Input
+                placeholder="Label (optional)"
+                value={label}
+                onChange={(e) => setLabel(e.target.value)}
+                className="sm:w-40"
+                disabled={atLimit}
+              />
+              <select
+                value={frequency}
+                onChange={(e) => setFrequency(e.target.value as Frequency)}
+                disabled={atLimit}
+                className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+              >
+                <option value="weekly">Weekly</option>
+                <option value="daily">Daily</option>
+              </select>
+              <Button type="submit" disabled={atLimit || addSite.isPending}>
+                {addSite.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Plus className="h-4 w-4 mr-1" /> Add</>}
+              </Button>
+            </form>
+            {atLimit && (
+              <p className="text-xs text-amber-600 mt-2">
+                You've reached your plan's monitoring limit. Remove a site or{" "}
+                <Link href="/pricing" className="underline">upgrade</Link> to add more.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="space-y-3">
+        <h2 className="text-lg font-semibold">Monitored sites</h2>
+        {isLoading ? (
+          <div className="space-y-3">
+            {[1, 2].map((i) => <div key={i} className="h-20 rounded-xl bg-muted/50 animate-pulse" />)}
+          </div>
+        ) : sites.length === 0 ? (
+          <Card className="border-dashed">
+            <CardContent className="py-12 text-center text-muted-foreground text-sm">
+              No sites monitored yet. Add one above to start tracking its AEO score over time.
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-2">
+            {sites.map((site) => (
+              <Card key={site.id} className={site.active ? "" : "opacity-60"}>
+                <CardContent className="py-4 flex flex-col sm:flex-row sm:items-center gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-sm truncate">{site.label || displayUrl(site.url)}</span>
+                      {!site.active && <Badge variant="outline" className="text-[10px]">Paused</Badge>}
+                    </div>
+                    {site.label && <span className="text-xs text-muted-foreground truncate block">{displayUrl(site.url)}</span>}
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground mt-1">
+                      <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" /> {site.frequency}</span>
+                      <span>Last run: {fmtDate(site.lastRunAt)}</span>
+                      {site.active && <span>Next: {fmtDate(site.nextRunAt)}</span>}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    {site.lastScore != null ? (
+                      site.lastAuditId ? (
+                        <Link href={`/results/${site.lastAuditId}`} title="Open latest audit">
+                          <ScoreBadge score={Math.round(site.lastScore)} />
+                        </Link>
+                      ) : <ScoreBadge score={Math.round(site.lastScore)} />
+                    ) : (
+                      <span className="text-xs text-muted-foreground">No runs yet</span>
+                    )}
+                    <select
+                      value={site.frequency}
+                      onChange={(e) => setFreq.mutate({ id: site.id, frequency: e.target.value as Frequency })}
+                      className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+                      title="Cadence"
+                    >
+                      <option value="weekly">Weekly</option>
+                      <option value="daily">Daily</option>
+                    </select>
+                    <Button size="sm" variant="outline" onClick={() => runNow.mutate(site.id)} disabled={runNow.isPending} title="Re-audit now">
+                      {runNow.isPending && runNow.variables === site.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => toggleActive.mutate({ id: site.id, active: !site.active })} title={site.active ? "Pause" : "Resume"}>
+                      {site.active ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                    </Button>
+                    {site.lastAuditId && (
+                      <Link href={`/results/${site.lastAuditId}`}>
+                        <Button size="sm" variant="ghost" title="Open results"><ExternalLink className="h-4 w-4" /></Button>
+                      </Link>
+                    )}
+                    <Button size="sm" variant="ghost" onClick={() => removeSite.mutate(site.id)} title="Remove" className="text-red-600 hover:text-red-700">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

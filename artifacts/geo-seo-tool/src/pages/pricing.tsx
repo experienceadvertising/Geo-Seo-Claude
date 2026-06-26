@@ -28,7 +28,7 @@ const pricingProductJsonLd = {
     "@type": "AggregateOffer",
     priceCurrency: "USD",
     lowPrice: "0",
-    highPrice: "299",
+    highPrice: "249",
     offerCount: "5",
     offers: [
       {
@@ -42,12 +42,12 @@ const pricingProductJsonLd = {
       {
         "@type": "Offer",
         name: "Pro (monthly)",
-        price: "49",
+        price: "79",
         priceCurrency: "USD",
         url: "https://aeoimprovement.com/pricing",
         priceSpecification: {
           "@type": "UnitPriceSpecification",
-          price: "49",
+          price: "79",
           priceCurrency: "USD",
           billingDuration: "P1M",
         },
@@ -55,7 +55,7 @@ const pricingProductJsonLd = {
       {
         "@type": "Offer",
         name: "Pro (annual)",
-        price: "470",
+        price: "790",
         priceCurrency: "USD",
         url: "https://aeoimprovement.com/pricing",
         priceSpecification: {
@@ -68,12 +68,12 @@ const pricingProductJsonLd = {
       {
         "@type": "Offer",
         name: "Agency (monthly)",
-        price: "299",
+        price: "249",
         priceCurrency: "USD",
         url: "https://aeoimprovement.com/pricing",
         priceSpecification: {
           "@type": "UnitPriceSpecification",
-          price: "299",
+          price: "249",
           priceCurrency: "USD",
           billingDuration: "P1M",
         },
@@ -81,12 +81,12 @@ const pricingProductJsonLd = {
       {
         "@type": "Offer",
         name: "Agency (annual)",
-        price: "2870",
+        price: "2490",
         priceCurrency: "USD",
         url: "https://aeoimprovement.com/pricing",
         priceSpecification: {
           "@type": "UnitPriceSpecification",
-          price: "2870",
+          price: "2490",
           priceCurrency: "USD",
           billingDuration: "P1Y",
         },
@@ -112,7 +112,7 @@ const pricingFaqJsonLd = {
       name: "What's the difference between Pro and Agency?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Pro ($49/mo or $470/yr) is built for one site or one in-house team: 100 audits/month, 30 simulations/month, all four engines (ChatGPT, Claude, Gemini, Perplexity), the Fix Generator, sentiment analysis, and 1-year trend history. Agency ($299/mo or $2,870/yr) is for teams managing many client sites: 500 audits/month, 150 simulations/month, agency-branded reports, multi-client management, 2-year trend history, and a dedicated account manager.",
+        text: "Pro ($79/mo or $790/yr) is built for one site or one in-house team: 100 audits/month, 30 simulations/month, all four engines (ChatGPT, Claude, Gemini, Perplexity), the Fix Generator, sentiment analysis, and 1-year trend history. Agency ($249/mo or $2,490/yr) is for teams managing many client sites: 500 audits/month, 150 simulations/month, agency-branded reports, multi-client management, 2-year trend history, and a dedicated account manager.",
       },
     },
     {
@@ -128,7 +128,7 @@ const pricingFaqJsonLd = {
       name: "Do annual plans have a discount?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Annual plans are priced at roughly two months free vs paying monthly: $470/year for Pro (vs $588 if billed monthly) and $2,870/year for Agency (vs $3,588 if billed monthly).",
+        text: "Annual plans are priced at roughly two months free vs paying monthly: $790/year for Pro (vs $948 if billed monthly) and $2,490/year for Agency (vs $2,988 if billed monthly).",
       },
     },
   ],
@@ -326,7 +326,7 @@ export default function PricingPage() {
   const [billing, setBilling] = useState<BillingInterval>("month");
   const { isSignedIn } = useAuth();
   const { plan: currentPlan } = usePlan();
-  const { data: productsData, isLoading: productsLoading } = useStripeProducts();
+  const { data: productsData } = useStripeProducts();
   const { data: subData } = useStripeSubscription();
   const checkout = useCheckout();
   const portal = useCustomerPortal();
@@ -411,8 +411,8 @@ export default function PricingPage() {
     };
   }
 
-  const proDisplay = buildPlanDisplay("pro", proMonthly, proAnnual, 4900, 47000);
-  const agencyDisplay = buildPlanDisplay("agency", agencyMonthly, agencyAnnual, 29900, 287000);
+  const proDisplay = buildPlanDisplay("pro", proMonthly, proAnnual, 7900, 79000);
+  const agencyDisplay = buildPlanDisplay("agency", agencyMonthly, agencyAnnual, 24900, 249000);
 
   const plans = [
     {
@@ -428,7 +428,9 @@ export default function PricingPage() {
       planId: "pro" as const,
       name: "Pro",
       ...proDisplay,
-      priceLoading: productsLoading,
+      // Render the price immediately from the static fallback (which matches the
+      // live Stripe price); live data replaces it seamlessly with no skeleton flash.
+      priceLoading: false,
       description: "For marketers & SEO professionals",
       features: PLAN_FEATURES.pro,
       isHighlighted: true,
@@ -437,7 +439,7 @@ export default function PricingPage() {
       planId: "agency" as const,
       name: "Agency",
       ...agencyDisplay,
-      priceLoading: productsLoading,
+      priceLoading: false,
       description: "For agencies managing multiple clients",
       features: PLAN_FEATURES.agency,
       isHighlighted: false,

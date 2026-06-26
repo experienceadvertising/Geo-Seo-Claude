@@ -3,6 +3,7 @@ import { db, usersTable, auditsTable } from "@workspace/db";
 import { sql, and, isNotNull, eq, gte, lte } from "drizzle-orm";
 import { getUserPlan } from "./planUtils";
 import { EmailService } from "./emailService";
+import { runDueMonitoredSites } from "./monitoring";
 import { logger } from "./logger";
 
 // Cron-driven sends have no inbound HTTP request to derive a base URL from,
@@ -274,6 +275,18 @@ async function runWeeklyInsights() {
 
 // ── Start all schedules ───────────────────────────────────────────────────────
 export function startEmailScheduler() {
+  // Continuous monitoring sweep runs independently of email config — the
+  // re-audits still happen (and feed the Projects trend view) even when
+  // Postmark isn't set; only the alert emails are skipped in that case.
+  // Daily at 07:00 UTC; per-site cadence is enforced via nextRunAt, so weekly
+  // sites are only re-audited once their week is up.
+  cron.schedule("0 7 * * *", () => {
+    runDueMonitoredSites().catch((err) =>
+      logger.error({ err }, "Monitored-sites sweep cron error")
+    );
+  });
+  logger.info("Monitored-sites scheduler started (daily sweep, per-site cadence)");
+
   if (!process.env.POSTMARK_API_TOKEN) {
     logger.warn("POSTMARK_API_TOKEN not set — email scheduler disabled");
     return;
