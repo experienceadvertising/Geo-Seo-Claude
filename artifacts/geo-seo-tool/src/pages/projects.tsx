@@ -3,8 +3,9 @@ import { Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { customFetch } from "@workspace/api-client-react";
 import {
-  Loader2, Plus, Play, Pause, Trash2, ExternalLink, Bell, Sparkles, Clock,
+  Loader2, Plus, Play, Pause, Trash2, ExternalLink, Bell, Sparkles, Clock, Bot, Copy, Check,
 } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer } from "recharts";
 import { SEO } from "@/components/seo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,6 +35,17 @@ interface ListResponse {
   plan: string;
 }
 
+interface CrawlerActivity {
+  token: string;
+  pixelUrl: string;
+  snippet: string;
+  knownCrawlers: string[];
+  total: number;
+  byCrawler: Array<{ crawler: string; count: number; lastSeen: string }>;
+  daily: Array<{ day: string; count: number }>;
+  recent: Array<{ crawler: string; path: string | null; createdAt: string }>;
+}
+
 const QUERY_KEY = ["geo", "monitored-sites"];
 
 function fmtDate(iso: string | null): string {
@@ -59,10 +71,27 @@ export default function ProjectsPage() {
   const [label, setLabel] = useState("");
   const [frequency, setFrequency] = useState<Frequency>("weekly");
 
+  const [copied, setCopied] = useState(false);
+
   const { data, isLoading } = useQuery<ListResponse>({
     queryKey: QUERY_KEY,
     queryFn: () => customFetch<ListResponse>("/api/geo/monitored-sites"),
   });
+
+  // AI crawler activity (Pro). Enabled once we know the plan supports it.
+  const crawler = useQuery<CrawlerActivity>({
+    queryKey: ["geo", "crawler-activity"],
+    queryFn: () => customFetch<CrawlerActivity>("/api/geo/crawler-activity"),
+    enabled: (data?.limit ?? 0) > 0,
+    retry: false,
+  });
+
+  function copySnippet(snippet: string) {
+    navigator.clipboard?.writeText(snippet).then(
+      () => { setCopied(true); setTimeout(() => setCopied(false), 2000); toast({ title: "Snippet copied" }); },
+      () => toast({ title: "Couldn't copy", description: "Select and copy the snippet manually.", variant: "destructive" }),
+    );
+  }
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: QUERY_KEY });
 
@@ -261,6 +290,106 @@ export default function ProjectsPage() {
           </div>
         )}
       </div>
+
+      {!monitoringLocked && (
+        <div className="space-y-3">
+          <div>
+            <h2 className="text-lg font-semibold flex items-center gap-2"><Bot className="h-5 w-5 text-emerald-600" /> AI crawler activity</h2>
+            <p className="text-sm text-muted-foreground">
+              Robots.txt shows which AI bots you <em>allow</em>. This shows which ones actually <em>visit</em>. Add the
+              snippet to your site and we'll log real GPTBot / ClaudeBot / PerplexityBot fetches as they happen.
+            </p>
+          </div>
+
+          {crawler.isLoading ? (
+            <div className="h-40 rounded-xl bg-muted/50 animate-pulse" />
+          ) : crawler.data ? (
+            <>
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Tracking snippet</CardTitle>
+                  <CardDescription>Paste this once into your site's global <code>&lt;head&gt;</code> or footer template.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="flex items-start gap-2">
+                    <code className="flex-1 text-xs bg-muted rounded-md p-3 break-all font-mono">{crawler.data.snippet}</code>
+                    <Button size="sm" variant="outline" onClick={() => copySnippet(crawler.data!.snippet)}>
+                      {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    The pixel is invisible and only ever logs known AI crawlers — never your human visitors, and no IP addresses.
+                  </p>
+                </CardContent>
+              </Card>
+
+              {crawler.data.total === 0 ? (
+                <Card className="border-dashed">
+                  <CardContent className="py-10 text-center text-muted-foreground text-sm">
+                    No AI crawler visits logged yet. Once the snippet is live, fetches from GPTBot, ClaudeBot, PerplexityBot
+                    and others will appear here within minutes of a crawl.
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base">{crawler.data.total.toLocaleString()} AI crawler hits</CardTitle>
+                      <CardDescription>By bot, all time</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {crawler.data.byCrawler.map((c) => (
+                        <div key={c.crawler} className="flex items-center justify-between text-sm">
+                          <span className="font-medium">{c.crawler}</span>
+                          <span className="text-muted-foreground text-xs">
+                            {c.count.toLocaleString()} · last {fmtDate(c.lastSeen)}
+                          </span>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base">Last 14 days</CardTitle>
+                      <CardDescription>Daily AI crawler hits</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-40 w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={crawler.data.daily.map((d) => ({ name: d.day.slice(5), hits: d.count }))} margin={{ top: 4, right: 8, bottom: 0, left: -24 }}>
+                            <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                            <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
+                            <RechartsTooltip />
+                            <Bar dataKey="hits" fill="#10b981" radius={[3, 3, 0, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {crawler.data.recent.length > 0 && (
+                    <Card className="md:col-span-2">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base">Recent visits</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-1.5">
+                        {crawler.data.recent.slice(0, 10).map((r, i) => (
+                          <div key={i} className="flex items-center justify-between gap-3 text-xs">
+                            <span className="font-medium shrink-0">{r.crawler}</span>
+                            <span className="text-muted-foreground truncate flex-1">{r.path || "/"}</span>
+                            <span className="text-muted-foreground shrink-0">{fmtDate(r.createdAt)}</span>
+                          </div>
+                        ))}
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              )}
+            </>
+          ) : null}
+        </div>
+      )}
     </div>
   );
 }

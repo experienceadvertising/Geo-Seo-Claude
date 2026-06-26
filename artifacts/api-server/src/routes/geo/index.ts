@@ -12,6 +12,7 @@ import { anthropic } from "@workspace/integrations-anthropic-ai";
 import { RECOMMENDATIONS_SCHEMA_VERSION, METHODOLOGY_VERSION } from "@workspace/recommendations";
 import simulateRouter from "./simulate";
 import monitorRouter from "./monitor";
+import crawlerRouter from "./crawler";
 import { requireAuth } from "../../middlewares/auth";
 import { analyzeRateLimiter, readRateLimiter } from "../../middlewares/rateLimiters";
 import { assertPublicUrl, SsrfError } from "../../lib/safeFetch";
@@ -56,6 +57,7 @@ import { EmailService } from "../../lib/emailService";
 const router: IRouter = Router();
 router.use(simulateRouter);
 router.use(monitorRouter);
+router.use(crawlerRouter);
 
 router.post("/geo/analyze", requireAuth, analyzeRateLimiter, async (req, res): Promise<void> => {
   const parsed = AnalyzeUrlBody.safeParse(req.body);
