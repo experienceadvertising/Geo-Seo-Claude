@@ -7,6 +7,7 @@ import stripeRouter from "./stripe";
 import authRouter from "./auth";
 import contactRouter from "./contact";
 import referralRouter from "./referral";
+import crawlerPixelRouter from "./crawlerPixel";
 
 const router: IRouter = Router();
 
@@ -18,5 +19,6 @@ router.use(geoRouter);
 router.use(adminRouter);
 router.use(contactRouter);
 router.use(referralRouter);
+router.use(crawlerPixelRouter);
 
 export default router;
