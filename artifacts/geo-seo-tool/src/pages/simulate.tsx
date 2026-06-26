@@ -5,7 +5,10 @@ import {
   useSuggestPrompts,
   useRunSimulation,
   useGetLatestSimulationForAudit,
+  customFetch,
 } from "@workspace/api-client-react";
+import { useQuery } from "@tanstack/react-query";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,6 +27,93 @@ const ENGINES = [
   { id: "gemini", label: "Gemini", color: "bg-blue-500" },
   { id: "perplexity", label: "Perplexity", color: "bg-purple-500" },
 ] as const;
+
+interface SovResponse {
+  domain: string;
+  brand: string | null;
+  competitors: string[];
+  series: Array<{ date: string; values: Record<string, number> }>;
+  runs: number;
+}
+
+// Brand line is always emerald; competitors cycle through a distinct palette.
+const SOV_COMPETITOR_COLORS = ["#6366f1", "#f59e0b", "#ec4899", "#14b8a6", "#8b5cf6"];
+
+function ShareOfVoiceCard({ data }: { data: SovResponse }) {
+  const { brand, competitors, series } = data;
+  if (!brand || series.length < 2) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-primary" /> Share of Voice over time
+          </CardTitle>
+          <CardDescription>How often AI engines name you vs. your competitors, tracked across runs.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            Run this simulation again over the coming weeks — once there are at least two runs for this domain,
+            we'll chart whether you're gaining or losing share of voice against the brands AI engines recommend.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const chartData = series.map((s) => {
+    const label = new Date(s.date).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    return { name: label, ...s.values };
+  });
+  const latest = series[series.length - 1].values;
+  const first = series[0].values;
+  const brandDelta = Math.round((latest[brand] ?? 0) - (first[brand] ?? 0));
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <TrendingUp className="h-5 w-5 text-primary" /> Share of Voice over time
+        </CardTitle>
+        <CardDescription>
+          Share of all brand mentions across AI answers for this domain's prompts, per run.{" "}
+          {brandDelta !== 0 && (
+            <span className={brandDelta > 0 ? "text-green-600 font-medium" : "text-red-600 font-medium"}>
+              {brand} {brandDelta > 0 ? "+" : ""}{brandDelta} pts since the first run.
+            </span>
+          )}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="h-72 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData} margin={{ top: 8, right: 16, bottom: 4, left: -16 }}>
+              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+              <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+              <YAxis tick={{ fontSize: 11 }} domain={[0, 100]} unit="%" />
+              <RechartsTooltip formatter={(v: number) => `${v}%`} />
+              <Legend wrapperStyle={{ fontSize: 12 }} />
+              <Line type="monotone" dataKey={brand} stroke="#10b981" strokeWidth={3} dot={{ r: 3 }} />
+              {competitors.map((c, i) => (
+                <Line
+                  key={c}
+                  type="monotone"
+                  dataKey={c}
+                  stroke={SOV_COMPETITOR_COLORS[i % SOV_COMPETITOR_COLORS.length]}
+                  strokeWidth={1.5}
+                  dot={{ r: 2 }}
+                />
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+        <p className="text-xs text-muted-foreground mt-3">
+          Based on {series.length} simulation{series.length === 1 ? "" : "s"} for this domain. Share = a brand's mentions ÷
+          all brand mentions in that run (across every prompt × engine).
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
 
 function pct(n: number) {
   return `${Math.round(n * 100)}%`;
@@ -191,6 +281,15 @@ export default function SimulatePage() {
   }, [run.isSuccess]);
   const result = (run.data as any) || (latest.data as any);
   const showingHistorical = !run.data && !!latest.data;
+
+  // Share of Voice trend — derived from this domain's past simulations (Pro).
+  // Refetches after each run so a freshly-completed simulation extends the line.
+  const sov = useQuery<SovResponse>({
+    queryKey: ["geo", "share-of-voice", domain, run.isSuccess],
+    queryFn: () => customFetch<SovResponse>(`/api/geo/share-of-voice?domain=${encodeURIComponent(domain)}`),
+    enabled: isPro && !!domain && !!result,
+    retry: false,
+  });
 
   // Citation Gap: computed entirely from existing citedUrls in results — no extra API calls
   const citationGap = useMemo(() => {
@@ -587,6 +686,9 @@ export default function SimulatePage() {
               )}
             </CardContent>
           </Card>
+
+          {/* Share of Voice trend (Pro) — derived from this domain's run history */}
+          {isPro && sov.data && sov.data.runs > 0 && <ShareOfVoiceCard data={sov.data} />}
 
           {/* Citation Gap */}
           {citationGap && citationGap.length > 1 && (
