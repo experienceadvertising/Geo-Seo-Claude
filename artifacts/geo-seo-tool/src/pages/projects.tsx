@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { customFetch } from "@workspace/api-client-react";
 import {
-  Loader2, Plus, Play, Pause, Trash2, ExternalLink, Bell, Sparkles, Clock, Bot, Copy, Check,
+  Loader2, Plus, Play, Pause, Trash2, ExternalLink, Bell, Sparkles, Clock, Bot, Copy, Check, LineChart as LineChartIcon, Link2,
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer } from "recharts";
 import { SEO } from "@/components/seo";
@@ -62,6 +62,169 @@ function displayUrl(raw: string): string {
   } catch {
     return raw;
   }
+}
+
+interface GoogleStatus { configured: boolean; connected: boolean; propertyId: string | null; propertyName: string | null }
+interface Ga4Property { property: string; displayName: string; account: string }
+interface AiReferrals {
+  property: string;
+  days: number;
+  totalSessions: number;
+  series: Array<{ date: string; sessions: number }>;
+  bySource: Array<{ source: string; sessions: number }>;
+}
+
+// Google Analytics integration — connect a GA4 property and see how much real
+// traffic AI answer engines (ChatGPT, Perplexity, Gemini, …) actually sent you,
+// closing the loop from "am I cited" to "did it drive visits". Self-contained
+// (own queries) and rendered only for Pro users.
+function GoogleAnalyticsSection() {
+  const { toast } = useToast();
+  const qc = useQueryClient();
+
+  const status = useQuery<GoogleStatus>({
+    queryKey: ["google", "status"],
+    queryFn: () => customFetch<GoogleStatus>("/api/integrations/google/status"),
+    retry: false,
+  });
+
+  // Surface the OAuth round-trip result (?google=connected|denied|error|…) once.
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    const g = p.get("google");
+    if (!g) return;
+    if (g === "connected") toast({ title: "Google connected", description: "Pick the GA4 property you want to report on." });
+    else if (g === "denied") toast({ title: "Connection cancelled", variant: "destructive" });
+    else toast({ title: "Couldn't connect Google", description: "Please try again.", variant: "destructive" });
+    p.delete("google");
+    window.history.replaceState({}, "", window.location.pathname + (p.toString() ? `?${p}` : ""));
+    qc.invalidateQueries({ queryKey: ["google"] });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const connected = !!status.data?.connected;
+  const propertyId = status.data?.propertyId ?? null;
+
+  const properties = useQuery<{ properties: Ga4Property[] }>({
+    queryKey: ["google", "properties"],
+    queryFn: () => customFetch<{ properties: Ga4Property[] }>("/api/integrations/google/properties"),
+    enabled: connected && !propertyId,
+    retry: false,
+  });
+
+  const referrals = useQuery<AiReferrals>({
+    queryKey: ["google", "ai-referrals"],
+    queryFn: () => customFetch<AiReferrals>("/api/integrations/google/ai-referrals"),
+    enabled: connected && !!propertyId,
+    retry: false,
+  });
+
+  const setProperty = useMutation({
+    mutationFn: (p: Ga4Property) => customFetch("/api/integrations/google/property", { method: "POST", body: JSON.stringify({ propertyId: p.property, propertyName: p.displayName }) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["google"] }),
+  });
+
+  const disconnect = useMutation({
+    mutationFn: () => customFetch("/api/integrations/google/disconnect", { method: "POST" }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["google"] }); toast({ title: "Google disconnected" }); },
+  });
+
+  if (status.isLoading) return <div className="h-32 rounded-xl bg-muted/50 animate-pulse" />;
+  if (!status.data?.configured) {
+    return (
+      <Card className="border-dashed">
+        <CardContent className="py-6 text-sm text-muted-foreground">
+          Google Analytics integration isn't configured on this server yet. Once it's set up you'll be able to connect a
+          GA4 property here and see how much traffic AI engines are actually driving to your site.
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <CardTitle className="text-base flex items-center gap-2"><LineChartIcon className="h-4 w-4 text-emerald-600" /> AI referral traffic (Google Analytics)</CardTitle>
+            <CardDescription>Real sessions AI answer engines sent to your site — the payoff for getting cited.</CardDescription>
+          </div>
+          {connected && (
+            <Button size="sm" variant="ghost" onClick={() => disconnect.mutate()} disabled={disconnect.isPending} className="text-muted-foreground">
+              Disconnect
+            </Button>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {!connected ? (
+          <div className="flex items-center gap-3">
+            <Button onClick={() => { window.location.href = "/api/integrations/google/connect"; }}>
+              <Link2 className="h-4 w-4 mr-1.5" /> Connect Google Analytics
+            </Button>
+            <span className="text-xs text-muted-foreground">Read-only. We only read AI-referral session counts.</span>
+          </div>
+        ) : !propertyId ? (
+          <div className="space-y-2">
+            <p className="text-sm font-medium">Choose the GA4 property to report on:</p>
+            {properties.isLoading ? (
+              <div className="h-20 rounded-lg bg-muted/50 animate-pulse" />
+            ) : properties.data?.properties?.length ? (
+              <div className="flex flex-col gap-1.5 max-h-64 overflow-auto">
+                {properties.data.properties.map((p) => (
+                  <button
+                    key={p.property}
+                    onClick={() => setProperty.mutate(p)}
+                    disabled={setProperty.isPending}
+                    className="text-left rounded-md border px-3 py-2 text-sm hover:border-emerald-500/40 hover:bg-emerald-500/5 transition-colors"
+                  >
+                    <span className="font-medium">{p.displayName}</span>
+                    {p.account && <span className="text-xs text-muted-foreground ml-2">{p.account}</span>}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">No GA4 properties found on this Google account.</p>
+            )}
+          </div>
+        ) : referrals.isLoading ? (
+          <div className="h-44 rounded-lg bg-muted/50 animate-pulse" />
+        ) : referrals.data ? (
+          <div className="space-y-4">
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-bold">{referrals.data.totalSessions.toLocaleString()}</span>
+              <span className="text-sm text-muted-foreground">AI-referred sessions · last {referrals.data.days} days · {referrals.data.property}</span>
+            </div>
+            {referrals.data.totalSessions === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No AI-referral sessions recorded in this window yet. As ChatGPT, Perplexity and others start citing you,
+                their referred visits will show up here.
+              </p>
+            ) : (
+              <>
+                <div className="h-44 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={referrals.data.series.map((s) => ({ name: s.date.slice(5), sessions: s.sessions }))} margin={{ top: 4, right: 8, bottom: 0, left: -24 }}>
+                      <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                      <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
+                      <RechartsTooltip />
+                      <Bar dataKey="sessions" fill="#10b981" radius={[3, 3, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {referrals.data.bySource.slice(0, 8).map((s) => (
+                    <Badge key={s.source} variant="secondary">{s.source} <span className="ml-1.5 opacity-60">{s.sessions.toLocaleString()}</span></Badge>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">Couldn't load GA4 data. Try disconnecting and reconnecting Google.</p>
+        )}
+      </CardContent>
+    </Card>
+  );
 }
 
 export default function ProjectsPage() {
@@ -388,6 +551,13 @@ export default function ProjectsPage() {
               )}
             </>
           ) : null}
+        </div>
+      )}
+
+      {!monitoringLocked && (
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold flex items-center gap-2"><LineChartIcon className="h-5 w-5 text-emerald-600" /> Traffic impact</h2>
+          <GoogleAnalyticsSection />
         </div>
       )}
     </div>

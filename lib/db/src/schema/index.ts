@@ -20,6 +20,7 @@
 export * from "./audits";
 export * from "./monitoredSites";
 export * from "./crawlerHits";
+export * from "./googleConnections";
 export * from "./promptSimulations";
 export * from "./users";
 export * from "./monthlyUsage";

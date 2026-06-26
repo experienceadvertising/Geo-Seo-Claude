@@ -8,6 +8,7 @@ import authRouter from "./auth";
 import contactRouter from "./contact";
 import referralRouter from "./referral";
 import crawlerPixelRouter from "./crawlerPixel";
+import googleRouter from "./google";
 
 const router: IRouter = Router();
 
@@ -20,5 +21,6 @@ router.use(adminRouter);
 router.use(contactRouter);
 router.use(referralRouter);
 router.use(crawlerPixelRouter);
+router.use(googleRouter);
 
 export default router;
