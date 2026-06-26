@@ -100,7 +100,7 @@ router.post("/geo/analyze", requireAuth, analyzeRateLimiter, async (req, res): P
         .then(([u]) => {
           if (u?.email && !u.emailOptOut) {
             const baseUrl = process.env.FRONTEND_URL || "https://aeoimprovement.com";
-            const unsubscribeUrl = `${baseUrl}/unsubscribe?token=${u.unsubscribeToken}`;
+            const unsubscribeUrl = `${baseUrl}/api/auth/unsubscribe?token=${u.unsubscribeToken}`;
             return EmailService.sendLimitReached(u.email, u.firstName || "", "audits", quota.cap, unsubscribeUrl);
           }
         })
@@ -138,7 +138,7 @@ router.post("/geo/analyze", requireAuth, analyzeRateLimiter, async (req, res): P
           .where(eq(usersTable.id, req.userId!));
         if (!u?.email || u.emailOptOut) return;
         const baseUrl = process.env.FRONTEND_URL || "https://aeoimprovement.com";
-        const unsubscribeUrl = `${baseUrl}/unsubscribe?token=${u.unsubscribeToken}`;
+        const unsubscribeUrl = `${baseUrl}/api/auth/unsubscribe?token=${u.unsubscribeToken}`;
         await EmailService.sendApproachingLimit(
           u.email, u.firstName || "", "audits", quota.used + 1, quota.cap, unsubscribeUrl,
         );
@@ -407,7 +407,7 @@ Hard rules:
           .where(eq(usersTable.id, req.userId!));
         if (!u?.email || u.emailOptOut) return;
         const baseUrl = process.env.FRONTEND_URL || "https://aeoimprovement.com";
-        const unsubscribeUrl = `${baseUrl}/unsubscribe?token=${u.unsubscribeToken}`;
+        const unsubscribeUrl = `${baseUrl}/api/auth/unsubscribe?token=${u.unsubscribeToken}`;
         await EmailService.sendAuditComplete(
           u.email, u.firstName || "", url, analysis.geoScore, String(audit.id), unsubscribeUrl,
         );
@@ -451,7 +451,7 @@ Hard rules:
         `);
         if (claim.rows.length === 0) return;
         const baseUrl = process.env.FRONTEND_URL || "https://aeoimprovement.com";
-        const unsubscribeUrl = `${baseUrl}/unsubscribe?token=${u.unsubscribeToken}`;
+        const unsubscribeUrl = `${baseUrl}/api/auth/unsubscribe?token=${u.unsubscribeToken}`;
         await EmailService.sendWhatYouMissed(
           u.email, u.firstName || "", url, analysis.geoScore, unsubscribeUrl,
         );
