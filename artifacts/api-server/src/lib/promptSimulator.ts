@@ -217,11 +217,26 @@ const NON_COMPETITOR_HOSTS = new Set([
   "trustpilot.com","producthunt.com","crunchbase.com","glassdoor.com",
 ]);
 
+// Common multi-label public suffixes where the registrable domain is the last
+// THREE labels (e.g. "foo.co.uk"), not two. Without this, "foo.co.uk" and
+// "bar.co.uk" both bucket to "co.uk" and look like the same brand.
+const MULTI_PART_SUFFIXES = new Set([
+  "co.uk", "org.uk", "gov.uk", "ac.uk", "com.au", "net.au", "org.au", "edu.au",
+  "gov.au", "co.nz", "org.nz", "com.br", "com.mx", "co.jp", "co.kr", "co.in",
+  "co.za", "com.sg", "com.my", "com.hk", "com.tw", "com.tr", "com.ua", "com.ph",
+  "com.vn", "co.id", "co.th",
+]);
+
 function rootDomain(hostname: string): string {
   const parts = hostname.toLowerCase().replace(/^www\./, "").split(".");
   if (parts.length <= 2) return parts.join(".");
-  // Naively use last 2 labels (handles most TLDs; .co.uk style edge cases over-bucket but acceptable)
-  return parts.slice(-2).join(".");
+  // Handle multi-label public suffixes (.co.uk etc.) — use last 3 labels there.
+  const lastTwo = parts.slice(-2).join(".");
+  if (MULTI_PART_SUFFIXES.has(lastTwo) && parts.length >= 3) {
+    return parts.slice(-3).join(".");
+  }
+  // Naively use last 2 labels (handles most TLDs).
+  return lastTwo;
 }
 
 const POSITIVE_SIGNALS = [
@@ -252,6 +267,55 @@ function detectSentiment(text: string, brandName: string): SentimentLabel | null
   if (pos > neg + 1) return "Positive";
   if (neg > pos) return "Negative";
   return "Neutral";
+}
+
+// Generic/category words that, on their own, do not identify a competing brand.
+// Used by looksLikeBrand() to reject bold segments that are really category labels
+// ("Top Paid Media Platforms", "Best Ecommerce Metrics") rather than brand names.
+const BRAND_STOPWORDS = new Set([
+  "top", "best", "tier", "agency", "agencies", "platform", "platforms", "metrics",
+  "channels", "channel", "pricing", "marketing", "digital", "media", "paid",
+  "ecommerce", "brand", "brands", "google", "meta", "facebook", "instagram",
+  "tiktok", "youtube", "linkedin", "twitter", "seo", "sem", "ppc", "ads", "ad",
+  "the", "and", "for", "with", "your", "company", "services", "solutions",
+]);
+
+// Heuristic: does a bold text segment look like a real brand/company name rather
+// than a generic category phrase or a sentence fragment? Used to mine competitor
+// names out of the AI engine's own prose (which usually bolds the brands it names).
+function looksLikeBrand(name: string): boolean {
+  const cleaned = name.replace(/[*_#]/g, "").replace(/^\s*\d+[.)]\s*/, "").trim();
+  if (cleaned.length < 2 || cleaned.length > 40) return false;
+  if (cleaned.includes("&")) return false;
+  if (/[:?]$/.test(cleaned)) return false;
+  if (!/^[A-Z0-9]/.test(cleaned)) return false;
+  const words = cleaned.split(/\s+/);
+  if (words.length > 5) return false;
+  const generic = words.filter((w) => BRAND_STOPWORDS.has(w.toLowerCase())).length;
+  if (generic >= Math.ceil(words.length / 2)) return false;
+  return true;
+}
+
+// Mine candidate competitor names from the engine's bolded prose. AI engines
+// almost always **bold** the brands they recommend, so this surfaces real named
+// competitors even when no external URL is cited.
+function extractBrandsFromText(text: string, brandName: string): string[] {
+  const ownBrand = brandName.trim().toLowerCase();
+  const seen = new Set<string>();
+  const out: string[] = [];
+  const re = /\*\*([^*\n]{2,60})\*\*/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    const candidate = m[1].replace(/[.,;:!?)\]]+$/, "").trim();
+    if (!looksLikeBrand(candidate)) continue;
+    const norm = candidate.toLowerCase();
+    if (norm === ownBrand) continue;
+    if (seen.has(norm)) continue;
+    seen.add(norm);
+    out.push(candidate);
+    if (out.length >= 10) break;
+  }
+  return out;
 }
 
 function detectCompetitors(citedUrls: string[], brandName: string, targetDomain: string): string[] {
@@ -429,7 +493,10 @@ async function runEngineForPrompt(
     );
     const { mentioned, firstPosition } = detectBrandMention(text, brandName);
     const domainCited = detectDomainCitation(urls, domain);
-    const competitorMentions = detectCompetitors(urls, brandName, domain);
+    const namedBrands = extractBrandsFromText(text, brandName);
+    const competitorMentions = namedBrands.length > 0
+      ? namedBrands
+      : detectCompetitors(urls, brandName, domain);
     const sentiment = mentioned ? detectSentiment(text, brandName) : null;
     return {
       engine: engineId,

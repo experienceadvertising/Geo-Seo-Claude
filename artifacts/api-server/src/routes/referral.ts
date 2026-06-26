@@ -5,7 +5,7 @@ import { eq, and, count, sum } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
 import { readRateLimiter } from "../middlewares/rateLimiters";
 import { logger } from "../lib/logger";
-import { safeBaseUrl } from "../lib/publicUrl";
+import { canonicalBaseUrl } from "../lib/publicUrl";
 
 const router: IRouter = Router();
 
@@ -13,8 +13,8 @@ function generateReferralCode(): string {
   return randomBytes(4).toString("hex").toUpperCase();
 }
 
-function getReferralLink(code: string, req: any): string {
-  return `${safeBaseUrl(req)}/sign-up?ref=${code}`;
+function getReferralLink(code: string): string {
+  return `${canonicalBaseUrl()}/sign-up?ref=${code}`;
 }
 
 router.get("/referral", requireAuth, readRateLimiter, async (req, res): Promise<void> => {
@@ -59,7 +59,7 @@ router.get("/referral", requireAuth, readRateLimiter, async (req, res): Promise<
 
     res.json({
       referralCode: code,
-      referralLink: getReferralLink(code, req),
+      referralLink: getReferralLink(code),
       stats: {
         pendingRewards: pendingCount,
         paidRewards: paidCount,

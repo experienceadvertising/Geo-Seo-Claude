@@ -85,14 +85,21 @@ function deriveBrandName(url: string, title: string | null): string {
     }
   }
 
-  // Pass 3: pick the shortest segment that looks like a proper name
+  // Pass 3: only accept a proper-name title segment if it actually relates to the
+  // domain (shares a significant token with the domain root). A generic keyword-style
+  // segment unrelated to the domain (e.g. "Performance Marketing Agency" on
+  // experienceadvertising.com) must NOT override the real brand.
+  const STOP = new Set(["the","and","for","with","your","best","top","agency","agencies","company","services","solutions","marketing","digital","online","group","inc","llc","ltd","co"]);
+  const rootTokens = new Set(
+    domainBrand.replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase().split(/[^a-z0-9]+/).filter((t) => t.length >= 3)
+  );
   const properNameSegs = segments.filter(
     (s) => s.length >= 3 && s.length <= 40 && /^[A-Z]/.test(s) && !/^(Home|Welcome|Official)$/i.test(s)
   );
-  if (properNameSegs.length > 0) {
-    const shortest = properNameSegs.sort((a, b) => a.length - b.length)[0];
-    return stripTrailingFragment(shortest);
-  }
+  const relatedSeg = properNameSegs.find((seg) =>
+    seg.toLowerCase().split(/[^a-z0-9]+/).some((tok) => tok.length >= 3 && !STOP.has(tok) && rootTokens.has(tok))
+  );
+  if (relatedSeg) return stripTrailingFragment(relatedSeg);
 
   return domainBrand;
 }
@@ -579,14 +586,22 @@ export async function analyzeBrandAuthority(
   title: string | null,
   hasOrgSchema: boolean,
   hasLlmsTxt: boolean,
-  orgSchemaName?: string | null
+  orgSchemaName?: string | null,
+  ogSiteName?: string | null
 ): Promise<BrandAuthorityResult> {
-  const brandName = deriveBrandName(url, title);
+  const isUsableName = (n: string | null | undefined): n is string =>
+    !!n && n.trim().length >= 2 && n.trim().length <= 60;
+  const brandName = isUsableName(orgSchemaName)
+    ? stripTrailingFragment(orgSchemaName.trim())
+    : isUsableName(ogSiteName)
+      ? stripTrailingFragment(ogSiteName.trim())
+      : deriveBrandName(url, title);
   const domain = new URL(url).hostname.replace(/^www\./, "");
 
   // Build alt-name list: organization name from schema, plus the longest title segment.
   const altNames: string[] = [];
   if (orgSchemaName) altNames.push(orgSchemaName);
+  if (ogSiteName) altNames.push(ogSiteName);
   if (title) {
     const titleSegs = title
       .split(/[|•\-—–·:»]/)
