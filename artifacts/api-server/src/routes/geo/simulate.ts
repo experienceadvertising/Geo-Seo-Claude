@@ -130,7 +130,7 @@ router.post("/geo/simulate", requireAuth, simulateRateLimiter, async (req, res):
         .then(([u]) => {
           if (u?.email && !u.emailOptOut) {
             const baseUrl = process.env.FRONTEND_URL || "https://aeoimprovement.com";
-            const unsubscribeUrl = `${baseUrl}/unsubscribe?token=${u.unsubscribeToken}`;
+            const unsubscribeUrl = `${baseUrl}/api/auth/unsubscribe?token=${u.unsubscribeToken}`;
             return EmailService.sendLimitReached(u.email, u.firstName || "", "simulations", monthQuota.cap, unsubscribeUrl);
           }
         })
@@ -167,7 +167,7 @@ router.post("/geo/simulate", requireAuth, simulateRateLimiter, async (req, res):
           .where(sql`id = ${req.userId!}`);
         if (!u?.email || u.emailOptOut) return;
         const baseUrl = process.env.FRONTEND_URL || "https://aeoimprovement.com";
-        const unsubscribeUrl = `${baseUrl}/unsubscribe?token=${u.unsubscribeToken}`;
+        const unsubscribeUrl = `${baseUrl}/api/auth/unsubscribe?token=${u.unsubscribeToken}`;
         await EmailService.sendApproachingLimit(
           u.email, u.firstName || "", "simulations", monthQuota.used + 1, monthQuota.cap, unsubscribeUrl,
         );
@@ -216,12 +216,12 @@ router.post("/geo/simulate", requireAuth, simulateRateLimiter, async (req, res):
       .then(([u]) => {
         if (!u?.email || u.emailOptOut) return;
         const baseUrl = process.env.FRONTEND_URL || "https://aeoimprovement.com";
-        const unsubscribeUrl = `${baseUrl}/unsubscribe?token=${u.unsubscribeToken}`;
+        const unsubscribeUrl = `${baseUrl}/api/auth/unsubscribe?token=${u.unsubscribeToken}`;
         return EmailService.sendSimulationComplete(
           u.email,
           u.firstName || "",
           domain,
-          summary.visibilityScore ?? 0,
+          summary.overallVisibilityScore ?? 0,
           auditId,
           unsubscribeUrl,
         );

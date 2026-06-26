@@ -578,6 +578,12 @@ export default function Results() {
               <CardTitle className="text-sm font-mono uppercase tracking-wider flex items-center gap-2">
                 <Bot className="h-4 w-4" /> Platform Scores
               </CardTitle>
+              <p className="text-xs text-muted-foreground mt-2 leading-relaxed normal-case font-sans tracking-normal">
+                Per-engine readiness — how prepared this page is for each AI platform, weighted by what that engine values
+                (e.g. citability for Perplexity, E-E-A-T for Claude). These are independent of your overall AEO score, which
+                blends the six category scores above; a page can be strong on individual platforms yet still have a lower
+                overall score.
+              </p>
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y border-t">
