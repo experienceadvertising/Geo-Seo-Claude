@@ -25,9 +25,10 @@ router.post("/geo/prompts/suggest", requireAuth, readRateLimiter, async (req, re
     title: typeof req.body?.title === "string" ? req.body.title.slice(0, 200) : null,
     aiInsights: typeof req.body?.aiInsights === "string" ? req.body.aiInsights.slice(0, 800) : null,
   };
+  const suggestMode = req.body?.mode === "fanout" ? "fanout" : "standard";
   try {
-    const prompts = await generatePromptsForBrand(brandName, context);
-    res.json({ prompts });
+    const prompts = await generatePromptsForBrand(brandName, context, suggestMode);
+    res.json({ prompts, mode: suggestMode });
   } catch (err) {
     req.log.error({ err }, "Prompt suggestion failed");
     res.status(500).json({ error: "Failed to generate prompt suggestions" });

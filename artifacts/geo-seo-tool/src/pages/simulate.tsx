@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, Sparkles, Play, ArrowLeft, CheckCircle2, XCircle, Link as LinkIcon, AlertTriangle, ExternalLink, Lock, TrendingUp, TrendingDown, Minus, Plus, Trash2, Trophy, BarChart3, Info } from "lucide-react";
+import { Loader2, Sparkles, Play, ArrowLeft, CheckCircle2, XCircle, Link as LinkIcon, AlertTriangle, ExternalLink, Lock, TrendingUp, TrendingDown, Minus, Plus, Trash2, Trophy, BarChart3, Info, Network, Layers } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { usePlan } from "@/hooks/usePlan";
 import { UpgradePrompt } from "@/components/upgrade-prompt";
@@ -83,6 +83,7 @@ export default function SimulatePage() {
 
   const [brandName, setBrandName] = useState("");
   const [promptsText, setPromptsText] = useState("");
+  const [suggestMode, setSuggestMode] = useState<"standard" | "fanout">("standard");
   const [selectedEngines, setSelectedEngines] = useState<string[]>(ENGINES.map(e => e.id));
   const [competitorUrls, setCompetitorUrls] = useState<string[]>(["", "", ""]);
 
@@ -120,7 +121,7 @@ export default function SimulatePage() {
     ? "Select at least one engine."
     : null;
 
-  const handleSuggest = async () => {
+  const handleSuggest = async (mode: "standard" | "fanout" = suggestMode) => {
     if (!brandName) return;
     try {
       const res = await suggest.mutateAsync({
@@ -129,6 +130,7 @@ export default function SimulatePage() {
           description: audit?.description || undefined,
           ...(audit?.title ? { title: audit.title } : {}),
           ...(audit?.aiInsights ? { aiInsights: audit.aiInsights } : {}),
+          mode,
         } as any,
       });
       setPromptsText((res as any).prompts.join("\n"));
@@ -314,16 +316,41 @@ export default function SimulatePage() {
                 Prompts (one per line
                 {!isPro && <span className="ml-1 text-amber-600 font-semibold">· Free: max {maxPrompts}</span>})
               </label>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleSuggest}
-                disabled={!brandName || suggest.isPending}
-              >
-                {suggest.isPending ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 mr-1.5" />}
-                Auto-generate
-              </Button>
+              <div className="flex items-center gap-1.5">
+                <div className="flex rounded-md border overflow-hidden text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setSuggestMode("standard")}
+                    className={`px-2.5 py-1.5 transition-colors ${suggestMode === "standard" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:text-foreground"}`}
+                    title="Generate 6 prompts matching your buyers' search intent"
+                  >
+                    Buyer queries
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSuggestMode("fanout")}
+                    className={`px-2.5 py-1.5 transition-colors border-l ${suggestMode === "fanout" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:text-foreground"}`}
+                    title="Generate 8 prompts covering the full topic cluster AI engines fan out to"
+                  >
+                    <Network className="h-3 w-3 inline-block mr-1" />Fan-out cluster
+                  </button>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleSuggest(suggestMode)}
+                  disabled={!brandName || suggest.isPending}
+                >
+                  {suggest.isPending ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 mr-1.5" />}
+                  Generate
+                </Button>
+              </div>
             </div>
+            {suggestMode === "fanout" && (
+              <p className="text-xs text-violet-700 dark:text-violet-400 bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-900 rounded-md px-3 py-2 mb-2">
+                <strong>Fan-out cluster mode:</strong> generates 8 queries covering all topic angles (definitions, comparisons, how-tos, troubleshooting) that AI engines internally search when researching your category. Running these gives a truer picture of your topical breadth.
+              </p>
+            )}
             <Textarea
               rows={8}
               placeholder={"best CRM for small teams\nhow do I improve email deliverability\nstripe vs square comparison"}
@@ -463,18 +490,36 @@ export default function SimulatePage() {
           {/* Summary */}
           <Card>
             <CardHeader>
-              <div className="flex items-start justify-between">
+              <div className="flex items-start justify-between flex-wrap gap-4">
                 <div>
                   <CardTitle>AI Visibility Score</CardTitle>
                   <CardDescription>Across {result.summary.totalPrompts} prompts and {result.summary.perEngine.length} engines</CardDescription>
                 </div>
-                <div className="text-right">
-                  <div className={`text-5xl font-bold ${
-                    result.summary.overallVisibilityScore >= 60 ? "text-green-600"
-                    : result.summary.overallVisibilityScore >= 30 ? "text-yellow-600"
-                    : "text-red-600"
-                  }`}>{result.summary.overallVisibilityScore}</div>
-                  <div className="text-xs text-muted-foreground">/ 100</div>
+                <div className="flex gap-6 items-start">
+                  <div className="text-center">
+                    <div className={`text-5xl font-bold ${
+                      result.summary.overallVisibilityScore >= 60 ? "text-green-600"
+                      : result.summary.overallVisibilityScore >= 30 ? "text-yellow-600"
+                      : "text-red-600"
+                    }`}>{result.summary.overallVisibilityScore}</div>
+                    <div className="text-xs text-muted-foreground">/ 100 visibility</div>
+                  </div>
+                  {result.summary.topicalBreadthScore !== undefined && (
+                    <div className="text-center border-l pl-6">
+                      <div className={`text-5xl font-bold ${
+                        result.summary.topicalBreadthScore >= 60 ? "text-green-600"
+                        : result.summary.topicalBreadthScore >= 30 ? "text-yellow-600"
+                        : "text-red-600"
+                      }`}>{result.summary.topicalBreadthScore}</div>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground justify-center mt-0.5">
+                        / 100 breadth
+                        <Info
+                          className="h-3 w-3 shrink-0 text-muted-foreground/50"
+                          aria-label="Topical breadth: % of prompts where you were mentioned by at least one engine. Measures how wide your coverage is across the topic cluster."
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </CardHeader>
@@ -624,6 +669,42 @@ export default function SimulatePage() {
                     </div>
                   );
                 })()}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Fan-out Topic Map */}
+          {result.summary.fanoutTopics && result.summary.fanoutTopics.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Network className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+                  Fan-out Topic Map
+                </CardTitle>
+                <CardDescription>
+                  Topics inferred from what AI engines actually cited across your prompts — the sub-query cluster they searched when building their answers.
+                  These are the adjacent topics your content needs to rank for to maximize citations.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {result.summary.fanoutTopics.map((t: any, i: number) => (
+                    <div
+                      key={i}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm"
+                      style={{ opacity: Math.max(0.45, 1 - i * 0.07) }}
+                    >
+                      <Layers className="h-3 w-3 text-violet-500 shrink-0" />
+                      <span className="capitalize">{t.topic}</span>
+                      {t.count > 1 && (
+                        <span className="text-[10px] font-mono text-muted-foreground ml-0.5">×{t.count}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground mt-4 italic">
+                  Topics are extracted from cited URL paths — no extra AI calls. High-frequency topics appear bolder. Create content or pages targeting these sub-queries to expand your coverage across the fan-out cluster.
+                </p>
               </CardContent>
             </Card>
           )}

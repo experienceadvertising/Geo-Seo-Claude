@@ -56,11 +56,19 @@ export interface AnalysisResult {
   hasLlmsTxt: boolean;
   hasHttps: boolean;
   hasCanonical: boolean;
+  /** True when a nosnippet directive was found in meta robots or x-robots-tag header. */
+  hasNoSnippet: boolean;
   wordCount: number;
   rawHtmlWordCount: number;
   renderedWordCount: number;
   requiresJavaScript: boolean;
   renderedSuccessfully: boolean;
+  /**
+   * 0-100 score measuring how early the first substantive content block appears
+   * relative to total page length. Higher = better (answer is near the top).
+   * Based on Zyppy Signal's Content Placement factor (score 8.8/10).
+   */
+  contentPlacementScore: number;
   brandName: string;
   brandSignals: BrandSignal[];
   recommendations: GeoRecommendation[];
@@ -196,7 +204,9 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
   let title: string | null = null;
   let description: string | null = null;
   let hasCanonical = false;
+  let hasNoSnippet = false;
   let wordCount = 0;
+  let contentPlacementScore = 50;
   let rawHtmlWordCount = 0;
   let renderedWordCount = 0;
   let renderedSuccessfully = false;
@@ -218,6 +228,11 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
         $raw("script, style, noscript").remove();
         const rawText = $raw("body").text().replace(/\s+/g, " ").trim();
         rawHtmlWordCount = rawText.split(/\s+/).filter(Boolean).length;
+      }
+      // Check x-robots-tag HTTP header for nosnippet directive
+      const xRobotsTag = response.headers.get("x-robots-tag") || "";
+      if (/nosnippet|max-snippet\s*:\s*0\b/i.test(xRobotsTag)) {
+        hasNoSnippet = true;
       }
     }
   } catch {}
@@ -246,6 +261,18 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
         $("meta[property='og:description']").attr("content") ||
         null;
       hasCanonical = $("link[rel='canonical']").length > 0;
+
+      // Detect nosnippet / preview-restriction directives in meta robots tags.
+      // Per Zyppy Signal AI Citation Ranking Factors: Preview Controls scores 9.2/10.
+      // nosnippet or max-snippet:0 / max-snippet:-1 block AI extraction entirely.
+      if (!hasNoSnippet) {
+        $("meta[name='robots'], meta[name='googlebot']").each((_, el) => {
+          const content = ($(el).attr("content") || "").toLowerCase();
+          if (/nosnippet/.test(content) || /max-snippet\s*:\s*(-1|0)\b/.test(content)) {
+            hasNoSnippet = true;
+          }
+        });
+      }
 
       // Detect schema types from raw HTML (JSON-LD is server-rendered for SEO)
       const $forSchema = cheerio.load(rawHtml || analysisHtml);
@@ -306,6 +333,24 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
       citabilityBlocks = contentBlocks.map((b) => scorePassage(b.content, b.heading));
       const allText = $("body").text().replace(/\s+/g, " ").trim();
       const analyzedWordCount = allText.split(/\s+/).filter(Boolean).length;
+
+      // Content placement score: measures how early the first substantive content block
+      // appears relative to total body length. Per Zyppy Signal (score 8.8/10), AI engines
+      // — particularly Gemini — apply per-URL retrieval caps, so above-fold content is
+      // far more likely to be extracted and cited.
+      if (contentBlocks.length > 0 && allText.length > 0) {
+        const firstBlockPreview = contentBlocks[0].content.slice(0, 80).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const matchIdx = allText.search(new RegExp(firstBlockPreview.slice(0, 40)));
+        const wordsBeforeFirst = matchIdx > 0
+          ? allText.slice(0, matchIdx).split(/\s+/).filter(Boolean).length
+          : 0;
+        const totalWords = allText.split(/\s+/).filter(Boolean).length;
+        if (totalWords > 0) {
+          const placementPct = wordsBeforeFirst / totalWords;
+          // 100 = answer in first 5% of page; 50 = at 25%; 0 = at 50%+
+          contentPlacementScore = Math.max(0, Math.round(100 - placementPct * 200));
+        }
+      }
       // Prefer the rendered word count if rendering succeeded
       wordCount = renderedSuccessfully ? Math.max(renderedWordCount, analyzedWordCount) : analyzedWordCount;
     } catch {}
@@ -475,6 +520,8 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
       brandFound: brandAuthority.signals.some((s) => s.found),
       blockedAiCrawlers,
       avgCitabilityScore,
+      hasNoSnippet,
+      contentPlacementScore,
     });
   }
 
@@ -513,11 +560,13 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
     hasLlmsTxt,
     hasHttps,
     hasCanonical,
+    hasNoSnippet,
     wordCount,
     rawHtmlWordCount,
     renderedWordCount,
     requiresJavaScript,
     renderedSuccessfully,
+    contentPlacementScore,
     brandName: brandAuthority.brandName,
     brandSignals: brandAuthority.signals,
     recommendations,

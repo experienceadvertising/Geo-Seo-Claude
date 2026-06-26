@@ -472,5 +472,39 @@
     "expiresAt": "2027-05-04",
     "updatedAt": "2026-05-04",
     "notes": "Previously displayed a '134-167 word optimal passage length' figure derived from classical featured-snippet length norms, not from controlled measurement against generative engines. Removed pending an internal benchmark; recommendation framed qualitatively in the meantime."
+  },
+  {
+    "id": "nosnippet-directive",
+    "titleTemplate": "Remove nosnippet directive blocking AI extraction",
+    "claim": "The nosnippet meta tag or x-robots-tag header explicitly instructs AI engines not to use your content in answers, making citation impossible regardless of content quality. Removing it is a prerequisite for any AI visibility.",
+    "severity": "critical",
+    "category": "technical",
+    "expectedLift": null,
+    "sourceType": "research",
+    "sourceUrl": "https://signal.zyppy.com/p/fan-out-framework",
+    "sourceCitation": "Cyrus Shepard, Zyppy Signal — 'Preview Controls' ranks #2 among AI citation ranking factors (score 9.2/10) across 54 cross-referenced AI citation studies. Avoiding nosnippet is identified as the single highest-leverage technical change for AI visibility.",
+    "verified": true,
+    "lastVerifiedAt": "2026-06-26",
+    "lastReviewedAt": "2026-06-26",
+    "expiresAt": "2027-06-26",
+    "updatedAt": "2026-06-26",
+    "notes": "Score of 9.2 comes from Zyppy Signal's evidence-based AI Citation Ranking Factors framework, synthesising 54 published experiments, studies, and patents. Preview Controls (avoiding nosnippet) ranks second only to fan-out rank."
+  },
+  {
+    "id": "content-placement",
+    "titleTemplate": "Front-load your key answer",
+    "claim": "AI engines apply per-URL retrieval caps when extracting content. Pages that front-load their primary answer — before preambles, context-setting, or disclaimers — are more likely to have that answer extracted and cited.",
+    "severity": "high",
+    "category": "answerability",
+    "expectedLift": null,
+    "sourceType": "research",
+    "sourceUrl": "https://signal.zyppy.com/p/fan-out-framework",
+    "sourceCitation": "Cyrus Shepard, Zyppy Signal — 'Content Placement' ranks #5 among AI citation ranking factors (score 8.8/10). Google Gemini is specifically noted to use a strict per-URL retrieval cap, making above-fold content placement critical for Gemini citations.",
+    "verified": true,
+    "lastVerifiedAt": "2026-06-26",
+    "lastReviewedAt": "2026-06-26",
+    "expiresAt": "2027-06-26",
+    "updatedAt": "2026-06-26",
+    "notes": "No controlled lift number is published for content placement in isolation. The Zyppy Signal framework assigns a practitioner-consensus score of 8.8/10 based on cross-referencing 54 published AI citation experiments; the ranking reflects expert judgment, not a measured percentage improvement attributable to placement alone."
   }
 ]

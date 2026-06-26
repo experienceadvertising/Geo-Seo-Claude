@@ -94,6 +94,18 @@ export interface SimulationSummary {
   }>;
   topCompetitors: Array<{ name: string; count: number }>;
   overallVisibilityScore: number;
+  /**
+   * % of prompts (0-100) where the brand was mentioned by at least ONE engine.
+   * Measures topical breadth — how wide your coverage is across the query cluster.
+   * Based on Zyppy Signal "Fan-out Rank breadth" factor (score 8.9/10).
+   */
+  topicalBreadthScore: number;
+  /**
+   * Topics inferred from the URL paths cited by AI engines across all prompts.
+   * Shows the "fan-out" sub-query cluster the engines are actually searching
+   * when they research topics relevant to your brand.
+   */
+  fanoutTopics: Array<{ topic: string; count: number }>;
 }
 
 const openaiClient = new OpenAI({
@@ -139,6 +151,57 @@ function detectDomainCitation(urls: string[], targetDomain: string): boolean {
       return h === target || h.endsWith(`.${target}`);
     } catch { return false; }
   });
+}
+
+/**
+ * Extracts topic strings from cited URL paths across all simulation results.
+ * Shows the "fan-out" sub-query cluster that AI engines are actually searching —
+ * what adjacent topics they research when building answers about your brand's category.
+ * Zero additional API cost: derived purely from citation data already collected.
+ */
+function extractFanoutTopics(results: PromptResultRow[]): Array<{ topic: string; count: number }> {
+  const STOP_WORDS = new Set([
+    "the","a","an","and","or","but","in","on","at","to","for","of","with","by","from","as",
+    "is","are","was","were","be","been","have","has","had","do","does","did","not","this",
+    "that","these","those","it","its","http","https","www","com","org","net","co","io","ai",
+    "html","php","asp","jsp","index","page","post","blog","about","home","get","how","what",
+    "why","when","where","who","which","can","will","your","our","their","you","we","us",
+  ]);
+  const topicCounts = new Map<string, number>();
+
+  for (const row of results) {
+    for (const er of row.engines) {
+      if (er.error) continue;
+      for (const rawUrl of er.citedUrls) {
+        try {
+          const { hostname, pathname } = new URL(rawUrl);
+          // Skip the user's own domain — we want what ELSE is being cited
+          const segments = pathname.split("/").filter(s => s.length > 3 && !/^\d+$/.test(s) && !/^[a-f0-9-]{20,}$/.test(s));
+          for (const seg of segments) {
+            // Split slug-style segments into words
+            const words = seg
+              .toLowerCase()
+              .replace(/\.[a-z]{2,4}$/, "")
+              .split(/[-_+%20]+/)
+              .filter(w => w.length > 2 && !STOP_WORDS.has(w) && /^[a-z]/.test(w));
+            if (words.length >= 2 && words.length <= 8) {
+              const topic = words.slice(0, 5).join(" ");
+              if (topic.length >= 6 && topic.length <= 55) {
+                topicCounts.set(topic, (topicCounts.get(topic) || 0) + 1);
+              }
+            }
+          }
+          // Also use the subdomain+domain as a signal (e.g. docs.stripe.com → "stripe docs")
+          void hostname; // hostname already decoded above, no extra processing needed
+        } catch { /* skip malformed URLs */ }
+      }
+    }
+  }
+
+  return Array.from(topicCounts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 12)
+    .map(([topic, count]) => ({ topic, count }));
 }
 
 // Common content/aggregator/news/social hosts to filter from competitor detection
@@ -478,6 +541,19 @@ export async function runPromptSimulation(
       )
     : 0;
 
+  // Topical breadth score: % of prompts where the brand was mentioned by ANY engine.
+  // Maps to Zyppy Signal "Fan-out Rank breadth" (score 8.9/10): ranking for multiple
+  // related queries in the topic cluster, not just head terms, drives AI citation frequency.
+  const promptsWithAnyMention = results.filter((row) =>
+    row.engines.some((er) => er.brandMentioned && !er.error)
+  ).length;
+  const topicalBreadthScore = prompts.length > 0
+    ? Math.round((promptsWithAnyMention / prompts.length) * 100)
+    : 0;
+
+  // Fan-out topics: topics inferred from cited URL paths (zero extra API cost).
+  const fanoutTopics = extractFanoutTopics(results);
+
   return {
     results,
     summary: {
@@ -485,6 +561,8 @@ export async function runPromptSimulation(
       perEngine,
       topCompetitors,
       overallVisibilityScore,
+      topicalBreadthScore,
+      fanoutTopics,
     },
   };
 }
@@ -498,6 +576,7 @@ export interface PromptGenerationContext {
 export async function generatePromptsForBrand(
   brandName: string,
   ctx: PromptGenerationContext | string | null,
+  mode: "standard" | "fanout" = "standard",
 ): Promise<string[]> {
   // Support legacy string signature for backwards compat
   const context: PromptGenerationContext = typeof ctx === "string" || ctx === null
@@ -516,7 +595,7 @@ export async function generatePromptsForBrand(
     ? contextLines.join("\n")
     : "(no additional context)";
 
-  const sys = `You are an expert in Answer Engine Optimization (AEO). Your task is to generate 6 realistic search prompts that real users type into ChatGPT, Perplexity, Claude, or Google AI Overviews when researching a topic that ${brandName} should ideally be cited for.
+  const standardSys = `You are an expert in Answer Engine Optimization (AEO). Your task is to generate 6 realistic search prompts that real users type into ChatGPT, Perplexity, Claude, or Google AI Overviews when researching a topic that ${brandName} should ideally be cited for.
 
 IMPORTANT: Read the site context carefully below to understand what ${brandName} actually does — community platform, SaaS tool, marketplace, agency, media brand, etc. — and generate prompts that match those specific use cases, not generic category prompts.
 
@@ -530,6 +609,26 @@ Rules:
 - Target the actual audience inferred from the context (B2B vs B2C, skill level, industry, etc.)
 - Return ONLY the 6 prompts, one per line, no numbering, no bullets, no quotes, no explanation`;
 
+  // Fan-out mode: generate the broader topic cluster that AI engines internally fan out to.
+  // Based on Zyppy Signal research: AI engines spawn 5-20 sub-queries beyond the primary
+  // query. Ranking for this full cluster (score 8.9/10) is a top citation factor.
+  // Generates 8 prompts covering all angles — definition, comparison, how-to, troubleshooting, use-case.
+  const fanoutSys = `You are an AI search engine researcher. When a user asks a question, AI engines like ChatGPT and Google Gemini internally generate 5-20 "fan-out" sub-queries to research different facets of the topic before writing their answer.
+
+Your task: generate 8 queries that represent the FULL FAN-OUT CLUSTER an AI engine would spawn when researching topics relevant to ${brandName}. These are the sub-queries your site needs to rank for to earn AI citations across the topic neighborhood.
+
+IMPORTANT: Read the site context carefully below to understand ${brandName}'s category, audience, and use cases.
+
+Rules:
+- Generate exactly 8 prompts covering the FULL topic cluster — not just buyer intent
+- Include ALL of these angles (one or two prompts each): definitional ("what is X"), comparison ("X vs Y alternatives"), how-to ("how to do X"), troubleshooting ("why does X fail"), use-case ("X for specific scenario"), feature/benefit ("best X with Y feature")
+- Each prompt must be 6–14 words — natural query-style phrasing
+- Do NOT include "${brandName}" in any prompt — these must be category-level queries the site could be cited for
+- Prioritize queries with informational intent (what/how/why/best) — these trigger the most AI citations
+- Return ONLY the 8 prompts, one per line, no numbering, no bullets, no quotes, no explanation`;
+
+  const sys = mode === "fanout" ? fanoutSys : standardSys;
+  const maxPrompts = mode === "fanout" ? 8 : 6;
   const user = `Brand: ${brandName}\n\n${contextBlock}`;
 
   const resp = await openaiClient.chat.completions.create({
@@ -545,5 +644,5 @@ Rules:
     .split("\n")
     .map((l) => l.replace(/^[\d.\-\)\s"'*]+|["'\s]+$/g, "").trim())
     .filter((l) => l.length > 10 && l.length < 200)
-    .slice(0, 6);
+    .slice(0, maxPrompts);
 }

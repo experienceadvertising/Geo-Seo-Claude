@@ -357,6 +357,13 @@ export interface RecommendationContext {
   brandFound: boolean;
   blockedAiCrawlers: string[];
   avgCitabilityScore: number;
+  /** True when a nosnippet / max-snippet:0 directive was detected. Critical finding. */
+  hasNoSnippet?: boolean;
+  /**
+   * 0-100 score for how early the first substantive content block appears.
+   * Lower score = content is buried and risks being cut off by AI retrieval caps.
+   */
+  contentPlacementScore?: number;
 }
 
 /**
@@ -599,6 +606,22 @@ export function generateGeoRecommendations(ctx: RecommendationContext): GeoRecom
   if (!ctx.hasLlmsTxt) {
     recs.push(composeRec("llms-txt", {
       detail: "No /llms.txt found. The 2026 evidence is mixed — only a small fraction of the most-cited domains use one, and major engines do not appear to rely on it. Publishing one is cheap and harmless, but prioritize FAQ content and answer capsules first; they deliver far higher citation ROI.",
+    }));
+  }
+
+  // nosnippet directive — Critical: directly blocks AI extraction (Zyppy Signal score 9.2/10)
+  if (ctx.hasNoSnippet) {
+    recs.push(composeRec("nosnippet-directive", {
+      detail: "A nosnippet or max-snippet:0 directive was found in your meta robots tag or x-robots-tag HTTP header. This explicitly instructs AI engines not to extract content from your page, making citation impossible regardless of how good your content is. Remove the nosnippet value from the robots tag — if you need to block traditional featured snippets for specific pages, use max-snippet with a positive value instead.",
+      priority: "critical",
+    }));
+  }
+
+  // Content placement — fires when key content is buried (Zyppy Signal score 8.8/10)
+  if ((ctx.contentPlacementScore ?? 50) < 40) {
+    recs.push(composeRec("content-placement", {
+      detail: `Content placement score: ${ctx.contentPlacementScore ?? "unknown"}/100 — your primary answer appears well into the page rather than near the top. AI engines like Gemini apply per-URL retrieval caps, meaning content beyond the first 250–500 words is often not extracted at all. Move your core answer, definition, or key takeaway to the very top of your main content area — ideally the first paragraph after your H1 — before any preamble, disclaimers, or contextual build-up.`,
+      priority: (ctx.contentPlacementScore ?? 50) < 20 ? "high" : "medium",
     }));
   }
 
