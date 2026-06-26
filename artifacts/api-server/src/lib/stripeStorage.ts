@@ -16,7 +16,7 @@ export class StripeStorage {
     const [user] = await db
       .insert(usersTable)
       .values({
-        id: clerkUserId,
+        id: userId,
         email,
         stripeCustomerId: stripeCustomerId ?? null,
         unsubscribeToken: randomBytes(32).toString("hex"),
