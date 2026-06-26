@@ -75,6 +75,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <>
                 <nav className="hidden md:flex items-center gap-4 text-sm font-medium text-muted-foreground">
                   <Link href="/" className="hover:text-foreground transition-colors">Audits</Link>
+                  <Link href="/projects" className="hover:text-foreground transition-colors">Projects</Link>
                   <Link href="/methodology" className="hover:text-foreground transition-colors">Methodology</Link>
                   <Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
                   <Link href="/contact" className="hover:text-foreground transition-colors">Contact</Link>

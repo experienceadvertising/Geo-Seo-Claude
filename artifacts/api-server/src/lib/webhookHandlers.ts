@@ -297,5 +297,44 @@ export class WebhookHandlers {
         );
       }
     }
+
+    // Card-expiring dunning — Stripe fires this ~30 days before a card on file
+    // expires. Nudge the customer to update it so the next renewal doesn't fail.
+    if (type === "customer.source.expiring") {
+      const customerId: string = obj?.customer;
+      const last4: string = obj?.last4 || "";
+      const expMonth: number = obj?.exp_month ?? 0;
+      const expYear: number = obj?.exp_year ?? 0;
+      const user = customerId ? await getUserFromCustomer(customerId) : null;
+      if (user?.email) {
+        EmailService.sendCardExpiring(user.email, user.firstName || "", last4, expMonth, expYear).catch(
+          (err) => logger.error({ err, userId: user.id }, "Card-expiring email failed"),
+        );
+      }
+    }
+
+    // Renewal receipt — only for recurring cycle charges (NOT the first payment,
+    // which the checkout/upgrade flow already covers). Doubles as the
+    // "payment recovered" confirmation after a past_due invoice finally clears.
+    if (type === "invoice.payment_succeeded") {
+      const billingReason: string = obj?.billing_reason || "";
+      const amountPaid: number = obj?.amount_paid ?? 0;
+      if (billingReason === "subscription_cycle" && amountPaid > 0) {
+        const customerId: string = obj?.customer;
+        const user = customerId ? await getUserFromCustomer(customerId) : null;
+        if (user?.email) {
+          const amount = `$${(amountPaid / 100).toFixed(2)} ${(obj?.currency || "usd").toUpperCase()}`;
+          const periodEndUnix: number | null = obj?.lines?.data?.[0]?.period?.end ?? null;
+          const periodEnd = periodEndUnix ? new Date(periodEndUnix * 1000) : null;
+          const invoiceUrl: string | null = obj?.hosted_invoice_url || null;
+          const priceId: string | null = obj?.lines?.data?.[0]?.price?.id ?? null;
+          const plan = priceId ? await getPlanFromPriceId(priceId) : null;
+          const planName = plan ? planLabel(plan) : "subscription";
+          EmailService.sendRenewalReceipt(user.email, user.firstName || "", planName, amount, periodEnd, invoiceUrl).catch(
+            (err) => logger.error({ err, userId: user.id }, "Renewal-receipt email failed"),
+          );
+        }
+      }
+    }
   }
 }

@@ -5,6 +5,9 @@ declare module "express-session" {
   interface SessionData {
     userId: string;
     email: string;
+    // CSRF state for the Google OAuth round-trip (set on /connect, verified on
+    // /callback). Cleared once consumed.
+    googleOAuthState?: string;
   }
 }
 

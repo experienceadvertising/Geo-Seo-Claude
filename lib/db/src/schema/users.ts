@@ -37,6 +37,12 @@ export const usersTable = pgTable("users", {
   referralCode: text("referral_code").unique(),
   referredBy: text("referred_by"),
 
+  // AI-crawler hit-logging: an opaque per-user token embedded in the tracking
+  // pixel (<img src=".../api/crawler-pixel/{token}.gif">). When an AI bot
+  // fetches a page carrying the pixel we log the visit against this user.
+  // Generated lazily the first time the user opens the Crawler Activity view.
+  crawlerToken: text("crawler_token").unique(),
+
   // First-audit milestone — set when the user completes their very first
   // audit. Drives the "you ran your first audit, here's how to go deeper"
   // celebratory email and prevents resending it.

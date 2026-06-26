@@ -33,6 +33,21 @@ export const readRateLimiter = rateLimit({
 // ── Auth limiters (IP-based; auth endpoints are unauthenticated) ─────────────
 const ipKey = (req: Request) => ipKeyGenerator(req.ip || "anon") || "anon";
 
+// Crawler tracking-pixel ingest. Public + unauthenticated and hit by bots, so
+// keyed by IP and set generously (real crawlers fetch infrequently per IP);
+// the cap exists only to bound abuse of the public endpoint.
+export const crawlerPixelRateLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 600,
+  standardHeaders: false,
+  legacyHeaders: false,
+  keyGenerator: ipKey,
+  // Never 429 a bot with JSON — just stop logging; the handler still returns
+  // the gif. We achieve that by not throwing: skip counting successful gifs is
+  // unnecessary, but we keep the response an image via the handler regardless.
+  message: "",
+});
+
 // Login: prevent credential-stuffing / brute-force.
 export const loginRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,

@@ -8,6 +8,7 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Results from "@/pages/results";
 import Simulate from "@/pages/simulate";
+import Projects from "@/pages/projects";
 import Admin from "@/pages/admin";
 import Pricing from "@/pages/pricing";
 import Upgrade from "@/pages/upgrade";
@@ -62,6 +63,9 @@ function AppRoutes() {
         </Route>
         <Route path="/simulate/:id">
           <RequireAuth><Simulate /></RequireAuth>
+        </Route>
+        <Route path="/projects">
+          <RequireAuth><Projects /></RequireAuth>
         </Route>
         <Route path="/admin">
           <RequireAuth><Admin /></RequireAuth>

@@ -11,6 +11,8 @@ import {
   passwordChangedEmail,
   paymentFailedEmail,
   subscriptionCanceledEmail,
+  cardExpiringEmail,
+  renewalReceiptEmail,
   limitReachedEmail,
   firstAuditEmail,
   auditCompleteEmail,
@@ -129,6 +131,16 @@ export const EmailService = {
   async sendSubscriptionCanceled(email: string, firstName: string, planName: string): Promise<boolean> {
     const { subject, html, text } = subscriptionCanceledEmail(firstName, planName);
     return send(email, subject, html, text, "subscription-canceled");
+  },
+
+  async sendCardExpiring(email: string, firstName: string, last4: string, expMonth: number, expYear: number): Promise<boolean> {
+    const { subject, html, text } = cardExpiringEmail(firstName, last4, expMonth, expYear);
+    return send(email, subject, html, text, "card-expiring");
+  },
+
+  async sendRenewalReceipt(email: string, firstName: string, planName: string, amount: string, periodEnd?: Date | null, invoiceUrl?: string | null): Promise<boolean> {
+    const { subject, html, text } = renewalReceiptEmail(firstName, planName, amount, periodEnd, invoiceUrl);
+    return send(email, subject, html, text, "renewal-receipt");
   },
 
   // Conversion-stage emails — these have an unsubscribe link because they

@@ -1,10 +1,10 @@
 import { Router, type IRouter } from "express";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, asc } from "drizzle-orm";
 import { db, promptSimulationsTable, auditsTable } from "@workspace/db";
 import { runPromptSimulation, generatePromptsForBrand, type EngineId, type PromptGenerationContext } from "../../lib/promptSimulator";
 import { requireAuth } from "../../middlewares/auth";
 import { simulateRateLimiter, readRateLimiter } from "../../middlewares/rateLimiters";
-import { getUserPlan, PLAN_LIMITS } from "../../lib/planUtils";
+import { getUserPlan, PLAN_LIMITS, planAtLeast } from "../../lib/planUtils";
 import { consumeQuota, refundQuota, currentYearMonth, markApproachingNotified } from "../../lib/usageLimits";
 import { sql } from "drizzle-orm";
 import { db as appDb, usersTable } from "@workspace/db";
@@ -130,7 +130,7 @@ router.post("/geo/simulate", requireAuth, simulateRateLimiter, async (req, res):
         .then(([u]) => {
           if (u?.email && !u.emailOptOut) {
             const baseUrl = process.env.FRONTEND_URL || "https://aeoimprovement.com";
-            const unsubscribeUrl = `${baseUrl}/unsubscribe?token=${u.unsubscribeToken}`;
+            const unsubscribeUrl = `${baseUrl}/api/auth/unsubscribe?token=${u.unsubscribeToken}`;
             return EmailService.sendLimitReached(u.email, u.firstName || "", "simulations", monthQuota.cap, unsubscribeUrl);
           }
         })
@@ -167,7 +167,7 @@ router.post("/geo/simulate", requireAuth, simulateRateLimiter, async (req, res):
           .where(sql`id = ${req.userId!}`);
         if (!u?.email || u.emailOptOut) return;
         const baseUrl = process.env.FRONTEND_URL || "https://aeoimprovement.com";
-        const unsubscribeUrl = `${baseUrl}/unsubscribe?token=${u.unsubscribeToken}`;
+        const unsubscribeUrl = `${baseUrl}/api/auth/unsubscribe?token=${u.unsubscribeToken}`;
         await EmailService.sendApproachingLimit(
           u.email, u.firstName || "", "simulations", monthQuota.used + 1, monthQuota.cap, unsubscribeUrl,
         );
@@ -216,12 +216,12 @@ router.post("/geo/simulate", requireAuth, simulateRateLimiter, async (req, res):
       .then(([u]) => {
         if (!u?.email || u.emailOptOut) return;
         const baseUrl = process.env.FRONTEND_URL || "https://aeoimprovement.com";
-        const unsubscribeUrl = `${baseUrl}/unsubscribe?token=${u.unsubscribeToken}`;
+        const unsubscribeUrl = `${baseUrl}/api/auth/unsubscribe?token=${u.unsubscribeToken}`;
         return EmailService.sendSimulationComplete(
           u.email,
           u.firstName || "",
           domain,
-          summary.visibilityScore ?? 0,
+          summary.overallVisibilityScore ?? 0,
           auditId,
           unsubscribeUrl,
         );
@@ -292,6 +292,105 @@ router.get("/geo/simulations/:id", requireAuth, readRateLimiter, async (req, res
     ...sim,
     createdAt: sim.createdAt.toISOString(),
   });
+});
+
+// ---------------------------------------------------------------------------
+// Share of Voice over time
+//
+// Derives a trended "share of voice" view from the user's stored simulations
+// for a domain — zero extra API cost. For each past simulation we count, across
+// every (prompt × engine) response, how many name the brand vs. each competitor
+// (the named brands extractBrandsFromText pulled from the engine prose). Share
+// of voice = a given entity's mentions ÷ total mentions in that run. Plotting
+// that per run shows whether the brand is gaining or losing ground against the
+// competitors AI engines actually recommend.
+// ---------------------------------------------------------------------------
+
+interface SovEngineResult { brandMentioned?: boolean; competitorMentions?: string[]; error?: string | null }
+interface SovRow { engines?: SovEngineResult[] }
+
+const SOV_TOP_COMPETITORS = 5;
+
+function computeShareOfVoice(
+  sims: Array<{ brandName: string | null; results: unknown; createdAt: Date }>,
+): { brand: string; competitors: string[]; series: Array<{ date: string; values: Record<string, number> }> } {
+  const brand = sims[sims.length - 1]?.brandName?.trim() || "Your brand";
+
+  // Aggregate competitor mention totals across all runs to pick the lines worth
+  // plotting (the consistently-recommended rivals), and remember a display name.
+  const aggregate = new Map<string, number>();
+  const display = new Map<string, string>();
+  const perRun = sims.map((sim) => {
+    let brandMentions = 0;
+    const comp = new Map<string, number>();
+    const rows = Array.isArray(sim.results) ? (sim.results as SovRow[]) : [];
+    for (const row of rows) {
+      for (const er of row.engines ?? []) {
+        if (er.error) continue;
+        if (er.brandMentioned) brandMentions++;
+        for (const raw of er.competitorMentions ?? []) {
+          const name = String(raw).trim();
+          const norm = name.toLowerCase();
+          if (!norm || norm === brand.toLowerCase()) continue;
+          comp.set(norm, (comp.get(norm) ?? 0) + 1);
+          if (!display.has(norm)) display.set(norm, name);
+        }
+      }
+    }
+    for (const [k, v] of comp) aggregate.set(k, (aggregate.get(k) ?? 0) + v);
+    return { date: sim.createdAt, brandMentions, comp };
+  });
+
+  const topComp = [...aggregate.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, SOV_TOP_COMPETITORS)
+    .map(([k]) => k);
+
+  const series = perRun.map((p) => {
+    const compTotal = [...p.comp.values()].reduce((s, v) => s + v, 0);
+    const total = p.brandMentions + compTotal;
+    const values: Record<string, number> = {};
+    values[brand] = total > 0 ? Math.round((p.brandMentions / total) * 100) : 0;
+    for (const k of topComp) {
+      values[display.get(k)!] = total > 0 ? Math.round(((p.comp.get(k) ?? 0) / total) * 100) : 0;
+    }
+    return { date: p.date.toISOString(), values };
+  });
+
+  return { brand, competitors: topComp.map((k) => display.get(k)!), series };
+}
+
+router.get("/geo/share-of-voice", requireAuth, readRateLimiter, async (req, res): Promise<void> => {
+  const domain = typeof req.query.domain === "string" ? req.query.domain.trim().toLowerCase().slice(0, 253) : "";
+  if (!domain) {
+    res.status(400).json({ error: "domain query param is required" });
+    return;
+  }
+
+  // Share of Voice is a paid, competitor-tracking view.
+  const plan = await getUserPlan(req.userId!);
+  if (!planAtLeast(plan, "pro")) {
+    res.status(403).json({ error: "Share of Voice tracking is a Pro feature.", upgradeRequired: true, plan });
+    return;
+  }
+
+  const sims = await db
+    .select({ brandName: promptSimulationsTable.brandName, results: promptSimulationsTable.results, createdAt: promptSimulationsTable.createdAt })
+    .from(promptSimulationsTable)
+    .where(and(
+      eq(promptSimulationsTable.userId, req.userId!),
+      eq(promptSimulationsTable.domain, domain),
+      eq(promptSimulationsTable.status, "complete"),
+    ))
+    .orderBy(asc(promptSimulationsTable.createdAt));
+
+  if (sims.length === 0) {
+    res.json({ domain, brand: null, competitors: [], series: [], runs: 0 });
+    return;
+  }
+
+  const sov = computeShareOfVoice(sims);
+  res.json({ domain, ...sov, runs: sims.length });
 });
 
 export default router;

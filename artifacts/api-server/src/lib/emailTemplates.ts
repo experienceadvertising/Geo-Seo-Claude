@@ -388,6 +388,56 @@ export function subscriptionCanceledEmail(firstName: string, planName: string) {
   return { subject, html, text };
 }
 
+// ── Email: Card Expiring (transactional — billing) ───────────────────────────
+export function cardExpiringEmail(firstName: string, last4: string, expMonth: number, expYear: number) {
+  const subject = "Your card on file is about to expire";
+  const exp = `${String(expMonth).padStart(2, "0")}/${String(expYear).slice(-2)}`;
+  const cardLine = last4
+    ? `card ending in <strong>${last4}</strong> (expires ${exp})`
+    : `card on file (expires ${exp})`;
+  const html = layout(
+    `${h1("Your card is about to expire")}
+    ${p(`Hi ${firstName || "there"}, the ${cardLine} for your AEO Improvement subscription is expiring soon.`)}
+    ${p("Update it now so your next renewal goes through without interruption — and you keep access to all 4 AI engines, the Fix Generator, competitor tracking, and your trend history.")}
+    <div style="text-align:center;margin:24px 0;">
+      ${btn("Update payment method →", `${BASE_URL}/pricing`)}
+    </div>
+    ${divider()}
+    ${p("Already updated it? You can safely ignore this email. Questions about billing? Just reply.", "color:#6b7280;font-size:13px;")}`,
+    "Your card on file is expiring — update it to avoid an interruption.",
+  );
+  const text = `Hi ${firstName || "there"},\n\nThe ${last4 ? `card ending in ${last4}` : "card on file"} for your AEO Improvement subscription expires ${exp}.\n\nUpdate it to keep your subscription active: ${BASE_URL}/pricing\n\nAlready updated? Ignore this email. Questions? Reply.`;
+  return { subject, html, text };
+}
+
+// ── Email: Renewal Receipt (transactional — billing) ─────────────────────────
+export function renewalReceiptEmail(
+  firstName: string,
+  planName: string,
+  amount: string,
+  periodEnd?: Date | null,
+  invoiceUrl?: string | null,
+) {
+  const subject = `Your AEO Improvement ${planName} plan renewed`;
+  const periodLine = periodEnd
+    ? `Your subscription is active through ${periodEnd.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}.`
+    : "";
+  const html = layout(
+    `${h1("Thanks — your subscription renewed")}
+    ${p(`Hi ${firstName || "there"}, your AEO Improvement <strong>${planName}</strong> subscription has renewed. You were charged <strong>${amount}</strong>.`)}
+    ${periodLine ? p(periodLine) : ""}
+    <div style="text-align:center;margin:24px 0;">
+      ${btn("Open your dashboard →", `${BASE_URL}/`)}
+    </div>
+    ${invoiceUrl ? p(`<a href="${invoiceUrl}" style="color:#059669;">View your invoice / receipt →</a>`, "font-size:13px;") : ""}
+    ${divider()}
+    ${p("Manage your plan or payment method any time from the billing portal. Questions? Just reply to this email.", "color:#6b7280;font-size:13px;")}`,
+    `Your AEO Improvement ${planName} plan renewed — ${amount}.`,
+  );
+  const text = `Hi ${firstName || "there"},\n\nYour AEO Improvement ${planName} subscription renewed. You were charged ${amount}.\n${periodLine ? `\n${periodLine}\n` : ""}${invoiceUrl ? `\nInvoice: ${invoiceUrl}\n` : ""}\nDashboard: ${BASE_URL}/\n\nQuestions? Reply to this email.`;
+  return { subject, html, text };
+}
+
 // ── Email 5: Monthly Report (Agency) ─────────────────────────────────────────
 export interface MonthlyReportData {
   firstName: string;

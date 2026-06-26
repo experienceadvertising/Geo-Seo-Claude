@@ -40,6 +40,8 @@ export const PLAN_LIMITS = {
     monthlyAudits: 5,
     monthlySimulations: 2,
     auditHistoryDays: 30,
+    // Continuous monitoring (scheduled re-audits + alerts) is a paid feature.
+    monitoredSites: 0,
     competitorTracking: false,
     fixGenerator: false,
     sitemapScanner: false,
@@ -48,13 +50,14 @@ export const PLAN_LIMITS = {
   pro: {
     simulationPrompts: 25,
     simulationEngines: ["chatgpt", "claude", "gemini", "perplexity"] as string[],
-    // At $49/mo Pro, worst-case cost at these caps ≈ $35-45 → 29-41% gross
+    // At $79/mo Pro, worst-case cost at these caps ≈ $35-45 → 43-56% gross
     // margin floor. Typical use (~10 audits, 8 simulations) ≈ $7 cost →
     // 91% gross margin. Caps protect the worst case, typical use is very
     // profitable.
     monthlyAudits: 100,
     monthlySimulations: 30,
     auditHistoryDays: 365,
+    monitoredSites: 10,
     competitorTracking: true,
     fixGenerator: true,
     sitemapScanner: false,
@@ -63,13 +66,14 @@ export const PLAN_LIMITS = {
   agency: {
     simulationPrompts: 25,
     simulationEngines: ["chatgpt", "claude", "gemini", "perplexity"] as string[],
-    // At $299/mo Agency, worst-case cost ≈ $230 (margin floor 23%) and
+    // At $249/mo Agency, worst-case cost ≈ $230 (margin floor 8%) and
     // typical agency use (~50 audits, 30 simulations across clients) ≈
-    // $50 cost → 83% margin. Caps high enough that legitimate agencies
+    // $50 cost → 80% margin. Caps high enough that legitimate agencies
     // never hit them.
     monthlyAudits: 500,
     monthlySimulations: 150,
     auditHistoryDays: 730,
+    monitoredSites: 50,
     competitorTracking: true,
     fixGenerator: true,
     sitemapScanner: true,

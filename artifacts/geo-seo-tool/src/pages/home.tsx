@@ -466,6 +466,20 @@ function AnalysisProgress({ stage }: { stage?: number }) {
 //   (3) For free users, embeds a compact "What Pro unlocks for YOUR site"
 //       row showing three locked previews tied to their actual data — much
 //       higher-conversion than abstract feature lists on /pricing.
+// Canonicalize a stored audit URL for *display* only (does not mutate history):
+// lowercase the host, drop the protocol, a leading "www.", and a trailing slash
+// so "https://Stripe.com/" and "stripe.com" render as the same "stripe.com".
+function canonicalDisplayUrl(raw: string): string {
+  try {
+    const u = new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`);
+    const host = u.hostname.toLowerCase().replace(/^www\./, "");
+    const path = u.pathname.replace(/\/$/, "");
+    return host + (path && path !== "/" ? path : "");
+  } catch {
+    return raw.trim().toLowerCase();
+  }
+}
+
 function AeoJourneyCard({ audits }: { audits: Array<{ id: number; url: string; geoScore: number; createdAt: string }> }) {
   const { isFree } = usePlan();
   // Audits are returned newest-first by /api/geo/audits.
@@ -981,7 +995,7 @@ function SignedInDashboard() {
                   <Card className="cursor-pointer hover:border-emerald-500/30 hover:shadow-md transition-all">
                     <CardContent className="py-4 flex items-center justify-between gap-4">
                       <div className="flex flex-col min-w-0">
-                        <span className="font-medium text-sm truncate">{audit.url}</span>
+                        <span className="font-medium text-sm truncate">{canonicalDisplayUrl(audit.url)}</span>
                         <span className="text-xs text-muted-foreground">
                           {new Date(audit.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
                         </span>
