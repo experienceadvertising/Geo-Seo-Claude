@@ -15,7 +15,7 @@ import { SEO, breadcrumbJsonLd } from "@/components/seo";
 
 const PRICING_TITLE = "Pricing — AEO Improvement | Free, Pro, Agency plans for AI search optimization";
 const PRICING_DESC =
-  "Free AEO audits forever. Pro from $49/mo unlocks ChatGPT, Claude, Gemini, and Perplexity coverage plus the Fix Generator. Agency plan for multi-client teams. Transparent pricing, no demo required.";
+  "Free AEO audits forever. Pro from $79/mo unlocks ChatGPT, Claude, Gemini, and Perplexity coverage, the Fix Generator, continuous site monitoring, and AI crawler tracking. Agency plan for multi-client teams. Transparent pricing, no demo required.";
 
 const pricingProductJsonLd = {
   "@context": "https://schema.org",
@@ -112,7 +112,7 @@ const pricingFaqJsonLd = {
       name: "What's the difference between Pro and Agency?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Pro ($79/mo or $790/yr) is built for one site or one in-house team: 100 audits/month, 30 simulations/month, all four engines (ChatGPT, Claude, Gemini, Perplexity), the Fix Generator, sentiment analysis, and 1-year trend history. Agency ($249/mo or $2,490/yr) is for teams managing many client sites: 500 audits/month, 150 simulations/month, agency-branded reports, multi-client management, 2-year trend history, and a dedicated account manager.",
+        text: "Pro ($79/mo or $790/yr) is built for one site or one in-house team: 100 audits/month, 30 simulations/month, all four engines (ChatGPT, Claude, Gemini, Perplexity), fan-out prompt mode with Topical Breadth scoring, the Fix Generator, sentiment analysis, Projects continuous monitoring with alerts, real AI crawler hit tracking, competitor Share of Voice, and 1-year trend history. Agency ($249/mo or $2,490/yr) is for teams managing many client sites: 500 audits/month, 150 simulations/month, Google Analytics AI-referral integration, agency-branded reports, multi-client management, 2-year trend history, and a dedicated account manager.",
       },
     },
     {
@@ -145,7 +145,8 @@ const PLAN_FEATURES = {
     "2 simulations / month",
     "3 prompts per audit",
     "ChatGPT engine only",
-    "Basic AEO score",
+    "Basic 6-dimension AEO score",
+    "AI crawler access audit",
     "30-day audit history",
   ],
   pro: [
@@ -153,9 +154,12 @@ const PLAN_FEATURES = {
     "30 simulations / month",
     "25 prompts per audit",
     "ChatGPT, Claude, Gemini & Perplexity",
+    "Fan-out mode + Topical Breadth score",
     "Sentiment & tone analysis",
     "Fix Generator (llms.txt, JSON-LD, robots.txt)",
-    "Competitor citation gap table",
+    "Competitor citation gap + Share of Voice",
+    "Projects — continuous monitoring & alerts",
+    "Real AI crawler hit tracking (embed pixel)",
     "1-year visibility trend history",
     "Priority email support",
   ],
@@ -163,6 +167,7 @@ const PLAN_FEATURES = {
     "500 audits / month",
     "150 simulations / month",
     "Everything in Pro",
+    "Google Analytics AI-referral integration",
     "2-year visibility trend history",
     "Agency-branded reports",
     "Multiple client site management",
@@ -463,8 +468,8 @@ export default function PricingPage() {
             Rank in AI answers, not just search
           </h1>
           <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-            Start for free. Upgrade when you're ready to unlock all AI engines,
-            automated fixes, and competitor intelligence.
+            Start for free. Upgrade when you're ready to unlock all four AI engines,
+            automated fixes, continuous monitoring, real crawler tracking, and competitor intelligence.
           </p>
 
           {/* Billing interval toggle */}

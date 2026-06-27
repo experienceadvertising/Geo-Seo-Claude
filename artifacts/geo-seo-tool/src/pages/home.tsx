@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
-import { Search, Loader2, ArrowRight, BarChart3, TrendingUp, TrendingDown, Minus, Zap, Shield, Lock, Sparkles, CheckCircle2, BookOpen, Lightbulb, ExternalLink, Globe, FileCode, Building2, Bot } from "lucide-react";
+import { Search, Loader2, ArrowRight, BarChart3, TrendingUp, TrendingDown, Minus, Zap, Shield, Lock, Sparkles, CheckCircle2, BookOpen, Lightbulb, ExternalLink, Globe, FileCode, Building2, Bot, Activity, LineChart, Radar, Bell } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -241,8 +241,10 @@ function SignedOutLanding() {
               <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm text-foreground/80 max-w-md">
                 {[
                   "Live prompts across 4 AI engines",
-                  "6 AI crawler bots audited",
+                  "Real AI crawler hit tracking",
+                  "Continuous site monitoring & alerts",
                   "Fix Generator for llms.txt & JSON-LD",
+                  "Google Analytics AI-referral traffic",
                   "Free to start, no credit card",
                 ].map(item => (
                   <li key={item} className="flex items-center gap-2">
@@ -283,9 +285,9 @@ function SignedOutLanding() {
 
         <section className="space-y-8">
           <div className="text-center space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">What's inside every audit</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Full platform overview</p>
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Everything you need to rank in AI answers</h2>
-            <p className="text-muted-foreground max-w-xl mx-auto">Six interlocking checks, each mapped to a concrete recommendation you can ship the same day.</p>
+            <p className="text-muted-foreground max-w-xl mx-auto">Audit, simulate, fix, monitor — one platform, from first crawl to continuous citability.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -293,47 +295,103 @@ function SignedOutLanding() {
               {
                 icon: Bot,
                 gradient: "from-violet-500 to-purple-600",
+                badge: null,
                 title: "Live AI prompt simulation",
-                body: "Type the queries your buyers actually use, like \"best project management tool for agencies\" or \"alternatives to X\", and find out whether ChatGPT, Claude, Gemini, and Perplexity name you, cite your site, and what they say when they do.",
+                body: "Run the exact queries your buyers type — \"best project management tool for agencies\", \"alternatives to X\" — and see whether ChatGPT, Claude, Gemini, and Perplexity name you, cite your site, and what they say. Fan-out mode covers 6 topical clusters in one go and scores your topical breadth.",
               },
               {
                 icon: BarChart3,
                 gradient: "from-emerald-500 to-teal-600",
+                badge: null,
                 title: "6-dimension AEO score",
-                body: "Citability, AI Crawler Access, Brand Authority, Schema, Technical SEO, and Platform Optimization. Each dimension is scored 0 to 100 and visualized as a radar chart.",
+                body: "Citability, AI Crawler Access, Brand Authority, Schema, Technical SEO, and Platform Optimization — each scored 0–100 and visualized as a radar chart. Includes nosnippet detection, content-placement checks, and 29 evidence-backed recommendations.",
               },
               {
                 icon: Zap,
                 gradient: "from-amber-500 to-orange-500",
+                badge: null,
                 title: "Fix Generator",
-                body: "Auto-drafts your llms.txt, JSON-LD schema blocks, and robots.txt entries based on your specific audit gaps. Copy and ship. No guessing required.",
+                body: "Auto-drafts your llms.txt, JSON-LD schema blocks (FAQPage, Organization), and robots.txt entries based on your specific audit gaps. Copy and ship the same day. No guessing required.",
               },
               {
-                icon: Shield,
+                icon: Activity,
                 gradient: "from-blue-500 to-cyan-500",
-                title: "AI crawler access audit",
-                body: "Checks all six major AI bots (GPTBot, ClaudeBot, PerplexityBot, Google-Extended, Applebot, and meta-externalagent) against your robots.txt and headers.",
+                badge: "New",
+                title: "Real AI crawler hit tracking",
+                body: "Go beyond robots.txt checks. Embed one line of tracking and see exactly when GPTBot, ClaudeBot, PerplexityBot, and Google-Extended actually crawl your pages — dates, paths, frequency. Know your site is being indexed, not just allowed.",
               },
               {
-                icon: Building2,
+                icon: Bell,
                 gradient: "from-rose-500 to-pink-500",
-                title: "Brand authority footprint",
-                body: "Scans Wikipedia, Wikidata, LinkedIn, GitHub, X, and Crunchbase for your brand. These are the signals AI engines use to decide whether to trust and cite you.",
+                badge: "New",
+                title: "Projects — continuous monitoring",
+                body: "Add any domain to a Project and we re-audit it on your schedule. Get alerted the moment your AEO score drops or your crawler access changes. Stop discovering problems weeks late.",
               },
               {
-                icon: TrendingUp,
+                icon: LineChart,
                 gradient: "from-teal-500 to-emerald-500",
-                title: "Score trending over time",
-                body: "Every audit is stored. Track your AEO score across runs and see exactly how each change you ship moves the needle on citability.",
+                badge: "New",
+                title: "Share of Voice + GA4 analytics",
+                body: "Track your citation share vs. competitors across every simulation run. Connect Google Analytics to see AI-referred traffic alongside your AEO score — close the loop between optimization and real business results.",
               },
-            ].map(({ icon: Icon, gradient, title, body }) => (
+            ].map(({ icon: Icon, gradient, badge, title, body }) => (
               <div
                 key={title}
                 className="group relative rounded-2xl border border-border bg-card p-6 hover:border-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/5 transition-all duration-300 overflow-hidden"
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-emerald-500/3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <div className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br ${gradient} text-white shadow-lg mb-5`}>
-                  <Icon className="h-5 w-5" />
+                <div className="flex items-start justify-between mb-5">
+                  <div className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br ${gradient} text-white shadow-lg`}>
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  {badge && (
+                    <span className="inline-flex items-center rounded-full bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5">
+                      {badge}
+                    </span>
+                  )}
+                </div>
+                <h3 className="text-base font-bold mb-2">{title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{body}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="space-y-8">
+          <div className="text-center space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">How it works</p>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">From invisible to cited in four steps</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {[
+              {
+                step: "01",
+                gradient: "from-violet-500 to-purple-600",
+                title: "Audit",
+                body: "Paste any URL. In under 60 seconds, get a full AEO score across 6 dimensions — crawler access, schema, authority, citability, and more.",
+              },
+              {
+                step: "02",
+                gradient: "from-amber-500 to-orange-500",
+                title: "Simulate",
+                body: "Run real queries across ChatGPT, Claude, Gemini, and Perplexity. See your citation rate, competitor Share of Voice, and topical breadth.",
+              },
+              {
+                step: "03",
+                gradient: "from-emerald-500 to-teal-600",
+                title: "Fix",
+                body: "Copy ready-to-ship llms.txt, JSON-LD, and robots.txt snippets from the Fix Generator. No agency, no guesswork, no waiting.",
+              },
+              {
+                step: "04",
+                gradient: "from-rose-500 to-pink-500",
+                title: "Monitor",
+                body: "Add sites to Projects for scheduled re-audits and score-drop alerts. Connect Google Analytics to measure AI-referred traffic from your wins.",
+              },
+            ].map(({ step, gradient, title, body }) => (
+              <div key={step} className="relative rounded-2xl border border-border bg-card p-6">
+                <div className={`inline-flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br ${gradient} text-white text-xs font-bold mb-4 shadow-md`}>
+                  {step}
                 </div>
                 <h3 className="text-base font-bold mb-2">{title}</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">{body}</p>
