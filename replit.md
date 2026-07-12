@@ -67,8 +67,12 @@ Custom email+password auth (Clerk was removed — email delivery was unreliable 
   `POST /api/stripe/checkout`, `POST /api/stripe/portal`, `POST /api/stripe/webhook`
 - Plan system: `src/lib/planUtils.ts` — getPlanInfo() (stored vs effective + trial), getUserPlan()
   (effective, trial-aware), getStoredPlan() (billing), planAtLeast(), PLAN_LIMITS, TRIAL_LENGTH_DAYS
-- Trial lifecycle emails: daily cron 10:00 UTC in `src/lib/emailScheduler.ts` — reminder at ≤3 days
-  left (`trial_reminder_sent_at`), ended notice within 7 days after lapse (`trial_ended_sent_at`)
+- Trial lifecycle emails: daily cron 10:00 UTC in `src/lib/emailScheduler.ts` (+ one run 60s after
+  boot) — reminder at ≤3 days left (`trial_reminder_sent_at`), ended notice within 7 days after
+  lapse (`trial_ended_sent_at`), one-time promo announcement (`trial_promo_email_sent_at`)
+- Launch promo: `src/lib/promoGrant.ts` ran once at boot (claim row in `one_time_jobs`,
+  job_id `free-month-promo-2026-07`) — granted every pre-existing account a fresh 30-day
+  all-access window (`trial_promo_granted_at`); stored-free users get the announcement email
 - Stripe integration: `src/lib/stripeClient.ts` (Replit managed credentials), `src/lib/webhookHandlers.ts`
 - Webhook must be registered BEFORE `express.json()` in `app.ts` (needs raw Buffer body)
 - On checkout.session.completed webhook: updates `users.plan` in DB to "pro"/"agency"

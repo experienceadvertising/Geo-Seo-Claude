@@ -130,6 +130,23 @@ async function runTrialLifecycle() {
     const end = trialEndFor(user);
     const msLeft = end.getTime() - now.getTime();
 
+    // One-time launch announcement for accounts that got the promo grant
+    // (see lib/promoGrant.ts). Only while the window is still open — a
+    // stale flag after the window closed would announce something untrue.
+    if (user.trialPromoGrantedAt && !user.trialPromoEmailSentAt && msLeft > 0) {
+      const claim = await db
+        .update(usersTable)
+        .set({ trialPromoEmailSentAt: now })
+        .where(and(eq(usersTable.id, user.id), sql`trial_promo_email_sent_at IS NULL`))
+        .returning({ id: usersTable.id });
+      if (claim.length !== 1) continue;
+      const ok = await EmailService.sendFreeMonthPromo(user.email, firstName, end, unsubUrl(user.unsubscribeToken));
+      if (!ok) {
+        await db.update(usersTable).set({ trialPromoEmailSentAt: null }).where(eq(usersTable.id, user.id));
+      }
+      continue; // never stack the promo announcement with a reminder same-day
+    }
+
     if (!user.trialReminderSentAt && msLeft > 0 && msLeft <= THREE_DAYS) {
       // Claim the flag BEFORE sending (UPDATE … WHERE still-null) so a
       // second scheduler instance or overlapping run can't double-send;
@@ -372,6 +389,16 @@ export function startEmailScheduler() {
       logger.error({ err }, "Trial lifecycle cron error")
     );
   });
+
+  // Also run once shortly after boot so the one-time promo announcement
+  // goes out the day the promo ships instead of waiting for the next
+  // 10:00 UTC cron. Safe to run on every deploy: all sends in the job are
+  // claim-first flagged, so repeat runs are no-ops.
+  setTimeout(() => {
+    runTrialLifecycle().catch((err) =>
+      logger.error({ err }, "Trial lifecycle startup run error")
+    );
+  }, 60_000);
 
   cron.schedule("0 8 * * 1", () => {
     runWeeklyDigests().catch((err) =>

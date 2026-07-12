@@ -1166,6 +1166,41 @@ export function whatYouMissedEmail(
   return { subject, html, text };
 }
 
+// ── Email: Free-month launch promo announcement (one-time) ───────────────────
+// Sent once to every account that existed when the free all-access first
+// month shipped (the promo grant gave them a fresh 30-day window). New
+// signups never get this — their welcome email covers the same ground.
+export function freeMonthPromoEmail(firstName: string, endsAt: Date, unsubscribeUrl?: string) {
+  const safeFirstName = esc(firstName) || "there";
+  const endDate = endsAt.toLocaleDateString("en-US", { month: "long", day: "numeric" });
+  const subject = "Every feature is now free on your account — for a full month 🎁";
+  const html = layout(
+    `${h1("We unlocked everything for you")}
+    ${p(`Hi ${safeFirstName}, good news: for the next month, <strong>every feature of AEO Improvement is free on your account</strong> — no credit card, nothing to activate. It's already on.`)}
+    <table cellpadding="0" cellspacing="0" width="100%" style="margin:8px 0 24px;">
+      ${feature("🔬", "All 4 AI engines", "Run simulations against ChatGPT, Claude, Gemini, and Perplexity — see exactly who cites you where.")}
+      ${feature("🔧", "Fix Generator", "Auto-drafts your llms.txt, JSON-LD schema, and robots.txt patches. Copy and ship.")}
+      ${feature("📡", "Continuous monitoring", "Add your sites once and get re-audited on a schedule, with alerts when your score moves.")}
+      ${feature("📊", "Competitor tracking & sentiment", "The citation gap table and brand sentiment analysis, fully unlocked.")}
+      ${feature("📈", "Top-tier limits", "500 audits and 150 simulations this month, with 25 prompts per run.")}
+    </table>
+    <table cellpadding="0" cellspacing="0" width="100%" style="margin:16px 0;background:#ecfdf5;border-radius:8px;border:1px solid #a7f3d0;">
+      <tr><td style="padding:18px 20px;font-size:14px;color:#065f46;text-align:center;">
+        Free with every feature until <strong>${endDate}</strong>
+      </td></tr>
+    </table>
+    <div style="text-align:center;margin:24px 0;">
+      ${btn("Start using everything →", BASE_URL)}
+    </div>
+    ${divider()}
+    ${p(`After ${endDate} your account simply returns to your current plan — nothing is charged and your data stays put. We'll remind you a few days before.`, "color:#6b7280;font-size:13px;")}`,
+    `All 4 engines, Fix Generator, monitoring, competitor tracking — free on your account until ${endDate}.`,
+    unsubscribeUrl,
+  );
+  const text = `Hi ${firstName || "there"},\n\nGood news: for the next month, every feature of AEO Improvement is free on your account — no credit card, nothing to activate.\n\nNow unlocked for you:\n- All 4 AI engines (ChatGPT, Claude, Gemini, Perplexity)\n- Fix Generator (llms.txt, JSON-LD, robots.txt)\n- Continuous monitoring with alerts\n- Competitor tracking & sentiment analysis\n- 500 audits + 150 simulations this month\n\nFree until ${endDate}: ${BASE_URL}\n\nAfter that your account simply returns to your current plan — nothing is charged. We'll remind you a few days before.`;
+  return { subject, html, text };
+}
+
 // ── Email: Free-month ending soon (T-3 days) ─────────────────────────────────
 // Sent once by the daily trial-lifecycle scheduler job when a (still-free)
 // user's all-access first month has ≤3 days left. The one moment where the
@@ -1176,7 +1211,7 @@ export function trialEndingSoonEmail(firstName: string, endsAt: Date, unsubscrib
   const subject = `Your free all-access month ends ${endDate}`;
   const html = layout(
     `${h1("Your free month is almost up")}
-    ${p(`Hi ${safeFirstName}, your first month of AEO Improvement — with every feature unlocked — ends on <strong>${endDate}</strong>.`)}
+    ${p(`Hi ${safeFirstName}, your free all-access month of AEO Improvement — with every feature unlocked — ends on <strong>${endDate}</strong>.`)}
     ${p("After that, your account moves to the free plan and you'll lose:")}
     <table cellpadding="0" cellspacing="0" width="100%" style="margin:8px 0 24px;">
       ${feature("🔬", "All 4 AI engines", "Simulations drop back to ChatGPT only — no more Claude, Gemini, or Perplexity results.")}
@@ -1212,7 +1247,7 @@ export function trialEndedEmail(firstName: string, unsubscribeUrl?: string) {
   const subject = "Your free all-access month has ended";
   const html = layout(
     `${h1("Your free month has ended")}
-    ${p(`Hi ${safeFirstName}, your first month of AEO Improvement — with every feature unlocked — is over, and your account is now on the <strong>free plan</strong>.`)}
+    ${p(`Hi ${safeFirstName}, your free all-access month of AEO Improvement — with every feature unlocked — is over, and your account is now on the <strong>free plan</strong>.`)}
     ${p("You still have, free forever:")}
     <ul style="margin:0 0 16px 0;padding:0 0 0 20px;font-size:14px;line-height:1.8;color:#374151;">
       <li>5 AEO audits per month with full recommendations</li>

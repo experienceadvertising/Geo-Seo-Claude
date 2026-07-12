@@ -55,6 +55,15 @@ export const usersTable = pgTable("users", {
   trialReminderSentAt: timestamp("trial_reminder_sent_at"),
   trialEndedSentAt: timestamp("trial_ended_sent_at"),
 
+  // Free-month launch promo. When the free-first-month feature shipped, a
+  // one-time startup job (api-server lib/promoGrant.ts) granted every
+  // EXISTING account a fresh 30-day all-access month and stamped this
+  // column. It marks who is eligible for the one-off announcement email
+  // (sent-once via trial_promo_email_sent_at); accounts created after
+  // launch stay NULL — their welcome email already covers the free month.
+  trialPromoGrantedAt: timestamp("trial_promo_granted_at"),
+  trialPromoEmailSentAt: timestamp("trial_promo_email_sent_at"),
+
   // First-audit milestone — set when the user completes their very first
   // audit. Drives the "you ran your first audit, here's how to go deeper"
   // celebratory email and prevents resending it.

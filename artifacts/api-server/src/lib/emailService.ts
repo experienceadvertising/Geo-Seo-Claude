@@ -21,6 +21,7 @@ import {
   scoreChangedEmail,
   approachingLimitEmail,
   whatYouMissedEmail,
+  freeMonthPromoEmail,
   trialEndingSoonEmail,
   trialEndedEmail,
   referralRewardEmail,
@@ -100,6 +101,11 @@ export const EmailService = {
   },
 
   // Free-first-month lifecycle — sent by the daily trial job in emailScheduler.
+  async sendFreeMonthPromo(email: string, firstName: string, endsAt: Date, unsubscribeUrl?: string): Promise<boolean> {
+    const { subject, html, text } = freeMonthPromoEmail(firstName, endsAt, unsubscribeUrl);
+    return send(email, subject, html, text, "free-month-promo", unsubscribeUrl);
+  },
+
   async sendTrialEndingSoon(email: string, firstName: string, endsAt: Date, unsubscribeUrl?: string): Promise<boolean> {
     const { subject, html, text } = trialEndingSoonEmail(firstName, endsAt, unsubscribeUrl);
     return send(email, subject, html, text, "trial-ending-soon", unsubscribeUrl);
