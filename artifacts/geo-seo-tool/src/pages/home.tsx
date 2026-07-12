@@ -243,7 +243,7 @@ function SignedOutLanding() {
                   "Live prompts across 4 AI engines",
                   "6 AI crawler bots audited",
                   "Fix Generator for llms.txt & JSON-LD",
-                  "Free to start, no credit card",
+                  "First month free — every feature, no card",
                 ].map(item => (
                   <li key={item} className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-shrink-0" />
@@ -266,7 +266,7 @@ function SignedOutLanding() {
               </div>
               <div className="flex flex-col items-center lg:items-start gap-1">
                 <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                  <Lock className="h-3 w-3" /> Free account required. No credit card.
+                  <Lock className="h-3 w-3" /> First month free with all features. No credit card.
                 </p>
                 <Link href="/pricing" className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline font-medium">
                   See all plans &amp; pricing →
@@ -370,7 +370,7 @@ function SignedOutLanding() {
           <div className="relative px-8 md:px-16 py-14 md:py-20 flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="text-center md:text-left space-y-4 max-w-xl">
               <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 px-3 py-1 text-xs font-semibold text-emerald-300">
-                <CheckCircle2 className="h-3 w-3" /> Free account, no credit card
+                <CheckCircle2 className="h-3 w-3" /> First month free — all features, no credit card
               </div>
               <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight leading-tight">
                 Find out how AI engines see your site in 60 seconds.

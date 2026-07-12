@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { customFetch } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { UsageMeter } from "@/components/usage-meter";
+import { TrialBanner } from "@/components/trial-banner";
 
 function AdminLink() {
   const { isSignedIn } = useAuth();
@@ -80,6 +81,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   <Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
                   <Link href="/contact" className="hover:text-foreground transition-colors">Contact</Link>
                 </nav>
+                <TrialBanner />
                 <UsageMeter />
                 <AdminLink />
                 <UserBadge />

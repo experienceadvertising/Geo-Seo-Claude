@@ -34,7 +34,11 @@ Custom email+password auth (Clerk was removed — email delivery was unreliable 
   `POST /api/auth/forgot-password`, `POST /api/auth/reset-password`, `GET /api/auth/me`
 - **Session middleware**: `artifacts/api-server/src/middlewares/session.ts`
 - **Admin check**: `req.session.email` compared to `ADMIN_EMAILS` env var (comma-separated)
-- **Plan**: stored in `users.plan` column (updated by Stripe webhooks)
+- **Plan**: stored in `users.plan` column (updated by Stripe webhooks). Every account's FIRST MONTH
+  is free with all features: `users.trial_ends_at` (signup + 30d; NULL ⇒ derived `created_at` + 30d)
+  bumps the EFFECTIVE plan to agency-level entitlements via `planUtils.getPlanInfo()` while
+  `users.plan` stays what they pay for. Gates use `getUserPlan()` (effective); billing UI and
+  upsell emails use `getStoredPlan()`.
 
 ## Artifacts
 
@@ -44,7 +48,8 @@ Custom email+password auth (Clerk was removed — email delivery was unreliable 
 - Users enter any URL and get a full AI search optimization audit
 - Features: AEO score (0-100), AI crawler access, citability scoring, schema detection, quick wins
 - AI-powered insights via Claude; prompt simulation via GPT-4o-mini + ChatGPT/Claude/Gemini/Perplexity
-- Tiered SaaS: Free / Pro ($49/mo, $470/yr) / Agency ($299/mo, $2,870/yr) via `users.plan` DB column
+- Tiered SaaS: Free / Pro ($79/mo, $790/yr) / Agency ($249/mo, $2,490/yr) via `users.plan` DB column;
+  first month free with every feature unlocked (no card) — see Plan note in Auth section
 - Sentiment analysis: keyword-heuristic detection of Positive/Neutral/Negative brand tone per engine result
 - Visibility Trend: line chart of historical AEO scores for a domain (`/api/geo/audits/history`)
 - Fix Generator (Pro only): generates ready-to-copy llms.txt, JSON-LD schema, robots.txt snippets
@@ -60,7 +65,10 @@ Custom email+password auth (Clerk was removed — email delivery was unreliable 
   `GET /api/me` (returns user plan from DB)
 - Stripe payment routes: `GET /api/stripe/products`, `GET /api/stripe/subscription`,
   `POST /api/stripe/checkout`, `POST /api/stripe/portal`, `POST /api/stripe/webhook`
-- Plan system: `src/lib/planUtils.ts` — getUserPlan(), planAtLeast(), PLAN_LIMITS
+- Plan system: `src/lib/planUtils.ts` — getPlanInfo() (stored vs effective + trial), getUserPlan()
+  (effective, trial-aware), getStoredPlan() (billing), planAtLeast(), PLAN_LIMITS, TRIAL_LENGTH_DAYS
+- Trial lifecycle emails: daily cron 10:00 UTC in `src/lib/emailScheduler.ts` — reminder at ≤3 days
+  left (`trial_reminder_sent_at`), ended notice within 7 days after lapse (`trial_ended_sent_at`)
 - Stripe integration: `src/lib/stripeClient.ts` (Replit managed credentials), `src/lib/webhookHandlers.ts`
 - Webhook must be registered BEFORE `express.json()` in `app.ts` (needs raw Buffer body)
 - On checkout.session.completed webhook: updates `users.plan` in DB to "pro"/"agency"

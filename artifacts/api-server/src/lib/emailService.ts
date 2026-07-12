@@ -21,6 +21,8 @@ import {
   scoreChangedEmail,
   approachingLimitEmail,
   whatYouMissedEmail,
+  trialEndingSoonEmail,
+  trialEndedEmail,
   referralRewardEmail,
   referralRewardPendingEmail,
   type WeeklyDigestData,
@@ -95,6 +97,17 @@ export const EmailService = {
   async sendWelcomeD7(email: string, firstName: string, unsubscribeUrl?: string): Promise<boolean> {
     const { subject, html, text } = welcomeD7Email(firstName, unsubscribeUrl);
     return send(email, subject, html, text, "welcome-d7", unsubscribeUrl);
+  },
+
+  // Free-first-month lifecycle — sent by the daily trial job in emailScheduler.
+  async sendTrialEndingSoon(email: string, firstName: string, endsAt: Date, unsubscribeUrl?: string): Promise<boolean> {
+    const { subject, html, text } = trialEndingSoonEmail(firstName, endsAt, unsubscribeUrl);
+    return send(email, subject, html, text, "trial-ending-soon", unsubscribeUrl);
+  },
+
+  async sendTrialEnded(email: string, firstName: string, unsubscribeUrl?: string): Promise<boolean> {
+    const { subject, html, text } = trialEndedEmail(firstName, unsubscribeUrl);
+    return send(email, subject, html, text, "trial-ended", unsubscribeUrl);
   },
 
   async sendWeeklyDigest(email: string, data: WeeklyDigestData, unsubscribeUrl?: string): Promise<boolean> {

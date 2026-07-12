@@ -2,7 +2,9 @@ import { Router, type IRouter } from "express";
 import { requireAuth } from "../middlewares/auth";
 import { getUncachableStripeClient, getStripePublishableKey } from "../lib/stripeClient";
 import { stripeStorage } from "../lib/stripeStorage";
-import { getUserPlan } from "../lib/planUtils";
+// Billing surfaces key off the PAID plan, not the free-first-month
+// entitlement bump — a trial user must still see upgrade CTAs.
+import { getStoredPlan } from "../lib/planUtils";
 import { safeBaseUrl } from "../lib/publicUrl";
 import { logger } from "../lib/logger";
 import { db, usersTable } from "@workspace/db";
@@ -66,7 +68,7 @@ router.get("/stripe/subscription", requireAuth, async (req, res): Promise<void> 
     const userId = req.userId!;
     const user = await stripeStorage.getUser(userId);
     if (!user?.stripeCustomerId) {
-      const plan = await getUserPlan(userId);
+      const plan = await getStoredPlan(userId);
       res.json({ subscription: null, plan });
       return;
     }
@@ -77,7 +79,7 @@ router.get("/stripe/subscription", requireAuth, async (req, res): Promise<void> 
       limit: 1,
     });
     const subscription = subs.data[0] ?? null;
-    const plan = await getUserPlan(userId);
+    const plan = await getStoredPlan(userId);
     res.json({ subscription, plan });
   } catch (err: any) {
     logger.error({ err: err?.message, userId: req.userId }, "Failed to get subscription");

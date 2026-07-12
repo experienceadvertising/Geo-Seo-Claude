@@ -111,8 +111,8 @@ router.post("/geo/analyze", requireAuth, analyzeRateLimiter, async (req, res): P
         .catch((err) => req.log.error({ err, userId: req.userId }, "limit-reached email failed"));
     }
     res.status(429).json({
-      error: `You've used all ${quota.cap} free audits this month. Upgrade to Pro for 100 audits/mo.`,
-      upgradeRequired: true,
+      error: `You've used all ${quota.cap} ${userPlan === "free" ? "free " : ""}audits this month. ${userPlan === "free" ? "Upgrade to Pro for 100 audits/mo." : "Your quota refills next month."}`,
+      upgradeRequired: userPlan === "free",
       limitType: "audits",
       used: quota.used,
       cap: quota.cap,

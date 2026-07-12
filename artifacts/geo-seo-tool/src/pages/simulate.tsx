@@ -192,6 +192,21 @@ export default function SimulatePage() {
     }
   }, [audit, domain]);
 
+  // Clamp engine selection to what the plan actually allows. The default
+  // selects all 4 engines; for a plan limited to fewer, locked engines can't
+  // be toggled but would stay silently selected — submitting engines the
+  // server will reject or ignore and inflating the "Running (N queries)"
+  // count the user sees.
+  const allowedKey = allowedEngines.join(",");
+  React.useEffect(() => {
+    if (planLoading) return;
+    setSelectedEngines(prev => {
+      const next = prev.filter(id => allowedEngines.includes(id));
+      if (next.length === prev.length) return prev;
+      return next.length > 0 ? next : [...allowedEngines];
+    });
+  }, [planLoading, allowedKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const prompts = useMemo(
     () => promptsText.split("\n").map(s => s.trim()).filter(s => s.length >= 5),
     [promptsText]

@@ -1,7 +1,7 @@
 import cron from "node-cron";
 import { db, usersTable, auditsTable } from "@workspace/db";
 import { sql, and, isNotNull, eq, gte, lte } from "drizzle-orm";
-import { getUserPlan } from "./planUtils";
+import { getUserPlan, getStoredPlan, trialEndFor } from "./planUtils";
 import { EmailService } from "./emailService";
 import { runDueMonitoredSites } from "./monitoring";
 import { logger } from "./logger";
@@ -70,10 +70,12 @@ async function runWelcomeSeries() {
       !user.welcomeD7SentAt &&
       new Date(user.createdAt) <= daysAgo(7)
     ) {
-      // The D7 email pitches Pro. Don't send it to users already on Pro or
-      // Agency — at best it's noise, at worst it makes us look like we don't
-      // know who our paying customers are.
-      const plan = await getUserPlan(user.id);
+      // The D7 email nudges free-month users toward Pro. Don't send it to
+      // users already PAYING for Pro or Agency — at best it's noise, at worst
+      // it makes us look like we don't know who our paying customers are.
+      // Stored plan, not effective plan: during the free first month every
+      // user's effective plan is the top tier, which would skip everyone.
+      const plan = await getStoredPlan(user.id);
       if (plan !== "free") {
         // Mark it "sent" anyway so we don't keep re-checking this user every
         // day for the rest of time.
@@ -90,6 +92,71 @@ async function runWelcomeSeries() {
           .update(usersTable)
           .set({ welcomeD7SentAt: new Date() })
           .where(eq(usersTable.id, user.id));
+      }
+    }
+  }
+}
+
+// ── Free-first-month lifecycle (runs daily at 10:00 AM UTC) ─────────────────
+// Two sends, each at most once per user (flag columns claimed atomically):
+//   1. Reminder — all-access month ends in ≤3 days.
+//   2. Ended — all-access month lapsed; you're on the free plan now.
+// Only stored-free users qualify: someone who subscribed mid-month has
+// nothing expiring. The "ended" send is bounded to trials that lapsed in
+// the LAST 7 DAYS so legacy accounts (whose derived trial ended long ago)
+// are never mass-mailed on the day this feature ships.
+async function runTrialLifecycle() {
+  logger.info("Email scheduler: running trial lifecycle check");
+
+  const now = new Date();
+  const users = await db
+    .select()
+    .from(usersTable)
+    .where(
+      and(
+        eq(usersTable.emailOptOut, false),
+        eq(usersTable.emailVerified, true),
+        isNotNull(usersTable.email),
+        eq(usersTable.plan, "free"),
+      ),
+    );
+
+  const THREE_DAYS = 3 * 24 * 60 * 60 * 1000;
+  const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+
+  for (const user of users) {
+    if (!user.email) continue;
+    const firstName = getFirstName(user);
+    const end = trialEndFor(user);
+    const msLeft = end.getTime() - now.getTime();
+
+    if (!user.trialReminderSentAt && msLeft > 0 && msLeft <= THREE_DAYS) {
+      // Claim the flag BEFORE sending (UPDATE … WHERE still-null) so a
+      // second scheduler instance or overlapping run can't double-send;
+      // roll back on failure so tomorrow's run retries.
+      const claim = await db
+        .update(usersTable)
+        .set({ trialReminderSentAt: now })
+        .where(and(eq(usersTable.id, user.id), sql`trial_reminder_sent_at IS NULL`))
+        .returning({ id: usersTable.id });
+      if (claim.length !== 1) continue;
+      const ok = await EmailService.sendTrialEndingSoon(user.email, firstName, end, unsubUrl(user.unsubscribeToken));
+      if (!ok) {
+        await db.update(usersTable).set({ trialReminderSentAt: null }).where(eq(usersTable.id, user.id));
+      }
+      continue; // never send reminder + ended on the same day
+    }
+
+    if (!user.trialEndedSentAt && msLeft <= 0 && msLeft > -SEVEN_DAYS) {
+      const claim = await db
+        .update(usersTable)
+        .set({ trialEndedSentAt: now })
+        .where(and(eq(usersTable.id, user.id), sql`trial_ended_sent_at IS NULL`))
+        .returning({ id: usersTable.id });
+      if (claim.length !== 1) continue;
+      const ok = await EmailService.sendTrialEnded(user.email, firstName, unsubUrl(user.unsubscribeToken));
+      if (!ok) {
+        await db.update(usersTable).set({ trialEndedSentAt: null }).where(eq(usersTable.id, user.id));
       }
     }
   }
@@ -298,6 +365,14 @@ export function startEmailScheduler() {
     );
   });
 
+  // 10:00 UTC — an hour after the welcome series so a user whose D7 and
+  // trial reminder happen to land on the same day gets them spaced out.
+  cron.schedule("0 10 * * *", () => {
+    runTrialLifecycle().catch((err) =>
+      logger.error({ err }, "Trial lifecycle cron error")
+    );
+  });
+
   cron.schedule("0 8 * * 1", () => {
     runWeeklyDigests().catch((err) =>
       logger.error({ err }, "Weekly digest cron error")
@@ -318,5 +393,5 @@ export function startEmailScheduler() {
     );
   });
 
-  logger.info("Email scheduler started (welcome series, weekly digest, monthly report, weekly insights)");
+  logger.info("Email scheduler started (welcome series, trial lifecycle, weekly digest, monthly report, weekly insights)");
 }
