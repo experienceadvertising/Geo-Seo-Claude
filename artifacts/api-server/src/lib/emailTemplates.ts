@@ -171,15 +171,15 @@ export function welcomeD3Email(firstName: string, unsubscribeUrl?: string) {
   // Concrete > clever: name the actions, not the category. "Wins" is empty
   // calories; "llms.txt + FAQ schema + robots.txt" tells the recipient
   // exactly what's inside before they open.
-  const subject = "3 fixes for ChatGPT to cite you: llms.txt, FAQ schema, robots.txt";
+  const subject = "3 fixes for ChatGPT to cite you: fresh dates, FAQ schema, robots.txt";
   const html = layout(
     `${h1("3 quick wins for better AI citations")}
     ${p(`Hi ${firstName || "there"}, it's been a few days since you signed up. Here are three high-impact improvements most sites can make this week:`)}
 
     <table cellpadding="0" cellspacing="0" width="100%" style="margin:8px 0 24px;">
-      ${feature("1️⃣", "Add an llms.txt file", "A plain-text summary of your site at /llms.txt tells AI systems exactly who you are and what you do. It takes 10 minutes and boosts citability across every engine.")}
+      ${feature("1️⃣", "Show a visible 'Last updated' date", "AI engines strongly prefer fresh content — the overwhelming majority of ChatGPT citations go to recently updated pages. Add a visible updated date (and dateModified schema) to your key pages, and actually refresh them.")}
       ${feature("2️⃣", "Add FAQ schema markup", "AI engines love structured Q&A. Add <code style='font-size:12px;background:#f3f4f6;padding:1px 4px;border-radius:3px;'>FAQPage</code> JSON-LD to your top pages. Our Fix Generator writes it for you.")}
-      ${feature("3️⃣", "Open your robots.txt to AI bots", "Many sites accidentally block GPTBot and ClaudeBot. Check your audit's Crawler Access section — one line in robots.txt can unlock all four engines.")}
+      ${feature("3️⃣", "Open your robots.txt to AI search bots", "Many sites accidentally block OAI-SearchBot (ChatGPT Search), Claude-SearchBot, or PerplexityBot — the crawlers that decide whether you CAN be cited. Check your audit's Crawler Access section.")}
     </table>
 
     <div style="text-align:center;margin:32px 0;">
@@ -191,7 +191,7 @@ export function welcomeD3Email(firstName: string, unsubscribeUrl?: string) {
     "3 high-impact improvements most sites can make this week →",
     unsubscribeUrl,
   );
-  const text = `Hi ${firstName || "there"},\n\n3 quick AEO wins:\n\n1. Add an llms.txt file at /llms.txt\n2. Add FAQPage JSON-LD schema\n3. Open robots.txt to AI bots (GPTBot, ClaudeBot)\n\nSee your audit: ${BASE_URL}\n\nThe Fix Generator — unlocked during your free first month — creates all of these for you automatically.`;
+  const text = `Hi ${firstName || "there"},\n\n3 quick AEO wins:\n\n1. Show a visible "Last updated" date on key pages (AI engines strongly prefer fresh content)\n2. Add FAQPage JSON-LD schema\n3. Open robots.txt to AI search bots (OAI-SearchBot, Claude-SearchBot, PerplexityBot)\n\nSee your audit: ${BASE_URL}\n\nThe Fix Generator — unlocked during your free first month — creates the schema and robots.txt fixes for you automatically.`;
   return { subject, html, text };
 }
 
@@ -724,41 +724,44 @@ type InsightTopic = {
 const AEO_INSIGHTS: InsightTopic[] = [
   {
     subject: "The robots.txt mistake quietly blocking AI from your site",
-    preheader: "GPTBot, ClaudeBot, PerplexityBot — most sites still block at least one.",
+    preheader: "OAI-SearchBot, Claude-SearchBot, PerplexityBot — the bots that decide if you CAN be cited.",
     title: "The robots.txt trap blocking AI from your site",
     intro:
-      "Most sites still ship the robots.txt they wrote for the SEO era — which routinely blocks the AI crawlers without anyone realising. Each AI engine uses a distinct user-agent and respects an explicit allow.",
-    body: `${p("The four user-agents that matter most right now:")}
+      "Most sites still ship the robots.txt they wrote for the SEO era — which routinely blocks the AI crawlers without anyone realising. And in 2026 the distinction that matters is SEARCH bots vs TRAINING bots: blocking a search bot removes you from that engine's citations; blocking a training bot only opts you out of model training.",
+    body: `${p("The citation-critical user-agents — these decide whether you <em>can</em> appear in AI answers:")}
     <ul style="margin:0 0 16px 0;padding:0 0 0 20px;font-size:14px;line-height:1.8;color:#374151;">
-      <li><code style="background:#f3f4f6;padding:1px 6px;border-radius:3px;font-size:13px;">GPTBot</code> — OpenAI / ChatGPT search</li>
-      <li><code style="background:#f3f4f6;padding:1px 6px;border-radius:3px;font-size:13px;">ClaudeBot</code> + <code style="background:#f3f4f6;padding:1px 6px;border-radius:3px;font-size:13px;">Claude-Web</code> — Anthropic / Claude</li>
-      <li><code style="background:#f3f4f6;padding:1px 6px;border-radius:3px;font-size:13px;">PerplexityBot</code> — Perplexity</li>
-      <li><code style="background:#f3f4f6;padding:1px 6px;border-radius:3px;font-size:13px;">Google-Extended</code> — Gemini training &amp; grounding</li>
+      <li><code style="background:#f3f4f6;padding:1px 6px;border-radius:3px;font-size:13px;">OAI-SearchBot</code> + <code style="background:#f3f4f6;padding:1px 6px;border-radius:3px;font-size:13px;">ChatGPT-User</code> — ChatGPT Search index &amp; live fetches (separate from GPTBot!)</li>
+      <li><code style="background:#f3f4f6;padding:1px 6px;border-radius:3px;font-size:13px;">Claude-SearchBot</code> + <code style="background:#f3f4f6;padding:1px 6px;border-radius:3px;font-size:13px;">Claude-User</code> — Claude's search index &amp; live fetches</li>
+      <li><code style="background:#f3f4f6;padding:1px 6px;border-radius:3px;font-size:13px;">PerplexityBot</code> + <code style="background:#f3f4f6;padding:1px 6px;border-radius:3px;font-size:13px;">Perplexity-User</code> — Perplexity</li>
     </ul>
-    ${p("Drop this near the top of your <code style='background:#f3f4f6;padding:1px 4px;border-radius:3px;font-size:13px;'>/robots.txt</code> to explicitly welcome them:")}
-    <pre style="background:#0f172a;color:#e2e8f0;padding:14px 16px;border-radius:8px;font-size:12px;line-height:1.5;overflow-x:auto;margin:0 0 16px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;">User-agent: GPTBot
+    ${p("Training-only bots (<code style='background:#f3f4f6;padding:1px 4px;border-radius:3px;font-size:13px;'>GPTBot</code>, <code style='background:#f3f4f6;padding:1px 4px;border-radius:3px;font-size:13px;'>ClaudeBot</code>, <code style='background:#f3f4f6;padding:1px 4px;border-radius:3px;font-size:13px;'>Google-Extended</code>) are a separate decision — block them if you don't want to feed model training; it won't cost you citations. And note: Google AI Overviews use the regular Googlebot, not Google-Extended.")}
+    ${p("Drop this near the top of your <code style='background:#f3f4f6;padding:1px 4px;border-radius:3px;font-size:13px;'>/robots.txt</code> to explicitly welcome the search bots:")}
+    <pre style="background:#0f172a;color:#e2e8f0;padding:14px 16px;border-radius:8px;font-size:12px;line-height:1.5;overflow-x:auto;margin:0 0 16px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;">User-agent: OAI-SearchBot
 Allow: /
 
-User-agent: ClaudeBot
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: Claude-User
 Allow: /
 
 User-agent: PerplexityBot
-Allow: /
-
-User-agent: Google-Extended
 Allow: /</pre>
     ${p("If you have an existing <code style='background:#f3f4f6;padding:1px 4px;border-radius:3px;font-size:13px;'>Disallow: /</code> under <code style='background:#f3f4f6;padding:1px 4px;border-radius:3px;font-size:13px;'>User-agent: *</code>, the per-bot rules above override it for those specific agents — but verify in your audit's Crawler Access section.")}`,
     pitch:
-      "Run an audit on your site to see exactly which of the four engines are currently blocked, and which are getting through.",
+      "Run an audit on your site to see exactly which engines' search bots are currently blocked, and which are getting through.",
     textBody:
-      "Most sites still ship the robots.txt they wrote for SEO — which often blocks the AI crawlers.\n\nThe user-agents that matter:\n- GPTBot (OpenAI)\n- ClaudeBot, Claude-Web (Anthropic)\n- PerplexityBot\n- Google-Extended (Gemini)\n\nAdd to /robots.txt:\nUser-agent: GPTBot\nAllow: /\n\nUser-agent: ClaudeBot\nAllow: /\n\n(repeat for each)\n\nRun an audit to see which engines you're currently blocking.",
+      "Most sites still ship the robots.txt they wrote for SEO — which often blocks the AI crawlers.\n\nThe distinction that matters in 2026: SEARCH bots decide whether you can be cited; TRAINING bots only feed model training.\n\nCitation-critical user-agents:\n- OAI-SearchBot + ChatGPT-User (ChatGPT Search — separate from GPTBot!)\n- Claude-SearchBot + Claude-User (Anthropic)\n- PerplexityBot + Perplexity-User\n\nAdd to /robots.txt:\nUser-agent: OAI-SearchBot\nAllow: /\n\nUser-agent: Claude-SearchBot\nAllow: /\n\n(repeat for each search bot)\n\nBlocking GPTBot/ClaudeBot/Google-Extended is a separate training opt-out — it won't cost you citations.\n\nRun an audit to see which engines you're currently blocking.",
   },
   {
     subject: "What an actually-good llms.txt looks like (with example)",
-    preheader: "The simplest, highest-ROI thing you can ship for AEO this week.",
+    preheader: "A cheap extra worth doing right — as long as you know what it can't do.",
     title: "What an actually-good llms.txt looks like",
     intro:
-      "An llms.txt is a plain-markdown summary of your site placed at the root — a kind of executive briefing for AI agents that arrive without context. The format is intentionally simple, but the content discipline matters.",
+      "An llms.txt is a plain-markdown summary of your site placed at the root — an executive briefing for AI agents that arrive without context. Honest framing first: crawler-log studies show the major AI search crawlers rarely fetch it today, so treat it as a cheap extra rather than a citation lever. But agents and AI dev tools do read it when pointed at your site, it takes ten minutes, and if you ship one it should be good.",
     body: `${p("Here's a minimal but effective structure to start from:")}
     <pre style="background:#0f172a;color:#e2e8f0;padding:14px 16px;border-radius:8px;font-size:12px;line-height:1.5;overflow-x:auto;margin:0 0 16px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;"># Acme Robotics
 

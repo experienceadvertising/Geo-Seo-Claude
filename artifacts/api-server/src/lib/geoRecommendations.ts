@@ -118,9 +118,15 @@ export function extractContentSignals($: cheerio.CheerioAPI, url: string, brandN
   );
   const currentYearStatCount = (bodyText.match(currentYearStatRegex) || []).length;
 
-  // Expert quotes
+  // Expert quotes — accept straight AND curly quotation marks (the old
+  // pattern required curly quotes, missing every straight-quoted
+  // attribution), and count attribution-first phrasing too.
   const blockquotes = $("blockquote").length;
-  const namedQuotes = (bodyText.match(/[""][^""]{20,}[""]\s*[-—–]?\s*(?:said|told|according to)\s+[A-Z][a-z]+\s+[A-Z][a-z]+/g) || []).length;
+  const QUOTE_THEN_ATTR_RE = /["“”][^"“”]{20,}["“”]\s*[-—–,]?\s*(?:said|says|told|according to)\s+[A-Z][a-z]+\s+[A-Z][a-z]+/g;
+  const ATTR_THEN_QUOTE_RE = /(?:said|says|according to)\s+[A-Z][a-z]+\s+[A-Z][a-z]+[^."]{0,60}[:,]?\s*["“”][^"“”]{20,}["“”]/g;
+  const namedQuotes =
+    (bodyText.match(QUOTE_THEN_ATTR_RE) || []).length +
+    (bodyText.match(ATTR_THEN_QUOTE_RE) || []).length;
   const expertQuoteCount = blockquotes + namedQuotes;
 
   // Citation links: external links to non-self domains
@@ -213,9 +219,11 @@ export function extractContentSignals($: cheerio.CheerioAPI, url: string, brandN
     }
   }
 
-  // Byline: visible "By [Name]" line, or rel=author link, or Person JSON-LD
+  // Byline: visible "By [Name]" line, or rel=author link, or Person JSON-LD.
+  // Standard bylines are title-cased ("By Jane Doe") — a lowercase-only "by"
+  // pattern missed them.
   let hasByline =
-    /\bby\s+[A-Z][a-z]+\s+[A-Z][a-z]+/.test(bodyText.slice(0, 2000)) ||
+    /\b[Bb]y\s+[A-Z][a-z]+\s+[A-Z][a-z]+/.test(bodyText.slice(0, 2000)) ||
     $('a[rel="author"]').length > 0 ||
     $('[itemprop="author"]').length > 0;
   if (!hasByline) {
@@ -224,7 +232,15 @@ export function extractContentSignals($: cheerio.CheerioAPI, url: string, brandN
       if (!raw) return;
       try {
         const parsed = JSON.parse(raw);
-        const arr = Array.isArray(parsed) ? parsed : [parsed];
+        const topLevel = Array.isArray(parsed) ? parsed : [parsed];
+        // Include one level of @graph — Yoast/WordPress wrap Article/author
+        // entities there.
+        const arr: any[] = [];
+        for (const entry of topLevel) {
+          if (!entry || typeof entry !== "object") continue;
+          arr.push(entry);
+          if (Array.isArray(entry["@graph"])) arr.push(...entry["@graph"]);
+        }
         for (const item of arr) {
           if (item && typeof item === "object" && item.author) {
             hasByline = true;
@@ -626,10 +642,12 @@ export function generateGeoRecommendations(ctx: RecommendationContext): GeoRecom
     }));
   }
 
+  // Only citation-path bots reach this list (the analyzer filters out
+  // training-only bots) — a block here always means lost citations.
   if (ctx.blockedAiCrawlers.length > 0) {
     recs.push(composeRec("unblock-crawlers", {
-      detail: `Blocked in robots.txt: ${ctx.blockedAiCrawlers.join(", ")}. If you want to be cited by these engines, allow their user agents.`,
-      priority: ctx.blockedAiCrawlers.length >= 3 ? "high" : "medium",
+      detail: `Citation-critical crawlers blocked in robots.txt: ${ctx.blockedAiCrawlers.join(", ")}. These are the search indexers and user-request fetchers AI answers rely on — while blocked, those engines cannot cite this site. (Blocking training-only bots like GPTBot or ClaudeBot is a separate choice and does not affect citations.)`,
+      priority: "high",
     }));
   }
 
