@@ -49,9 +49,9 @@ export interface ComparisonRow {
 // competitor column is left as a "Check their site" hedge so we never
 // fabricate a competitor's feature claim.
 export const OUR_FACTS = {
-  freeTier: "Free plan: 5 audits + 2 simulations / month, no credit card",
-  proPrice: "$49 / month or $470 / year",
-  agencyPrice: "$299 / month",
+  freeTier: "First month free with every feature unlocked, then a free plan (5 audits + 2 simulations / month) — no credit card",
+  proPrice: "$79 / month or $790 / year",
+  agencyPrice: "$249 / month or $2,490 / year",
   proAudits: "100 audits / month",
   proSims: "30 simulations / month, 25 prompts each",
   engines: "ChatGPT, Claude, Gemini, Perplexity (4 engines)",

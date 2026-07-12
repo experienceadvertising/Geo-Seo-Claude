@@ -12,7 +12,13 @@ export interface UsageBucket {
 
 export interface MeResponse {
   userId: string;
+  /** Effective plan — what the user is entitled to right now. During the
+   * free all-access first month this is the top tier even though they pay
+   * nothing; every feature gate should key off this. */
   plan: Plan;
+  /** What the user actually pays for. Billing CTAs key off this. */
+  storedPlan?: Plan;
+  trial?: { active: boolean; endsAt?: string };
   usage?: {
     yearMonth: string;
     audits: UsageBucket;
@@ -31,6 +37,12 @@ export interface PlanInfo {
   isPro: boolean;
   isAgency: boolean;
   isFree: boolean;
+  /** The paid plan (free/pro/agency) ignoring the free-first-month bump. */
+  storedPlan: Plan;
+  /** True while the user's free all-access first month is running. */
+  trialActive: boolean;
+  /** ISO date the free month ends; undefined when trialActive is false. */
+  trialEndsAt?: string;
   simulationPrompts: number;
   simulationEngines: string[];
   usage: {
@@ -65,11 +77,16 @@ export function usePlan(): PlanInfo & { isLoading: boolean } {
   const audits = data?.usage?.audits ?? { used: 0, cap: fb.monthlyAudits, remaining: fb.monthlyAudits };
   const simulations = data?.usage?.simulations ?? { used: 0, cap: fb.monthlySimulations, remaining: fb.monthlySimulations };
 
+  const trialActive = data?.trial?.active ?? false;
+
   return {
     plan,
     isPro: plan === "pro" || plan === "agency",
     isAgency: plan === "agency",
     isFree: plan === "free",
+    storedPlan: data?.storedPlan ?? plan,
+    trialActive,
+    trialEndsAt: trialActive ? data?.trial?.endsAt : undefined,
     isLoading,
     simulationPrompts,
     simulationEngines,

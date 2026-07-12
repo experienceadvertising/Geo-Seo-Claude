@@ -48,6 +48,10 @@ type Source =
   | "weekly-insights"
   | "first-audit"
   | "score-changed"
+  | "welcome-d7"
+  | "trial-banner"
+  | "trial-ending"
+  | "trial-ended"
   | null;
 
 interface HeroContent {
@@ -58,7 +62,11 @@ interface HeroContent {
   showUsage: boolean;
 }
 
-function buildHero(source: Source, isFree: boolean): HeroContent {
+function buildHero(
+  source: Source,
+  isFree: boolean,
+  trial?: { active: boolean; endsAt?: string },
+): HeroContent {
   // For paid users landing here from a stale email link, soften everything
   // and just thank them for being a customer.
   if (!isFree) {
@@ -70,7 +78,46 @@ function buildHero(source: Source, isFree: boolean): HeroContent {
       showUsage: false,
     };
   }
+
+  // Mid-trial: they already HAVE every feature, so "upgrade to unlock" copy
+  // would read as if we don't know that. The pitch is continuity instead.
+  if (trial?.active) {
+    const endDate = trial.endsAt
+      ? new Date(trial.endsAt).toLocaleDateString("en-US", { month: "long", day: "numeric" })
+      : null;
+    const daysLeft = trial.endsAt
+      ? Math.max(0, Math.ceil((new Date(trial.endsAt).getTime() - Date.now()) / 86_400_000))
+      : null;
+    if (source === "trial-ending" || (daysLeft !== null && daysLeft <= 5)) {
+      return {
+        badge: endDate ? `Free month ends ${endDate}` : "Free month ending soon",
+        badgeTone: "amber",
+        headline: "Keep everything you've been using",
+        subhead:
+          "All 4 AI engines, the Fix Generator, monitoring, competitor tracking — everything you've had this month stays on with Pro. Subscribe now and nothing turns off.",
+        showUsage: false,
+      };
+    }
+    return {
+      badge: endDate ? `Free all-access month · until ${endDate}` : "Free all-access month",
+      badgeTone: "emerald",
+      headline: "You already have everything — keep it that way",
+      subhead:
+        "Every Pro and Agency feature is unlocked free during your first month. Subscribe any time to keep all 4 engines, the Fix Generator, and monitoring running after it ends.",
+      showUsage: false,
+    };
+  }
+
   switch (source) {
+    case "trial-ended":
+      return {
+        badge: "Your free month has ended",
+        badgeTone: "rose",
+        headline: "Get everything back in one click",
+        subhead:
+          "Last month you had all 4 AI engines, the Fix Generator, monitoring, and competitor tracking. Pro turns it all back on — your history and settings are exactly where you left them.",
+        showUsage: true,
+      };
     case "approaching-audits":
       return {
         badge: "1 audit left this month",
@@ -239,14 +286,21 @@ const SOURCE_ICON: Record<HeroContent["badgeTone"], React.ReactNode> = {
 export default function UpgradePage() {
   const [, setLocation] = useLocation();
   const { isSignedIn, isLoaded } = useAuth();
-  const { plan, isFree, usage, isLoading: planLoading } = usePlan();
+  // storedPlan, not the effective plan: during the free all-access first
+  // month the effective plan is "agency", which would render the
+  // "thanks for being a subscriber" hero to users who pay nothing.
+  const { storedPlan, trialActive, trialEndsAt, usage, isLoading: planLoading } = usePlan();
+  const isFree = storedPlan === "free";
   const { data: productsData, isLoading: productsLoading } = useStripeProducts();
   const checkout = useCheckout();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const source = (getQueryParam("source") as Source) || null;
-  const hero = useMemo(() => buildHero(source, isFree), [source, isFree]);
+  const hero = useMemo(
+    () => buildHero(source, isFree, { active: trialActive, endsAt: trialEndsAt }),
+    [source, isFree, trialActive, trialEndsAt],
+  );
 
   // Stripe redirect-back handling — same pattern as /pricing so users
   // landing here after checkout get a confirmation toast.
@@ -377,7 +431,7 @@ export default function UpgradePage() {
                 ) : (
                   <>
                     <span className="text-4xl font-extrabold tracking-tight text-slate-900">
-                      {proPrice ? formatPrice(proPrice.unitAmount) : "$49"}
+                      {proPrice ? formatPrice(proPrice.unitAmount) : "$79"}
                     </span>
                     <span className="text-slate-500 text-sm mb-1">/mo</span>
                   </>
@@ -447,7 +501,7 @@ export default function UpgradePage() {
                     500 audits / 150 simulations per month, multi-client management, agency-branded reports, dedicated account manager
                   </p>
                   <p className="text-xs text-slate-500 mt-1.5">
-                    {agencyPrice ? formatPrice(agencyPrice.unitAmount) : "$299"}/mo · for teams managing multiple client sites
+                    {agencyPrice ? formatPrice(agencyPrice.unitAmount) : "$249"}/mo · for teams managing multiple client sites
                   </p>
                 </div>
               </div>
@@ -482,7 +536,8 @@ export default function UpgradePage() {
             </a>
           </p>
           <p className="text-xs text-slate-400 pt-2">
-            Plan: <span className="capitalize font-medium text-slate-600">{plan}</span>
+            Plan: <span className="capitalize font-medium text-slate-600">{storedPlan}</span>
+            {trialActive && <span className="text-emerald-600"> · free all-access month active</span>}
           </p>
         </div>
       </div>
