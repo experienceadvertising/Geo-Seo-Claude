@@ -15,7 +15,7 @@ import { SEO, breadcrumbJsonLd } from "@/components/seo";
 
 const PRICING_TITLE = "Pricing — AEO Improvement | Free, Pro, Agency plans for AI search optimization";
 const PRICING_DESC =
-  "Free AEO audits forever. Pro from $79/mo unlocks ChatGPT, Claude, Gemini, and Perplexity coverage, the Fix Generator, continuous site monitoring, and AI crawler tracking. Agency plan for multi-client teams. Transparent pricing, no demo required.";
+  "Every feature free for your first month — no credit card. Then free AEO audits forever, or Pro from $79/mo for all four AI engines, the Fix Generator, continuous site monitoring, and AI crawler tracking. Agency plan for multi-client teams.";
 
 const pricingProductJsonLd = {
   "@context": "https://schema.org",
@@ -60,7 +60,7 @@ const pricingProductJsonLd = {
         url: "https://aeoimprovement.com/pricing",
         priceSpecification: {
           "@type": "UnitPriceSpecification",
-          price: "470",
+          price: "790",
           priceCurrency: "USD",
           billingDuration: "P1Y",
         },
@@ -104,7 +104,7 @@ const pricingFaqJsonLd = {
       name: "Is there a free plan?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Yes. The Free plan includes 5 audits per month, 2 prompt simulations per month, ChatGPT engine coverage, the basic AEO score, and 30-day audit history. No credit card is required to sign up.",
+        text: "Yes. Every new account gets its entire first month completely free with every feature unlocked — all four AI engines, the Fix Generator, monitoring, and competitor tracking — with no credit card required. After the first month, the Free plan includes 5 audits per month, 2 prompt simulations per month, ChatGPT engine coverage, the basic AEO score, and 30-day audit history.",
       },
     },
     {
@@ -141,7 +141,8 @@ const pricingBreadcrumb = breadcrumbJsonLd([
 
 const PLAN_FEATURES = {
   free: [
-    "5 audits / month",
+    "First month: every Pro & Agency feature unlocked",
+    "Then 5 audits / month",
     "2 simulations / month",
     "3 prompts per audit",
     "ChatGPT engine only",
@@ -297,9 +298,17 @@ function PlanCard({
             Current Plan
           </Button>
         ) : planId === "free" ? (
-          <Button variant="outline" className="w-full" disabled>
-            Always Free
-          </Button>
+          isSignedIn ? (
+            <Button variant="outline" className="w-full" disabled>
+              Always Free
+            </Button>
+          ) : (
+            <Link href="/sign-up">
+              <Button variant="outline" className="w-full">
+                Start free — all features, 1 month
+              </Button>
+            </Link>
+          )
         ) : !isSignedIn ? (
           <Link href="/sign-up">
             <Button className={`w-full bg-gradient-to-r ${gradients[planId]} hover:opacity-90 text-white border-0`}>
@@ -330,7 +339,10 @@ export default function PricingPage() {
   const [, setLocation] = useLocation();
   const [billing, setBilling] = useState<BillingInterval>("month");
   const { isSignedIn } = useAuth();
-  const { plan: currentPlan } = usePlan();
+  // storedPlan, not effective plan: during the free all-access first month
+  // the effective plan is "agency", which would mark the Agency card as
+  // "Current Plan" and hide every checkout button from trial users.
+  const { storedPlan: currentPlan, trialActive, trialEndsAt } = usePlan();
   const { data: productsData } = useStripeProducts();
   const { data: subData } = useStripeSubscription();
   const checkout = useCheckout();
@@ -425,7 +437,7 @@ export default function PricingPage() {
       name: "Free",
       price: "$0",
       period: "/mo",
-      description: "Try AEO auditing, no credit card needed",
+      description: "First month: every feature unlocked. No card needed.",
       features: PLAN_FEATURES.free,
       isHighlighted: false,
     },
@@ -468,7 +480,8 @@ export default function PricingPage() {
             Rank in AI answers, not just search
           </h1>
           <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-            Start for free. Upgrade when you're ready to unlock all four AI engines,
+            Your first month is completely free with every feature unlocked — no credit card.
+            After that, stay free or upgrade to keep all four AI engines,
             automated fixes, continuous monitoring, real crawler tracking, and competitor intelligence.
           </p>
 
@@ -503,6 +516,20 @@ export default function PricingPage() {
             </button>
           </div>
         </div>
+
+        {isSignedIn && currentPlan === "free" && trialActive && (
+          <Alert className="border-emerald-200 bg-emerald-50 max-w-lg mx-auto">
+            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+            <AlertDescription className="text-emerald-800">
+              You're in your <strong>free all-access month</strong> — every Pro and
+              Agency feature is already unlocked
+              {trialEndsAt
+                ? ` until ${new Date(trialEndsAt).toLocaleDateString("en-US", { month: "long", day: "numeric" })}`
+                : ""}
+              . Subscribe below to keep them after it ends.
+            </AlertDescription>
+          </Alert>
+        )}
 
         {isSignedIn && currentPlan !== "free" && (
           <Alert className="border-emerald-200 bg-emerald-50 max-w-lg mx-auto">

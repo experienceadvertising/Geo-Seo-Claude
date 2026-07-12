@@ -7,6 +7,7 @@ import { eq, and, or, isNull } from "drizzle-orm";
 import { EmailService } from "../lib/emailService";
 import { logger } from "../lib/logger";
 import { requireAuth } from "../middlewares/auth";
+import { TRIAL_LENGTH_DAYS } from "../lib/planUtils";
 import {
   loginRateLimiter,
   registerRateLimiter,
@@ -169,6 +170,10 @@ router.post("/auth/register", registerRateLimiter, async (req, res): Promise<voi
     verificationToken: hashToken(verToken),
     verificationExpires: verExpires,
     plan: "free",
+    // Free all-access first month: full feature entitlements until this
+    // date (see planUtils.getPlanInfo). Stored explicitly so support can
+    // extend an individual user's trial by bumping the column.
+    trialEndsAt: new Date(Date.now() + TRIAL_LENGTH_DAYS * 24 * 60 * 60 * 1000),
     unsubscribeToken: unsubToken,
     referralCode: myReferralCode,
     referredBy,

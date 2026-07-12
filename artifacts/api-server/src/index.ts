@@ -3,6 +3,7 @@ import { logger } from "./lib/logger";
 import { runMigrations } from "stripe-replit-sync";
 import { getStripeSync } from "./lib/stripeClient";
 import { startEmailScheduler } from "./lib/emailScheduler";
+import { runFreeMonthPromoGrant } from "./lib/promoGrant";
 
 async function initStripe() {
   const databaseUrl = process.env.DATABASE_URL;
@@ -60,6 +61,11 @@ if (Number.isNaN(port) || port <= 0) {
 
 async function start() {
   await initStripe();
+  // Non-fatal: the claim row releases on failure, so the next boot retries
+  // (e.g. when the drizzle push for the new columns hasn't run yet).
+  await runFreeMonthPromoGrant().catch((err) =>
+    logger.error({ err }, "Free-month promo grant failed — will retry next boot"),
+  );
   startEmailScheduler();
   app.listen(port, (err) => {
     if (err) {

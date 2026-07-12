@@ -73,7 +73,9 @@ export default function SignUpPage() {
             <CheckCircle2 className="h-14 w-14 text-emerald-500 mx-auto" />
             <h2 className="text-2xl font-bold">Check your email</h2>
             <p className="text-muted-foreground text-sm">
-              We sent a verification link to <strong>{email}</strong>. Click the link to activate your account.
+              We sent a verification link to <strong>{email}</strong>. Click the
+              link to activate your account — your free all-access month starts
+              the moment you do.
             </p>
             <p className="text-xs text-muted-foreground">
               The link will expire in 24 hours. Don't see it? Check your spam folder.
@@ -114,7 +116,10 @@ export default function SignUpPage() {
             </span>
           </div>
           <CardTitle className="text-2xl font-bold">Create your account</CardTitle>
-          <CardDescription>Free. No credit card required.</CardDescription>
+          <CardDescription>
+            Your first month is completely free with every feature unlocked.
+            No credit card required.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
