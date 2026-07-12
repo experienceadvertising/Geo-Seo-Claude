@@ -217,9 +217,30 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
   let citabilityBlocks: CitabilityBlock[] = [];
   let $page: cheerio.CheerioAPI | null = null;
 
+  // Kick off ALL independent network I/O concurrently — the raw fetch,
+  // browser render, robots.txt, and llms.txt have no data dependencies on
+  // each other. The old flow awaited them one after another, adding their
+  // latencies together on every audit.
+  const rawFetchPromise = safeFetch(url, { headers, timeoutMs: 15000, maxBytes: 8 * 1024 * 1024 });
+  const renderPromise = renderPage(url).catch(() => null);
+  const robotsPromise = safeFetch(`${baseUrl}/robots.txt`, {
+    headers,
+    timeoutMs: 10000,
+    maxBytes: 512 * 1024,
+  })
+    .then((r) => r.text())
+    .catch(() => "");
+  const llmsPromise = safeFetch(`${baseUrl}/llms.txt`, {
+    headers,
+    timeoutMs: 8000,
+    maxBytes: 256 * 1024,
+  })
+    .then((r) => r.ok)
+    .catch(() => false);
+
   // 1) Fetch raw HTML (this is what AI crawlers without JS see)
   try {
-    const response = await safeFetch(url, { headers, timeoutMs: 15000, maxBytes: 8 * 1024 * 1024 });
+    const response = await rawFetchPromise;
     if (response.ok) {
       const ct = (response.headers.get("content-type") || "").toLowerCase();
       if (ct.includes("html") || ct === "" || ct.includes("xml")) {
@@ -238,9 +259,9 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
     }
   } catch {}
 
-  // 2) Try rendering with a real browser to capture client-side content
+  // 2) Rendered content (already in flight, kicked off above)
   try {
-    const rendered = await renderPage(url);
+    const rendered = await renderPromise;
     if (rendered) {
       renderedHtml = rendered.html;
       renderedWordCount = rendered.visibleText.split(/\s+/).filter(Boolean).length;
@@ -369,17 +390,9 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
     renderedWordCount >= 100 &&
     (rawHtmlWordCount < 50 || renderedWordCount > rawHtmlWordCount * 4);
 
-  // Check robots.txt
+  // Check robots.txt (fetched concurrently above)
   const crawlerStatuses: CrawlerStatus[] = [];
-  let robotsTxt = "";
-  try {
-    const robotsRes = await safeFetch(`${baseUrl}/robots.txt`, {
-      headers,
-      timeoutMs: 10000,
-      maxBytes: 512 * 1024,
-    });
-    robotsTxt = await robotsRes.text();
-  } catch {}
+  const robotsTxt = await robotsPromise;
 
   const rules = parseRobotsTxt(robotsTxt);
   for (const crawler of AI_CRAWLERS) {
@@ -393,16 +406,8 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
     });
   }
 
-  // Check llms.txt
-  let hasLlmsTxt = false;
-  try {
-    const llmsRes = await safeFetch(`${baseUrl}/llms.txt`, {
-      headers,
-      timeoutMs: 8000,
-      maxBytes: 256 * 1024,
-    });
-    hasLlmsTxt = llmsRes.ok;
-  } catch {}
+  // Check llms.txt (fetched concurrently above)
+  const hasLlmsTxt = await llmsPromise;
 
   // Calculate scores
   const avgCitabilityScore = citabilityBlocks.length > 0

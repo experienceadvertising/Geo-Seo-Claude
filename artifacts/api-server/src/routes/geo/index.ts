@@ -155,8 +155,11 @@ router.post("/geo/analyze", requireAuth, analyzeRateLimiter, async (req, res): P
   req.log.info({ url, userId: req.userId }, "Starting GEO analysis");
 
   try {
+    const analyzeStart = Date.now();
     const analysis = await analyzeUrl(url);
+    const analyzeMs = Date.now() - analyzeStart;
 
+    const insightsStart = Date.now();
     let aiInsights: string | null = null;
     try {
       const brand = analysis.brandName || (() => {
@@ -254,9 +257,16 @@ Hard rules:
 - The ONLY number you may call "the score", "your score", or "the AEO/GEO score" is the Overall GEO score (${analysis.geoScore}/100). The six category figures (Citability, Brand Authority, Content Quality, Technical SEO, Structured Data, Platform Optimization) are SUB-SCORES — if you cite one, name it explicitly (e.g. "your Citability sub-score of ${analysis.scores.citability}/100"). Never present a sub-score as the page's overall score.
 - When you reference the page URL or domain, write the hostname in lowercase (e.g. "stripe.com", not "Stripe.com"), even if the page title or excerpt capitalizes it.`;
 
+      // Latency-critical: this call blocks the audit response while the user
+      // watches the "Generating insights" spinner. The briefing is a short,
+      // strictly-templated ~400-word markdown doc, so the fast/cheap tier
+      // handles it well — INSIGHTS_MODEL overrides without a redeploy if you
+      // want heavier prose back (e.g. INSIGHTS_MODEL=claude-sonnet-4-5).
+      // max_tokens 1024 comfortably fits the 350-500 word hard limit and
+      // stops a runaway generation from stalling the response.
       const message = await anthropic.messages.create({
-        model: "claude-sonnet-4-5",
-        max_tokens: 2048,
+        model: process.env.INSIGHTS_MODEL || "claude-haiku-4-5",
+        max_tokens: 1024,
         messages: [{ role: "user", content: prompt }],
       });
 
@@ -267,6 +277,12 @@ Hard rules:
     } catch (aiErr) {
       req.log.warn({ err: aiErr }, "AI insights generation failed, proceeding without");
     }
+    // Phase timings — when a user reports "the audit is slow", this log line
+    // says whether the crawl/render or the LLM call is to blame.
+    req.log.info(
+      { url, analyzeMs, insightsMs: Date.now() - insightsStart },
+      "GEO analysis phases complete",
+    );
 
     const [audit] = await db.insert(auditsTable).values({
       userId: req.userId!,
