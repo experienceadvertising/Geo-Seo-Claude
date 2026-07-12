@@ -151,6 +151,18 @@ async function copyRuntimeAssets(distDir) {
   const destMigrations = path.join(distDir, "migrations");
   await cp(sourceMigrations, destMigrations, { recursive: true });
   console.log(`Copied stripe-replit-sync migrations -> ${destMigrations}`);
+
+  // connect-pg-simple reads <pkg>/table.sql at runtime (relative to
+  // __dirname) when createTableIfMissing needs to create the sessions
+  // table. Bundling inlines the JS, so without this copy any FRESH
+  // database 500s on every sign-in with ENOENT dist/table.sql until the
+  // table exists. Existing deployments never hit it — the table is
+  // already there — which is why it only surfaced in local testing.
+  const pgSimpleEntry = require2.resolve("connect-pg-simple");
+  const sourceTableSql = path.join(path.dirname(pgSimpleEntry), "table.sql");
+  const destTableSql = path.join(distDir, "table.sql");
+  await cp(sourceTableSql, destTableSql);
+  console.log(`Copied connect-pg-simple table.sql -> ${destTableSql}`);
 }
 
 buildAll().catch((err) => {

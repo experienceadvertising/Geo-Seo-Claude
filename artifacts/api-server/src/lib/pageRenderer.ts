@@ -41,7 +41,7 @@ export interface RenderedPage {
   finalUrl: string;
 }
 
-export async function renderPage(url: string, timeoutMs = 25000): Promise<RenderedPage | null> {
+export async function renderPage(url: string, timeoutMs = 15000): Promise<RenderedPage | null> {
   try {
     await assertPublicUrl(url);
   } catch {
@@ -64,7 +64,16 @@ export async function renderPage(url: string, timeoutMs = 25000): Promise<Render
     // (cloud metadata 169.254.169.254, 10/8, 172.16/12, 192.168/16, ::1, ULAs,
     // etc.). This closes the gap where a navigated page could redirect or pull
     // a sub-resource straight to an internal host.
+    //
+    // Images, media, and fonts are aborted outright: we only extract text
+    // (innerText) and markup, so they contribute nothing to the analysis but
+    // dominate load time — and their long-tail requests are the main reason
+    // busy pages never reach network-idle.
     await page.route("**/*", async (route) => {
+      const resourceType = route.request().resourceType();
+      if (resourceType === "image" || resourceType === "media" || resourceType === "font") {
+        return route.abort();
+      }
       try {
         await assertPublicUrl(route.request().url());
       } catch {
@@ -72,10 +81,15 @@ export async function renderPage(url: string, timeoutMs = 25000): Promise<Render
       }
       return route.continue();
     });
-    await page.goto(url, { waitUntil: "networkidle", timeout: timeoutMs }).catch(async () => {
-      await page.waitForLoadState("domcontentloaded", { timeout: 5000 }).catch(() => {});
-    });
-    await page.waitForTimeout(800);
+    // Wait for DOM + a BOUNDED settle instead of open-ended network-idle.
+    // Sites with analytics beacons/long-polling never go network-idle, which
+    // previously burned the full 25s timeout on exactly the popular sites
+    // users audit most. domcontentloaded fires fast; the capped networkidle
+    // wait then gives SPAs a few seconds to hydrate, and the short fixed
+    // pause catches late DOM writes.
+    await page.goto(url, { waitUntil: "domcontentloaded", timeout: timeoutMs }).catch(() => {});
+    await page.waitForLoadState("networkidle", { timeout: 5000 }).catch(() => {});
+    await page.waitForTimeout(500);
     const html = await page.content();
     const visibleText = await page.evaluate(() => {
       const body = document.body;
