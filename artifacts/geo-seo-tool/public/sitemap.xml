@@ -79,6 +79,12 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://aeoimprovement.com/changelog</loc>
+    <lastmod>2026-07-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://aeoimprovement.com/contact</loc>
     <lastmod>2026-05-05</lastmod>
     <changefreq>yearly</changefreq>

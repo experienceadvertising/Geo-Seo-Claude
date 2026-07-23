@@ -28,6 +28,7 @@ const WhatIsAEO = lazy(() => import("@/pages/what-is-answer-engine-optimization"
 const HowToAppearInAISearch = lazy(() => import("@/pages/how-to-appear-in-ai-search"));
 const ProductLanding = lazy(() => import("@/pages/product-landing"));
 const Benchmark = lazy(() => import("@/pages/benchmark"));
+const Changelog = lazy(() => import("@/pages/changelog"));
 const SignInPage = lazy(() => import("@/pages/sign-in"));
 const SignUpPage = lazy(() => import("@/pages/sign-up"));
 const VerifyEmailPage = lazy(() => import("@/pages/verify-email"));
@@ -101,6 +102,7 @@ function AppRoutes() {
         <Route path="/ai-visibility-checker">{() => <ProductLanding variant="visibility" />}</Route>
         <Route path="/chatgpt-citation-tracker">{() => <ProductLanding variant="citations" />}</Route>
         <Route path="/ai-citation-readiness-benchmark" component={Benchmark} />
+        <Route path="/changelog" component={Changelog} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

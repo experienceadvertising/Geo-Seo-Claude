@@ -210,6 +210,7 @@ function SiteFooter() {
                 { label: "Appear in AI Search", href: "/how-to-appear-in-ai-search" },
                 { label: "Best AEO Tools", href: "/best-aeo-tools" },
                 { label: "Best GEO Tools", href: "/best-geo-optimization-tools" },
+                { label: "Changelog", href: "/changelog" },
               ].map(({ label, href }) => (
                 <li key={href}>
                   <Link href={href} className="hover:text-white transition-colors">

@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
-import { Search, Loader2, ArrowRight, BarChart3, TrendingUp, TrendingDown, Minus, Zap, Shield, Lock, Sparkles, CheckCircle2, BookOpen, Lightbulb, ExternalLink, Globe, FileCode, Building2, Bot, Activity, LineChart, Radar, Bell } from "lucide-react";
+import { Search, Loader2, ArrowRight, BarChart3, TrendingUp, TrendingDown, Minus, Zap, Shield, Lock, Sparkles, CheckCircle2, BookOpen, Lightbulb, ExternalLink, Globe, FileCode, Building2, Bot, Activity, LineChart, Radar, Bell, Megaphone } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ import { ScoreBadge } from "@/components/score-badge";
 import { usePlan } from "@/hooks/usePlan";
 import { AuthoritySignalsCard } from "@/components/authority-signals-card";
 import { ReferralCard } from "@/components/referral-card";
+import { CHANGELOG } from "@/data/changelog";
 
 function MarketStats() {
   const items = [
@@ -899,6 +900,57 @@ function DashboardLearningHub() {
   );
 }
 
+const WHATS_NEW_COUNT = 3;
+
+function WhatsNewCard() {
+  const recent = CHANGELOG.slice(0, WHATS_NEW_COUNT);
+  const BADGE_COLORS: Record<string, string> = {
+    New: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+    Improvement: "bg-blue-500/10 text-blue-700 dark:text-blue-400",
+    Research: "bg-purple-500/10 text-purple-700 dark:text-purple-400",
+    Performance: "bg-orange-500/10 text-orange-700 dark:text-orange-400",
+    Fix: "bg-red-500/10 text-red-700 dark:text-red-400",
+  };
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Megaphone className="h-4 w-4 text-emerald-600" />
+            What's new
+          </CardTitle>
+          <Link href="/changelog" className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
+            See all updates <ArrowRight className="h-3 w-3" />
+          </Link>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {recent.map((entry, i) => {
+          const Icon = entry.icon;
+          const badgeClass = BADGE_COLORS[entry.badge] ?? BADGE_COLORS["New"];
+          return (
+            <div key={i} className="flex items-start gap-3">
+              <div className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-muted">
+                <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2 mb-0.5">
+                  <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${badgeClass}`}>
+                    {entry.badge}
+                  </span>
+                  <span className="text-xs text-muted-foreground">{entry.date}</span>
+                </div>
+                <p className="text-sm font-medium leading-snug">{entry.title}</p>
+                <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">{entry.summary}</p>
+              </div>
+            </div>
+          );
+        })}
+      </CardContent>
+    </Card>
+  );
+}
+
 function SignedInDashboard() {
   const [url, setUrl] = React.useState(() => localStorage.getItem("pendingAuditUrl") || "");
   const [, setLocation] = useLocation();
@@ -996,6 +1048,8 @@ function SignedInDashboard() {
       {!analyzeUrl.isPending && (
         <ReferralCard />
       )}
+
+      {!analyzeUrl.isPending && <WhatsNewCard />}
 
       {!analyzeUrl.isPending && <DashboardLearningHub />}
 
