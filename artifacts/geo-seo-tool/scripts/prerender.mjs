@@ -74,7 +74,7 @@ function safeJson(obj) {
 
 function buildHeadInjection(route) {
   const canonical = `${SITE_ORIGIN}${route.path === "/" ? "/" : route.path}`;
-  const ogImage = `${SITE_ORIGIN}/opengraph.jpg`;
+  const ogImage = route.ogImage ?? `${SITE_ORIGIN}/opengraph.jpg`;
   const ogType = route.ogType ?? "website";
 
   const lines = [

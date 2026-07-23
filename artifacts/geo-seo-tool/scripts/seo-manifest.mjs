@@ -346,6 +346,32 @@ export const ROUTES = [
   },
 
   {
+    path: "/changelog",
+    title: "What's New — AEO Improvement Changelog",
+    description:
+      "New features, methodology corrections, and performance improvements — see every update to AEO Improvement, newest first.",
+    ogType: "article",
+    ogImage: "https://aeoimprovement.com/og-changelog.png",
+    publishedTime: "2026-05-01",
+    modifiedTime: "2026-07-22",
+    authorName: AUTHOR.name,
+    jsonLd: [
+      articleLd({
+        path: "/changelog",
+        title: "What's New — AEO Improvement Changelog",
+        description:
+          "New features, methodology corrections, and performance improvements — see every update to AEO Improvement, newest first.",
+        datePublished: "2026-05-01",
+        dateModified: "2026-07-22",
+      }),
+      breadcrumbLd([
+        { name: "Home", path: "/" },
+        { name: "Changelog", path: "/changelog" },
+      ]),
+    ],
+  },
+
+  {
     path: "/contact",
     title: "Contact — AEO Improvement",
     description:
