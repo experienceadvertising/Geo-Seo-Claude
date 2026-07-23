@@ -432,18 +432,18 @@ export default function ProjectsPage() {
                       <option value="weekly">Weekly</option>
                       <option value="daily">Daily</option>
                     </select>
-                    <Button size="sm" variant="outline" onClick={() => runNow.mutate(site.id)} disabled={runNow.isPending} title="Re-audit now">
+                    <Button size="sm" variant="outline" onClick={() => runNow.mutate(site.id)} disabled={runNow.isPending} title="Re-audit now" aria-label={`Re-audit ${site.label || displayUrl(site.url)} now`}>
                       {runNow.isPending && runNow.variables === site.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
                     </Button>
-                    <Button size="sm" variant="ghost" onClick={() => toggleActive.mutate({ id: site.id, active: !site.active })} title={site.active ? "Pause" : "Resume"}>
+                    <Button size="sm" variant="ghost" onClick={() => toggleActive.mutate({ id: site.id, active: !site.active })} title={site.active ? "Pause" : "Resume"} aria-label={`${site.active ? "Pause" : "Resume"} monitoring ${site.label || displayUrl(site.url)}`}>
                       {site.active ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                     </Button>
                     {site.lastAuditId && (
                       <Link href={`/results/${site.lastAuditId}`}>
-                        <Button size="sm" variant="ghost" title="Open results"><ExternalLink className="h-4 w-4" /></Button>
+                        <Button size="sm" variant="ghost" title="Open results" aria-label={`Open results for ${site.label || displayUrl(site.url)}`}><ExternalLink className="h-4 w-4" /></Button>
                       </Link>
                     )}
-                    <Button size="sm" variant="ghost" onClick={() => removeSite.mutate(site.id)} title="Remove" className="text-red-600 hover:text-red-700">
+                    <Button size="sm" variant="ghost" onClick={() => removeSite.mutate(site.id)} title="Remove" aria-label={`Remove ${site.label || displayUrl(site.url)}`} className="text-red-600 hover:text-red-700">
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -459,8 +459,8 @@ export default function ProjectsPage() {
           <div>
             <h2 className="text-lg font-semibold flex items-center gap-2"><Bot className="h-5 w-5 text-emerald-600" /> AI crawler activity</h2>
             <p className="text-sm text-muted-foreground">
-              Robots.txt shows which AI bots you <em>allow</em>. This shows which ones actually <em>visit</em>. Add the
-              snippet to your site and we'll log real GPTBot / ClaudeBot / PerplexityBot fetches as they happen.
+              Robots.txt shows which AI bots you allow. This pixel records known AI user-agents only when they request the embedded image.
+              It does not observe the original HTML request, and no recorded pixel request is not proof that a crawler skipped the page.
             </p>
           </div>
 
@@ -481,7 +481,7 @@ export default function ProjectsPage() {
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    The pixel is invisible and only ever logs known AI crawlers — never your human visitors, and no IP addresses.
+                    The pixel is invisible, stores no IP addresses, and ignores ordinary browser user-agents. Some crawlers do not fetch images, so this is positive evidence of a visit, not complete server-log coverage.
                   </p>
                 </CardContent>
               </Card>
@@ -489,8 +489,7 @@ export default function ProjectsPage() {
               {crawler.data.total === 0 ? (
                 <Card className="border-dashed">
                   <CardContent className="py-10 text-center text-muted-foreground text-sm">
-                    No AI crawler visits logged yet. Once the snippet is live, fetches from GPTBot, ClaudeBot, PerplexityBot
-                    and others will appear here within minutes of a crawl.
+                    No AI crawler pixel requests logged yet. This may mean no supported bot has visited, or that a bot fetched the HTML without requesting images.
                   </CardContent>
                 </Card>
               ) : (

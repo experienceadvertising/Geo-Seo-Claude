@@ -338,7 +338,7 @@ components:
               type: number
             brandAuthority:
               type: number
-            contentQuality:
+            aiCrawlerAccess:
               type: number
             technicalSeo:
               type: number
@@ -349,7 +349,7 @@ components:
           required:
             - citability
             - brandAuthority
-            - contentQuality
+            - aiCrawlerAccess
             - technicalSeo
             - structuredData
             - platformOptimization
@@ -385,6 +385,9 @@ components:
           type: boolean
         hasCanonical:
           type: boolean
+        hasNoSnippet:
+          type: boolean
+          description: True when robots directives forbid quoted snippets.
         wordCount:
           type: integer
         rawHtmlWordCount:
@@ -449,6 +452,9 @@ components:
           type: string
         detail:
           type: string
+        url:
+          type: string
+          format: uri
         priority:
           type: string
           enum: [critical, high, medium, low]

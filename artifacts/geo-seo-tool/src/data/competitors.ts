@@ -55,7 +55,7 @@ export const OUR_FACTS = {
   proAudits: "100 audits / month",
   proSims: "30 simulations / month, 25 prompts each",
   engines: "ChatGPT, Claude, Gemini, Perplexity (4 engines)",
-  fixGenerator: "Auto-drafts llms.txt, FAQPage JSON-LD, Organization schema, robots.txt audit",
+  fixGenerator: "Auto-drafts FAQPage and Organization JSON-LD plus citation-bot robots.txt entries",
   citationGap: "Side-by-side competitor citation gap table",
   history: "1-year audit + simulation history (Pro), 2 years (Agency)",
   signup: "Self-serve sign-up, instant access, no demo required",
@@ -77,12 +77,12 @@ export const COMPETITORS: CompetitorMeta[] = [
       "Real-time visibility dashboards",
     ],
     theirGaps: [
-      "Does not prominently advertise an automated llms.txt or JSON-LD generator",
+      "Does not prominently advertise an automated JSON-LD generator",
       "No publicly advertised competitor citation gap table",
       "Pricing requires a trial or sales conversation to confirm",
     ],
     whenToPickThem: "You want a pure monitoring dashboard and primarily care about how AI engines describe your brand qualitatively (sentiment + mention frequency).",
-    whenToPickUs: "You want monitoring AND the actionable, technical fixes — auto-generated llms.txt, JSON-LD, and a prioritized recommendation list — without a sales call to find out what it costs.",
+    whenToPickUs: "You want monitoring AND actionable, deployable JSON-LD and crawler fixes with a prioritized recommendation list — without a sales call to find out what it costs.",
   },
   {
     slug: "athenahq",
@@ -100,12 +100,12 @@ export const COMPETITORS: CompetitorMeta[] = [
       "Granular citation source authority analysis",
     ],
     theirGaps: [
-      "Does not prominently advertise a one-click llms.txt + JSON-LD auto-generator",
+      "Does not prominently advertise a one-click JSON-LD auto-generator",
       "No publicly advertised competitor citation gap table as a standalone module",
-      "Self-serve plan starts at $95 / month — higher than our $49 Pro tier",
+      "Self-serve plan starts at $95 / month — higher than our $79 Pro tier",
     ],
     whenToPickThem: "You specifically need to monitor across Grok or Copilot in addition to the major engines, and you're comfortable at the $95+/mo price point for the broader engine net.",
-    whenToPickUs: "You want the four engines that drive ~95% of meaningful AI search traffic today (ChatGPT, Claude, Gemini, Perplexity), the technical Fix Generator that drafts your llms.txt and schema, and a $49 starting price.",
+    whenToPickUs: "You want self-serve coverage across ChatGPT, Claude, Gemini, and Perplexity, a technical Fix Generator focused on schema and citation-bot access, and a $79 starting price.",
   },
   {
     slug: "profound",
@@ -124,11 +124,11 @@ export const COMPETITORS: CompetitorMeta[] = [
     ],
     theirGaps: [
       "No published pricing — requires a sales conversation to evaluate",
-      "Does not prominently advertise an automated llms.txt or JSON-LD generator",
+      "Does not prominently advertise an automated JSON-LD generator",
       "Attribution-first framing means less emphasis on 'fix this on your site' workflows",
     ],
     whenToPickThem: "You're an enterprise team with a six-figure budget who needs deep attribution data tied into a broader analytics stack and is willing to navigate a sales cycle.",
-    whenToPickUs: "You want to start optimizing today — sign up, run an audit in 90 seconds, and walk away with a copy-paste llms.txt and a prioritized fix list — without scheduling a demo.",
+    whenToPickUs: "You want to start optimizing today — sign up, run an audit, and walk away with deployable schema and a prioritized fix list — without scheduling a demo.",
   },
   {
     slug: "brandlight",
@@ -147,11 +147,11 @@ export const COMPETITORS: CompetitorMeta[] = [
     ],
     theirGaps: [
       "No published pricing — enterprise sales cycle required",
-      "Does not prominently advertise an automated llms.txt or JSON-LD generator",
+      "Does not prominently advertise an automated JSON-LD generator",
       "Smaller monitored engine set (4) than AthenaHQ (7) — same core engines as us",
     ],
     whenToPickThem: "You're a global enterprise brand worried about AI bias and reputation, and you have budget for a platform plus narrative-shaping advisory.",
-    whenToPickUs: "You want a self-serve tool with the same four major engines, automated technical fixes, transparent pricing starting at $49/mo, and the option to start free.",
+    whenToPickUs: "You want a self-serve tool with four major engines, automated technical fixes, transparent pricing starting at $79/mo, and the option to start free.",
   },
 ];
 
@@ -197,7 +197,7 @@ export const SHARED_ROWS: SharedRow[] = [
   },
   {
     feature: "Starting paid price",
-    us: "$49 / month (Pro)",
+    us: "$79 / month (Pro)",
     theirAnswers: {
       otterly: "Not published",
       athenahq: "$95 / month",
@@ -218,8 +218,8 @@ export const SHARED_ROWS: SharedRow[] = [
     advantage: { otterly: "us", athenahq: "them", profound: "them", brandlight: "neutral" },
   },
   {
-    feature: "Automated llms.txt generator",
-    us: "Yes — auto-drafted from your sitemap, copy-paste ready",
+    feature: "Deployable schema generator",
+    us: "FAQPage and Organization JSON-LD, copy-paste ready",
     theirAnswers: {
       otterly: "Not advertised on their site",
       athenahq: "Not advertised on their site",

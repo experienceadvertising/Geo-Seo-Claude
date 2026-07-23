@@ -120,7 +120,7 @@ export default function About() {
             AEO Improvement scores any URL across six dimensions of AI search
             readiness — citability, AI crawler access, brand authority, schema
             markup, technical SEO, and live prompt simulation — and ships
-            ready-to-paste fixes (llms.txt, JSON-LD, robots.txt) that move the
+            ready-to-paste fixes (JSON-LD and citation-bot robots.txt, with an optional llms.txt map) that move the
             score, not just dashboards that report it.
           </p>
           <div className="grid sm:grid-cols-3 gap-3 pt-2">
@@ -133,7 +133,7 @@ export default function About() {
               {
                 icon: <Wrench className="h-5 w-5 text-emerald-600" />,
                 title: "Ship the fixes",
-                body: "Generate the actual files — llms.txt, FAQ schema, robots.txt — instead of leaving a list of things engineering will get to in six weeks.",
+                body: "Generate FAQ and Organization schema plus citation-bot robots.txt entries instead of leaving a list of things engineering will get to in six weeks.",
               },
               {
                 icon: <BookOpen className="h-5 w-5 text-emerald-600" />,

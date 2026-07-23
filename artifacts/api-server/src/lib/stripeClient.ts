@@ -1,6 +1,23 @@
 import Stripe from "stripe";
 import { StripeSync } from "stripe-replit-sync";
 
+type ReplitStripeConnectionResponse = {
+  items?: Array<{
+    settings?: {
+      publishable?: string;
+      secret?: string;
+    };
+  }>;
+};
+
+function getReplitStripeSettings(data: unknown): { publishableKey: string; secretKey: string } | null {
+  if (!data || typeof data !== "object") return null;
+  const { items } = data as ReplitStripeConnectionResponse;
+  const settings = items?.[0]?.settings;
+  if (!settings?.secret || !settings?.publishable) return null;
+  return { publishableKey: settings.publishable, secretKey: settings.secret };
+}
+
 async function getCredentials(): Promise<{ publishableKey: string; secretKey: string }> {
   // PREFER the Replit-managed Stripe integration when available.
   // The integration is bound per-environment (dev → sandbox, prod → live AEO
@@ -30,10 +47,8 @@ async function getCredentials(): Promise<{ publishableKey: string; secretKey: st
 
     if (resp.ok) {
       const data = await resp.json();
-      const settings = data.items?.[0]?.settings;
-      if (settings?.secret && settings?.publishable) {
-        return { publishableKey: settings.publishable, secretKey: settings.secret };
-      }
+      const settings = getReplitStripeSettings(data);
+      if (settings) return settings;
     }
     // Fall through to env-var path if connector lookup fails or returns
     // incomplete settings — useful when running outside Replit.

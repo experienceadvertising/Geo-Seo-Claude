@@ -150,7 +150,7 @@ export function welcomeEmail(firstName: string, unsubscribeUrl?: string) {
     <table cellpadding="0" cellspacing="0" width="100%" style="margin:8px 0 24px;">
       ${feature("🔍", "Run your first audit", "Enter your website URL and get an instant AEO score with specific recommendations.")}
       ${feature("🔬", "Simulate across all 4 engines", "See whether ChatGPT, Claude, Gemini, and Perplexity actually cite you — all engines are unlocked for you.")}
-      ${feature("🛠", "Generate your fixes", "The Fix Generator auto-drafts your llms.txt, JSON-LD schema, and robots.txt patches — copy and ship.")}
+      ${feature("🛠", "Generate your fixes", "The Fix Generator auto-drafts JSON-LD schema and citation-bot robots.txt patches, with llms.txt clearly labeled optional.")}
     </table>
 
     <div style="text-align:center;margin:32px 0;">
@@ -167,14 +167,14 @@ export function welcomeEmail(firstName: string, unsubscribeUrl?: string) {
 }
 
 // ── Email 2: Day-3 Tips ──────────────────────────────────────────────────────
-export function welcomeD3Email(firstName: string, unsubscribeUrl?: string) {
-  // Concrete > clever: name the actions, not the category. "Wins" is empty
-  // calories; "llms.txt + FAQ schema + robots.txt" tells the recipient
-  // exactly what's inside before they open.
-  const subject = "3 fixes for ChatGPT to cite you: fresh dates, FAQ schema, robots.txt";
+export function welcomeD3Email(firstName: string, hasAudit: boolean, unsubscribeUrl?: string) {
+  // Concrete > clever: name the actions, not the category.
+  const subject = hasAudit
+    ? "Your next 3 AEO tasks: fresh dates, FAQ schema, robots.txt"
+    : "Your free month is running — start with this 60-second audit";
   const html = layout(
-    `${h1("3 quick wins for better AI citations")}
-    ${p(`Hi ${firstName || "there"}, it's been a few days since you signed up. Here are three high-impact improvements most sites can make this week:`)}
+    `${h1(hasAudit ? "3 quick wins for better AI citations" : "Start your optimization journey")}
+    ${p(hasAudit ? `Hi ${firstName || "there"}, your first audit is in. Here are three high-impact improvements to check against its task list:` : `Hi ${firstName || "there"}, you still have every feature unlocked. Run your first audit now so we can build a prioritized, trackable optimization journey for your domain.`)}
 
     <table cellpadding="0" cellspacing="0" width="100%" style="margin:8px 0 24px;">
       ${feature("1️⃣", "Show a visible 'Last updated' date", "AI engines strongly prefer fresh content — the overwhelming majority of ChatGPT citations go to recently updated pages. Add a visible updated date (and dateModified schema) to your key pages, and actually refresh them.")}
@@ -183,11 +183,11 @@ export function welcomeD3Email(firstName: string, unsubscribeUrl?: string) {
     </table>
 
     <div style="text-align:center;margin:32px 0;">
-      ${btn("View my audit & apply fixes →", BASE_URL)}
+      ${btn(hasAudit ? "View my tasks & apply fixes →" : "Run my first audit →", BASE_URL)}
     </div>
 
     ${divider()}
-    ${p("The Fix Generator — unlocked during your free first month — writes your llms.txt, JSON-LD, and robots.txt patches automatically. Copy and deploy in minutes.", "color:#6b7280;font-size:13px;")}`,
+    ${p("The Fix Generator — unlocked during your free first month — writes your JSON-LD and citation-bot robots.txt patches automatically. Copy and deploy in minutes.", "color:#6b7280;font-size:13px;")}`,
     "3 high-impact improvements most sites can make this week →",
     unsubscribeUrl,
   );
@@ -207,7 +207,7 @@ export function welcomeD7Email(firstName: string, unsubscribeUrl?: string) {
 
     <table cellpadding="0" cellspacing="0" width="100%" style="margin:8px 0 24px;background:#f0fdf4;border-radius:8px;padding:16px;">
       ${feature("✦", "All 4 AI engines", "Run simulations against ChatGPT, Claude, Gemini, and Perplexity — not just one.")}
-      ${feature("🔧", "Fix Generator", "Auto-generate your llms.txt, JSON-LD schema, and robots.txt patches. Copy and deploy in minutes.")}
+      ${feature("🔧", "Fix Generator", "Auto-generate JSON-LD schema and citation-bot robots.txt patches. Copy and deploy in minutes.")}
       ${feature("📊", "Competitor citation gaps", "See exactly which competitors are being cited instead of you — and why.")}
       ${feature("📡", "Continuous monitoring", "Add your site once and get re-audited on a schedule, with alerts when your score moves.")}
       ${feature("💬", "Sentiment analysis", "Understand how AI engines perceive your brand — positive, neutral, or negative.")}
@@ -221,7 +221,7 @@ export function welcomeD7Email(firstName: string, unsubscribeUrl?: string) {
     "Everything is unlocked on your account right now — here's what to try →",
     unsubscribeUrl,
   );
-  const text = `Hi ${firstName || "there"},\n\nYou're one week into your free all-access month. Already unlocked on your account:\n- All 4 AI engines (ChatGPT, Claude, Gemini, Perplexity)\n- Fix Generator (llms.txt, JSON-LD, robots.txt)\n- Competitor citation gap table\n- Continuous monitoring with alerts\n- Sentiment analysis\n\nUse them now: ${BASE_URL}\n\nWhen your free month ends you'll move to the free plan unless you subscribe: ${BASE_URL}/upgrade?source=welcome-d7`;
+  const text = `Hi ${firstName || "there"},\n\nYou're one week into your free all-access month. Already unlocked on your account:\n- All 4 AI engines (ChatGPT, Claude, Gemini, Perplexity)\n- Fix Generator (JSON-LD, citation-bot robots.txt, optional llms.txt)\n- Competitor citation gap table\n- Continuous monitoring with alerts\n- Sentiment analysis\n\nUse them now: ${BASE_URL}\n\nWhen your free month ends you'll move to the free plan unless you subscribe: ${BASE_URL}/upgrade?source=welcome-d7`;
   return { subject, html, text };
 }
 
@@ -232,6 +232,7 @@ export interface WeeklyDigestData {
     url: string;
     geoScore: number;
     quickWins: string[];
+    nextAction?: { title: string; detail: string };
     createdAt: Date;
   };
   auditCount: number;
@@ -257,6 +258,12 @@ export function weeklyDigestEmail(data: WeeklyDigestData, unsubscribeUrl?: strin
         <ul style="margin:0;padding:0 0 0 20px;font-size:14px;line-height:1.8;color:#374151;">
           ${latestAudit.quickWins.slice(0, 3).map(w => `<li>${esc(w)}</li>`).join("")}
         </ul>` : ""}
+      ${latestAudit.nextAction ? `
+        <div style="margin:20px 0;padding:16px 18px;background:#ecfdf5;border-left:4px solid ${BRAND_COLOR};border-radius:6px;">
+          <div style="font-size:12px;font-weight:700;color:${BRAND_COLOR};text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px;">Your next unfinished action</div>
+          <div style="font-size:14px;font-weight:700;color:#1f2937;margin-bottom:4px;">${esc(latestAudit.nextAction.title)}</div>
+          <div style="font-size:13px;color:#4b5563;line-height:1.55;">${esc(latestAudit.nextAction.detail)}</div>
+        </div>` : ""}
       <div style="margin-top:24px;text-align:center;">
         ${btn("View full audit →", `${BASE_URL}`)}
       </div>`
@@ -280,7 +287,7 @@ export function weeklyDigestEmail(data: WeeklyDigestData, unsubscribeUrl?: strin
     `Your weekly AEO Improvement digest — ${auditCount} audit${auditCount !== 1 ? "s" : ""} this week`,
     unsubscribeUrl,
   );
-  const text = `Hi ${firstName || "there"}, your AEO weekly digest:\n\nAudits this week: ${auditCount}\n${latestAudit ? `Latest AEO score: ${Math.round(latestAudit.geoScore)}\nTop quick win: ${latestAudit.quickWins[0] || "none"}\n` : ""}\nView your dashboard: ${BASE_URL}`;
+  const text = `Hi ${firstName || "there"}, your AEO weekly digest:\n\nAudits this week: ${auditCount}\n${latestAudit ? `Latest AEO score: ${Math.round(latestAudit.geoScore)}\n${latestAudit.nextAction ? `Next unfinished action: ${latestAudit.nextAction.title} — ${latestAudit.nextAction.detail}\n` : `Top quick win: ${latestAudit.quickWins[0] || "none"}\n`}` : ""}\nView your dashboard: ${BASE_URL}`;
   return { subject, html, text };
 }
 
@@ -596,7 +603,7 @@ export function firstAuditEmail(
     <table cellpadding="0" cellspacing="0" width="100%" style="margin:8px 0 24px;">
       ${feature("🔬", "Run a prompt simulation", "Type the queries your buyers actually use and see whether ChatGPT, Claude, Gemini, and Perplexity name you, cite your site, or recommend a competitor instead.")}
       ${feature("📊", "Compare to competitors", "Run audits on 2–3 competitors to find your AEO gaps and see who the engines are citing in your place.")}
-      ${feature("🛠", "Generate fixes", "Pro users get auto-generated llms.txt, JSON-LD schema, and robots.txt entries based on your specific gaps — copy and ship.")}
+      ${feature("🛠", "Generate fixes", "Pro users get auto-generated JSON-LD and citation-bot robots.txt entries based on specific gaps — copy and ship.")}
     </table>
 
     <div style="text-align:center;margin:24px 0;">
@@ -608,7 +615,7 @@ export function firstAuditEmail(
     `Your first audit on ${hostname} scored ${Math.round(geoScore)}/100 — here's what to do next.`,
     unsubscribeUrl,
   );
-  const text = `Hi ${firstName || "there"},\n\nYou just ran your first AEO audit on ${hostname}. Score: ${Math.round(geoScore)}/100 — ${scoreVerdict}.\n\n${topRecommendation ? `Top opportunity: ${topRecommendation}\n\n` : ""}Next steps:\n- Run a prompt simulation to see how AI engines answer about your brand\n- Audit 2-3 competitors to find your gaps\n- Pro users get auto-generated llms.txt + JSON-LD schema\n\nOpen your audit: ${auditId ? `${BASE_URL}/results/${auditId}` : BASE_URL}`;
+  const text = `Hi ${firstName || "there"},\n\nYou just ran your first AEO audit on ${hostname}. Score: ${Math.round(geoScore)}/100 — ${scoreVerdict}.\n\n${topRecommendation ? `Top opportunity: ${topRecommendation}\n\n` : ""}Next steps:\n- Run a prompt simulation to see how AI engines answer about your brand\n- Audit 2-3 competitors to find your gaps\n- Pro users get auto-generated JSON-LD and citation-bot robots.txt entries\n\nOpen your audit: ${auditId ? `${BASE_URL}/results/${auditId}` : BASE_URL}`;
   return { subject, html, text };
 }
 
@@ -757,9 +764,9 @@ Allow: /</pre>
       "Most sites still ship the robots.txt they wrote for SEO — which often blocks the AI crawlers.\n\nThe distinction that matters in 2026: SEARCH bots decide whether you can be cited; TRAINING bots only feed model training.\n\nCitation-critical user-agents:\n- OAI-SearchBot + ChatGPT-User (ChatGPT Search — separate from GPTBot!)\n- Claude-SearchBot + Claude-User (Anthropic)\n- PerplexityBot + Perplexity-User\n\nAdd to /robots.txt:\nUser-agent: OAI-SearchBot\nAllow: /\n\nUser-agent: Claude-SearchBot\nAllow: /\n\n(repeat for each search bot)\n\nBlocking GPTBot/ClaudeBot/Google-Extended is a separate training opt-out — it won't cost you citations.\n\nRun an audit to see which engines you're currently blocking.",
   },
   {
-    subject: "What an actually-good llms.txt looks like (with example)",
+    subject: "llms.txt is optional — what it can and cannot do",
     preheader: "A cheap extra worth doing right — as long as you know what it can't do.",
-    title: "What an actually-good llms.txt looks like",
+    title: "llms.txt is an optional content map, not a citation lever",
     intro:
       "An llms.txt is a plain-markdown summary of your site placed at the root — an executive briefing for AI agents that arrive without context. Honest framing first: crawler-log studies show the major AI search crawlers rarely fetch it today, so treat it as a cheap extra rather than a citation lever. But agents and AI dev tools do read it when pointed at your site, it takes ten minutes, and if you ship one it should be good.",
     body: `${p("Here's a minimal but effective structure to start from:")}
@@ -788,9 +795,9 @@ America and the EU.
       <li>Linked URLs use the <strong>fully-qualified absolute path</strong>, not relative — agents that fetch this file standalone need the absolute reference.</li>
     </ul>`,
     pitch:
-      "On Pro, the Fix Generator drafts a complete llms.txt for your site using your real content — copy, paste, ship.",
+      "Finish citation-critical work first. Pro can draft this optional map after your schema, crawler access, and fresh content are in place.",
     textBody:
-      "An llms.txt is a plain-markdown summary at /llms.txt — an executive briefing for AI agents.\n\nMinimal structure:\n# Brand Name\n> One-line description of what you do.\n\n## What we do\n2-3 sentences: product, audience, geography.\n\n## Key pages\n- Absolute URLs to the most important pages.\n\nThe blockquote line under H1 is what models quote when summarising you. Make it specific.\n\nPro's Fix Generator drafts a complete llms.txt for your site automatically.",
+      "An llms.txt is an optional plain-markdown content map at /llms.txt. Major answer-engine crawlers rarely request it, so it should follow fresh server-visible content, schema, and citation-bot access.\n\nMinimal structure:\n# Brand Name\n> One-line description of what you do.\n\n## What we do\n2-3 sentences: product, audience, geography.\n\n## Key pages\n- Absolute URLs to the most important pages.\n\nPro's Fix Generator can draft the optional map after higher-impact work is complete.",
   },
   {
     subject: "FAQ schema: the highest-ROI structured data for AEO",
@@ -1018,8 +1025,8 @@ export function scoreChangedEmail(
     </div>
     ${divider()}
     ${p(improved
-      ? "Pro unlocks unlimited audits, the Fix Generator that drafts your llms.txt and JSON-LD, and full score history so you can see the arc of every improvement."
-      : "Pro's Fix Generator can re-draft your llms.txt and schema in minutes if a deploy broke them, and full audit history shows you exactly when the drop started.",
+      ? "Pro unlocks 100 audits per month, the Fix Generator for JSON-LD and crawler rules, and full score history so you can see the arc of every improvement."
+      : "Pro's Fix Generator can re-draft your schema and crawler rules in minutes if a deploy broke them, and full audit history shows you exactly when the drop started.",
       "color:#6b7280;font-size:13px;")}`,
     improved
       ? `Your score on ${hostname} went from ${prev} to ${curr} — nice work.`
@@ -1052,7 +1059,7 @@ export function approachingLimitEmail(
 
   const proCap = kind === "audits" ? 100 : 30;
   const pitch = kind === "audits"
-    ? "Pro gives you 100 audits a month — plus all 4 AI engines (Claude, Gemini, Perplexity, ChatGPT), the Fix Generator that auto-drafts your llms.txt and JSON-LD, and competitor citation tracking."
+    ? "Pro gives you 100 audits a month — plus all 4 AI engines, the Fix Generator for JSON-LD and crawler rules, and competitor citation tracking."
     : "Pro gives you 30 prompt simulations a month — across all 4 AI engines instead of just ChatGPT, and 25 prompts per simulation instead of 3.";
 
   // Visual usage bar — pure HTML/CSS table so it renders in every client.
@@ -1105,7 +1112,7 @@ export function whatYouMissedEmail(
   const hostname = (() => { try { return new URL(url).hostname; } catch { return url; } })();
   const safeHostname = esc(hostname);
   const subject = `Here's what your ${hostname} audit looks like on Pro`;
-  const preheader = `Free shows ChatGPT only. Pro shows all 4 engines + auto-drafts your llms.txt for ${hostname}.`;
+  const preheader = `Free shows ChatGPT only. Pro shows all 4 engines and generates technical fixes for ${hostname}.`;
 
   // Engine row — three locked cards for the engines free users don't get.
   // We deliberately use real product names; users see them everywhere else
@@ -1120,21 +1127,19 @@ export function whatYouMissedEmail(
       </table>
     </td>`;
 
-  // Fix Generator preview — a tailored llms.txt teaser that uses the user's
-  // actual hostname. NOT calling the gated codepath; this is a hand-crafted
+  // Fix Generator preview — a tailored Organization schema teaser that uses
+  // the user's actual hostname. This is a hand-crafted
   // template fragment that demonstrates what the real generator produces.
-  const llmsTxtPreview = `# ${hostname}
-
-> [Your one-line company description goes here.]
-
-## Core pages
-- ${hostname}/
-- ${hostname}/about
-- ${hostname}/pricing
-
-## Documentation
-- ${hostname}/docs
-<span style="color:#9ca3af;">... 14 more lines auto-generated for your site</span>`;
+  const schemaPreview = `&lt;script type="application/ld+json"&gt;
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "[Your verified brand name]",
+  "url": "https://${hostname}/",
+  "sameAs": []
+}
+&lt;/script&gt;
+<span style="color:#9ca3af;">Related profiles stay empty until you confirm ownership.</span>`;
 
   const content = `
     ${h1(`Your ${safeHostname} audit, on Pro`)}
@@ -1153,10 +1158,10 @@ export function whatYouMissedEmail(
     ${p(`Free runs prompts against ChatGPT only. Pro runs the same prompts against all four — so you actually see whether ${safeHostname} gets cited where your buyers are searching, not just one of four places.`, "font-size:14px;color:#4b5563;")}
 
     <div style="margin:32px 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:0.06em;color:#6b7280;font-weight:600;">
-      Your auto-generated llms.txt (preview)
+      Your Organization schema (preview)
     </div>
-    <pre style="background:#0f172a;color:#e2e8f0;font-family:'SFMono-Regular',Menlo,Monaco,Consolas,monospace;font-size:12px;line-height:1.65;padding:16px 20px;border-radius:8px;overflow-x:auto;margin:0 0 12px;white-space:pre-wrap;">${llmsTxtPreview}</pre>
-    ${p(`Pro's Fix Generator drafts the full file from your sitemap — copy, paste, ship. Same for FAQPage JSON-LD, Organization schema, and a robots.txt audit pass.`, "font-size:14px;color:#4b5563;")}
+    <pre style="background:#0f172a;color:#e2e8f0;font-family:'SFMono-Regular',Menlo,Monaco,Consolas,monospace;font-size:12px;line-height:1.65;padding:16px 20px;border-radius:8px;overflow-x:auto;margin:0 0 12px;white-space:pre-wrap;">${schemaPreview}</pre>
+    ${p(`Pro's Fix Generator drafts FAQPage and Organization JSON-LD plus citation-bot robots.txt additions. An llms.txt content map is included as an explicitly optional extra.`, "font-size:14px;color:#4b5563;")}
 
     <div style="text-align:center;margin:32px 0 0;">
       ${btn(`Unlock all 4 engines + Fix Generator`, `${BASE_URL}/upgrade?source=what-you-missed`)}
@@ -1165,7 +1170,7 @@ export function whatYouMissedEmail(
   `;
 
   const html = layout(content, preheader, unsubscribeUrl);
-  const text = `Hi ${firstName || "there"},\n\nYour free audit on ${hostname} gave you a score (${geoScore}/100) and a recommendation list. Here's what the same audit returns on Pro:\n\nEngines you didn't see:\n- Claude (Anthropic)\n- Gemini (Google — powers AI Overviews)\n- Perplexity (citation-first AI search)\n\nFree = ChatGPT only. Pro = all four, side by side.\n\nPlus, Pro's Fix Generator auto-drafts your llms.txt, FAQPage JSON-LD, and Organization schema from your actual sitemap. Copy, paste, ship.\n\nUpgrade: ${BASE_URL}/upgrade?source=what-you-missed\n\nNo commitment — cancel any time.`;
+  const text = `Hi ${firstName || "there"},\n\nYour free audit on ${hostname} gave you a score (${geoScore}/100) and a recommendation list. Here's what the same audit returns on Pro:\n\nEngines you didn't see:\n- Claude (Anthropic)\n- Gemini (Google — powers AI Overviews)\n- Perplexity (citation-first AI search)\n\nFree = ChatGPT only. Pro = all four, side by side.\n\nPlus, Pro's Fix Generator auto-drafts FAQPage and Organization JSON-LD plus citation-bot robots.txt additions. Copy, paste, ship.\n\nUpgrade: ${BASE_URL}/upgrade?source=what-you-missed\n\nNo commitment — cancel any time.`;
   return { subject, html, text };
 }
 
@@ -1182,7 +1187,7 @@ export function freeMonthPromoEmail(firstName: string, endsAt: Date, unsubscribe
     ${p(`Hi ${safeFirstName}, good news: for the next month, <strong>every feature of AEO Improvement is free on your account</strong> — no credit card, nothing to activate. It's already on.`)}
     <table cellpadding="0" cellspacing="0" width="100%" style="margin:8px 0 24px;">
       ${feature("🔬", "All 4 AI engines", "Run simulations against ChatGPT, Claude, Gemini, and Perplexity — see exactly who cites you where.")}
-      ${feature("🔧", "Fix Generator", "Auto-drafts your llms.txt, JSON-LD schema, and robots.txt patches. Copy and ship.")}
+      ${feature("🔧", "Fix Generator", "Auto-drafts JSON-LD schema and citation-bot robots.txt patches. Copy and ship.")}
       ${feature("📡", "Continuous monitoring", "Add your sites once and get re-audited on a schedule, with alerts when your score moves.")}
       ${feature("📊", "Competitor tracking & sentiment", "The citation gap table and brand sentiment analysis, fully unlocked.")}
       ${feature("📈", "Top-tier limits", "500 audits and 150 simulations this month, with 25 prompts per run.")}
@@ -1200,7 +1205,7 @@ export function freeMonthPromoEmail(firstName: string, endsAt: Date, unsubscribe
     `All 4 engines, Fix Generator, monitoring, competitor tracking — free on your account until ${endDate}.`,
     unsubscribeUrl,
   );
-  const text = `Hi ${firstName || "there"},\n\nGood news: for the next month, every feature of AEO Improvement is free on your account — no credit card, nothing to activate.\n\nNow unlocked for you:\n- All 4 AI engines (ChatGPT, Claude, Gemini, Perplexity)\n- Fix Generator (llms.txt, JSON-LD, robots.txt)\n- Continuous monitoring with alerts\n- Competitor tracking & sentiment analysis\n- 500 audits + 150 simulations this month\n\nFree until ${endDate}: ${BASE_URL}\n\nAfter that your account simply returns to your current plan — nothing is charged. We'll remind you a few days before.`;
+  const text = `Hi ${firstName || "there"},\n\nGood news: for the next month, every feature of AEO Improvement is free on your account — no credit card, nothing to activate.\n\nNow unlocked for you:\n- All 4 AI engines (ChatGPT, Claude, Gemini, Perplexity)\n- Fix Generator (JSON-LD, citation-bot robots.txt, optional llms.txt)\n- Continuous monitoring with alerts\n- Competitor tracking & sentiment analysis\n- 500 audits + 150 simulations this month\n\nFree until ${endDate}: ${BASE_URL}\n\nAfter that your account simply returns to your current plan — nothing is charged. We'll remind you a few days before.`;
   return { subject, html, text };
 }
 
@@ -1218,7 +1223,7 @@ export function trialEndingSoonEmail(firstName: string, endsAt: Date, unsubscrib
     ${p("After that, your account moves to the free plan and you'll lose:")}
     <table cellpadding="0" cellspacing="0" width="100%" style="margin:8px 0 24px;">
       ${feature("🔬", "All 4 AI engines", "Simulations drop back to ChatGPT only — no more Claude, Gemini, or Perplexity results.")}
-      ${feature("🔧", "Fix Generator", "No more auto-generated llms.txt, JSON-LD schema, or robots.txt patches.")}
+      ${feature("🔧", "Fix Generator", "No more auto-generated JSON-LD schema or citation-bot robots.txt patches.")}
       ${feature("📡", "Continuous monitoring", "Scheduled re-audits and score alerts stop running for your sites.")}
       ${feature("📊", "Competitor tracking & sentiment", "The citation gap table and brand sentiment analysis lock again.")}
     </table>

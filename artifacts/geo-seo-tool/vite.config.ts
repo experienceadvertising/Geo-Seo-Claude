@@ -38,6 +38,12 @@ function spaFallback(): Plugin {
     name: "spa-fallback",
     configurePreviewServer(server) {
       server.middlewares.use((req, _res, next) => {
+        const assetPath = (req.url ?? "").split("?")[0];
+        if (/\/assets\/.*\.[a-f0-9]{8,}\.(?:js|css|woff2?|png|jpe?g|webp|svg)$/i.test(assetPath)) {
+          _res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+        } else if (assetPath.endsWith(".html") || !/\.[a-z0-9]+$/i.test(assetPath)) {
+          _res.setHeader("Cache-Control", "public, max-age=0, must-revalidate");
+        }
         const url = req.url ?? "/";
         const pathname = url.split("?")[0];
         const hasFileExtension = /\.[a-zA-Z0-9]{1,10}$/.test(pathname);
@@ -98,6 +104,15 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          charts: ["recharts"],
+          markdown: ["react-markdown"],
+          query: ["@tanstack/react-query"],
+        },
+      },
+    },
   },
   server: {
     port,

@@ -45,7 +45,7 @@ export default function Methodology() {
         path="/methodology"
         ogType="article"
         publishedTime="2026-05-05"
-        modifiedTime="2026-05-05"
+        modifiedTime="2026-07-22"
         authorName={PRIMARY_AUTHOR.name}
         jsonLd={[articleJsonLd, methodologyBreadcrumb]}
       />
@@ -56,17 +56,48 @@ export default function Methodology() {
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Methodology</h1>
           <Badge variant="outline" className="font-mono text-xs gap-1">
-            <RefreshCw className="h-3 w-3" /> v2026.05
+            <RefreshCw className="h-3 w-3" /> v2026.07
           </Badge>
         </div>
         <p className="mt-2 text-sm text-muted-foreground">
-          By <a href={PRIMARY_AUTHOR.url} rel="author" className="text-emerald-700 hover:underline font-medium">{PRIMARY_AUTHOR.name}</a>, {PRIMARY_AUTHOR.jobTitle} · Last reviewed May 5, 2026
+          By <a href={PRIMARY_AUTHOR.url} rel="author" className="text-emerald-700 hover:underline font-medium">{PRIMARY_AUTHOR.name}</a>, {PRIMARY_AUTHOR.jobTitle} · Last reviewed July 22, 2026
         </p>
         <p className="mt-2 text-muted-foreground">
           How AEO Improvement turns a URL into a prioritized list of recommendations,
           and where each claim comes from.
         </p>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">The six-dimension AEO score</CardTitle>
+          <CardDescription>The UI, API, PDF report, and benchmark use this same weighted formula.</CardDescription>
+        </CardHeader>
+        <CardContent className="text-sm leading-relaxed space-y-4">
+          <div className="grid sm:grid-cols-2 gap-3">
+            {[
+              ["Citability", "25%", "Self-contained, answer-ready content blocks"],
+              ["Brand Authority", "20%", "Confident external entity signals"],
+              ["AI Crawler Access", "20%", "Search/live-fetch bots, indexability, snippet and raw HTML access"],
+              ["Technical SEO", "15%", "HTTPS, canonical, sitemap, server visibility, metadata"],
+              ["Schema Markup", "10%", "Weighted Organization, FAQ, Article, Product, HowTo and breadcrumb markup"],
+              ["Platform Optimization", "10%", "Average readiness across ChatGPT, Claude, Perplexity and Google AI Overviews"],
+            ].map(([name, weight, detail]) => <div key={name} className="border rounded-md p-3"><div className="flex justify-between font-semibold"><span>{name}</span><span>{weight}</span></div><p className="mt-1 text-xs text-muted-foreground">{detail}</p></div>)}
+          </div>
+          <p><strong>AI Crawler Access formula:</strong> 70% comes from citation-path bot access, 15% from the absence of <code>noindex</code>, 10% from snippet permission, and 5% from substantive raw HTML. Training-only bots such as GPTBot, ClaudeBot, and Google-Extended do not affect this score.</p>
+          <p><strong>llms.txt:</strong> contributes only a 2-point optional technical bonus. It does not create a quick win and is not presented as a citation gate.</p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle className="text-base">July 2026 methodology change log</CardTitle></CardHeader>
+        <CardContent className="text-sm leading-relaxed space-y-2">
+          <p><strong>Freshness moved to the front:</strong> visible last-updated dates and genuinely refreshed evidence are prioritized before optional files.</p>
+          <p><strong>Crawler roles were separated:</strong> search-index and live-fetch bots now determine citation access; training bots are reported as an IP choice.</p>
+          <p><strong>llms.txt was downgraded:</strong> it remains available as an optional content map but no longer appears as a headline fix.</p>
+          <p><strong>Entity confidence was tightened:</strong> ambiguous external profiles are omitted from generated <code>sameAs</code> markup unless the match passes a business-entity confidence check.</p>
+        </CardContent>
+      </Card>
 
       {/* ── Section 1: What the research actually says ─────────────────────── */}
       <Card>
@@ -79,7 +110,7 @@ export default function Methodology() {
         <CardContent className="text-sm leading-relaxed space-y-3">
           <p>
             The starting point for our research-tagged recommendations is{" "}
-            <em>GEO: Generative Engine Optimization</em> by Aggarwal, Murahari et al.
+            <a className="text-emerald-700 underline" href="https://dl.acm.org/doi/10.1145/3637528.3671900" target="_blank" rel="noreferrer"><em>GEO: Generative Engine Optimization</em></a> by Aggarwal, Murahari et al.
             (Princeton / IIT Delhi, KDD 2024). The paper introduces a benchmark of
             ten content-modification methods and reports their average effect on
             AI-engine citation behavior across a held-out prompt corpus.
@@ -141,6 +172,17 @@ export default function Methodology() {
             assume our recommendations are tuned for pages that are <em>not
             already</em> dominating their target queries.
           </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle className="text-base">Primary technical references</CardTitle></CardHeader>
+        <CardContent className="text-sm leading-relaxed">
+          <ul className="list-disc pl-5 space-y-2">
+            <li><a className="text-emerald-700 underline" href="https://platform.openai.com/docs/bots" target="_blank" rel="noreferrer">OpenAI crawler documentation</a> for OAI-SearchBot, ChatGPT-User, and GPTBot roles.</li>
+            <li><a className="text-emerald-700 underline" href="https://developers.google.com/search/docs/crawling-indexing/robots/intro" target="_blank" rel="noreferrer">Google robots.txt documentation</a> and <a className="text-emerald-700 underline" href="https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data" target="_blank" rel="noreferrer">structured data guidance</a>.</li>
+            <li><a className="text-emerald-700 underline" href="https://schema.org/Organization" target="_blank" rel="noreferrer">Schema.org Organization</a> and <a className="text-emerald-700 underline" href="https://schema.org/FAQPage" target="_blank" rel="noreferrer">FAQPage</a> definitions.</li>
+          </ul>
         </CardContent>
       </Card>
 

@@ -112,7 +112,7 @@ const pricingFaqJsonLd = {
       name: "What's the difference between Pro and Agency?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Pro ($79/mo or $790/yr) is built for one site or one in-house team: 100 audits/month, 30 simulations/month, all four engines (ChatGPT, Claude, Gemini, Perplexity), fan-out prompt mode with Topical Breadth scoring, the Fix Generator, sentiment analysis, Projects continuous monitoring with alerts, real AI crawler hit tracking, competitor Share of Voice, and 1-year trend history. Agency ($249/mo or $2,490/yr) is for teams managing many client sites: 500 audits/month, 150 simulations/month, Google Analytics AI-referral integration, agency-branded reports, multi-client management, 2-year trend history, and a dedicated account manager.",
+        text: "Pro ($79/mo or $790/yr) includes 100 audits/month, 30 simulations/month, all four engines, fan-out mode, the Fix Generator, Projects monitoring, crawler pixel request tracking, competitor Share of Voice, and 1-year history. Agency ($249/mo or $2,490/yr) raises limits to 500 audits, 150 simulations, 50 monitored sites, Google Analytics AI-referral reporting, and 2-year history.",
       },
     },
     {
@@ -157,10 +157,10 @@ const PLAN_FEATURES = {
     "ChatGPT, Claude, Gemini & Perplexity",
     "Fan-out mode + Topical Breadth score",
     "Sentiment & tone analysis",
-    "Fix Generator (llms.txt, JSON-LD, robots.txt)",
+    "Fix Generator (JSON-LD, robots.txt, optional llms.txt)",
     "Competitor citation gap + Share of Voice",
     "Projects — continuous monitoring & alerts",
-    "Real AI crawler hit tracking (embed pixel)",
+    "AI crawler pixel request tracking",
     "1-year visibility trend history",
     "Priority email support",
   ],
@@ -170,10 +170,8 @@ const PLAN_FEATURES = {
     "Everything in Pro",
     "Google Analytics AI-referral integration",
     "2-year visibility trend history",
-    "Agency-branded reports",
-    "Multiple client site management",
-    "Dedicated account manager",
-    "Priority support & onboarding",
+    "Up to 50 client sites in Projects",
+    "Priority email support",
   ],
 };
 

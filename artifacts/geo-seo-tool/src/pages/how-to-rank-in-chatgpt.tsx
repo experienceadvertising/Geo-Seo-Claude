@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { SEO, breadcrumbJsonLd } from "@/components/seo";
 import { AUTHOR_PERSON_LD, PRIMARY_AUTHOR, PUBLISHER_ORG } from "@/data/author";
+import { GuideSources } from "@/components/guide-sources";
 
 const PAGE_TITLE = "How to Rank in ChatGPT: Get Your Site Cited in AI Answers (2026)";
 const PAGE_DESC =
@@ -107,7 +108,7 @@ export default function HowToRankInChatGPT() {
         path="/how-to-rank-in-chatgpt"
         ogType="article"
         publishedTime="2026-05-05"
-        modifiedTime="2026-05-05"
+        modifiedTime="2026-07-22"
         authorName={PRIMARY_AUTHOR.name}
         jsonLd={[articleJsonLd, faqJsonLd, breadcrumb]}
       />
@@ -123,7 +124,7 @@ export default function HowToRankInChatGPT() {
               How to rank in ChatGPT: get your site cited in AI answers
             </h1>
             <p className="text-sm text-slate-500">
-              By <a href={PRIMARY_AUTHOR.url} rel="author" className="text-emerald-700 hover:underline font-medium">{PRIMARY_AUTHOR.name}</a>, {PRIMARY_AUTHOR.jobTitle} · Updated May 5, 2026
+              By <a href={PRIMARY_AUTHOR.url} rel="author" className="text-emerald-700 hover:underline font-medium">{PRIMARY_AUTHOR.name}</a>, {PRIMARY_AUTHOR.jobTitle} · Updated July 22, 2026
             </p>
             <p className="text-lg text-slate-600 leading-relaxed">
               ChatGPT now answers questions with citations from the live web. This guide covers
@@ -387,6 +388,8 @@ export default function HowToRankInChatGPT() {
               <li><Link href="/best-aeo-tools" className="text-emerald-600 hover:underline">Best AEO tools in 2026</Link></li>
             </ul>
           </section>
+
+          <GuideSources />
 
           {/* CTA */}
           <Card className="border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50/30">

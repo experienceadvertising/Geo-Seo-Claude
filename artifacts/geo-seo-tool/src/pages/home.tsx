@@ -209,15 +209,7 @@ function SignedOutLanding() {
   return (
     <div className="flex-1 w-full">
       <section className="relative overflow-hidden">
-        <div aria-hidden className="absolute inset-0 -z-10">
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-emerald-950/40 dark:via-background dark:to-teal-950/40" />
-          <div className="absolute top-0 left-1/4 w-[600px] h-[600px] rounded-full bg-emerald-400/20 blur-[120px]" />
-          <div className="absolute top-1/3 right-0 w-[500px] h-[500px] rounded-full bg-teal-400/20 blur-[120px]" />
-          <div className="absolute inset-0 opacity-[0.15] dark:opacity-[0.08]" style={{
-            backgroundImage: "radial-gradient(circle, currentColor 1px, transparent 1px)",
-            backgroundSize: "24px 24px",
-          }} />
-        </div>
+        <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-br from-emerald-50 via-white to-cyan-50 dark:from-emerald-950/40 dark:via-background dark:to-cyan-950/30" />
 
         <div className="w-full max-w-7xl mx-auto px-4 md:px-8 py-16 md:py-24">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
@@ -226,11 +218,7 @@ function SignedOutLanding() {
                 <Sparkles className="h-3 w-3" /> Answer Engine Optimization
               </div>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.05]">
-                Get cited by{" "}
-                <span className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 bg-clip-text text-transparent">
-                  the AI engines
-                </span>
-                {" "}that matter.
+                See why AI engines cite your competitors
               </h1>
               <p className="text-lg md:text-xl text-muted-foreground max-w-[560px]">
                 Audit your site's citability across ChatGPT, Claude, Gemini, and Perplexity.
@@ -241,9 +229,9 @@ function SignedOutLanding() {
               <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm text-foreground/80 max-w-md">
                 {[
                   "Live prompts across 4 AI engines",
-                  "Real AI crawler hit tracking",
+                  "AI crawler pixel request tracking",
                   "Continuous site monitoring & alerts",
-                  "Fix Generator for llms.txt & JSON-LD",
+                  "Fix Generator for JSON-LD & robots.txt",
                   "Google Analytics AI-referral traffic",
                   "First month free — every feature, no card",
                 ].map(item => (
@@ -311,7 +299,7 @@ function SignedOutLanding() {
                 gradient: "from-amber-500 to-orange-500",
                 badge: null,
                 title: "Fix Generator",
-                body: "Auto-drafts your llms.txt, JSON-LD schema blocks (FAQPage, Organization), and robots.txt entries based on your specific audit gaps. Copy and ship the same day. No guessing required.",
+                body: "Auto-drafts JSON-LD schema blocks (FAQPage, Organization) and citation-bot robots.txt entries based on your specific audit gaps. An optional llms.txt draft is included but does not affect recommendations.",
               },
               {
                 icon: Activity,
@@ -380,7 +368,7 @@ function SignedOutLanding() {
                 step: "03",
                 gradient: "from-emerald-500 to-teal-600",
                 title: "Fix",
-                body: "Copy ready-to-ship llms.txt, JSON-LD, and robots.txt snippets from the Fix Generator. No agency, no guesswork, no waiting.",
+                body: "Copy ready-to-ship JSON-LD and citation-bot robots.txt snippets from the Fix Generator. Track each recommendation to completion and re-scan to measure the change.",
               },
               {
                 step: "04",
@@ -664,7 +652,7 @@ function AeoJourneyCard({ audits }: { audits: Array<{ id: number; url: string; g
                   <div className="text-xs font-semibold mb-1 flex items-center gap-1.5">
                     <Zap className="h-3 w-3 text-emerald-600" /> Fix Generator
                   </div>
-                  <div className="text-xs text-muted-foreground leading-snug">Auto-draft your llms.txt, JSON-LD & robots.txt. Copy and ship.</div>
+                  <div className="text-xs text-muted-foreground leading-snug">Auto-draft JSON-LD and citation-bot robots.txt rules. Copy and ship.</div>
                 </div>
               </Link>
               <Link href="/pricing">
@@ -697,8 +685,8 @@ const AEO_TIPS: Array<{ icon: string; title: string; body: string }> = [
   },
   {
     icon: "📄",
-    title: "Publish an llms.txt at your root",
-    body: "An llms.txt is a plain-text manifest at /llms.txt that tells LLMs which pages to prioritise and how to summarise your brand. It's emerging as a de-facto standard. Early adoption is cheap and signals intent to rank in AI answers.",
+    title: "Keep llms.txt optional",
+    body: "Crawler-log evidence shows llms.txt is rarely requested and no major answer engine treats it as a citation gate. Spend effort on fresh, server-visible content, citation-path bot access, and clear entity schema first.",
   },
   {
     icon: "❓",
@@ -803,7 +791,7 @@ const QUICK_WINS: string[] = [
   "Open your robots.txt and confirm it doesn't block GPTBot, ClaudeBot, PerplexityBot, or Google-Extended.",
   "View Source on your homepage. Your value prop and key claims should appear in the raw HTML, not after a JS render.",
   "Add FAQPage JSON-LD to your single highest-traffic page first. Validate with Google's Rich Results Test.",
-  "Create a one-page llms.txt at your root listing your most important URLs. Even a minimal version helps.",
+  "Treat llms.txt as an optional content map after citation-critical work is complete.",
   "Add Organization schema with sameAs links to your Wikipedia, LinkedIn, Crunchbase, and X profiles.",
   "Check whether your best original data or research is behind a form or paywall. AI credits whoever it can read, not whoever wrote it. Publish a crawlable version.",
   "Search your brand name on Reddit and Wikipedia right now. LLM training data draws heavily from both. A gap there is a gap in how AI describes you.",
@@ -912,7 +900,7 @@ function DashboardLearningHub() {
 }
 
 function SignedInDashboard() {
-  const [url, setUrl] = React.useState("");
+  const [url, setUrl] = React.useState(() => localStorage.getItem("pendingAuditUrl") || "");
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -921,6 +909,8 @@ function SignedInDashboard() {
   const { data: audits, isLoading: auditsLoading } = useListAudits();
   const analyzeUrl = useAnalyzeUrl();
   const queryClient = useQueryClient();
+
+  React.useEffect(() => { localStorage.removeItem("pendingAuditUrl"); }, []);
 
   // Post-checkout success handling. Stripe redirects successful upgrades to
   // `/?checkout=success` so users land on their dashboard (where they can
@@ -975,6 +965,7 @@ function SignedInDashboard() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
+            aria-label="Website URL to audit"
             className="pl-10 h-11 text-base"
             placeholder="https://yourwebsite.com"
             value={url}
@@ -1074,7 +1065,7 @@ function SignedInDashboard() {
 export default function Home() {
   const { isSignedIn, isLoaded } = useAuth();
 
-  if (!isLoaded) return null;
+  if (!isLoaded) return <div className="min-h-[50vh] flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" aria-label="Loading account" /></div>;
   if (!isSignedIn) return <SignedOutLanding />;
   return <SignedInDashboard />;
 }

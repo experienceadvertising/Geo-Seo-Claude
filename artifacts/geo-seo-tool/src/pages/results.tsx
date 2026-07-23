@@ -24,7 +24,7 @@ import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Responsi
 import ReactMarkdown from "react-markdown";
 import { useToast } from "@/hooks/use-toast";
 import { Helmet } from "react-helmet-async";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { usePlan } from "@/hooks/usePlan";
 import { UpgradePrompt } from "@/components/upgrade-prompt";
 
@@ -33,11 +33,15 @@ export default function Results() {
   const id = parseInt(params.id || "0", 10);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const reRun = useAnalyzeUrl();
   const { isPro } = usePlan();
   const [showFixes, setShowFixes] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [approvedSameAs, setApprovedSameAs] = useState<string[]>([]);
+  const [pdfLoading, setPdfLoading] = useState(false);
   const fixesRef = useRef<HTMLDivElement | null>(null);
+  const [recommendationFilter, setRecommendationFilter] = useState<"open" | "all" | "done">("open");
 
   const { data: audit, isLoading, isError } = useGetAudit(id, {
     query: {
@@ -51,7 +55,7 @@ export default function Results() {
     return [
       { subject: 'Citability', A: audit.scores.citability, fullMark: 100 },
       { subject: 'Brand Authority', A: audit.scores.brandAuthority, fullMark: 100 },
-      { subject: 'Content Quality', A: audit.scores.contentQuality, fullMark: 100 },
+      { subject: 'AI Crawler Access', A: audit.scores.aiCrawlerAccess, fullMark: 100 },
       { subject: 'Technical SEO', A: audit.scores.technicalSeo, fullMark: 100 },
       { subject: 'Structured Data', A: audit.scores.structuredData, fullMark: 100 },
       { subject: 'Platform Opt', A: audit.scores.platformOptimization, fullMark: 100 },
@@ -62,6 +66,32 @@ export default function Results() {
     if (!audit?.url) return null;
     try { return new URL(audit.url).hostname.replace(/^www\./, ""); } catch { return null; }
   }, [audit?.url]);
+
+  const progressKey = ["recommendation-progress", domain];
+  const { data: recommendationProgress } = useQuery<{ completed: Array<{ recommendationId: string; completedAt: string }> }>({
+    queryKey: progressKey,
+    queryFn: () => customFetch(`/api/geo/recommendation-progress?domain=${encodeURIComponent(domain!)}`),
+    enabled: !!domain,
+    retry: false,
+  });
+  const completedRecommendationIds = useMemo(
+    () => new Set((recommendationProgress?.completed ?? []).map((item) => item.recommendationId)),
+    [recommendationProgress],
+  );
+  const currentCompletedCount = useMemo(
+    () => audit?.recommendations?.filter((item) => completedRecommendationIds.has(item.id)).length ?? 0,
+    [audit?.recommendations, completedRecommendationIds],
+  );
+  const updateRecommendation = useMutation({
+    mutationFn: ({ recommendationId, completed }: { recommendationId: string; completed: boolean }) =>
+      customFetch("/api/geo/recommendation-progress", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ domain, recommendationId, completed }),
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: progressKey }),
+    onError: () => toast({ title: "Progress not saved", description: "Please try again.", variant: "destructive" }),
+  });
 
   const { data: historyData } = useQuery({
     queryKey: ["audit-history", domain],
@@ -87,6 +117,12 @@ export default function Results() {
     staleTime: Infinity,
     retry: false,
   });
+  const schemaBlocksForCopy = useMemo(() => {
+    if (!fixesData?.schemaBlocks) return [];
+    return fixesData.schemaBlocks.map((block: Record<string, any>) =>
+      block["@type"] === "Organization" ? { ...block, sameAs: approvedSameAs } : block,
+    );
+  }, [fixesData, approvedSameAs]);
 
   // Scroll the Fix Generator panel into view when it opens, so paid users
   // immediately see the result instead of clicking a button with no apparent
@@ -103,6 +139,25 @@ export default function Results() {
       setCopiedKey(key);
       setTimeout(() => setCopiedKey(null), 2000);
     } catch { /* ignore */ }
+  };
+
+  const downloadPdf = async () => {
+    setPdfLoading(true);
+    try {
+      const response = await fetch(`/api/geo/audits/${audit!.id}/pdf`, { credentials: "include" });
+      if (!response.ok) throw new Error("PDF request failed");
+      const blob = await response.blob();
+      const href = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = href;
+      link.download = `aeo-audit-${domain || audit!.id}.pdf`;
+      link.click();
+      URL.revokeObjectURL(href);
+    } catch {
+      toast({ title: "PDF download failed", description: "Please try again.", variant: "destructive" });
+    } finally {
+      setPdfLoading(false);
+    }
   };
 
   if (isLoading) {
@@ -159,11 +214,9 @@ export default function Results() {
             {audit.brandName && (<><span>•</span><span>Brand: <span className="text-foreground">{audit.brandName}</span></span></>)}
           </div>
           <div className="pt-2 flex items-center gap-2 flex-wrap">
-            <a href={`/api/geo/audits/${audit.id}/pdf`} target="_blank" rel="noopener noreferrer" data-testid="link-download-pdf">
-              <Button variant="outline" size="sm" className="font-mono text-xs gap-2" data-testid="button-download-pdf">
-                <Download className="h-3.5 w-3.5" /> Download PDF Report
-              </Button>
-            </a>
+            <Button variant="outline" size="sm" className="font-mono text-xs gap-2" data-testid="button-download-pdf" onClick={downloadPdf} disabled={pdfLoading}>
+              {pdfLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />} {pdfLoading ? "Preparing PDF..." : "Download PDF Report"}
+            </Button>
             <Link href={`/simulate/${audit.id}`}>
               <Button size="sm" className="font-mono text-xs gap-2" data-testid="button-run-simulation">
                 <Sparkles className="h-3.5 w-3.5" /> Run Prompt Simulation
@@ -216,6 +269,13 @@ export default function Results() {
           </div>
         </div>
       </div>
+
+      {reRun.isPending && (
+        <div className="rounded-md border bg-muted/30 p-4 flex items-center gap-3 text-sm" role="status">
+          <Loader2 className="h-5 w-5 animate-spin text-primary" />
+          <div><div className="font-medium">Re-scanning {domain}</div><div className="text-xs text-muted-foreground">Fetching the page, checking crawler rules, recomputing scores, and generating a new briefing.</div></div>
+        </div>
+      )}
 
       {/* AI Insights Summary */}
       {audit.aiInsights && (
@@ -298,16 +358,20 @@ export default function Results() {
               const abBlocks = blocks.filter(b => b.grade === "A" || b.grade === "B").length;
               const avgCit = audit.avgCitabilityScore ?? (blocks.length ? Math.round(blocks.reduce((s, b) => s + b.score, 0) / blocks.length) : 0);
               const wc = audit.wordCount ?? 0;
-              const wcContrib = Math.min(40, wc > 1000 ? 40 : Math.round(wc / 25));
-              const titleContrib = audit.title ? 10 : 0;
-              const descContrib = audit.description ? 15 : 0;
-              const blockContrib = abBlocks * 3;
               const foundSignals = (audit.brandSignals ?? []).filter(s => s.found).length;
               const totalSignals = (audit.brandSignals ?? []).length;
-              const presentSchemas = (audit.schemaTypes ?? []).filter(s => s.present).length;
-              const totalSchemas = (audit.schemaTypes ?? []).length;
-              const allowedCrawlers = (audit.crawlers ?? []).filter(c => c.allowed).length;
-              const totalCrawlers = (audit.crawlers ?? []).length;
+              const presentSchemaNames = new Set((audit.schemaTypes ?? []).filter(s => s.present).map(s => s.type));
+              const schemaPoints = Math.min(100,
+                (presentSchemaNames.has("Organization") || presentSchemaNames.has("LocalBusiness") ? 25 : 0) +
+                (presentSchemaNames.has("WebSite") ? 15 : 0) +
+                (presentSchemaNames.has("FAQPage") ? 30 : 0) +
+                (presentSchemaNames.has("Article") ? 20 : 0) +
+                (presentSchemaNames.has("Product") ? 20 : 0) +
+                (presentSchemaNames.has("HowTo") ? 15 : 0) +
+                (presentSchemaNames.has("BreadcrumbList") ? 10 : 0));
+              const citationCrawlerNames = new Set(["OAI-SearchBot", "ChatGPT-User", "Claude-SearchBot", "Claude-User", "PerplexityBot", "Perplexity-User", "BingBot", "Applebot"]);
+              const citationCrawlers = (audit.crawlers ?? []).filter(c => citationCrawlerNames.has(c.name));
+              const allowedCitationCrawlers = citationCrawlers.filter(c => c.allowed).length;
               const platformAvg = audit.platforms?.length
                 ? Math.round(audit.platforms.reduce((s, p) => s + p.score, 0) / audit.platforms.length)
                 : 0;
@@ -336,21 +400,21 @@ export default function Results() {
                       { label: "Confirmed signals", value: `${foundSignals} of ${totalSignals}` },
                       { label: "Brand", value: audit.brandName || "—" },
                     ]}
-                    formula="baseline 10 + Wikipedia(35) + DuckDuckGo(20) + GitHub(6–20) + Org schema(10) + llms.txt(5). See Brand Authority Signals below."
+                    formula="baseline 10 + Wikipedia(35) + DuckDuckGo(20) + GitHub(6–20) + Organization schema(10). Unavailable third-party checks receive a neutral 5-point adjustment."
                   />
                   <ScoreCard
-                    title="Content Quality"
-                    score={audit.scores.contentQuality}
+                    title="AI Crawler Access"
+                    score={audit.scores.aiCrawlerAccess}
                     weight="20%"
-                    desc="Readability & depth"
-                    icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+                    desc="Citation-path bot access"
+                    icon={<Bot className="h-4 w-4 text-muted-foreground" />}
                     signals={[
-                      { label: `Word count (${wc.toLocaleString()})`, value: `+${wcContrib}` },
-                      { label: `Title tag${audit.title ? "" : " (missing)"}`, value: `+${titleContrib}` },
-                      { label: `Meta description${audit.description ? "" : " (missing)"}`, value: `+${descContrib}` },
-                      { label: `A/B citability blocks (${abBlocks} × 3)`, value: `+${blockContrib}` },
+                      { label: "Search/live-fetch bots", value: `${allowedCitationCrawlers} of ${citationCrawlers.length} allowed` },
+                      { label: "Indexing directive", value: audit.technicalIssues?.some(i => /noindex/i.test(i)) ? "Blocked" : "Allowed" },
+                      { label: "Snippet permission", value: audit.hasNoSnippet ? "Blocked" : "Allowed" },
+                      { label: "Raw HTML visibility", value: audit.requiresJavaScript ? "JS-dependent" : "Readable" },
                     ]}
-                    formula="Sum of contributions, capped at 100. Differs from Citability because it weights word count and on-page metadata as well as block quality."
+                    formula="70% citation-path bot access + 15% indexable + 10% snippets allowed + 5% readable without JavaScript. Training bots do not affect this score."
                   />
                   <ScoreCard
                     title="Technical SEO"
@@ -361,10 +425,10 @@ export default function Results() {
                     signals={[
                       { label: "HTTPS", value: audit.hasHttps ? "+10" : "0" },
                       { label: "Canonical tag", value: audit.hasCanonical ? "+10" : "0" },
-                      { label: "llms.txt", value: audit.hasLlmsTxt ? "+10" : "0" },
+                      { label: "llms.txt (optional)", value: audit.hasLlmsTxt ? "+2" : "0" },
                       { label: "Long-form (>3k words)", value: wc > 3000 ? "+10" : "0" },
                     ]}
-                    formula="baseline 60 + bonuses listed; minus penalties for SPA-only render or low word count."
+                    formula="baseline 60 + HTTPS(10) + canonical(10) + sitemap(8) + optional llms.txt(2) + long-form(10), minus noindex, nosnippet, or JS-only penalties."
                   />
                   <ScoreCard
                     title="Structured Data"
@@ -373,18 +437,18 @@ export default function Results() {
                     desc="Schema.org markup"
                     icon={<Code2 className="h-4 w-4 text-muted-foreground" />}
                     signals={[
-                      { label: "Schemas detected", value: `${presentSchemas} of ${totalSchemas}` },
+                      { label: "Weighted schema points", value: `${schemaPoints}/100` },
                     ]}
-                    formula={`round(${presentSchemas} / ${totalSchemas} × 100)`}
+                    formula="Organization/LocalBusiness 25, WebSite 15, FAQPage 30, Article/Product 20, HowTo 15, BreadcrumbList 10; capped at 100."
                   />
                   <ScoreCard
                     title="Platform Opt"
                     score={audit.scores.platformOptimization}
                     weight="10%"
-                    desc="LLMs.txt & targeted"
+                    desc="Per-engine readiness"
                     icon={<Bot className="h-4 w-4 text-muted-foreground" />}
                     signals={[
-                      { label: "AI crawlers allowed", value: `${allowedCrawlers} of ${totalCrawlers}` },
+                      { label: "Citation bots allowed", value: `${allowedCitationCrawlers} of ${citationCrawlers.length}` },
                       { label: "Platform score avg", value: `${platformAvg}/100` },
                     ]}
                     formula="Average of the four platform scores (ChatGPT, Claude, Perplexity, Google AI Overviews)."
@@ -409,6 +473,20 @@ export default function Results() {
                 Read our methodology
               </Link>.
             </p>
+            <div className="pt-3 flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden" aria-label={`${currentCompletedCount} recommendations completed`}>
+                <div className="h-full bg-emerald-500 transition-all" style={{ width: `${Math.min(100, (currentCompletedCount / Math.max(1, audit.recommendations.length)) * 100)}%` }} />
+              </div>
+              <span className="text-xs font-medium tabular-nums">{currentCompletedCount}/{audit.recommendations.length} complete</span>
+              <div className="inline-flex self-start rounded-md border bg-background p-0.5" aria-label="Filter recommendations">
+                {(["open", "all", "done"] as const).map((filter) => (
+                  <button key={filter} type="button" onClick={() => setRecommendationFilter(filter)} aria-pressed={recommendationFilter === filter}
+                    className={`px-2.5 py-1 text-xs rounded ${recommendationFilter === filter ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}>
+                    {filter === "open" ? "To do" : filter === "done" ? "Done" : "All"}
+                  </button>
+                ))}
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="pt-6">
             {/* Legacy notice: audits stored before source-tracking shipped have no
@@ -421,7 +499,10 @@ export default function Results() {
             )}
             {(() => {
               const schemaV1 = audit.recommendationsSchemaVersion === "v1";
-              const allRecs = audit.recommendations.slice(0, 14);
+              const allRecs = audit.recommendations.slice(0, 14).filter((r) => {
+                const done = completedRecommendationIds.has(r.id);
+                return recommendationFilter === "all" || (recommendationFilter === "done" ? done : !done);
+              });
               const researchRecs = allRecs.filter(r => r.source?.type === "research" || r.source?.type === "internal_benchmark");
               const consensusRecs = allRecs.filter(r => !r.source || r.source?.type === "practitioner_consensus");
 
@@ -432,14 +513,25 @@ export default function Results() {
                   : r.priority === "medium" ? "bg-teal-100 text-teal-700 border-teal-200"
                   : "bg-slate-100 text-slate-600 border-slate-200";
                 const showBadge = schemaV1 && r.source;
+                const done = completedRecommendationIds.has(r.id);
                 return (
-                  <li key={r.id ?? i} className="flex items-start gap-3 text-sm">
+                  <li key={r.id ?? i} className={`flex items-start gap-3 text-sm ${done ? "opacity-65" : ""}`}>
+                    <button
+                      type="button"
+                      className={`mt-0.5 h-5 w-5 shrink-0 rounded border flex items-center justify-center ${done ? "bg-emerald-600 border-emerald-600 text-white" : "border-muted-foreground/40 hover:border-emerald-600"}`}
+                      aria-label={done ? `Mark ${r.title} as not done` : `Mark ${r.title} as done`}
+                      title={done ? "Mark as not done" : "Mark as done"}
+                      disabled={updateRecommendation.isPending}
+                      onClick={() => updateRecommendation.mutate({ recommendationId: r.id, completed: !done })}
+                    >
+                      {done && <Check className="h-3.5 w-3.5" />}
+                    </button>
                     <span className={`shrink-0 inline-flex items-center justify-center px-2 py-0.5 rounded border text-[10px] font-mono font-bold uppercase ${pStyle}`}>
                       {r.priority}
                     </span>
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-semibold text-foreground">{r.title}</span>
+                        <span className={`font-semibold text-foreground ${done ? "line-through" : ""}`}>{r.title}</span>
                         {showBadge && r.source && <SourceBadge source={r.source} />}
                       </div>
                       <div className="text-[11px] text-muted-foreground italic mt-0.5">
@@ -453,6 +545,11 @@ export default function Results() {
 
               return (
                 <>
+                  {allRecs.length === 0 && (
+                    <div className="py-8 text-center text-sm text-muted-foreground">
+                      {recommendationFilter === "open" ? "Everything in this audit is complete. Re-scan to find the next opportunities." : "No recommendations in this view."}
+                    </div>
+                  )}
                   {researchRecs.length > 0 && (
                     <div className="mb-6">
                       <p className="text-[11px] font-mono uppercase tracking-wider text-emerald-700 mb-3 flex items-center gap-1.5">
@@ -566,7 +663,7 @@ export default function Results() {
                 Canonical: {audit.hasCanonical ? 'YES' : 'NO'}
               </div>
               <div className={`p-2 rounded border ${audit.hasLlmsTxt ? 'bg-green-500/5 border-green-500/20 text-green-600' : 'bg-yellow-500/5 border-yellow-500/20 text-yellow-600'}`}>
-                llms.txt: {audit.hasLlmsTxt ? 'YES' : 'NO'}
+                llms.txt (optional): {audit.hasLlmsTxt ? 'YES' : 'NO'}
               </div>
             </div>
           </CardContent>
@@ -720,13 +817,25 @@ export default function Results() {
 
                   {/* JSON-LD schema */}
                   <div className="space-y-2">
+                    {fixesData.sameAsCandidates?.length > 0 && (
+                      <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-950 space-y-2">
+                        <p className="font-semibold">Confirm external identity links before publishing</p>
+                        <p>Automated entity matching can be wrong for brands with common names. Only select a profile you control or have verified belongs to this organization.</p>
+                        {fixesData.sameAsCandidates.map((candidate: string) => (
+                          <label key={candidate} className="flex items-start gap-2 cursor-pointer">
+                            <input type="checkbox" className="mt-0.5" checked={approvedSameAs.includes(candidate)} onChange={(e) => setApprovedSameAs((current) => e.target.checked ? [...current, candidate] : current.filter((item) => item !== candidate))} />
+                            <span className="break-all">{candidate}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
                     <div className="flex items-center justify-between">
                       <div className="font-semibold text-sm font-mono">JSON-LD Schema Markup</div>
-                      <Button variant="outline" size="sm" className="gap-1.5 text-xs h-7" onClick={() => copyToClipboard(JSON.stringify(fixesData.schemaBlocks, null, 2), "schema")}>
+                      <Button variant="outline" size="sm" className="gap-1.5 text-xs h-7" onClick={() => copyToClipboard(JSON.stringify(schemaBlocksForCopy, null, 2), "schema")}>
                         {copiedKey === "schema" ? <><Check className="h-3 w-3 text-green-600" /> Copied</> : <><Copy className="h-3 w-3" /> Copy</>}
                       </Button>
                     </div>
-                    <pre className="text-xs font-mono bg-muted/60 rounded-lg p-4 overflow-auto max-h-80 whitespace-pre-wrap">{JSON.stringify(fixesData.schemaBlocks, null, 2)}</pre>
+                    <pre className="text-xs font-mono bg-muted/60 rounded-lg p-4 overflow-auto max-h-80 whitespace-pre-wrap">{JSON.stringify(schemaBlocksForCopy, null, 2)}</pre>
                   </div>
                 </>
               )}
@@ -735,7 +844,7 @@ export default function Results() {
         ) : (
           <UpgradePrompt
             feature="Fix Generator"
-            description="Generate ready-to-deploy llms.txt, JSON-LD schema, and robots.txt additions tailored to your audit findings. Copy and paste into your site in minutes."
+            description="Generate ready-to-deploy JSON-LD schema and citation-bot robots.txt additions, plus an optional llms.txt content map."
             requiredPlan="pro"
           />
         )

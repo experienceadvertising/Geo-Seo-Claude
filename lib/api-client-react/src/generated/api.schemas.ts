@@ -55,7 +55,7 @@ export interface PlatformScore {
 export type GeoAuditResultScores = {
   citability: number;
   brandAuthority: number;
-  contentQuality: number;
+  aiCrawlerAccess: number;
   technicalSeo: number;
   structuredData: number;
   platformOptimization: number;
@@ -176,6 +176,7 @@ export interface GeoRecommendation {
   id: string;
   title: string;
   detail: string;
+  url?: string;
   priority: GeoRecommendationPriority;
   category: GeoRecommendationCategory;
   impact: string;
@@ -206,6 +207,8 @@ export interface GeoAuditResult {
   hasLlmsTxt: boolean;
   hasHttps: boolean;
   hasCanonical: boolean;
+  /** True when robots directives forbid quoted snippets. */
+  hasNoSnippet?: boolean;
   wordCount: number;
   /** Words visible in the raw HTML response (what AI crawlers without JS see). */
   rawHtmlWordCount?: number;

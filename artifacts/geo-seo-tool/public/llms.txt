@@ -55,8 +55,8 @@ Scores below 40 are rated Poor (high priority to fix). Scores 40–69 are Modera
 ## Pricing
 
 - **Free**: 5 audits/month, 2 simulations/month, ChatGPT engine, basic AEO score, 30-day history
-- **Pro ($49/mo or $470/yr)**: 100 audits/month, 30 simulations/month, all four engines (ChatGPT, Claude, Gemini, Perplexity), Fix Generator, sentiment analysis, competitor citation gap, 1-year trend history
-- **Agency ($299/mo or $2,870/yr)**: 500 audits/month, 150 simulations/month, agency-branded reports, multi-client management, 2-year trend history, dedicated account manager
+- **Pro ($79/mo or $790/yr)**: 100 audits/month, 30 simulations/month, all four engines (ChatGPT, Claude, Gemini, Perplexity), Fix Generator, monitoring, competitor citation gap, 1-year trend history
+- **Agency ($249/mo or $2,490/yr)**: 500 audits/month, 150 simulations/month, 50 monitored sites, GA4 AI-referral reporting, and 2-year trend history
 
 ## Technology
 

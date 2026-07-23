@@ -90,8 +90,8 @@ export const EmailService = {
     return send(email, subject, html, text, "welcome", unsubscribeUrl);
   },
 
-  async sendWelcomeD3(email: string, firstName: string, unsubscribeUrl?: string): Promise<boolean> {
-    const { subject, html, text } = welcomeD3Email(firstName, unsubscribeUrl);
+  async sendWelcomeD3(email: string, firstName: string, hasAudit: boolean, unsubscribeUrl?: string): Promise<boolean> {
+    const { subject, html, text } = welcomeD3Email(firstName, hasAudit, unsubscribeUrl);
     return send(email, subject, html, text, "welcome-d3", unsubscribeUrl);
   },
 

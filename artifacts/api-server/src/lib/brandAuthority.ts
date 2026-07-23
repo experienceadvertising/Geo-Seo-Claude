@@ -1,4 +1,6 @@
 import { logger } from "./logger";
+import { isWikiArticleConfident } from "./entityConfidence";
+export { isWikiArticleConfident } from "./entityConfidence";
 
 export type SignalState = "found" | "not_found" | "unavailable";
 
@@ -7,6 +9,8 @@ export interface BrandSignal {
   found: boolean;
   state: SignalState;
   detail: string | null;
+  /** Canonical external profile URL, present only after a confident match. */
+  url?: string;
 }
 
 export interface BrandAuthorityResult {
@@ -222,32 +226,6 @@ async function wikipediaDisambigLinks(disambigTitle: string, brand: string): Pro
  * The domain check overrides this — if the domain literally appears in
  * the article text, it's always confident regardless of description.
  */
-const NON_TECH_ENTITY_DESC_RE =
-  /\b(album|ep|single|mixtape|song|soundtrack|film|movie|television|tv[\s-]series|tv[\s-]show|sitcom|miniseries|documentary|novel|book|comic\s+book|manga|anime|musician|singer|rapper|vocalist|band|actor|actress|athlete|politician|sportsperson|footballer|basketball\s+player|baseball\s+player|cricketer|painter|sculptor|visual\s+artist|poet|comedian|presenter|journalist|character|fictional)\b/i;
-
-/** Confidence check — does this Wikipedia article actually describe the brand/domain? */
-function isWikiArticleConfident(data: WikiSummary, brand: string, domain: string): boolean {
-  if (!data.extract) return false;
-  const haystack = `${data.title || ""} ${data.description || ""} ${data.extract}`.toLowerCase();
-  const domainLow = domain.toLowerCase();
-
-  // If the domain itself appears in the article text, that is definitive — always accept.
-  if (haystack.includes(domainLow)) return true;
-
-  // Reject articles whose description clearly marks them as a non-tech entity
-  // (e.g. "2017 EP by Notion", "English rapper", "2009 film directed by…").
-  // This is the primary fix for the "Notion (EP)" false-positive bug.
-  if (data.description && NON_TECH_ENTITY_DESC_RE.test(data.description)) return false;
-
-  const normBrand = normalize(stripCorporateSuffix(brand));
-  const normTitle = normalize(stripCorporateSuffix(data.title || ""));
-  return (
-    haystack.includes(brand.toLowerCase()) ||
-    haystack.includes(stripCorporateSuffix(brand).toLowerCase()) ||
-    (!!normBrand && !!normTitle && (normTitle === normBrand || normTitle.startsWith(normBrand) || normBrand.startsWith(normTitle)))
-  );
-}
-
 async function checkWikipedia({ brand, domain, altNames = [] }: CheckOpts): Promise<BrandSignal> {
   const cleanBrand = stripCorporateSuffix(brand);
   // Build prioritized candidate query list. Order matters — first confident hit wins.
@@ -287,6 +265,7 @@ async function checkWikipedia({ brand, domain, altNames = [] }: CheckOpts): Prom
         found: true,
         state: "found",
         detail: `Article: "${data.title}"`,
+        url: `https://en.wikipedia.org/wiki/${encodeURIComponent((data.title || "").replace(/ /g, "_"))}`,
       };
     }
     if (data.type === "disambiguation") {
@@ -308,6 +287,7 @@ async function checkWikipedia({ brand, domain, altNames = [] }: CheckOpts): Prom
           found: true,
           state: "found",
           detail: `Article: "${data.title}" (resolved from disambiguation "${dTitle}")`,
+          url: `https://en.wikipedia.org/wiki/${encodeURIComponent((data.title || "").replace(/ /g, "_"))}`,
         };
       }
     }
@@ -324,6 +304,7 @@ async function checkWikipedia({ brand, domain, altNames = [] }: CheckOpts): Prom
         found: true,
         state: "found",
         detail: `Article: "${data.title}"`,
+        url: `https://en.wikipedia.org/wiki/${encodeURIComponent((data.title || "").replace(/ /g, "_"))}`,
       };
     }
   }
@@ -585,7 +566,6 @@ export async function analyzeBrandAuthority(
   url: string,
   title: string | null,
   hasOrgSchema: boolean,
-  hasLlmsTxt: boolean,
   orgSchemaName?: string | null,
   ogSiteName?: string | null
 ): Promise<BrandAuthorityResult> {
@@ -641,7 +621,6 @@ export async function analyzeBrandAuthority(
     else score += 6;
   }
   if (hasOrgSchema) score += 10;
-  if (hasLlmsTxt) score += 5;
 
   const unavailableCount = [wiki, ddg, gh].filter((s) => s.state === "unavailable").length;
   score += unavailableCount * 5;
@@ -658,12 +637,6 @@ export async function analyzeBrandAuthority(
         found: hasOrgSchema,
         state: hasOrgSchema ? "found" : "not_found",
         detail: hasOrgSchema ? "Schema.org Organization markup detected" : "No Organization schema found",
-      },
-      {
-        source: "llms.txt",
-        found: hasLlmsTxt,
-        state: hasLlmsTxt ? "found" : "not_found",
-        detail: hasLlmsTxt ? "AI-friendly llms.txt manifest published" : "No llms.txt manifest found",
       },
     ],
   };

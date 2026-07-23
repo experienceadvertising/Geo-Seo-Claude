@@ -20,6 +20,7 @@ export const auditsTable = pgTable("audits", {
   hasLlmsTxt: jsonb("has_llms_txt").notNull().$type<boolean>(),
   hasHttps: jsonb("has_https").notNull().$type<boolean>(),
   hasCanonical: jsonb("has_canonical").notNull().$type<boolean>(),
+  hasNoSnippet: jsonb("has_no_snippet").$type<boolean>(),
   wordCount: integer("word_count").notNull(),
   rawHtmlWordCount: integer("raw_html_word_count"),
   renderedWordCount: integer("rendered_word_count"),

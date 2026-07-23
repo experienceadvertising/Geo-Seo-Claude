@@ -1,40 +1,46 @@
+import { lazy, Suspense } from "react";
 import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HelmetProvider } from "react-helmet-async";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
-import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
-import Results from "@/pages/results";
-import Simulate from "@/pages/simulate";
-import Projects from "@/pages/projects";
-import Admin from "@/pages/admin";
-import Pricing from "@/pages/pricing";
-import Upgrade from "@/pages/upgrade";
-import Methodology from "@/pages/methodology";
-import About from "@/pages/about";
-import Contact from "@/pages/contact";
-import VsComparison from "@/pages/vs-comparison";
-import BestAeoToolsPage from "@/pages/best-aeo-tools";
-import BestGeoToolsPage from "@/pages/best-geo-tools";
-import HowToRankInChatGPT from "@/pages/how-to-rank-in-chatgpt";
-import WhatIsAEO from "@/pages/what-is-answer-engine-optimization";
-import HowToAppearInAISearch from "@/pages/how-to-appear-in-ai-search";
-import SignInPage from "@/pages/sign-in";
-import SignUpPage from "@/pages/sign-up";
-import VerifyEmailPage from "@/pages/verify-email";
-import ForgotPasswordPage from "@/pages/forgot-password";
-import ResetPasswordPage from "@/pages/reset-password";
-import UnsubscribePage from "@/pages/unsubscribe";
 import { Layout } from "@/components/layout";
+import { ErrorBoundary } from "@/components/error-boundary";
+import { Loader2 } from "lucide-react";
+
+const NotFound = lazy(() => import("@/pages/not-found"));
+const Results = lazy(() => import("@/pages/results"));
+const Simulate = lazy(() => import("@/pages/simulate"));
+const Projects = lazy(() => import("@/pages/projects"));
+const Admin = lazy(() => import("@/pages/admin"));
+const Pricing = lazy(() => import("@/pages/pricing"));
+const Upgrade = lazy(() => import("@/pages/upgrade"));
+const Methodology = lazy(() => import("@/pages/methodology"));
+const About = lazy(() => import("@/pages/about"));
+const Contact = lazy(() => import("@/pages/contact"));
+const VsComparison = lazy(() => import("@/pages/vs-comparison"));
+const BestAeoToolsPage = lazy(() => import("@/pages/best-aeo-tools"));
+const BestGeoToolsPage = lazy(() => import("@/pages/best-geo-tools"));
+const HowToRankInChatGPT = lazy(() => import("@/pages/how-to-rank-in-chatgpt"));
+const WhatIsAEO = lazy(() => import("@/pages/what-is-answer-engine-optimization"));
+const HowToAppearInAISearch = lazy(() => import("@/pages/how-to-appear-in-ai-search"));
+const ProductLanding = lazy(() => import("@/pages/product-landing"));
+const Benchmark = lazy(() => import("@/pages/benchmark"));
+const SignInPage = lazy(() => import("@/pages/sign-in"));
+const SignUpPage = lazy(() => import("@/pages/sign-up"));
+const VerifyEmailPage = lazy(() => import("@/pages/verify-email"));
+const ForgotPasswordPage = lazy(() => import("@/pages/forgot-password"));
+const ResetPasswordPage = lazy(() => import("@/pages/reset-password"));
+const UnsubscribePage = lazy(() => import("@/pages/unsubscribe"));
 
 const queryClient = new QueryClient();
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { isLoaded, isSignedIn } = useAuth();
-  if (!isLoaded) return null;
+  if (!isLoaded) return <PageLoading label="Checking your account" />;
   if (!isSignedIn) {
     // Remember where the user was trying to go so we can return them after
     // they sign in. wouter strips the BASE_URL prefix from window.location,
@@ -44,6 +50,10 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
     return <Redirect to={target} />;
   }
   return <>{children}</>;
+}
+
+function PageLoading({ label = "Loading" }: { label?: string }) {
+  return <div className="min-h-[45vh] flex items-center justify-center gap-2 text-sm text-muted-foreground" role="status"><Loader2 className="h-5 w-5 animate-spin" />{label}...</div>;
 }
 
 function AppRoutes() {
@@ -87,6 +97,10 @@ function AppRoutes() {
         <Route path="/how-to-rank-in-chatgpt" component={HowToRankInChatGPT} />
         <Route path="/what-is-answer-engine-optimization" component={WhatIsAEO} />
         <Route path="/how-to-appear-in-ai-search" component={HowToAppearInAISearch} />
+        <Route path="/free-aeo-audit-tool">{() => <ProductLanding variant="audit" />}</Route>
+        <Route path="/ai-visibility-checker">{() => <ProductLanding variant="visibility" />}</Route>
+        <Route path="/chatgpt-citation-tracker">{() => <ProductLanding variant="citations" />}</Route>
+        <Route path="/ai-citation-readiness-benchmark" component={Benchmark} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
@@ -100,7 +114,7 @@ function App() {
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <TooltipProvider>
-              <AppRoutes />
+              <ErrorBoundary><Suspense fallback={<PageLoading />}><AppRoutes /></Suspense></ErrorBoundary>
               <Toaster />
             </TooltipProvider>
           </AuthProvider>

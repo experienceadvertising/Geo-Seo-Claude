@@ -170,10 +170,9 @@ router.post("/auth/register", registerRateLimiter, async (req, res): Promise<voi
     verificationToken: hashToken(verToken),
     verificationExpires: verExpires,
     plan: "free",
-    // Free all-access first month: full feature entitlements until this
-    // date (see planUtils.getPlanInfo). Stored explicitly so support can
-    // extend an individual user's trial by bumping the column.
-    trialEndsAt: new Date(Date.now() + TRIAL_LENGTH_DAYS * 24 * 60 * 60 * 1000),
+    // The all-access month starts when this address is verified, so email
+    // delivery delays never consume a user's trial.
+    trialEndsAt: null,
     unsubscribeToken: unsubToken,
     referralCode: myReferralCode,
     referredBy,
@@ -307,7 +306,12 @@ router.get("/auth/verify-email", async (req, res): Promise<void> => {
 
   await db
     .update(usersTable)
-    .set({ emailVerified: true, verificationToken: null, verificationExpires: null })
+    .set({
+      emailVerified: true,
+      verificationToken: null,
+      verificationExpires: null,
+      trialEndsAt: user.trialEndsAt ?? new Date(Date.now() + TRIAL_LENGTH_DAYS * 24 * 60 * 60 * 1000),
+    })
     .where(eq(usersTable.id, user.id));
 
   // Now that the user has confirmed their email, kick off the welcome series.
@@ -338,6 +342,7 @@ router.get("/auth/verify-email", async (req, res): Promise<void> => {
               .set({ welcomeEmailSentAt: null })
               .where(eq(usersTable.id, user.id));
           }
+          return undefined;
         })
         .catch((err) => {
           logger.error({ err, userId: user.id }, "Welcome email failed");
@@ -490,6 +495,7 @@ router.post("/auth/reset-password", passwordEmailRateLimiter, async (req, res): 
               .set({ welcomeEmailSentAt: null })
               .where(eq(usersTable.id, user.id));
           }
+          return undefined;
         })
         .catch((err) => {
           logger.error({ err, userId: user.id }, "Welcome email failed (post-reset)");
