@@ -38,10 +38,11 @@ export default function Changelog() {
   return (
     <div className="flex-1 w-full max-w-3xl mx-auto px-4 md:px-8 py-12 md:py-16">
       <SEO
-        title="Changelog — AEO Improvement | Product Updates & New Features"
-        description="Every update to AEO Improvement: new features, methodology corrections, performance improvements, and research-backed scoring changes. See what's new."
+        title="What's New — AEO Improvement Changelog"
+        description="New features, methodology corrections, and performance improvements — see every update to AEO Improvement, newest first."
         path="/changelog"
         ogType="article"
+        ogImage="https://aeoimprovement.com/og-changelog.png"
         publishedTime="2026-05-01T00:00:00Z"
         modifiedTime={`${latestIso}T00:00:00Z`}
         jsonLd={changelogJsonLd}

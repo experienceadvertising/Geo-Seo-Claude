@@ -6,6 +6,12 @@ uri = "file://artifacts/geo-seo-tool/src/assets/hero.png"
 type = "image"
 title = "AEO hero visualization"
 
+[[generated]]
+id = "UyI4xMfAzHzC8cFvjEZSW"
+uri = "file://artifacts/geo-seo-tool/public/og-changelog.png"
+type = "image"
+title = "changelog OG share image"
+
 [[outputs]]
 id = "rc5mocFTznTKvNYNjndqV"
 uri = "file://AEO-Improvement-Features.md"
