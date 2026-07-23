@@ -27,7 +27,8 @@ function normalizePlan(plan: string | null | undefined): Plan {
 /** Trial end for a user row. Accounts created before the trial_ends_at
  * column existed have NULL there — derive signup + 30 days from createdAt
  * so "first month" semantics apply uniformly with no backfill. */
-export function trialEndFor(user: { trialEndsAt: Date | null; createdAt: Date }): Date {
+export function trialEndFor(user: { trialEndsAt: Date | null; createdAt: Date; emailVerified?: boolean }): Date {
+  if (!user.trialEndsAt && user.emailVerified === false) return new Date(0);
   return (
     user.trialEndsAt ??
     new Date(user.createdAt.getTime() + TRIAL_LENGTH_DAYS * 24 * 60 * 60 * 1000)
@@ -58,6 +59,7 @@ export async function getPlanInfo(userId: string): Promise<PlanInfo> {
         plan: usersTable.plan,
         trialEndsAt: usersTable.trialEndsAt,
         createdAt: usersTable.createdAt,
+        emailVerified: usersTable.emailVerified,
       })
       .from(usersTable)
       .where(eq(usersTable.id, userId));

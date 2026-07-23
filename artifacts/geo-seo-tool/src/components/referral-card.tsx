@@ -19,7 +19,7 @@ interface ReferralData {
 export function ReferralCard() {
   const [copied, setCopied] = useState(false);
 
-  const { data, isLoading } = useQuery<ReferralData>({
+  const { data, isLoading, isError, refetch } = useQuery<ReferralData>({
     queryKey: ["referral"],
     queryFn: () => customFetch("/api/referral"),
     staleTime: 5 * 60 * 1000,
@@ -64,18 +64,27 @@ export function ReferralCard() {
       <CardContent className="space-y-4">
         {isLoading ? (
           <div className="h-10 rounded-lg bg-muted/50 animate-pulse" />
+        ) : isError || !data?.referralLink ? (
+          <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+            <p>We could not load your referral link.</p>
+            <Button variant="outline" size="sm" className="mt-2" onClick={() => refetch()}>
+              Try again
+            </Button>
+          </div>
         ) : (
           <>
             <div className="flex gap-2">
               <Input
                 readOnly
                 value={data?.referralLink ?? ""}
+                aria-label="Your referral link"
                 className="text-sm font-mono bg-muted/40 text-muted-foreground"
               />
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleCopy}
+                aria-label="Copy referral link"
                 className="flex-shrink-0 gap-1.5"
               >
                 {copied ? (

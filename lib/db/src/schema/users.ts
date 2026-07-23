@@ -45,8 +45,9 @@ export const usersTable = pgTable("users", {
 
   // Free all-access first month. Every new account gets every feature
   // (Agency-level entitlements) until this timestamp; set to signup + 30
-  // days at registration. NULL means "derive from createdAt + 30 days" so
-  // accounts that predate the column still get first-month semantics
+  // days when the email is verified. NULL means "not activated yet" for
+  // unverified accounts and "derive from createdAt + 30 days" for verified
+  // accounts that predate the column,
   // without a backfill. Effective-plan resolution lives in
   // api-server/src/lib/planUtils.ts.
   trialEndsAt: timestamp("trial_ends_at"),

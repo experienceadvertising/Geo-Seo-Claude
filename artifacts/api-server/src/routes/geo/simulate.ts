@@ -98,7 +98,7 @@ router.post("/geo/simulate", requireAuth, simulateRateLimiter, async (req, res):
     ? body.engines.filter((e: unknown): e is EngineId => typeof e === "string" && (VALID_ENGINES as string[]).includes(e))
     : undefined;
   const selectedEngines = requestedEngines
-    ? requestedEngines.filter((e) => allowedEngines.includes(e))
+    ? requestedEngines.filter((e: EngineId) => allowedEngines.includes(e))
     : allowedEngines;
 
   if (selectedEngines.length === 0) {
@@ -133,6 +133,7 @@ router.post("/geo/simulate", requireAuth, simulateRateLimiter, async (req, res):
             const unsubscribeUrl = `${baseUrl}/api/auth/unsubscribe?token=${u.unsubscribeToken}`;
             return EmailService.sendLimitReached(u.email, u.firstName || "", "simulations", monthQuota.cap, unsubscribeUrl);
           }
+          return undefined;
         })
         .catch((err) => req.log.error({ err, userId: req.userId }, "limit-reached email failed"));
     }

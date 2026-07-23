@@ -29,7 +29,7 @@ interface AuditRow {
 interface Scores {
   citability: number;
   brandAuthority: number;
-  contentQuality: number;
+  aiCrawlerAccess: number;
   technicalSeo: number;
   structuredData: number;
   platformOptimization: number;
@@ -139,13 +139,13 @@ export function generateAuditPdf(audit: AuditRow, stream: Writable): Promise<voi
 
   // Scores breakdown beside hero
   const scores = asObj<Scores>(audit.scores, {
-    citability: 0, brandAuthority: 0, contentQuality: 0,
+    citability: 0, brandAuthority: 0, aiCrawlerAccess: 0,
     technicalSeo: 0, structuredData: 0, platformOptimization: 0,
   });
   const items: Array<[string, number, number]> = [
     ["Citability", scores.citability, 25],
     ["Brand Authority", scores.brandAuthority, 20],
-    ["Content Quality", scores.contentQuality, 20],
+    ["AI Crawler Access", scores.aiCrawlerAccess, 20],
     ["Technical SEO", scores.technicalSeo, 15],
     ["Structured Data", scores.structuredData, 10],
     ["Platform Opt.", scores.platformOptimization, 10],

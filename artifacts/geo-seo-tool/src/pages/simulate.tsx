@@ -238,7 +238,9 @@ export default function SimulatePage() {
           mode,
         } as any,
       });
-      setPromptsText((res as any).prompts.join("\n"));
+      const generated = Array.isArray((res as any).prompts) ? (res as any).prompts : [];
+      if (generated.length === 0) throw new Error("No prompts returned");
+      setPromptsText(generated.join("\n"));
     } catch {
       // Surfaced to the user via suggest.isError below — swallow here so a
       // failed suggestion doesn't become an unhandled promise rejection.
@@ -253,7 +255,7 @@ export default function SimulatePage() {
           auditId,
           domain,
           brandName,
-          prompts,
+          prompts: prompts.slice(0, maxPrompts),
           engines: selectedEngines as any,
         },
       });
@@ -470,7 +472,7 @@ export default function SimulatePage() {
                 <strong>Fan-out cluster mode:</strong> generates 8 queries covering all topic angles (definitions, comparisons, how-tos, troubleshooting) that AI engines internally search when researching your category. Running these gives a truer picture of your topical breadth.
                 {!isPro && (
                   <span className="block mt-1 text-amber-700 dark:text-amber-400">
-                    ⚠️ Free plan is limited to {maxPrompts} prompts per run — delete down to {maxPrompts} before running, or <a href="/pricing" className="underline font-medium">upgrade to Pro</a> to run all 8.
+                    Free plan runs the first {maxPrompts} prompts. <a href="/pricing" className="underline font-medium">Upgrade to Pro</a> to run the full cluster.
                   </span>
                 )}
               </p>

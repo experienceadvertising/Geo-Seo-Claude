@@ -1,5 +1,5 @@
 import { and, eq, lte, or, isNull, asc } from "drizzle-orm";
-import { db, monitoredSitesTable, usersTable, type MonitoredSite } from "@workspace/db";
+import { db, pool, monitoredSitesTable, usersTable, type MonitoredSite } from "@workspace/db";
 import { runAndStoreAudit } from "./auditRunner";
 import { getUserPlan, PLAN_LIMITS } from "./planUtils";
 import { EmailService } from "./emailService";
@@ -103,6 +103,17 @@ export async function runMonitoredSite(site: MonitoredSite): Promise<MonitoredRu
  * the next sweep. Each site is isolated — one failure never aborts the sweep.
  */
 export async function runDueMonitoredSites(maxPerSweep = 50): Promise<void> {
+  // Replit autoscale can run several API instances. A session-level advisory
+  // lock ensures only one instance performs a sweep at a time.
+  const lockClient = await pool.connect();
+  const lockKey = 1_947_026_071;
+  const lock = await lockClient.query<{ locked: boolean }>("SELECT pg_try_advisory_lock($1) AS locked", [lockKey]);
+  if (!lock.rows[0]?.locked) {
+    lockClient.release();
+    log.info("monitor.sweep.skipped (another instance holds the lock)");
+    return;
+  }
+  try {
   const now = new Date();
   const due = await db
     .select()
@@ -134,4 +145,8 @@ export async function runDueMonitoredSites(maxPerSweep = 50): Promise<void> {
     }
   }
   log.info({ ok, failed }, "monitor.sweep.complete");
+  } finally {
+    await lockClient.query("SELECT pg_advisory_unlock($1)", [lockKey]).catch(() => undefined);
+    lockClient.release();
+  }
 }

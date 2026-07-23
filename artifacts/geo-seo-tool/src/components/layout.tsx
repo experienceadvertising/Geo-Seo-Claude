@@ -1,12 +1,13 @@
 import React, { useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Sparkles, LogOut, Shield } from "lucide-react";
+import { Sparkles, LogOut, Shield, Menu } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { customFetch } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { UsageMeter } from "@/components/usage-meter";
 import { TrialBanner } from "@/components/trial-banner";
+import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 function AdminLink() {
   const { isSignedIn } = useAuth();
@@ -41,8 +42,10 @@ function UserBadge() {
       <Button
         variant="ghost"
         size="sm"
+        className="h-11 w-11 p-0 sm:h-8 sm:w-auto sm:px-3"
         onClick={() => signOut().then(() => setLocation("/"))}
         title="Sign out"
+        aria-label="Sign out"
       >
         <LogOut className="h-4 w-4" />
         <span className="ml-1 hidden sm:inline">Sign out</span>
@@ -72,6 +75,24 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </Link>
           </div>
           <div className="flex flex-1 items-center justify-end gap-3">
+            {isLoaded && (
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-11 w-11 md:hidden" aria-label="Open navigation"><Menu className="h-5 w-5" /></Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-[min(85vw,320px)]">
+                  <SheetTitle>Navigation</SheetTitle>
+                  <nav className="mt-8 flex flex-col gap-1">
+                    {(isSignedIn
+                      ? [["Audits", "/"], ["Projects", "/projects"], ["Methodology", "/methodology"], ["Pricing", "/pricing"], ["Contact", "/contact"]]
+                      : [["Free AEO audit", "/free-aeo-audit-tool"], ["Methodology", "/methodology"], ["Pricing", "/pricing"], ["Sign in", "/sign-in"], ["Create account", "/sign-up"]]
+                    ).map(([label, href]) => (
+                      <SheetClose asChild key={href}><Link href={href} className="px-3 py-3 rounded-md text-sm font-medium hover:bg-muted">{label}</Link></SheetClose>
+                    ))}
+                  </nav>
+                </SheetContent>
+              </Sheet>
+            )}
             {isLoaded && isSignedIn && (
               <>
                 <nav className="hidden md:flex items-center gap-4 text-sm font-medium text-muted-foreground">
@@ -121,10 +142,6 @@ function SiteFooter() {
         className="absolute top-0 left-0 right-0 h-px"
         style={{ background: "linear-gradient(90deg, transparent, rgba(16,185,129,0.6) 40%, rgba(20,184,166,0.6) 60%, transparent)" }}
       />
-      <div aria-hidden className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-[600px] h-[400px] rounded-full bg-emerald-500/5 blur-[100px]" />
-        <div className="absolute bottom-0 right-1/4 w-[400px] h-[300px] rounded-full bg-teal-500/5 blur-[80px]" />
-      </div>
 
       <div className="relative container max-w-screen-xl px-6 lg:px-8 pt-16 pb-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-10 lg:gap-8 mb-14">

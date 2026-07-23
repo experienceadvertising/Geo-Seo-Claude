@@ -3,6 +3,8 @@ import { analyzeBrandAuthority, type BrandSignal } from "./brandAuthority";
 import { extractContentSignals, generateGeoRecommendations, type GeoRecommendation } from "./geoRecommendations";
 import { renderPage } from "./pageRenderer";
 import { safeFetch } from "./safeFetch";
+import { isAllowedByRobots, parseRobotsTxt } from "./robotsPolicy";
+export { isAllowedByRobots, parseRobotsTxt } from "./robotsPolicy";
 
 export interface CrawlerStatus {
   name: string;
@@ -34,7 +36,7 @@ export interface PlatformScore {
 export interface GeoScores {
   citability: number;
   brandAuthority: number;
-  contentQuality: number;
+  aiCrawlerAccess: number;
   technicalSeo: number;
   structuredData: number;
   platformOptimization: number;
@@ -191,42 +193,6 @@ function scorePassage(text: string, heading: string | null = null): CitabilityBl
     grade,
     preview: words.slice(0, 30).join(" ") + (wordCount > 30 ? "..." : ""),
   };
-}
-
-function parseRobotsTxt(robotsTxt: string): Map<string, boolean> {
-  const rules = new Map<string, boolean>();
-  const lines = robotsTxt.split("\n").map(l => l.trim());
-  // Robots.txt groups can list SEVERAL User-agent lines that all share the
-  // rules that follow (a very common pattern for AI-bot blocks). Track the
-  // whole current group, not just the last agent line — the old parser
-  // applied group rules only to the final agent, silently reporting the
-  // rest as "allowed".
-  let currentGroup: string[] = [];
-  let groupOpen = false; // still collecting user-agent lines for this group
-
-  for (const line of lines) {
-    if (line.toLowerCase().startsWith("user-agent:")) {
-      const agent = line.split(":")[1]?.trim().toLowerCase() || "";
-      if (!groupOpen) currentGroup = [];
-      groupOpen = true;
-      if (agent === "*" || AI_CRAWLERS.some(c => c.agent === agent)) {
-        currentGroup.push(agent);
-      }
-    } else if (line.toLowerCase().startsWith("disallow:")) {
-      groupOpen = false;
-      const path = line.split(":")[1]?.trim();
-      if (path === "/" || path === "") {
-        for (const agent of currentGroup) rules.set(agent, path === "/");
-      }
-    } else if (line.toLowerCase().startsWith("allow:")) {
-      groupOpen = false;
-      const path = line.split(":")[1]?.trim();
-      if (path === "/" || path === "") {
-        for (const agent of currentGroup) rules.set(agent, false);
-      }
-    }
-  }
-  return rules;
 }
 
 export async function analyzeUrl(url: string): Promise<AnalysisResult> {
@@ -482,12 +448,9 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
 
   const rules = parseRobotsTxt(robotsTxt);
   for (const crawler of AI_CRAWLERS) {
-    const specificRule = rules.get(crawler.agent);
-    const wildcardRule = rules.get("*");
-    const blocked = specificRule !== undefined ? specificRule : (wildcardRule !== undefined ? wildcardRule : false);
     crawlerStatuses.push({
       name: crawler.name,
-      allowed: !blocked,
+      allowed: isAllowedByRobots(rules, crawler.agent, parsedUrl.pathname || "/"),
       type: crawler.type,
     });
   }
@@ -646,6 +609,14 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
     (title ? 10 : 0) +
     (citabilityBlocks.filter(b => b.grade === "A" || b.grade === "B").length * 3)
   ));
+  const citationPathBots = crawlerStatuses.filter((c) => CRAWLER_ROLE_BY_NAME.get(c.name) !== "training");
+  const allowedCitationBots = citationPathBots.filter((c) => c.allowed).length;
+  const aiCrawlerAccessScore = Math.max(0, Math.min(100, Math.round(
+    (citationPathBots.length ? allowedCitationBots / citationPathBots.length : 1) * 70 +
+    (hasNoIndex ? 0 : 15) +
+    (hasNoSnippet ? 0 : 10) +
+    (requiresJavaScript ? 0 : 5)
+  )));
 
   // Platform scores — each keyed to the bot that actually gates CITATIONS
   // on that platform: OAI-SearchBot feeds ChatGPT Search (GPTBot is
@@ -657,19 +628,19 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
     {
       platform: "ChatGPT / OpenAI",
       score: Math.round((botAllowed("OAI-SearchBot") ? 50 : 10) + citabilityScore * 0.3 + schemaScore * 0.2),
-      status: botAllowed("OAI-SearchBot") ? "Indexed" : "Blocked",
+      status: botAllowed("OAI-SearchBot") ? "Crawler allowed" : "Crawler blocked",
       recommendations: ["Allow OAI-SearchBot (ChatGPT Search index) and ChatGPT-User in robots.txt", "Use FAQ schema for Q&A content", "Include citations and statistics"],
     },
     {
       platform: "Claude / Anthropic",
       score: Math.round((botAllowed("Claude-SearchBot") ? 50 : 10) + citabilityScore * 0.3 + contentQualityScore * 0.2),
-      status: botAllowed("Claude-SearchBot") ? "Indexed" : "Blocked",
+      status: botAllowed("Claude-SearchBot") ? "Crawler allowed" : "Crawler blocked",
       recommendations: ["Allow Claude-SearchBot and Claude-User in robots.txt", "Focus on E-E-A-T signals", "Create comprehensive topic clusters"],
     },
     {
       platform: "Perplexity",
       score: Math.round((botAllowed("PerplexityBot") ? 50 : 10) + citabilityScore * 0.35 + contentQualityScore * 0.15),
-      status: botAllowed("PerplexityBot") ? "Indexed" : "Blocked",
+      status: botAllowed("PerplexityBot") ? "Crawler allowed" : "Crawler blocked",
       recommendations: ["Allow PerplexityBot and Perplexity-User in robots.txt", "Provide factual, citation-ready content", "Link to authoritative sources"],
     },
     {
@@ -687,7 +658,7 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
   const hasFaqSchema = structuredDataTypes.some((s) => s.present && s.type === "FAQPage");
   const hasArticleSchema = structuredDataTypes.some((s) => s.present && s.type === "Article");
   const hasHowToSchema = structuredDataTypes.some((s) => s.present && s.type === "HowTo");
-  const brandAuthority = await analyzeBrandAuthority(url, title, hasOrgSchema, hasLlmsTxt, orgSchemaName, ogSiteName);
+  const brandAuthority = await analyzeBrandAuthority(url, title, hasOrgSchema, orgSchemaName, ogSiteName);
 
   // Generate prioritized GEO recommendations from extracted content signals.
   // Source attribution for each recommendation lives in the @workspace/recommendations
@@ -718,7 +689,7 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
   const scores: GeoScores = {
     citability: citabilityScore,
     brandAuthority: brandAuthority.score,
-    contentQuality: contentQualityScore,
+    aiCrawlerAccess: aiCrawlerAccessScore,
     technicalSeo: technicalScore,
     structuredData: schemaScore,
     platformOptimization: Math.round(platforms.reduce((sum, p) => sum + p.score, 0) / platforms.length),
@@ -728,7 +699,7 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
   const geoScore = Math.round(
     scores.citability * 0.25 +
     scores.brandAuthority * 0.20 +
-    scores.contentQuality * 0.20 +
+    scores.aiCrawlerAccess * 0.20 +
     scores.technicalSeo * 0.15 +
     scores.structuredData * 0.10 +
     scores.platformOptimization * 0.10

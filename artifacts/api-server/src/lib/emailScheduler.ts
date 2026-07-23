@@ -1,5 +1,5 @@
 import cron from "node-cron";
-import { db, usersTable, auditsTable } from "@workspace/db";
+import { db, pool, usersTable, auditsTable, recommendationProgressTable } from "@workspace/db";
 import { sql, and, isNotNull, eq, gte, lte } from "drizzle-orm";
 import { getUserPlan, getStoredPlan, trialEndFor } from "./planUtils";
 import { EmailService } from "./emailService";
@@ -10,6 +10,27 @@ import { logger } from "./logger";
 // so we use the configured FRONTEND_URL (preferred in prod) or fall back to
 // the production domain.
 const SCHEDULER_BASE_URL = (process.env.FRONTEND_URL || "https://aeoimprovement.com").replace(/\/$/, "");
+
+async function withSchedulerLock(name: string, job: () => Promise<void>): Promise<void> {
+  const client = await pool.connect();
+  try {
+    const result = await client.query<{ acquired: boolean }>(
+      "SELECT pg_try_advisory_lock(hashtext($1)) AS acquired",
+      [`aeo-email:${name}`],
+    );
+    if (!result.rows[0]?.acquired) {
+      logger.info({ job: name }, "Email scheduler job already running on another instance");
+      return;
+    }
+    try {
+      await job();
+    } finally {
+      await client.query("SELECT pg_advisory_unlock(hashtext($1))", [`aeo-email:${name}`]);
+    }
+  } finally {
+    client.release();
+  }
+}
 
 function unsubUrl(token: string | null | undefined): string | undefined {
   return token ? `${SCHEDULER_BASE_URL}/api/auth/unsubscribe?token=${token}` : undefined;
@@ -54,9 +75,9 @@ async function runWelcomeSeries() {
     if (
       user.welcomeEmailSentAt &&
       !user.welcomeD3SentAt &&
-      new Date(user.createdAt) <= daysAgo(3)
+      new Date(user.welcomeEmailSentAt) <= daysAgo(3)
     ) {
-      const ok = await EmailService.sendWelcomeD3(user.email, firstName, unsubUrl(user.unsubscribeToken));
+      const ok = await EmailService.sendWelcomeD3(user.email, firstName, !!user.firstAuditAt, unsubUrl(user.unsubscribeToken));
       if (ok) {
         await db
           .update(usersTable)
@@ -68,7 +89,7 @@ async function runWelcomeSeries() {
     if (
       user.welcomeEmailSentAt &&
       !user.welcomeD7SentAt &&
-      new Date(user.createdAt) <= daysAgo(7)
+      new Date(user.welcomeEmailSentAt) <= daysAgo(7)
     ) {
       // The D7 email nudges free-month users toward Pro. Don't send it to
       // users already PAYING for Pro or Agency — at best it's noise, at worst
@@ -209,6 +230,18 @@ async function runWeeklyDigests() {
 
     const latestAudit = weekAudits[0];
     const firstName = getFirstName(user);
+    let nextAction: { title: string; detail: string } | undefined;
+    if (latestAudit) {
+      const domain = (() => { try { return new URL(latestAudit.url).hostname.toLowerCase().replace(/^www\./, ""); } catch { return ""; } })();
+      const completed = domain ? await db.select({ recommendationId: recommendationProgressTable.recommendationId })
+        .from(recommendationProgressTable)
+        .where(and(eq(recommendationProgressTable.userId, user.id), eq(recommendationProgressTable.domain, domain))) : [];
+      const done = new Set(completed.map((row) => row.recommendationId));
+      const rec = ((latestAudit.recommendations as any[]) ?? []).find((item) =>
+        item?.id && !done.has(item.id) && (item.priority === "critical" || item.priority === "high"),
+      );
+      if (rec) nextAction = { title: String(rec.title), detail: String(rec.detail) };
+    }
 
     const ok = await EmailService.sendWeeklyDigest(
       user.email,
@@ -220,6 +253,7 @@ async function runWeeklyDigests() {
               url: latestAudit.url,
               geoScore: latestAudit.geoScore,
               quickWins: (latestAudit.quickWins as string[]) ?? [],
+              nextAction,
               createdAt: latestAudit.createdAt,
             }
           : undefined,
@@ -377,7 +411,7 @@ export function startEmailScheduler() {
   }
 
   cron.schedule("0 9 * * *", () => {
-    runWelcomeSeries().catch((err) =>
+    withSchedulerLock("welcome", runWelcomeSeries).catch((err) =>
       logger.error({ err }, "Welcome series cron error")
     );
   });
@@ -385,7 +419,7 @@ export function startEmailScheduler() {
   // 10:00 UTC — an hour after the welcome series so a user whose D7 and
   // trial reminder happen to land on the same day gets them spaced out.
   cron.schedule("0 10 * * *", () => {
-    runTrialLifecycle().catch((err) =>
+    withSchedulerLock("trial", runTrialLifecycle).catch((err) =>
       logger.error({ err }, "Trial lifecycle cron error")
     );
   });
@@ -395,19 +429,19 @@ export function startEmailScheduler() {
   // 10:00 UTC cron. Safe to run on every deploy: all sends in the job are
   // claim-first flagged, so repeat runs are no-ops.
   setTimeout(() => {
-    runTrialLifecycle().catch((err) =>
+    withSchedulerLock("trial", runTrialLifecycle).catch((err) =>
       logger.error({ err }, "Trial lifecycle startup run error")
     );
   }, 60_000);
 
   cron.schedule("0 8 * * 1", () => {
-    runWeeklyDigests().catch((err) =>
+    withSchedulerLock("weekly-digest", runWeeklyDigests).catch((err) =>
       logger.error({ err }, "Weekly digest cron error")
     );
   });
 
   cron.schedule("0 8 1 * *", () => {
-    runMonthlyReports().catch((err) =>
+    withSchedulerLock("monthly-report", runMonthlyReports).catch((err) =>
       logger.error({ err }, "Monthly report cron error")
     );
   });
@@ -415,7 +449,7 @@ export function startEmailScheduler() {
   // Thursdays 9:00 AM UTC — far enough from the Monday digest to feel like
   // a separate touchpoint, mid-week so it lands during planning windows.
   cron.schedule("0 9 * * 4", () => {
-    runWeeklyInsights().catch((err) =>
+    withSchedulerLock("weekly-insights", runWeeklyInsights).catch((err) =>
       logger.error({ err }, "Weekly insights cron error")
     );
   });

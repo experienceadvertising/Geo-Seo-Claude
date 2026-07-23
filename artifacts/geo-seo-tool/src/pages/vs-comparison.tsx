@@ -52,7 +52,7 @@ export default function VsComparison() {
         name: `How does AEO Improvement compare to ${c.name}?`,
         acceptedAnswer: {
           "@type": "Answer",
-          text: `${c.oneLiner} AEO Improvement adds an automated Fix Generator (llms.txt, JSON-LD, robots.txt) on top of monitoring, with self-serve pricing starting at ${OUR_FACTS.proPrice} and a free tier of ${OUR_FACTS.freeTier}.`,
+          text: `${c.oneLiner} AEO Improvement adds an automated Fix Generator for JSON-LD and citation-bot robots.txt entries on top of monitoring, with self-serve pricing starting at ${OUR_FACTS.proPrice} and a free tier of ${OUR_FACTS.freeTier}.`,
         },
       },
       {
@@ -117,8 +117,8 @@ export default function VsComparison() {
             </p>
             <p className="text-base text-slate-700 leading-relaxed max-w-3xl">
               <strong>AEO Improvement</strong> takes a different approach: alongside the visibility
-              tracking, we generate the actual technical fixes — your llms.txt, your FAQPage JSON-LD,
-              your Organization schema — auto-drafted from your sitemap. Less "you should fix this,"
+              tracking, we generate the actual technical fixes — your FAQPage JSON-LD, Organization
+              schema, and citation-bot robots.txt entries. Less "you should fix this,"
               more "here's the file, paste it." Plus a self-serve free tier so you can evaluate
               without a sales call.
             </p>
@@ -217,9 +217,8 @@ export default function VsComparison() {
             <h2 className="text-2xl font-bold text-slate-900">Where AEO Improvement wins for most teams</h2>
             <ul className="space-y-3">
               <WinItem title="The Fix Generator">
-                Audits tell you what's wrong. We also draft the fix. Your <code className="text-xs bg-slate-100 px-1.5 py-0.5 rounded">llms.txt</code>,{" "}
-                <code className="text-xs bg-slate-100 px-1.5 py-0.5 rounded">FAQPage</code> JSON-LD, and Organization schema
-                are generated from your sitemap and ready to copy-paste into your <code className="text-xs bg-slate-100 px-1.5 py-0.5 rounded">&lt;head&gt;</code>.
+                Audits tell you what's wrong. We also draft the fix. <code className="text-xs bg-slate-100 px-1.5 py-0.5 rounded">FAQPage</code> JSON-LD,
+                Organization schema, and citation-bot robots.txt entries are ready to copy and deploy.
               </WinItem>
               <WinItem title="A real free tier — not just a demo">
                 {OUR_FACTS.freeTier}. Sign up, run an audit in 90 seconds, no credit card.
@@ -247,7 +246,7 @@ export default function VsComparison() {
               </h3>
               <p className="text-slate-600 leading-relaxed">
                 Paste your URL. We'll run an audit against ChatGPT, score your AEO citability,
-                and show you the top fixes — including a llms.txt draft tailored to your sitemap.
+                and show you the top fixes, including deployable JSON-LD and crawler policy entries.
                 Free plan is {OUR_FACTS.freeTier}. No credit card.
               </p>
               <div className="flex flex-col sm:flex-row gap-3">

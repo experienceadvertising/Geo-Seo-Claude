@@ -4,6 +4,7 @@ import { runMigrations } from "stripe-replit-sync";
 import { getStripeSync } from "./lib/stripeClient";
 import { startEmailScheduler } from "./lib/emailScheduler";
 import { runFreeMonthPromoGrant } from "./lib/promoGrant";
+import { runProductMigrations } from "./lib/productMigrations";
 
 async function initStripe() {
   const databaseUrl = process.env.DATABASE_URL;
@@ -13,7 +14,7 @@ async function initStripe() {
   }
   try {
     logger.info("Initializing Stripe schema...");
-    await runMigrations({ databaseUrl, schema: "stripe" });
+    await runMigrations({ databaseUrl });
     logger.info("Stripe schema ready");
   } catch (err) {
     // Schema migrations failing is fatal — without the stripe.* tables no
@@ -61,6 +62,7 @@ if (Number.isNaN(port) || port <= 0) {
 
 async function start() {
   await initStripe();
+  await runProductMigrations();
   // Non-fatal: the claim row releases on failure, so the next boot retries
   // (e.g. when the drizzle push for the new columns hasn't run yet).
   await runFreeMonthPromoGrant().catch((err) =>

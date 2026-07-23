@@ -60,7 +60,8 @@ export const ROUTES = [
   {
     path: "/",
     title:
-      "AEO Improvement — Audit your visibility in ChatGPT, Claude, Perplexity & Gemini",
+      "Free AEO Audit Tool for ChatGPT and AI Search | AEO Improvement",
+    h1: "See why AI engines cite your competitors",
     description:
       "Free Answer Engine Optimization (AEO) audit. Score your website's citability across ChatGPT, Claude, Perplexity, and Google AI Overviews. Get personalized recommendations with transparent sources to win AI-driven discovery.",
     ogType: "website",
@@ -73,7 +74,7 @@ export const ROUTES = [
     title:
       "Pricing — AEO Improvement | Free, Pro, Agency plans for AI search optimization",
     description:
-      "Free AEO audits forever. Pro from $49/mo unlocks ChatGPT, Claude, Gemini, and Perplexity coverage plus the Fix Generator. Agency plan for multi-client teams. Transparent pricing, no demo required.",
+      "Every new account gets one month free with all features. Then use 5 audits and 2 ChatGPT simulations monthly for free, or Pro from $79/month.",
     ogType: "website",
     jsonLd: [
       breadcrumbLd([
@@ -125,7 +126,7 @@ export const ROUTES = [
       "How AEO Improvement scores a URL: the six pillars, where each recommendation comes from (Princeton/IIT Delhi GEO research, internal benchmarks, practitioner consensus), and exactly which claims we will and won't make.",
     ogType: "article",
     publishedTime: "2026-05-05",
-    modifiedTime: "2026-05-05",
+    modifiedTime: "2026-07-22",
     authorName: AUTHOR.name,
     jsonLd: [
       articleLd({
@@ -134,7 +135,7 @@ export const ROUTES = [
         description:
           "How AEO Improvement scores a URL: the six pillars, where each recommendation comes from, and exactly which claims we will and won't make.",
         datePublished: "2026-05-05",
-        dateModified: "2026-05-05",
+        dateModified: "2026-07-22",
       }),
       breadcrumbLd([
         { name: "Home", path: "/" },
@@ -150,7 +151,7 @@ export const ROUTES = [
       "Answer Engine Optimization (AEO) is the practice of making your website more likely to be cited by AI search engines like ChatGPT, Claude, Gemini, and Perplexity. Learn how it differs from SEO and how to get started.",
     ogType: "article",
     publishedTime: "2026-05-05",
-    modifiedTime: "2026-05-05",
+    modifiedTime: "2026-07-22",
     authorName: AUTHOR.name,
     jsonLd: [
       articleLd({
@@ -159,7 +160,7 @@ export const ROUTES = [
         description:
           "Answer Engine Optimization (AEO) is the practice of making your website more likely to be cited by AI search engines like ChatGPT, Claude, Gemini, and Perplexity.",
         datePublished: "2026-05-05",
-        dateModified: "2026-05-05",
+        dateModified: "2026-07-22",
       }),
       breadcrumbLd([
         { name: "Home", path: "/" },
@@ -180,7 +181,7 @@ export const ROUTES = [
       "A practical guide to getting your website cited by ChatGPT search. Covers GPTBot access, entity recognition, structured data, robots.txt strategy, and how to audit your current ChatGPT visibility.",
     ogType: "article",
     publishedTime: "2026-05-05",
-    modifiedTime: "2026-05-05",
+    modifiedTime: "2026-07-22",
     authorName: AUTHOR.name,
     jsonLd: [
       articleLd({
@@ -190,7 +191,7 @@ export const ROUTES = [
         description:
           "A practical guide to getting your website cited by ChatGPT search.",
         datePublished: "2026-05-05",
-        dateModified: "2026-05-05",
+        dateModified: "2026-07-22",
       }),
       breadcrumbLd([
         { name: "Home", path: "/" },
@@ -207,7 +208,7 @@ export const ROUTES = [
       "Learn how to get your website cited by ChatGPT, Claude, Gemini, and Perplexity. This guide covers on-site, off-site, and technical optimizations that increase AI search visibility for brands and businesses.",
     ogType: "article",
     publishedTime: "2026-05-05",
-    modifiedTime: "2026-05-05",
+    modifiedTime: "2026-07-22",
     authorName: AUTHOR.name,
     jsonLd: [
       articleLd({
@@ -217,7 +218,7 @@ export const ROUTES = [
         description:
           "Learn how to get your website cited by ChatGPT, Claude, Gemini, and Perplexity.",
         datePublished: "2026-05-05",
-        dateModified: "2026-05-05",
+        dateModified: "2026-07-22",
       }),
       breadcrumbLd([
         { name: "Home", path: "/" },
@@ -238,7 +239,7 @@ export const ROUTES = [
       "Compare the best Answer Engine Optimization tools of 2026. Pricing, features, AI engines covered, and which AEO platform fits self-serve marketers, agencies, and enterprise teams.",
     ogType: "article",
     publishedTime: "2026-05-03",
-    modifiedTime: "2026-05-05",
+    modifiedTime: "2026-07-22",
     authorName: AUTHOR.name,
     jsonLd: [
       articleLd({
@@ -248,7 +249,7 @@ export const ROUTES = [
         description:
           "Compare the best Answer Engine Optimization tools of 2026.",
         datePublished: "2026-05-03",
-        dateModified: "2026-05-05",
+        dateModified: "2026-07-22",
       }),
       breadcrumbLd([
         { name: "Home", path: "/" },
@@ -266,7 +267,7 @@ export const ROUTES = [
       "Compare the best Generative Engine Optimization tools of 2026. Pricing, features, AI engines covered, and which GEO platform fits self-serve marketers, agencies, and enterprise teams.",
     ogType: "article",
     publishedTime: "2026-05-03",
-    modifiedTime: "2026-05-05",
+    modifiedTime: "2026-07-22",
     authorName: AUTHOR.name,
     jsonLd: [
       articleLd({
@@ -276,7 +277,7 @@ export const ROUTES = [
         description:
           "Compare the best Generative Engine Optimization tools of 2026.",
         datePublished: "2026-05-03",
-        dateModified: "2026-05-05",
+        dateModified: "2026-07-22",
       }),
       breadcrumbLd([
         { name: "Home", path: "/" },
@@ -351,6 +352,40 @@ export const ROUTES = [
       "Get in touch with the AEO Improvement team about audits, simulations, billing, or partnerships.",
     ogType: "website",
     jsonLd: [],
+  },
+  {
+    path: "/free-aeo-audit-tool",
+    title: "Free AEO Audit Tool for ChatGPT and AI Search | AEO Improvement",
+    description: "Audit any URL across six AI citation-readiness dimensions, get prioritized evidence-backed fixes, and track each optimization to completion.",
+    ogType: "website",
+    modifiedTime: "2026-07-22",
+    jsonLd: [breadcrumbLd([{ name: "Home", path: "/" }, { name: "Free AEO audit tool", path: "/free-aeo-audit-tool" }])],
+  },
+  {
+    path: "/ai-visibility-checker",
+    title: "AI Visibility Checker for ChatGPT, Claude, Gemini and Perplexity",
+    description: "Check whether AI engines can crawl, understand, mention, and cite your site. Run real buyer prompts across four answer engines.",
+    ogType: "website",
+    modifiedTime: "2026-07-22",
+    jsonLd: [breadcrumbLd([{ name: "Home", path: "/" }, { name: "AI visibility checker", path: "/ai-visibility-checker" }])],
+  },
+  {
+    path: "/chatgpt-citation-tracker",
+    title: "ChatGPT Citation Tracker and Visibility Monitor | AEO Improvement",
+    description: "Track whether ChatGPT mentions and cites your brand, measure competitor Share of Voice, and monitor citation-readiness changes.",
+    ogType: "website",
+    modifiedTime: "2026-07-22",
+    jsonLd: [breadcrumbLd([{ name: "Home", path: "/" }, { name: "ChatGPT citation tracker", path: "/chatgpt-citation-tracker" }])],
+  },
+  {
+    path: "/ai-citation-readiness-benchmark",
+    title: "2026 AI Citation Readiness Benchmark | AEO Improvement",
+    description: "A living, anonymized benchmark of the technical and content gaps that keep websites out of ChatGPT and AI-generated answers.",
+    ogType: "article",
+    publishedTime: "2026-07-22",
+    modifiedTime: "2026-07-22",
+    authorName: AUTHOR.name,
+    jsonLd: [articleLd({ path: "/ai-citation-readiness-benchmark", title: "2026 AI Citation Readiness Benchmark", description: "An anonymized benchmark of website readiness for AI citations.", datePublished: "2026-07-22", dateModified: "2026-07-22" })],
   },
 ];
 

@@ -35,7 +35,7 @@ export const AnalyzeUrlResponse = zod.object({
   scores: zod.object({
     citability: zod.number(),
     brandAuthority: zod.number(),
-    contentQuality: zod.number(),
+    aiCrawlerAccess: zod.number(),
     technicalSeo: zod.number(),
     structuredData: zod.number(),
     platformOptimization: zod.number(),
@@ -77,6 +77,10 @@ export const AnalyzeUrlResponse = zod.object({
   hasLlmsTxt: zod.boolean(),
   hasHttps: zod.boolean(),
   hasCanonical: zod.boolean(),
+  hasNoSnippet: zod
+    .boolean()
+    .optional()
+    .describe("True when robots directives forbid quoted snippets."),
   wordCount: zod.number(),
   rawHtmlWordCount: zod
     .number()
@@ -118,6 +122,7 @@ export const AnalyzeUrlResponse = zod.object({
         id: zod.string(),
         title: zod.string(),
         detail: zod.string(),
+        url: zod.string().url().optional(),
         priority: zod.enum(["critical", "high", "medium", "low"]),
         category: zod.enum([
           "answerability",
@@ -224,7 +229,7 @@ export const GetAuditResponse = zod.object({
   scores: zod.object({
     citability: zod.number(),
     brandAuthority: zod.number(),
-    contentQuality: zod.number(),
+    aiCrawlerAccess: zod.number(),
     technicalSeo: zod.number(),
     structuredData: zod.number(),
     platformOptimization: zod.number(),
@@ -266,6 +271,10 @@ export const GetAuditResponse = zod.object({
   hasLlmsTxt: zod.boolean(),
   hasHttps: zod.boolean(),
   hasCanonical: zod.boolean(),
+  hasNoSnippet: zod
+    .boolean()
+    .optional()
+    .describe("True when robots directives forbid quoted snippets."),
   wordCount: zod.number(),
   rawHtmlWordCount: zod
     .number()
@@ -307,6 +316,7 @@ export const GetAuditResponse = zod.object({
         id: zod.string(),
         title: zod.string(),
         detail: zod.string(),
+        url: zod.string().url().optional(),
         priority: zod.enum(["critical", "high", "medium", "low"]),
         category: zod.enum([
           "answerability",

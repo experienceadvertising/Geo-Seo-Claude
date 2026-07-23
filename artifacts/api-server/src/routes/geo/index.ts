@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, desc, and, like, asc } from "drizzle-orm";
-import { db, auditsTable } from "@workspace/db";
+import { db, auditsTable, recommendationProgressTable } from "@workspace/db";
 import {
   AnalyzeUrlBody,
   ListAuditsQueryParams,
@@ -59,6 +59,84 @@ router.use(simulateRouter);
 router.use(monitorRouter);
 router.use(crawlerRouter);
 
+router.get("/geo/public/benchmark", readRateLimiter, async (_req, res): Promise<void> => {
+  const result = await db.execute(sql`
+    SELECT
+      count(*)::int AS sample_size,
+      avg(geo_score)::float AS overall,
+      avg((scores->>'citability')::float)::float AS citability,
+      avg((scores->>'brandAuthority')::float)::float AS brand_authority,
+      (avg((scores->>'aiCrawlerAccess')::float) FILTER (WHERE scores ? 'aiCrawlerAccess'))::float AS ai_crawler_access,
+      avg((scores->>'technicalSeo')::float)::float AS technical_seo,
+      avg((scores->>'structuredData')::float)::float AS structured_data,
+      avg((scores->>'platformOptimization')::float)::float AS platform_optimization,
+      count(*) FILTER (WHERE geo_score < 40)::int AS needs_work,
+      count(*) FILTER (WHERE geo_score >= 40 AND geo_score < 70)::int AS developing,
+      count(*) FILTER (WHERE geo_score >= 70)::int AS strong
+    FROM audits
+  `);
+  const row = result.rows[0] as any;
+  res.setHeader("Cache-Control", "public, max-age=3600, stale-while-revalidate=86400");
+  res.json({
+    sampleSize: Number(row?.sample_size || 0),
+    averages: {
+      overall: Number(row?.overall || 0), citability: Number(row?.citability || 0),
+      brandAuthority: Number(row?.brand_authority || 0), aiCrawlerAccess: Number(row?.ai_crawler_access || 0),
+      technicalSeo: Number(row?.technical_seo || 0), structuredData: Number(row?.structured_data || 0),
+      platformOptimization: Number(row?.platform_optimization || 0),
+    },
+    distribution: [
+      { label: "Needs work (0-39)", count: Number(row?.needs_work || 0) },
+      { label: "Developing (40-69)", count: Number(row?.developing || 0) },
+      { label: "Strong (70-100)", count: Number(row?.strong || 0) },
+    ],
+  });
+});
+
+function normalizeDomain(raw: string): string | null {
+  try {
+    const url = new URL(raw.includes("://") ? raw : `https://${raw}`);
+    return url.hostname.toLowerCase().replace(/^www\./, "");
+  } catch {
+    return null;
+  }
+}
+
+router.get("/geo/recommendation-progress", requireAuth, readRateLimiter, async (req, res): Promise<void> => {
+  const domain = normalizeDomain(String(req.query.domain || ""));
+  if (!domain) { res.status(400).json({ error: "Valid domain required" }); return; }
+  const rows = await db.select({
+    recommendationId: recommendationProgressTable.recommendationId,
+    completedAt: recommendationProgressTable.completedAt,
+  }).from(recommendationProgressTable).where(and(
+    eq(recommendationProgressTable.userId, req.userId!),
+    eq(recommendationProgressTable.domain, domain),
+  ));
+  res.json({ domain, completed: rows.map((row) => ({ ...row, completedAt: row.completedAt.toISOString() })) });
+});
+
+router.post("/geo/recommendation-progress", requireAuth, readRateLimiter, async (req, res): Promise<void> => {
+  const domain = normalizeDomain(String(req.body?.domain || ""));
+  const recommendationId = String(req.body?.recommendationId || "").trim();
+  const completed = req.body?.completed === true;
+  if (!domain || !/^[a-z0-9_.:-]{1,120}$/i.test(recommendationId)) {
+    res.status(400).json({ error: "Valid domain and recommendation ID required" });
+    return;
+  }
+  if (completed) {
+    await db.insert(recommendationProgressTable).values({
+      userId: req.userId!, domain, recommendationId,
+    }).onConflictDoNothing();
+  } else {
+    await db.delete(recommendationProgressTable).where(and(
+      eq(recommendationProgressTable.userId, req.userId!),
+      eq(recommendationProgressTable.domain, domain),
+      eq(recommendationProgressTable.recommendationId, recommendationId),
+    ));
+  }
+  res.json({ ok: true, completed });
+});
+
 router.post("/geo/analyze", requireAuth, analyzeRateLimiter, async (req, res): Promise<void> => {
   const parsed = AnalyzeUrlBody.safeParse(req.body);
   if (!parsed.success) {
@@ -107,6 +185,7 @@ router.post("/geo/analyze", requireAuth, analyzeRateLimiter, async (req, res): P
             const unsubscribeUrl = `${baseUrl}/api/auth/unsubscribe?token=${u.unsubscribeToken}`;
             return EmailService.sendLimitReached(u.email, u.firstName || "", "audits", quota.cap, unsubscribeUrl);
           }
+          return undefined;
         })
         .catch((err) => req.log.error({ err, userId: req.userId }, "limit-reached email failed"));
     }
@@ -215,7 +294,7 @@ ${roundExcerptStats(analysis.pageExcerpt || "(no content extracted)")}
 
 === AI VISIBILITY SIGNALS ===
 Overall GEO score: ${analysis.geoScore}/100
-Citability ${analysis.scores.citability}/100 · Brand Authority ${analysis.scores.brandAuthority}/100 · Content Quality ${analysis.scores.contentQuality}/100 · Technical SEO ${analysis.scores.technicalSeo}/100 · Structured Data ${analysis.scores.structuredData}/100 · Platform Optimization ${analysis.scores.platformOptimization}/100
+Citability ${analysis.scores.citability}/100 · Brand Authority ${analysis.scores.brandAuthority}/100 · AI Crawler Access ${analysis.scores.aiCrawlerAccess}/100 · Technical SEO ${analysis.scores.technicalSeo}/100 · Structured Data ${analysis.scores.structuredData}/100 · Platform Optimization ${analysis.scores.platformOptimization}/100
 
 Brand authority footprint for "${brand}":
 ${brandAuthLines || "  (no signals checked)"}
@@ -254,7 +333,7 @@ Hard rules:
 - NEVER recommend something that is already confirmed satisfied above (e.g. if Has llms.txt: true, do NOT suggest creating llms.txt; if no blocked crawlers, do NOT suggest unblocking them; if HTTPS is true, do NOT mention HTTPS)
 - DO NOT invent quantitative claims. You may NOT write percentages, multipliers ("4x"), or ranking-position numbers UNLESS that exact figure literally appears in the "TOP RULE-BASED FINDINGS" section above. No "extracted N% more often", no "Nx more reliably", no "deprioritize by N positions" — these are forbidden unless quoted verbatim from the findings.
 - When quoting any statistic that appears in the page content excerpt (e.g. "1.64735697% of GDP"), round to the precision a human would write: 1 decimal place for percentages and ratios, 2 decimal places only when the number is between 0 and 1. Never reproduce more than 4 significant figures from page-derived stats.
-- The ONLY number you may call "the score", "your score", or "the AEO/GEO score" is the Overall GEO score (${analysis.geoScore}/100). The six category figures (Citability, Brand Authority, Content Quality, Technical SEO, Structured Data, Platform Optimization) are SUB-SCORES — if you cite one, name it explicitly (e.g. "your Citability sub-score of ${analysis.scores.citability}/100"). Never present a sub-score as the page's overall score.
+- The ONLY number you may call "the score", "your score", or "the AEO/GEO score" is the Overall GEO score (${analysis.geoScore}/100). The six category figures (Citability, Brand Authority, AI Crawler Access, Technical SEO, Structured Data, Platform Optimization) are SUB-SCORES — if you cite one, name it explicitly (e.g. "your Citability sub-score of ${analysis.scores.citability}/100"). Never present a sub-score as the page's overall score.
 - When you reference the page URL or domain, write the hostname in lowercase (e.g. "stripe.com", not "Stripe.com"), even if the page title or excerpt capitalizes it.`;
 
       // Latency-critical: this call blocks the audit response while the user
@@ -262,16 +341,16 @@ Hard rules:
       // strictly-templated ~400-word markdown doc, so the fast/cheap tier
       // handles it well — INSIGHTS_MODEL overrides without a redeploy if you
       // want heavier prose back (e.g. INSIGHTS_MODEL=claude-sonnet-4-5).
-      // max_tokens 1024 comfortably fits the 350-500 word hard limit and
+      // Leave enough headroom for the model to finish the requested structure.
       // stops a runaway generation from stalling the response.
       const message = await anthropic.messages.create({
         model: process.env.INSIGHTS_MODEL || "claude-haiku-4-5",
-        max_tokens: 1024,
+        max_tokens: 1800,
         messages: [{ role: "user", content: prompt }],
       });
 
       const block = message.content[0];
-      if (block.type === "text") {
+      if (block.type === "text" && message.stop_reason !== "max_tokens") {
         aiInsights = sanitizeInsights(block.text, hostname);
       }
     } catch (aiErr) {
@@ -301,6 +380,7 @@ Hard rules:
       hasLlmsTxt: analysis.hasLlmsTxt,
       hasHttps: analysis.hasHttps,
       hasCanonical: analysis.hasCanonical,
+      hasNoSnippet: analysis.hasNoSnippet,
       wordCount: analysis.wordCount,
       rawHtmlWordCount: analysis.rawHtmlWordCount,
       renderedWordCount: analysis.renderedWordCount,
@@ -676,9 +756,11 @@ router.get("/geo/audits/:id/fixes", requireAuth, readRateLimiter, async (req, re
   const brandName = (audit.brandName as string | null) || hostname.replace(/^www\./, "").split(".")[0];
   const description = (audit.description as string | null) || `${brandName} — website`;
 
-  // Build llms.txt
+  // llms.txt is optional and low-impact. Keep it available for teams that
+  // want it, but do not imply that training bots control citations.
   const schemaDetected = ((audit.schemaTypes as any[]) || []).filter((s: any) => s.present).map((s: any) => s.type);
-  const crawlersBlocked = ((audit.crawlers as any[]) || []).filter((c: any) => !c.allowed).map((c: any) => c.name);
+  const citationCrawlerNames = new Set(["OAI-SearchBot", "ChatGPT-User", "Claude-SearchBot", "Claude-User", "PerplexityBot", "Perplexity-User", "BingBot", "Applebot"]);
+  const crawlersBlocked = ((audit.crawlers as any[]) || []).filter((c: any) => !c.allowed && citationCrawlerNames.has(c.name)).map((c: any) => c.name);
   const recs = ((audit.recommendations as any[]) || []).slice(0, 6);
 
   const llmsTxt = `# ${brandName}
@@ -701,9 +783,9 @@ ${description}
 
 - Website: ${audit.url}
 
-## For AI Crawlers
+## AI search discovery
 
-This site welcomes indexing by AI search crawlers including GPTBot, ClaudeBot, PerplexityBot, Google-Extended, Applebot, and meta-externalagent. Please index and cite this site's content appropriately.
+Citation access is controlled in robots.txt. This file is a human-readable content map and is not a substitute for allowing search-index and live-fetch bots.
 `;
 
   // Build optimized JSON-LD schema
@@ -712,20 +794,14 @@ This site welcomes indexing by AI search crawlers including GPTBot, ClaudeBot, P
 
   // Build sameAs from verified brand signals stored on the audit
   const brandSignals = (audit.brandSignals as any[]) || [];
-  const sameAs: string[] = [];
-  const wikiSignal = brandSignals.find((s: any) => s.source === "Wikipedia" && s.found && s.detail);
-  if (wikiSignal?.detail) {
-    // Detail format: 'Article: "Notion (productivity software)"' or 'Wikidata entity Q123: Notion'
-    const articleMatch = (wikiSignal.detail as string).match(/Article:\s+"([^"]+)"/);
-    if (articleMatch) {
-      sameAs.push(`https://en.wikipedia.org/wiki/${encodeURIComponent(articleMatch[1].replace(/ /g, "_"))}`);
-    }
-  }
+  const sameAsCandidates: string[] = [];
+  const wikiSignal = brandSignals.find((s: any) => s.source === "Wikipedia" && s.found && s.url);
+  if (wikiSignal?.url) sameAsCandidates.push(wikiSignal.url);
   const ghSignal = brandSignals.find((s: any) => s.source === "GitHub" && s.found && s.detail);
   if (ghSignal?.detail) {
     const loginMatch = (ghSignal.detail as string).match(/@([A-Za-z0-9_-]+)/);
     if (loginMatch) {
-      sameAs.push(`https://github.com/${loginMatch[1]}`);
+      sameAsCandidates.push(`https://github.com/${loginMatch[1]}`);
     }
   }
 
@@ -737,7 +813,8 @@ This site welcomes indexing by AI search crawlers including GPTBot, ClaudeBot, P
     "name": brandName,
     "url": audit.url,
     "description": description,
-    "sameAs": sameAs,
+    // External profiles must be confirmed by the user before publishing.
+    "sameAs": [],
   });
 
   schemaBlocks.push({
@@ -797,6 +874,7 @@ This site welcomes indexing by AI search crawlers including GPTBot, ClaudeBot, P
     brandName,
     llmsTxt,
     schemaBlocks,
+    sameAsCandidates,
     robotsSnippet,
     crawlersBlocked,
     missingSchema,

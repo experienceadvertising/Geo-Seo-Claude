@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { SEO, breadcrumbJsonLd } from "@/components/seo";
 import { COMPETITORS, OUR_FACTS } from "@/data/competitors";
 import { AUTHOR_PERSON_LD, PRIMARY_AUTHOR, PUBLISHER_ORG } from "@/data/author";
+import { GuideSources } from "@/components/guide-sources";
 
 /**
  * "Best AEO tools 2026" buyer's guide.
@@ -107,7 +108,7 @@ export default function BestAeoToolsPage({ variant = "aeo" }: BestAeoToolsPagePr
       bestFor: "Solo marketers, in-house SEO leads, indie founders",
       pick: "AEO Improvement",
       pickHref: `/upgrade?source=best-${acronym.toLowerCase()}-tools`,
-      reasoning: `${OUR_FACTS.freeTier}, ${OUR_FACTS.proPrice} for Pro. Self-serve sign-up, no demos, automated Fix Generator (llms.txt + JSON-LD).`,
+      reasoning: `${OUR_FACTS.freeTier}, ${OUR_FACTS.proPrice} for Pro. Self-serve sign-up, no demos, automated JSON-LD and crawler-policy fixes.`,
     },
     {
       icon: <TrendingUp className="h-5 w-5 text-emerald-600" />,
@@ -151,7 +152,7 @@ export default function BestAeoToolsPage({ variant = "aeo" }: BestAeoToolsPagePr
         path={path}
         ogType="article"
         publishedTime="2026-05-03"
-        modifiedTime="2026-05-05"
+        modifiedTime="2026-07-22"
         authorName={PRIMARY_AUTHOR.name}
         jsonLd={[itemListJsonLd, articleJsonLd, breadcrumb]}
       />
@@ -166,7 +167,7 @@ export default function BestAeoToolsPage({ variant = "aeo" }: BestAeoToolsPagePr
               The best {acronym} ({fullName}) tools in 2026
             </h1>
             <p className="text-sm text-slate-500">
-              By <a href={PRIMARY_AUTHOR.url} rel="author" className="text-emerald-700 hover:underline font-medium">{PRIMARY_AUTHOR.name}</a>, {PRIMARY_AUTHOR.jobTitle} · Updated May 5, 2026
+              By <a href={PRIMARY_AUTHOR.url} rel="author" className="text-emerald-700 hover:underline font-medium">{PRIMARY_AUTHOR.name}</a>, {PRIMARY_AUTHOR.jobTitle} · Updated July 22, 2026
             </p>
             <p className="text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto">
               An honest, category-by-category guide. We make {acronym} software ourselves —
@@ -233,13 +234,13 @@ export default function BestAeoToolsPage({ variant = "aeo" }: BestAeoToolsPagePr
                 the parts of the loop that consume the most time when you're running AEO without
                 tooling. A pure visibility-monitoring dashboard tells you the score is going
                 down; it doesn't help you make the score go up. Look for tools that ship
-                production-ready output (llms.txt drafts, JSON-LD blocks, robots.txt snippets)
+                production-ready output (JSON-LD blocks and citation-bot robots.txt snippets)
                 rather than just charts and exports.
               </p>
               <p className="text-slate-700 leading-relaxed">
                 The other practitioner reality worth naming: AEO citation visibility is volatile.
-                Between 40% and 60% of cited sources rotate month-to-month across major engines
-                in 2026. A single audit is a snapshot, not a baseline. Whichever tool you pick,
+                Cited sources can rotate from one run to the next across major engines. A single
+                audit is a snapshot, not a baseline. Whichever tool you pick,
                 run a recurring monthly check rather than a one-time setup pass. Even the best
                 technical fixes degrade as crawlers, training cutoffs, and retrieval indexes
                 change underneath you.
@@ -267,7 +268,7 @@ export default function BestAeoToolsPage({ variant = "aeo" }: BestAeoToolsPagePr
                 ) : (
                   <>
                     <strong>For most marketers and agencies:</strong> AEO Improvement — self-serve,
-                    free to start, automated Fix Generator drafts your llms.txt and schema,
+                    free to start, automated Fix Generator drafts JSON-LD and crawler fixes,
                     transparent pricing at {OUR_FACTS.proPrice}.{" "}
                     <strong>For enterprises with a sales-cycle budget:</strong> Profound or
                     Brandlight, depending on whether you optimize for attribution or narrative
@@ -305,8 +306,8 @@ export default function BestAeoToolsPage({ variant = "aeo" }: BestAeoToolsPagePr
               </Bullet>
               <Bullet>
                 <strong>Output that ships to production, not just dashboards.</strong> A
-                visibility chart tells you you're losing. A copy-pasteable llms.txt draft
-                helps you stop losing. Look for the verbs: "generate," "draft," "export."
+                visibility chart tells you you're losing. Deployable JSON-LD and crawler-policy
+                fixes help you act. Look for the verbs: "generate," "draft," "export."
               </Bullet>
               <Bullet>
                 <strong>Transparent pricing.</strong> If a vendor won't show you a price page,
@@ -376,8 +377,8 @@ export default function BestAeoToolsPage({ variant = "aeo" }: BestAeoToolsPagePr
                 </p>
                 <p>
                   We built the Fix Generator because we kept seeing the same pattern with our
-                  own consulting clients: an audit would surface "no llms.txt, no FAQPage
-                  schema, weak Organization markup" — and the marketer would ask their dev
+                  own consulting clients: an audit would surface "no FAQPage schema, weak
+                  Organization markup, blocked citation bots" — and the marketer would ask their dev
                   team for help, and the request would sit in a backlog for six weeks. So
                   we generate the file for you. Copy, paste, ship. Score moves.
                 </p>
@@ -403,8 +404,8 @@ export default function BestAeoToolsPage({ variant = "aeo" }: BestAeoToolsPagePr
             <CardContent className="pt-6 pb-6 space-y-4">
               <h3 className="text-2xl font-bold text-slate-900">Run a free {acronym} audit in 90 seconds</h3>
               <p className="text-slate-600 leading-relaxed">
-                Paste your URL. We'll score your AEO citability, show your top fixes, and draft
-                a starter llms.txt — all on the free plan. No credit card.
+                Paste your URL. We'll score your AEO citability and show your prioritized fixes.
+                Your first month includes the deployable Fix Generator. No credit card.
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
                 <Button
@@ -425,6 +426,8 @@ export default function BestAeoToolsPage({ variant = "aeo" }: BestAeoToolsPagePr
               </div>
             </CardContent>
           </Card>
+
+          <GuideSources />
 
           {/* Deep-dive comparisons */}
           <section className="space-y-3 pt-6 border-t border-slate-200">

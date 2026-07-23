@@ -1,5 +1,19 @@
 import Stripe from "stripe";
 
+type ReplitStripeConnectionResponse = {
+  items?: Array<{
+    settings?: {
+      secret?: string;
+    };
+  }>;
+};
+
+function getReplitStripeSecret(data: unknown): string | undefined {
+  if (!data || typeof data !== "object") return undefined;
+  const { items } = data as ReplitStripeConnectionResponse;
+  return items?.[0]?.settings?.secret;
+}
+
 async function getStripeClient(): Promise<Stripe> {
   if (process.env.STRIPE_SECRET_KEY) {
     console.log("Using STRIPE_SECRET_KEY from environment");
@@ -26,7 +40,7 @@ async function getStripeClient(): Promise<Stripe> {
     headers: { Accept: "application/json", "X-Replit-Token": xReplitToken },
   });
   const data = await resp.json();
-  const secretKey = data.items?.[0]?.settings?.secret;
+  const secretKey = getReplitStripeSecret(data);
   if (!secretKey) throw new Error("Stripe secret key not found in integration.");
   return new Stripe(secretKey, { apiVersion: "2025-08-27.basil" as any });
 }
@@ -76,7 +90,7 @@ async function createProducts() {
     },
     {
       name: "Agency Plan",
-      description: "500 audits/month, 150 simulations/month, everything in Pro plus agency-branded reports, multi-client management, 2-year trend history, and a dedicated account manager.",
+      description: "500 audits/month, 150 simulations/month, everything in Pro plus 50 monitored sites, GA4 integration, 2-year trend history, and priority support.",
       plan_id: "agency",
       // $249/mo · $2,490/yr (~2 months free, $207.50/mo)
       monthly: 24900,

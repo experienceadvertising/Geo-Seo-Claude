@@ -169,7 +169,7 @@ function buildHero(
         badgeTone: "indigo",
         headline: "Turn this week's insight into action",
         subhead:
-          "Pro unlocks the full toolkit: all 4 engines, the Fix Generator that drafts your llms.txt and JSON-LD, and competitor citation tracking.",
+          "Pro unlocks the full toolkit: all 4 engines, deployable JSON-LD and citation-bot robots.txt fixes, and competitor citation tracking.",
         showUsage: false,
       };
     case "first-audit":
@@ -238,7 +238,7 @@ const BENEFITS: BenefitRow[] = [
     icon: <FileCode2 className="h-5 w-5 text-emerald-600" />,
     title: "Fix Generator",
     free: "—",
-    pro: "Auto-drafts llms.txt, JSON-LD, robots.txt",
+    pro: "Auto-drafts JSON-LD and crawler fixes",
   },
   {
     icon: <Eye className="h-5 w-5 text-emerald-600" />,
@@ -498,7 +498,7 @@ export default function UpgradePage() {
                 <div>
                   <h3 className="font-bold text-slate-900">Agency</h3>
                   <p className="text-sm text-slate-600 mt-0.5">
-                    500 audits / 150 simulations per month, multi-client management, agency-branded reports, dedicated account manager
+                    500 audits / 150 simulations per month, 50 monitored client sites, GA4 AI-referral reporting, and 2-year history
                   </p>
                   <p className="text-xs text-slate-500 mt-1.5">
                     {agencyPrice ? formatPrice(agencyPrice.unitAmount) : "$249"}/mo · for teams managing multiple client sites

@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { SEO, breadcrumbJsonLd } from "@/components/seo";
 import { AUTHOR_PERSON_LD, PRIMARY_AUTHOR, PUBLISHER_ORG } from "@/data/author";
+import { GuideSources } from "@/components/guide-sources";
 
 const PAGE_TITLE = "How to Appear in AI Search Results: A Practical Guide for 2026";
 const PAGE_DESC =
@@ -124,7 +125,7 @@ export default function HowToAppearInAISearch() {
         path="/how-to-appear-in-ai-search"
         ogType="article"
         publishedTime="2026-05-05"
-        modifiedTime="2026-05-05"
+        modifiedTime="2026-07-22"
         authorName={PRIMARY_AUTHOR.name}
         jsonLd={[articleJsonLd, faqJsonLd, breadcrumb]}
       />
@@ -134,13 +135,13 @@ export default function HowToAppearInAISearch() {
           {/* Hero */}
           <header className="space-y-4">
             <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 border px-3 py-1 text-xs font-semibold inline-flex items-center gap-1.5">
-              <Search className="h-3.5 w-3.5" /> AI Search Visibility Guide · Updated May 2026
+              <Search className="h-3.5 w-3.5" /> AI Search Visibility Guide · Updated July 2026
             </Badge>
             <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 leading-tight">
               How to appear in AI search results: a practical guide for 2026
             </h1>
             <p className="text-sm text-slate-500">
-              By <a href={PRIMARY_AUTHOR.url} rel="author" className="text-emerald-700 hover:underline font-medium">{PRIMARY_AUTHOR.name}</a>, {PRIMARY_AUTHOR.jobTitle} · Updated May 5, 2026
+              By <a href={PRIMARY_AUTHOR.url} rel="author" className="text-emerald-700 hover:underline font-medium">{PRIMARY_AUTHOR.name}</a>, {PRIMARY_AUTHOR.jobTitle} · Updated July 22, 2026
             </p>
             <p className="text-lg text-slate-600 leading-relaxed">
               Getting cited by ChatGPT, Claude, Gemini, and Perplexity requires a different playbook than
@@ -310,9 +311,7 @@ export default function HowToAppearInAISearch() {
                   <Globe className="h-4 w-4 text-teal-600" /> llms.txt
                 </h3>
                 <p className="text-sm text-slate-600 leading-relaxed">
-                  An llms.txt file at your domain root is a plain-text manifest that tells AI engines which
-                  pages to prioritize and how to summarize your brand. It is an emerging convention rather
-                  than a formal standard, but early adoption is low-cost and signals intent clearly.
+                  An llms.txt file is an optional plain-text content map. Major answer engines do not document it as a citation gate, so prioritize fresh server-visible content, sitemaps, and citation-path crawler access first.
                 </p>
               </div>
             </div>
@@ -414,6 +413,8 @@ export default function HowToAppearInAISearch() {
               <li><Link href="/best-aeo-tools" className="text-emerald-600 hover:underline">Best AEO tools in 2026</Link></li>
             </ul>
           </section>
+
+          <GuideSources />
 
           {/* CTA */}
           <Card className="border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50/30">
