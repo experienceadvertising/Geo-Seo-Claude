@@ -31,7 +31,7 @@ Answer Engine Optimization is the discipline of making website content citable i
 - **Schema markup**: JSON-LD structured data that helps AI understand content type, author, and entity relationships
 - **Crawler access**: Explicit allowance for AI training and search crawlers in robots.txt (note: GPTBot is for OpenAI training, OAI-SearchBot is for live ChatGPT citations — they are independent)
 - **Brand authority**: Presence on structured knowledge sources (Wikipedia, Wikidata, LinkedIn, Crunchbase)
-- **llms.txt**: A plain-text briefing file (this file) that helps LLMs understand the site without executing JavaScript
+- **llms.txt**: An optional, site-authored content map. Major answer engines do not document it as a citation requirement, so it has no effect on the audit score.
 
 ## Who is it for?
 

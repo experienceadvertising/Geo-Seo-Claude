@@ -85,7 +85,7 @@ export default function Methodology() {
             ].map(([name, weight, detail]) => <div key={name} className="border rounded-md p-3"><div className="flex justify-between font-semibold"><span>{name}</span><span>{weight}</span></div><p className="mt-1 text-xs text-muted-foreground">{detail}</p></div>)}
           </div>
           <p><strong>AI Crawler Access formula:</strong> 70% comes from citation-path bot access, 15% from the absence of <code>noindex</code>, 10% from snippet permission, and 5% from substantive raw HTML. Training-only bots such as GPTBot, ClaudeBot, and Google-Extended do not affect this score.</p>
-          <p><strong>llms.txt:</strong> contributes only a 2-point optional technical bonus. It does not create a quick win and is not presented as a citation gate.</p>
+          <p><strong>llms.txt:</strong> is reported as an optional content map but has no scoring effect. It is not presented as a citation gate or a default recommendation.</p>
         </CardContent>
       </Card>
 

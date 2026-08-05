@@ -1,6 +1,11 @@
 import * as cheerio from "cheerio";
 import { analyzeBrandAuthority, type BrandSignal } from "./brandAuthority";
-import { extractContentSignals, generateGeoRecommendations, type GeoRecommendation } from "./geoRecommendations";
+import {
+  extractContentSignals,
+  generateGeoRecommendations,
+  type GeoRecommendation,
+} from "./geoRecommendations";
+import { extractDataNoSnippetSignals } from "./snippetControls";
 import { renderPage } from "./pageRenderer";
 import { safeFetch } from "./safeFetch";
 import { isAllowedByRobots, parseRobotsTxt } from "./robotsPolicy";
@@ -60,6 +65,8 @@ export interface AnalysisResult {
   hasCanonical: boolean;
   /** True when a nosnippet directive was found in meta robots or x-robots-tag header. */
   hasNoSnippet: boolean;
+  /** Words hidden by section-level data-nosnippet attributes. */
+  dataNoSnippetWordCount: number;
   wordCount: number;
   rawHtmlWordCount: number;
   renderedWordCount: number;
@@ -213,6 +220,7 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
   let description: string | null = null;
   let hasCanonical = false;
   let hasNoSnippet = false;
+  let dataNoSnippetWordCount = 0;
   let hasNoIndex = false;
   let wordCount = 0;
   let contentPlacementScore = 50;
@@ -322,6 +330,8 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
         ($("meta[name='application-name']").attr("content") || "").trim() ||
         null;
       hasCanonical = $("link[rel='canonical']").length > 0;
+
+      dataNoSnippetWordCount = extractDataNoSnippetSignals($).wordCount;
 
       // Detect nosnippet / preview-restriction directives in meta robots tags.
       // Per Zyppy Signal AI Citation Ranking Factors: Preview Controls scores 9.2/10.
@@ -582,12 +592,10 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
     technicalScore += 8;
   }
 
-  // llms.txt: kept as a small bonus, not a headline recommendation.
-  // Current crawler-log evidence (2026) shows major AI crawlers almost
-  // never fetch it and no engine has committed to reading it — it's a
-  // cheap, harmless extra, not a citation lever, so it no longer earns a
-  // quick-win slot or a large score share.
-  if (hasLlmsTxt) technicalScore += 2;
+  // llms.txt is reported as an optional site map for agents, but it does not
+  // affect the score. Major answer engines do not document it as a citation
+  // requirement, and the best current guidance prioritizes normal SEO access,
+  // snippet controls, and server-visible content.
 
   if (schemaScore < 25) {
     quickWins.push("Add structured data (Organization, Article, FAQ schemas) to improve AI discoverability");
@@ -676,12 +684,12 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
       hasArticleSchema,
       hasOrgSchema,
       hasHowToSchema,
-      hasLlmsTxt,
       brandName: brandAuthority.brandName || null,
       brandFound: brandAuthority.signals.some((s) => s.found),
       blockedAiCrawlers,
       avgCitabilityScore,
       hasNoSnippet,
+      dataNoSnippetWordCount,
       contentPlacementScore,
     });
   }
@@ -722,6 +730,7 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
     hasHttps,
     hasCanonical,
     hasNoSnippet,
+    dataNoSnippetWordCount,
     wordCount,
     rawHtmlWordCount,
     renderedWordCount,

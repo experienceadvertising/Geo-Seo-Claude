@@ -26,7 +26,7 @@ export const RECOMMENDATIONS_SCHEMA_VERSION = "v1" as const;
  * Format: "YYYY.MM" of the review month.
  * Rendered on the /methodology page and included in audit API responses.
  */
-export const METHODOLOGY_VERSION = "2026.05" as const;
+export const METHODOLOGY_VERSION = "2026.08" as const;
 
 export type Severity = "critical" | "high" | "medium" | "low";
 

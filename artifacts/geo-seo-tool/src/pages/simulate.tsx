@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, Sparkles, Play, ArrowLeft, CheckCircle2, XCircle, Link as LinkIcon, AlertTriangle, ExternalLink, Lock, TrendingUp, TrendingDown, Minus, Plus, Trash2, Trophy, BarChart3, Info, Network, Layers } from "lucide-react";
+import { Loader2, Sparkles, Play, ArrowLeft, CheckCircle2, XCircle, Link as LinkIcon, AlertTriangle, ExternalLink, Lock, TrendingUp, TrendingDown, Minus, Plus, Trash2, Trophy, BarChart3, Info, Network, Layers, Search } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { usePlan } from "@/hooks/usePlan";
 import { UpgradePrompt } from "@/components/upgrade-prompt";
@@ -34,6 +34,208 @@ interface SovResponse {
   competitors: string[];
   series: Array<{ date: string; values: Record<string, number> }>;
   runs: number;
+}
+
+interface GoogleStatus {
+  configured: boolean;
+  connected: boolean;
+  searchConsoleGranted: boolean;
+}
+
+interface SearchConsoleSite {
+  siteUrl: string;
+  permissionLevel: string;
+}
+
+interface SearchOpportunity {
+  query: string;
+  page: string;
+  clicks: number;
+  impressions: number;
+  ctr: number;
+  position: number;
+  priorityScore: number;
+  band: "established" | "quick_win" | "growth" | "emerging";
+  recommendedAction: string;
+}
+
+interface SearchOpportunityReport {
+  siteUrl: string;
+  pageUrl: string;
+  days: number;
+  startDate: string;
+  endDate: string;
+  rowsReturned: number;
+  opportunities: SearchOpportunity[];
+}
+
+function searchConsoleSiteMatchesPage(siteUrl: string, pageUrl: string): boolean {
+  try {
+    const page = new URL(pageUrl);
+    if (siteUrl.startsWith("sc-domain:")) {
+      const propertyDomain = siteUrl.slice("sc-domain:".length).toLowerCase().replace(/^www\./, "");
+      const pageDomain = page.hostname.toLowerCase().replace(/^www\./, "");
+      return pageDomain === propertyDomain || pageDomain.endsWith(`.${propertyDomain}`);
+    }
+    return page.toString().startsWith(new URL(siteUrl).toString());
+  } catch {
+    return false;
+  }
+}
+
+const OPPORTUNITY_LABELS: Record<SearchOpportunity["band"], string> = {
+  established: "Established",
+  quick_win: "Page 1 opportunity",
+  growth: "Positions 11 to 20",
+  emerging: "Positions 21 to 30",
+};
+
+function SearchConsoleOpportunityCard({
+  auditId,
+  pageUrl,
+  isPro,
+  selectedQuery,
+  onSelectQuery,
+}: {
+  auditId: number;
+  pageUrl: string;
+  isPro: boolean;
+  selectedQuery: string;
+  onSelectQuery: (query: string) => void;
+}) {
+  const [selectedSiteUrl, setSelectedSiteUrl] = useState("");
+
+  const status = useQuery<GoogleStatus>({
+    queryKey: ["google", "status"],
+    queryFn: () => customFetch<GoogleStatus>("/api/integrations/google/status"),
+    enabled: isPro,
+    retry: false,
+  });
+
+  const sites = useQuery<{ sites: SearchConsoleSite[] }>({
+    queryKey: ["google", "search-console", "sites"],
+    queryFn: () => customFetch<{ sites: SearchConsoleSite[] }>("/api/integrations/google/search-console/sites"),
+    enabled: isPro && !!status.data?.connected && !!status.data?.searchConsoleGranted,
+    retry: false,
+  });
+
+  React.useEffect(() => {
+    if (selectedSiteUrl || !sites.data?.sites?.length || !pageUrl) return;
+    const match = sites.data.sites.find((site) => searchConsoleSiteMatchesPage(site.siteUrl, pageUrl));
+    setSelectedSiteUrl(match?.siteUrl || sites.data.sites[0].siteUrl);
+  }, [pageUrl, selectedSiteUrl, sites.data]);
+
+  const opportunities = useQuery<SearchOpportunityReport>({
+    queryKey: ["google", "search-console", "opportunities", selectedSiteUrl, pageUrl],
+    queryFn: () => customFetch<SearchOpportunityReport>(
+      `/api/integrations/google/search-console/opportunities?siteUrl=${encodeURIComponent(selectedSiteUrl)}&pageUrl=${encodeURIComponent(pageUrl)}&days=90`,
+    ),
+    enabled: isPro && !!selectedSiteUrl && !!pageUrl,
+    retry: false,
+  });
+
+  const connectUrl = `/api/integrations/google/connect?returnTo=${encodeURIComponent(`/simulate/${auditId}`)}`;
+
+  return (
+    <div className="rounded-lg border bg-muted/20 p-4 space-y-3">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold flex items-center gap-2">
+            <Search className="h-4 w-4 text-blue-600" /> Search Console opportunities
+            <Badge className="text-[10px] px-1.5 py-0 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold">Pro</Badge>
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Use a query this page already ranks for as the seed for a more grounded fan-out cluster.
+          </p>
+        </div>
+      </div>
+
+      {!isPro ? (
+        <p className="text-sm text-muted-foreground">
+          <Lock className="h-3.5 w-3.5 inline mr-1" /> Upgrade to Pro to connect read-only Search Console data.
+        </p>
+      ) : status.isLoading ? (
+        <div className="h-16 rounded-md bg-muted/60 animate-pulse" />
+      ) : !status.data?.configured ? (
+        <p className="text-sm text-muted-foreground">Google integration is not configured on this server yet.</p>
+      ) : !status.data.connected ? (
+        <div className="flex flex-wrap items-center gap-3">
+          <Button size="sm" onClick={() => { window.location.href = connectUrl; }}>
+            <LinkIcon className="h-4 w-4 mr-1.5" /> Connect Google
+          </Button>
+          <span className="text-xs text-muted-foreground">Read-only access to GA4 and Search Console.</span>
+        </div>
+      ) : !status.data.searchConsoleGranted ? (
+        <div className="flex flex-wrap items-center gap-3">
+          <Button size="sm" onClick={() => { window.location.href = connectUrl; }}>
+            Reconnect for Search Console
+          </Button>
+          <span className="text-xs text-muted-foreground">Your existing connection only granted Analytics access.</span>
+        </div>
+      ) : sites.isLoading ? (
+        <div className="h-16 rounded-md bg-muted/60 animate-pulse" />
+      ) : !sites.data?.sites?.length ? (
+        <p className="text-sm text-muted-foreground">No verified Search Console properties were found for this Google account.</p>
+      ) : (
+        <div className="space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            <label className="text-xs font-medium shrink-0" htmlFor="gsc-site">Search Console property</label>
+            <select
+              id="gsc-site"
+              value={selectedSiteUrl}
+              onChange={(event) => setSelectedSiteUrl(event.target.value)}
+              className="h-9 flex-1 rounded-md border bg-background px-3 text-sm"
+            >
+              {sites.data.sites.map((site) => (
+                <option key={site.siteUrl} value={site.siteUrl}>{site.siteUrl}</option>
+              ))}
+            </select>
+          </div>
+
+          {opportunities.isLoading ? (
+            <div className="h-28 rounded-md bg-muted/60 animate-pulse" />
+          ) : opportunities.isError ? (
+            <p className="text-sm text-muted-foreground">Couldn't load Search Console query data for this page.</p>
+          ) : opportunities.data?.opportunities?.length ? (
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">
+                Finalized Google web-search data from {opportunities.data.startDate} to {opportunities.data.endDate}. Select a seed query, then generate the fan-out cluster.
+              </p>
+              <div className="grid gap-2 max-h-72 overflow-auto pr-1">
+                {opportunities.data.opportunities.slice(0, 12).map((item) => {
+                  const active = selectedQuery === item.query;
+                  return (
+                    <button
+                      key={item.query}
+                      type="button"
+                      onClick={() => onSelectQuery(item.query)}
+                      className={`text-left rounded-md border px-3 py-2 transition-colors ${active ? "border-blue-500 bg-blue-500/5" : "hover:border-blue-500/40 hover:bg-blue-500/5"}`}
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="text-sm font-medium">{item.query}</span>
+                        <Badge variant={active ? "default" : "outline"} className="text-[10px]">{OPPORTUNITY_LABELS[item.band]}</Badge>
+                      </div>
+                      <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1 text-xs text-muted-foreground">
+                        <span>Avg. position {item.position.toFixed(1)}</span>
+                        <span>{item.impressions.toLocaleString()} impressions</span>
+                        <span>{item.clicks.toLocaleString()} clicks</span>
+                        <span>CTR {(item.ctr * 100).toFixed(1)}%</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">{item.recommendedAction}</p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No qualifying queries were found for this exact page in the last 90 days. Check the selected property and the audited URL.
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 // Brand line is always emerald; competitors cycle through a distinct palette.
@@ -123,6 +325,44 @@ function getDomain(url: string): string {
   try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return url; }
 }
 
+const COVERAGE_STOP_WORDS = new Set([
+  "a", "an", "and", "are", "as", "at", "be", "best", "by", "can", "do", "does", "for", "from",
+  "how", "i", "in", "is", "it", "of", "on", "or", "the", "to", "vs", "what", "when", "where",
+  "which", "who", "why", "with", "you", "your",
+]);
+
+function coverageTokens(text: string): string[] {
+  return [...new Set(
+    text.toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, " ")
+      .split(/[\s-]+/)
+      .map((token) => token.replace(/(?:ing|ed|es|s)$/i, ""))
+      .filter((token) => token.length >= 3 && !COVERAGE_STOP_WORDS.has(token)),
+  )];
+}
+
+function assessPageCoverage(query: string, audit: any): {
+  status: "covered" | "weak" | "missing";
+  ratio: number;
+  matched: string[];
+} {
+  const blocks = Array.isArray(audit?.citabilityBlocks) ? audit.citabilityBlocks : [];
+  const pageText = [
+    audit?.title || "",
+    audit?.description || "",
+    ...blocks.flatMap((block: any) => [block?.heading || "", block?.preview || ""]),
+  ].join(" ");
+  const queryTokens = coverageTokens(query);
+  const pageTokens = new Set(coverageTokens(pageText));
+  const matched = queryTokens.filter((token) => pageTokens.has(token));
+  const ratio = queryTokens.length > 0 ? matched.length / queryTokens.length : 0;
+  return {
+    status: ratio >= 0.65 ? "covered" : ratio >= 0.35 ? "weak" : "missing",
+    ratio,
+    matched,
+  };
+}
+
 /**
  * Client-side error sanitizer — mirrors the server's sanitizeError logic so
  * that simulation results stored before the server fix was deployed also show
@@ -173,6 +413,7 @@ export default function SimulatePage() {
 
   const [brandName, setBrandName] = useState("");
   const [promptsText, setPromptsText] = useState("");
+  const [seedQuery, setSeedQuery] = useState("");
   const [suggestMode, setSuggestMode] = useState<"standard" | "fanout">("standard");
   const [selectedEngines, setSelectedEngines] = useState<string[]>(ENGINES.map(e => e.id));
   const [competitorUrls, setCompetitorUrls] = useState<string[]>(["", "", ""]);
@@ -216,6 +457,10 @@ export default function SimulatePage() {
     [promptsText]
   );
   const invalidPromptCount = Math.max(0, promptLines.length - prompts.length);
+  const pageCoverage = useMemo(
+    () => prompts.map((query) => ({ query, ...assessPageCoverage(query, audit) })),
+    [prompts, audit],
+  );
   const runDisabledReason = !brandName.trim()
     ? "Add a brand name."
     : !domain
@@ -235,6 +480,7 @@ export default function SimulatePage() {
           description: audit?.description || undefined,
           ...(audit?.title ? { title: audit.title } : {}),
           ...(audit?.aiInsights ? { aiInsights: audit.aiInsights } : {}),
+          ...(mode === "fanout" && seedQuery ? { seedQuery } : {}),
           mode,
         } as any,
       });
@@ -431,6 +677,19 @@ export default function SimulatePage() {
             </div>
           </div>
 
+          {audit?.url && (
+            <SearchConsoleOpportunityCard
+              auditId={auditId}
+              pageUrl={audit.url}
+              isPro={isPro}
+              selectedQuery={seedQuery}
+              onSelectQuery={(query) => {
+                setSeedQuery(query);
+                setSuggestMode("fanout");
+              }}
+            />
+          )}
+
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-sm font-medium">
@@ -469,7 +728,7 @@ export default function SimulatePage() {
             </div>
             {suggestMode === "fanout" && (
               <p className="text-xs text-violet-700 dark:text-violet-400 bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-900 rounded-md px-3 py-2 mb-2">
-                <strong>Fan-out cluster mode:</strong> generates 8 queries covering all topic angles (definitions, comparisons, how-tos, troubleshooting) that AI engines internally search when researching your category. Running these gives a truer picture of your topical breadth.
+                <strong>Fan-out cluster mode:</strong> generates 8 tightly related queries across primary intent, supporting topics, comparisons, problems, use cases, and decision-stage research. {seedQuery ? <>Using Search Console seed: <strong>{seedQuery}</strong>.</> : <>Select a Search Console opportunity above for the strongest starting point.</>}
                 {!isPro && (
                   <span className="block mt-1 text-amber-700 dark:text-amber-400">
                     Free plan runs the first {maxPrompts} prompts. <a href="/pricing" className="underline font-medium">Upgrade to Pro</a> to run the full cluster.
@@ -499,6 +758,29 @@ export default function SimulatePage() {
                 <p className="text-xs text-amber-600 font-medium">Only first {maxPrompts} prompts will run on the Free plan</p>
               )}
             </div>
+
+            {seedQuery && suggestMode === "fanout" && pageCoverage.length > 0 && (
+              <div className="mt-4 rounded-lg border p-3 space-y-2">
+                <div>
+                  <p className="text-sm font-semibold flex items-center gap-2"><Layers className="h-4 w-4 text-violet-600" /> Page coverage preview</p>
+                  <p className="text-xs text-muted-foreground mt-1">Lexical match against the stored page title, description, headings, and citation-block previews.</p>
+                </div>
+                <div className="grid gap-1.5">
+                  {pageCoverage.map((item) => (
+                    <div key={item.query} className="flex items-start justify-between gap-3 rounded-md bg-muted/40 px-3 py-2">
+                      <span className="text-xs leading-relaxed">{item.query}</span>
+                      <Badge
+                        variant="outline"
+                        className={`text-[10px] shrink-0 ${item.status === "covered" ? "border-emerald-400 text-emerald-700" : item.status === "weak" ? "border-amber-400 text-amber-700" : "border-red-400 text-red-700"}`}
+                      >
+                        {item.status === "covered" ? "Covered" : item.status === "weak" ? "Weak match" : "Possible gap"}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">This is a text-match screen, not a semantic content verdict. Review search intent and the full page before adding or splitting content.</p>
+              </div>
+            )}
           </div>
 
           <div>

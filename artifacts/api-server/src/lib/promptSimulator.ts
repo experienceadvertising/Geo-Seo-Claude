@@ -638,6 +638,8 @@ export interface PromptGenerationContext {
   description?: string | null;
   title?: string | null;
   aiInsights?: string | null;
+  /** Real query selected from Search Console to anchor fan-out generation. */
+  seedQuery?: string | null;
 }
 
 export async function generatePromptsForBrand(
@@ -651,6 +653,7 @@ export async function generatePromptsForBrand(
     : (ctx ?? {});
 
   const contextLines: string[] = [];
+  if (context.seedQuery) contextLines.push(`Primary query from Google Search Console: ${context.seedQuery}`);
   if (context.title) contextLines.push(`Page title: ${context.title}`);
   if (context.description) contextLines.push(`Meta description: ${context.description}`);
   // Include the first 600 chars of AI insights to give the model rich context about what the site does
@@ -679,19 +682,21 @@ Rules:
   // Fan-out mode: generate the broader topic cluster that AI engines internally fan out to.
   // Based on Zyppy Signal research: AI engines spawn 5-20 sub-queries beyond the primary
   // query. Ranking for this full cluster (score 8.9/10) is a top citation factor.
-  // Generates 8 prompts covering all angles — definition, comparison, how-to, troubleshooting, use-case.
+  // Generates a balanced cluster across intent, subtopics, comparisons,
+  // problems, use cases, and decision-stage questions.
   const fanoutSys = `You are an AI search engine researcher. When a user asks a question, AI engines like ChatGPT and Google Gemini internally generate 5-20 "fan-out" sub-queries to research different facets of the topic before writing their answer.
 
-Your task: generate 8 queries that represent the FULL FAN-OUT CLUSTER an AI engine would spawn when researching topics relevant to ${brandName}. These are the sub-queries your site needs to rank for to earn AI citations across the topic neighborhood.
+Your task: generate 8 queries that represent a useful fan-out cluster for the primary query in the site context. If no primary query is supplied, infer the narrowest reasonable topic from the page and brand context. These are related queries the existing page can evaluate for useful coverage gaps.
 
 IMPORTANT: Read the site context carefully below to understand ${brandName}'s category, audience, and use cases.
 
 Rules:
-- Generate exactly 8 prompts covering the FULL topic cluster — not just buyer intent
-- Include ALL of these angles (one or two prompts each): definitional ("what is X"), comparison ("X vs Y alternatives"), how-to ("how to do X"), troubleshooting ("why does X fail"), use-case ("X for specific scenario"), feature/benefit ("best X with Y feature")
-- Each prompt must be 6–14 words — natural query-style phrasing
-- Do NOT include "${brandName}" in any prompt — these must be category-level queries the site could be cited for
-- Prioritize queries with informational intent (what/how/why/best) — these trigger the most AI citations
+- Generate exactly 8 prompts covering the full topic cluster, not only buyer intent
+- Cover these categories across the set: primary intent, supporting subtopic, comparison, problem and solution, audience or use case, and decision stage
+- Include only categories that naturally fit the site context
+- Each prompt must be 6 to 14 words in natural query-style phrasing
+- Do not include "${brandName}" in any prompt. These must be neutral category queries the site could be cited for
+- Keep every query tightly connected to the likely primary topic and remove broad, generic, awkward, or repetitive variations
 - Return ONLY the 8 prompts, one per line, no numbering, no bullets, no quotes, no explanation`;
 
   const sys = mode === "fanout" ? fanoutSys : standardSys;

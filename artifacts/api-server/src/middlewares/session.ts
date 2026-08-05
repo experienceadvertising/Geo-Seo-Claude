@@ -8,6 +8,7 @@ declare module "express-session" {
     // CSRF state for the Google OAuth round-trip (set on /connect, verified on
     // /callback). Cleared once consumed.
     googleOAuthState?: string;
+    googleOAuthReturnTo?: string;
   }
 }
 

@@ -24,6 +24,7 @@ router.post("/geo/prompts/suggest", requireAuth, readRateLimiter, async (req, re
     description: typeof req.body?.description === "string" ? req.body.description.slice(0, 500) : null,
     title: typeof req.body?.title === "string" ? req.body.title.slice(0, 200) : null,
     aiInsights: typeof req.body?.aiInsights === "string" ? req.body.aiInsights.slice(0, 800) : null,
+    seedQuery: typeof req.body?.seedQuery === "string" ? req.body.seedQuery.trim().slice(0, 300) : null,
   };
   const suggestMode = req.body?.mode === "fanout" ? "fanout" : "standard";
   try {
