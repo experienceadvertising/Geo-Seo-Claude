@@ -48,8 +48,8 @@ Custom email+password auth (Clerk was removed — email delivery was unreliable 
 - Users enter any URL and get a full AI search optimization audit
 - Features: AEO score (0-100), AI crawler access, citability scoring, schema detection, quick wins
 - AI-powered insights via Claude; prompt simulation via GPT-4o-mini + ChatGPT/Claude/Gemini/Perplexity
-- Tiered SaaS: Free / Pro ($79/mo, $790/yr) / Agency ($249/mo, $2,490/yr) via `users.plan` DB column;
-  first month free with every feature unlocked (no card) — see Plan note in Auth section
+- Tiered SaaS: Free / Pro ($79/mo, $750/yr) / Agency ($249/mo, $2,390/yr) via `users.plan` DB column;
+  first month free with all core product features unlocked (no card); connected GA4 reporting requires a paid plan
 - Sentiment analysis: keyword-heuristic detection of Positive/Neutral/Negative brand tone per engine result
 - Visibility Trend: line chart of historical AEO scores for a domain (`/api/geo/audits/history`)
 - Fix Generator (Pro only): generates ready-to-copy llms.txt, JSON-LD schema, robots.txt snippets

@@ -5,6 +5,13 @@ import { isWikiArticleConfident } from "./entityConfidence.ts";
 import { buildPageUrlVariants, rankSearchOpportunities } from "./gscOpportunities.ts";
 import { isAllowedByRobots, parseRobotsTxt } from "./robotsPolicy.ts";
 import { extractDataNoSnippetSignals } from "./snippetControls.ts";
+import {
+  highestPaidPlan,
+  isBlockingSubscriptionStatus,
+  isEntitlingSubscriptionStatus,
+  planChangeDirection,
+  validateCheckoutPrice,
+} from "./billingPolicy.ts";
 
 test("rejects an ambiguous publication as a brand entity", () => {
   assert.equal(isWikiArticleConfident({
@@ -83,4 +90,34 @@ test("ranks Search Console opportunities and merges duplicate URL variants", () 
   assert.equal(opportunities[0].clicks, 15);
   assert.equal(opportunities[0].band, "quick_win");
   assert.equal(Math.round(opportunities[0].position * 10) / 10, 7.7);
+});
+
+test("checkout accepts only active recurring USD prices for the requested approved plan", () => {
+  const proProduct = { metadata: { plan_id: "pro" } } as any;
+  const validPrice = { active: true, currency: "usd", recurring: { interval: "month" }, product: proProduct } as any;
+
+  assert.deepEqual(validateCheckoutPrice(validPrice, "pro"), { ok: true, plan: "pro" });
+  assert.equal(validateCheckoutPrice({ ...validPrice, active: false }, "pro").ok, false);
+  assert.equal(validateCheckoutPrice({ ...validPrice, recurring: null }, "pro").ok, false);
+  assert.equal(validateCheckoutPrice({ ...validPrice, currency: "eur" }, "pro").ok, false);
+  assert.equal(validateCheckoutPrice(validPrice, "agency").ok, false);
+  assert.equal(validateCheckoutPrice({ ...validPrice, product: { metadata: { plan_id: "internal" } } }, "pro").ok, false);
+});
+
+test("subscription policy blocks duplicate billing while preserving paid grace access", () => {
+  for (const status of ["active", "trialing", "past_due", "incomplete", "paused", "unpaid"]) {
+    assert.equal(isBlockingSubscriptionStatus(status), true, `${status} should block a second checkout`);
+  }
+  assert.equal(isBlockingSubscriptionStatus("canceled"), false);
+  assert.equal(isBlockingSubscriptionStatus("incomplete_expired"), false);
+  assert.equal(isEntitlingSubscriptionStatus("past_due"), true);
+  assert.equal(isEntitlingSubscriptionStatus("unpaid"), false);
+});
+
+test("billing reconciliation keeps the highest active entitlement and labels plan changes correctly", () => {
+  assert.equal(highestPaidPlan([null, "pro", "agency"]), "agency");
+  assert.equal(highestPaidPlan([null]), null);
+  assert.equal(planChangeDirection("free", "pro"), "Upgrade");
+  assert.equal(planChangeDirection("pro", "agency"), "Upgrade");
+  assert.equal(planChangeDirection("agency", "pro"), "Downgrade");
 });

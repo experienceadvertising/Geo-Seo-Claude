@@ -7,6 +7,7 @@ import { runFreeMonthPromoGrant } from "./lib/promoGrant";
 import { runProductMigrations } from "./lib/productMigrations";
 
 async function initStripe() {
+  const isProduction = process.env.REPLIT_DEPLOYMENT === "1" || process.env.NODE_ENV === "production";
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) {
     logger.warn("DATABASE_URL not set — skipping Stripe initialization");
@@ -27,10 +28,16 @@ async function initStripe() {
   try {
     const stripeSync = await getStripeSync();
     const domain = process.env.REPLIT_DOMAINS?.split(",")[0];
-    if (domain) {
-      const webhookUrl = `https://${domain}/api/stripe/webhook`;
+    const frontendUrl = process.env.FRONTEND_URL;
+    const webhookBaseUrl = domain
+      ? `https://${domain}`
+      : frontendUrl ? new URL(frontendUrl).origin : null;
+    if (webhookBaseUrl) {
+      const webhookUrl = `${webhookBaseUrl}/api/stripe/webhook`;
       await stripeSync.findOrCreateManagedWebhook(webhookUrl);
       logger.info({ webhookUrl }, "Stripe webhook configured");
+    } else if (isProduction) {
+      throw new Error("A production hostname is required to configure the Stripe webhook");
     } else {
       logger.warn("REPLIT_DOMAINS not set — skipping webhook auto-creation");
     }
@@ -40,9 +47,11 @@ async function initStripe() {
       .then(() => logger.info("Stripe backfill complete"))
       .catch((err) => logger.warn({ err }, "Stripe backfill error (non-fatal)"));
   } catch (err) {
-    // Webhook / sync setup is non-fatal: server can still serve traffic and
-    // we can manually reconcile webhooks later, but make it visible.
-    logger.warn({ err }, "Stripe webhook/sync setup skipped (will retry on next boot)");
+    if (isProduction) {
+      logger.error({ err }, "Stripe webhook setup failed in production");
+      throw err;
+    }
+    logger.warn({ err }, "Stripe webhook/sync setup skipped in development");
   }
 }
 

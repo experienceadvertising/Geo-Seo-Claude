@@ -117,7 +117,7 @@ export default function SignUpPage() {
           </div>
           <CardTitle className="text-2xl font-bold">Create your account</CardTitle>
           <CardDescription>
-            Your first month is completely free with every feature unlocked.
+            Your first month is completely free with all core product features unlocked.
             No credit card required.
           </CardDescription>
         </CardHeader>

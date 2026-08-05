@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScoreBadge } from "@/components/score-badge";
 import { useToast } from "@/hooks/use-toast";
+import { usePlan } from "@/hooks/usePlan";
 
 type Frequency = "daily" | "weekly";
 
@@ -244,6 +245,8 @@ export default function ProjectsPage() {
   const [frequency, setFrequency] = useState<Frequency>("weekly");
 
   const [copied, setCopied] = useState(false);
+  const { storedPlan } = usePlan();
+  const hasPaidPlan = storedPlan === "pro" || storedPlan === "agency";
 
   const { data, isLoading } = useQuery<ListResponse>({
     queryKey: QUERY_KEY,
@@ -565,7 +568,22 @@ export default function ProjectsPage() {
       {!monitoringLocked && (
         <div className="space-y-3">
           <h2 className="text-lg font-semibold flex items-center gap-2"><LineChartIcon className="h-5 w-5 text-emerald-600" /> Traffic impact</h2>
-          <GoogleAnalyticsSection />
+          {hasPaidPlan ? (
+            <GoogleAnalyticsSection />
+          ) : (
+            <Card className="border-emerald-500/30 bg-emerald-500/5">
+              <CardContent className="py-8 text-center space-y-3">
+                <LineChartIcon className="h-8 w-8 text-emerald-600 mx-auto" />
+                <div>
+                  <p className="font-semibold">Google Analytics reporting is available on paid plans</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Subscribe to Pro or Agency to connect GA4 and measure visits referred by AI answer engines.
+                  </p>
+                </div>
+                <Link href="/pricing"><Button variant="outline">View paid plans</Button></Link>
+              </CardContent>
+            </Card>
+          )}
         </div>
       )}
     </div>

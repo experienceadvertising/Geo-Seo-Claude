@@ -163,7 +163,7 @@ function SearchConsoleOpportunityCard({
           <Button size="sm" onClick={() => { window.location.href = connectUrl; }}>
             <LinkIcon className="h-4 w-4 mr-1.5" /> Connect Google
           </Button>
-          <span className="text-xs text-muted-foreground">Read-only access to GA4 and Search Console.</span>
+          <span className="text-xs text-muted-foreground">Read-only access to Search Console.</span>
         </div>
       ) : !status.data.searchConsoleGranted ? (
         <div className="flex flex-wrap items-center gap-3">

@@ -30,7 +30,7 @@ export function TrialBanner() {
     <Link
       href="/upgrade?source=trial-banner"
       className={`hidden md:inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors hover:opacity-90 ${tone}`}
-      title="Every feature is unlocked free during your first month — click to see plans"
+      title="All core product features are unlocked during your free first month. Click to see plans."
     >
       <Sparkles className="h-3 w-3" />
       <span className="font-semibold">Free month</span>

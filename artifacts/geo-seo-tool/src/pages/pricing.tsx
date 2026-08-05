@@ -15,7 +15,7 @@ import { SEO, breadcrumbJsonLd } from "@/components/seo";
 
 const PRICING_TITLE = "Pricing — AEO Improvement | Free, Pro, Agency plans for AI search optimization";
 const PRICING_DESC =
-  "Every feature free for your first month — no credit card. Then free AEO audits forever, or Pro from $79/mo for all four AI engines, the Fix Generator, continuous site monitoring, and AI crawler tracking. Agency plan for multi-client teams.";
+  "Every core audit feature free for your first month, with no credit card. Then free AEO audits forever, or Pro from $79/mo for all four AI engines, the Fix Generator, continuous site monitoring, AI crawler tracking, and connected GA4 reporting. Agency plan for multi-client teams.";
 
 const pricingProductJsonLd = {
   "@context": "https://schema.org",
@@ -28,7 +28,7 @@ const pricingProductJsonLd = {
     "@type": "AggregateOffer",
     priceCurrency: "USD",
     lowPrice: "0",
-    highPrice: "249",
+    highPrice: "2390",
     offerCount: "5",
     offers: [
       {
@@ -55,12 +55,12 @@ const pricingProductJsonLd = {
       {
         "@type": "Offer",
         name: "Pro (annual)",
-        price: "790",
+        price: "750",
         priceCurrency: "USD",
         url: "https://aeoimprovement.com/pricing",
         priceSpecification: {
           "@type": "UnitPriceSpecification",
-          price: "790",
+          price: "750",
           priceCurrency: "USD",
           billingDuration: "P1Y",
         },
@@ -81,12 +81,12 @@ const pricingProductJsonLd = {
       {
         "@type": "Offer",
         name: "Agency (annual)",
-        price: "2490",
+        price: "2390",
         priceCurrency: "USD",
         url: "https://aeoimprovement.com/pricing",
         priceSpecification: {
           "@type": "UnitPriceSpecification",
-          price: "2490",
+          price: "2390",
           priceCurrency: "USD",
           billingDuration: "P1Y",
         },
@@ -104,7 +104,7 @@ const pricingFaqJsonLd = {
       name: "Is there a free plan?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Yes. Every new account gets its entire first month completely free with every feature unlocked — all four AI engines, the Fix Generator, monitoring, and competitor tracking — with no credit card required. After the first month, the Free plan includes 5 audits per month, 2 prompt simulations per month, ChatGPT engine coverage, the basic AEO score, and 30-day audit history.",
+        text: "Yes. Every new account gets its first month free with all core audit features unlocked, including all four AI engines, the Fix Generator, monitoring, and competitor tracking, with no credit card required. Connected Google Analytics reporting is reserved for paid plans. After the first month, the Free plan includes 5 audits per month, 2 prompt simulations per month, ChatGPT engine coverage, the basic AEO score, and 30-day audit history.",
       },
     },
     {
@@ -112,7 +112,7 @@ const pricingFaqJsonLd = {
       name: "What's the difference between Pro and Agency?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Pro ($79/mo or $790/yr) includes 100 audits/month, 30 simulations/month, all four engines, fan-out mode, the Fix Generator, Projects monitoring, crawler pixel request tracking, competitor Share of Voice, and 1-year history. Agency ($249/mo or $2,490/yr) raises limits to 500 audits, 150 simulations, 50 monitored sites, Google Analytics AI-referral reporting, and 2-year history.",
+        text: "Pro ($79/mo or $750/yr) includes 100 audits/month, 30 simulations/month, all four engines, fan-out mode, the Fix Generator, Projects monitoring, crawler pixel request tracking, Google Analytics AI-referral reporting, competitor Share of Voice, and 1-year history. Agency ($249/mo or $2,390/yr) raises limits to 500 audits, 150 simulations, 50 monitored sites, and 2-year history.",
       },
     },
     {
@@ -128,7 +128,7 @@ const pricingFaqJsonLd = {
       name: "Do annual plans have a discount?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Annual plans are priced at roughly two months free vs paying monthly: $790/year for Pro (vs $948 if billed monthly) and $2,490/year for Agency (vs $2,988 if billed monthly).",
+        text: "Annual plans save roughly 20% compared with monthly billing: $750/year for Pro (vs $948 if billed monthly) and $2,390/year for Agency (vs $2,988 if billed monthly).",
       },
     },
   ],
@@ -141,7 +141,7 @@ const pricingBreadcrumb = breadcrumbJsonLd([
 
 const PLAN_FEATURES = {
   free: [
-    "First month: every Pro & Agency feature unlocked",
+    "First month: all core audit features unlocked",
     "Then 5 audits / month",
     "2 simulations / month",
     "3 prompts per audit",
@@ -157,6 +157,7 @@ const PLAN_FEATURES = {
     "ChatGPT, Claude, Gemini & Perplexity",
     "Fan-out mode + Topical Breadth score",
     "Google Search Console query opportunities",
+    "Google Analytics AI-referral integration",
     "Sentiment & tone analysis",
     "Fix Generator (JSON-LD, robots.txt, optional llms.txt)",
     "Competitor citation gap + Share of Voice",
@@ -169,7 +170,6 @@ const PLAN_FEATURES = {
     "500 audits / month",
     "150 simulations / month",
     "Everything in Pro",
-    "Google Analytics AI-referral integration",
     "2-year visibility trend history",
     "Up to 50 client sites in Projects",
     "Priority email support",
@@ -196,6 +196,7 @@ interface PlanCardProps {
   isSignedIn: boolean;
   badgeLabel?: string;
   savingsBadge?: string;
+  actionLabel?: string;
 }
 
 function PlanCard({
@@ -214,6 +215,7 @@ function PlanCard({
   isSignedIn,
   badgeLabel,
   savingsBadge,
+  actionLabel,
 }: PlanCardProps) {
   const gradients: Record<string, string> = {
     free: "from-slate-500 to-slate-600",
@@ -323,7 +325,7 @@ function PlanCard({
             {upgradeLoading ? (
               <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Redirecting…</>
             ) : (
-              <>Upgrade to {name} <ExternalLink className="h-3.5 w-3.5 ml-1.5" /></>
+              <>{actionLabel || `Upgrade to ${name}`} <ExternalLink className="h-3.5 w-3.5 ml-1.5" /></>
             )}
           </Button>
         )}
@@ -343,7 +345,7 @@ export default function PricingPage() {
   // "Current Plan" and hide every checkout button from trial users.
   const { storedPlan: currentPlan, trialActive, trialEndsAt } = usePlan();
   const { data: productsData } = useStripeProducts();
-  const { data: subData } = useStripeSubscription();
+  const { data: subData, isLoading: subscriptionLoading } = useStripeSubscription();
   const checkout = useCheckout();
   const portal = useCustomerPortal();
   const { toast } = useToast();
@@ -354,8 +356,8 @@ export default function PricingPage() {
     if (params.get("checkout") === "success") {
       queryClient.invalidateQueries({ queryKey: ["me", "plan"] });
       toast({
-        title: "Subscription activated!",
-        description: "Your plan has been upgraded. It may take a moment to reflect.",
+        title: "Payment received",
+        description: "Stripe is confirming your subscription. Your upgraded plan will appear shortly.",
       });
       setLocation("/pricing", { replace: true });
     } else if (params.get("checkout") === "cancel") {
@@ -381,6 +383,10 @@ export default function PricingPage() {
   }
 
   function handleUpgrade(planId: "pro" | "agency") {
+    if (currentPlan !== "free" || subData?.canManageBilling) {
+      portal.mutate();
+      return;
+    }
     const price = getPriceForPlan(planId, billing);
     if (!price) {
       toast({
@@ -397,7 +403,7 @@ export default function PricingPage() {
   const proAnnual = getPriceForPlan("pro", "year");
   const agencyMonthly = getPriceForPlan("agency", "month");
   const agencyAnnual = getPriceForPlan("agency", "year");
-  const hasSubscription = !!subData?.subscription;
+  const canManageBilling = !!subData?.canManageBilling;
 
   // Build display values for each plan based on current billing toggle
   function buildPlanDisplay(
@@ -427,8 +433,8 @@ export default function PricingPage() {
     };
   }
 
-  const proDisplay = buildPlanDisplay("pro", proMonthly, proAnnual, 7900, 79000);
-  const agencyDisplay = buildPlanDisplay("agency", agencyMonthly, agencyAnnual, 24900, 249000);
+  const proDisplay = buildPlanDisplay("pro", proMonthly, proAnnual, 7900, 75000);
+  const agencyDisplay = buildPlanDisplay("agency", agencyMonthly, agencyAnnual, 24900, 239000);
 
   const plans = [
     {
@@ -436,7 +442,7 @@ export default function PricingPage() {
       name: "Free",
       price: "$0",
       period: "/mo",
-      description: "First month: every feature unlocked. No card needed.",
+      description: "First month: all core audit features unlocked. No card needed.",
       features: PLAN_FEATURES.free,
       isHighlighted: false,
     },
@@ -479,7 +485,7 @@ export default function PricingPage() {
             Rank in AI answers, not just search
           </h1>
           <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-            Your first month is completely free with every feature unlocked — no credit card.
+            Your first month is completely free with all core audit features unlocked. No credit card.
             After that, stay free or upgrade to keep all four AI engines,
             automated fixes, continuous monitoring, real crawler tracking, and competitor intelligence.
           </p>
@@ -520,8 +526,8 @@ export default function PricingPage() {
           <Alert className="border-emerald-200 bg-emerald-50 max-w-lg mx-auto">
             <CheckCircle2 className="h-4 w-4 text-emerald-600" />
             <AlertDescription className="text-emerald-800">
-              You're in your <strong>free all-access month</strong> — every Pro and
-              Agency feature is already unlocked
+              You're in your <strong>free core-feature month</strong>. All audit,
+              simulation, monitoring, and recommendation features are already unlocked
               {trialEndsAt
                 ? ` until ${new Date(trialEndsAt).toLocaleDateString("en-US", { month: "long", day: "numeric" })}`
                 : ""}
@@ -537,7 +543,7 @@ export default function PricingPage() {
               <span>
                 You're on the <strong className="capitalize">{currentPlan}</strong> plan.
               </span>
-              {hasSubscription && (
+              {canManageBilling && (
                 <Button
                   size="sm"
                   variant="outline"
@@ -561,9 +567,8 @@ export default function PricingPage() {
               isCurrentPlan={!!isSignedIn && currentPlan === p.planId}
               isSignedIn={!!isSignedIn}
               onUpgrade={() => handleUpgrade(p.planId as "pro" | "agency")}
-              upgradeLoading={
-                checkout.isPending && checkout.variables?.plan === p.planId
-              }
+              upgradeLoading={checkout.isPending || portal.isPending || (!!isSignedIn && subscriptionLoading)}
+              actionLabel={currentPlan !== "free" ? "Manage plan" : undefined}
               badgeLabel={!!isSignedIn && currentPlan === p.planId ? "Current" : undefined}
             />
           ))}

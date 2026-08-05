@@ -19,6 +19,20 @@ interface Product {
   prices: Price[];
 }
 
+export interface BillingSubscription {
+  id: string;
+  status: string;
+  cancelAtPeriodEnd: boolean;
+  currentPeriodEnd: number | null;
+  plan: "pro" | "agency" | null;
+}
+
+export interface BillingStatus {
+  subscription: BillingSubscription | null;
+  plan: string;
+  canManageBilling: boolean;
+}
+
 export function useStripeProducts() {
   return useQuery<{ data: Product[] }>({
     queryKey: ["stripe", "products"],
@@ -30,9 +44,9 @@ export function useStripeProducts() {
 
 export function useStripeSubscription() {
   const { isSignedIn } = useAuth();
-  return useQuery<{ subscription: any; plan: string }>({
+  return useQuery<BillingStatus>({
     queryKey: ["stripe", "subscription"],
-    queryFn: () => customFetch<{ subscription: any; plan: string }>("/api/stripe/subscription"),
+    queryFn: () => customFetch<BillingStatus>("/api/stripe/subscription"),
     enabled: isSignedIn,
     staleTime: 60_000,
     retry: false,

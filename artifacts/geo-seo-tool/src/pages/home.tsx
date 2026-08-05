@@ -233,7 +233,7 @@ function SignedOutLanding() {
                   "Continuous site monitoring & alerts",
                   "Fix Generator for JSON-LD & robots.txt",
                   "Google Analytics AI-referral traffic",
-                  "First month free — every feature, no card",
+                  "First month free, all core audit features, no card",
                 ].map(item => (
                   <li key={item} className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-shrink-0" />
@@ -256,7 +256,7 @@ function SignedOutLanding() {
               </div>
               <div className="flex flex-col items-center lg:items-start gap-1">
                 <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                  <Lock className="h-3 w-3" /> First month free with all features. No credit card.
+                  <Lock className="h-3 w-3" /> First month free with all core audit features. No credit card.
                 </p>
                 <Link href="/pricing" className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline font-medium">
                   See all plans &amp; pricing →
@@ -922,14 +922,19 @@ function SignedInDashboard() {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     if (params.get("checkout") !== "success") return;
-    queryClient.invalidateQueries({ queryKey: ["me", "plan"] });
-    queryClient.invalidateQueries({ queryKey: ["stripe", "subscription"] });
-    queryClient.invalidateQueries({ queryKey: ["me"] });
+    const refreshBillingState = () => {
+      queryClient.invalidateQueries({ queryKey: ["me", "plan"] });
+      queryClient.invalidateQueries({ queryKey: ["stripe", "subscription"] });
+      queryClient.invalidateQueries({ queryKey: ["me"] });
+    };
+    refreshBillingState();
+    const refreshTimers = [1500, 4000, 8000].map((delay) => window.setTimeout(refreshBillingState, delay));
     toast({
-      title: "You're upgraded. Welcome aboard.",
-      description: "Your new plan is active. All engines, deeper audits, and the full recommendation set are unlocked.",
+      title: "Payment received",
+      description: "Stripe is confirming your subscription. Your upgraded plan will appear shortly.",
     });
     setLocation("/", { replace: true });
+    return () => refreshTimers.forEach((timer) => window.clearTimeout(timer));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleSubmit(e: React.FormEvent) {
