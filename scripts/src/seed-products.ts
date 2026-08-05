@@ -82,19 +82,19 @@ async function createProducts() {
   const plans = [
     {
       name: "Pro Plan",
-      description: "100 audits/month, 30 simulations/month, all 4 AI engines (ChatGPT, Claude, Gemini, Perplexity), sentiment analysis, Fix Generator, competitor tracking, 1-year trend history.",
+      description: "100 audits/month, 30 simulations/month, all 4 AI engines (ChatGPT, Claude, Gemini, Perplexity), GA4 AI-referral reporting, Fix Generator, competitor tracking, and 1-year trend history.",
       plan_id: "pro",
-      // $79/mo · $790/yr (~2 months free, $65.83/mo)
+      // $79/mo, $750/yr (about 20% off, $62.50/mo)
       monthly: 7900,
-      yearly: 79000,
+      yearly: 75000,
     },
     {
       name: "Agency Plan",
       description: "500 audits/month, 150 simulations/month, everything in Pro plus 50 monitored sites, GA4 integration, 2-year trend history, and priority support.",
       plan_id: "agency",
-      // $249/mo · $2,490/yr (~2 months free, $207.50/mo)
+      // $249/mo, $2,390/yr (about 20% off, $199.17/mo)
       monthly: 24900,
-      yearly: 249000,
+      yearly: 239000,
     },
   ];
 
@@ -107,8 +107,9 @@ async function createProducts() {
     if (existing.data.length > 0) {
       product = existing.data[0];
       console.log(`${plan.name} (${product.id})`);
-      if (!product.metadata?.plan_id) {
+      if (product.metadata?.plan_id !== plan.plan_id || product.description !== plan.description) {
         product = await stripe.products.update(product.id, {
+          description: plan.description,
           metadata: { plan_id: plan.plan_id },
         });
       }

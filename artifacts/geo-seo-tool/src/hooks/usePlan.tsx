@@ -14,7 +14,8 @@ export interface MeResponse {
   userId: string;
   /** Effective plan — what the user is entitled to right now. During the
    * free all-access first month this is the top tier even though they pay
-   * nothing; every feature gate should key off this. */
+   * nothing; core product feature gates should key off this. Connected paid
+   * integrations may still use storedPlan. */
   plan: Plan;
   /** What the user actually pays for. Billing CTAs key off this. */
   storedPlan?: Plan;

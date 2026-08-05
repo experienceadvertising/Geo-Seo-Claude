@@ -23,7 +23,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
 import { usePlan } from "@/hooks/usePlan";
-import { useStripeProducts, useCheckout } from "@/hooks/useStripe";
+import { useStripeProducts, useStripeSubscription, useCheckout, useCustomerPortal } from "@/hooks/useStripe";
 import { useToast } from "@/hooks/use-toast";
 import { Helmet } from "react-helmet-async";
 
@@ -79,7 +79,7 @@ function buildHero(
     };
   }
 
-  // Mid-trial: they already HAVE every feature, so "upgrade to unlock" copy
+  // Mid-trial: they already have every core product feature, so "upgrade to unlock" copy
   // would read as if we don't know that. The pitch is continuity instead.
   if (trial?.active) {
     const endDate = trial.endsAt
@@ -99,11 +99,11 @@ function buildHero(
       };
     }
     return {
-      badge: endDate ? `Free all-access month · until ${endDate}` : "Free all-access month",
+      badge: endDate ? `Free core-feature month · until ${endDate}` : "Free core-feature month",
       badgeTone: "emerald",
       headline: "You already have everything — keep it that way",
       subhead:
-        "Every Pro and Agency feature is unlocked free during your first month. Subscribe any time to keep all 4 engines, the Fix Generator, and monitoring running after it ends.",
+        "All core product features are unlocked free during your first month. Subscribe any time to keep all 4 engines, the Fix Generator, and monitoring, plus add connected GA4 reporting.",
       showUsage: false,
     };
   }
@@ -292,7 +292,9 @@ export default function UpgradePage() {
   const { storedPlan, trialActive, trialEndsAt, usage, isLoading: planLoading } = usePlan();
   const isFree = storedPlan === "free";
   const { data: productsData, isLoading: productsLoading } = useStripeProducts();
+  const { data: subData, isLoading: subscriptionLoading } = useStripeSubscription();
   const checkout = useCheckout();
+  const portal = useCustomerPortal();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -309,8 +311,8 @@ export default function UpgradePage() {
     if (params.get("checkout") === "success") {
       queryClient.invalidateQueries({ queryKey: ["me", "plan"] });
       toast({
-        title: "Subscription activated",
-        description: "Your plan has been upgraded. It may take a moment to reflect.",
+        title: "Payment received",
+        description: "Stripe is confirming your subscription. Your upgraded plan will appear shortly.",
       });
       setLocation("/upgrade", { replace: true });
     } else if (params.get("checkout") === "cancel") {
@@ -336,6 +338,10 @@ export default function UpgradePage() {
     if (!isSignedIn) {
       const next = `/upgrade${window.location.search}`;
       setLocation(`/sign-up?next=${encodeURIComponent(next)}`);
+      return;
+    }
+    if (storedPlan !== "free" || subData?.canManageBilling) {
+      portal.mutate();
       return;
     }
     const price = getPriceForPlan(planId);
@@ -443,12 +449,12 @@ export default function UpgradePage() {
               size="lg"
               className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:opacity-90 text-white border-0 text-base font-semibold py-6"
               onClick={() => handleUpgrade("pro")}
-              disabled={checkout.isPending && checkout.variables?.plan === "pro"}
+              disabled={checkout.isPending || portal.isPending || subscriptionLoading}
             >
-              {checkout.isPending && checkout.variables?.plan === "pro" ? (
-                <><Loader2 className="h-5 w-5 animate-spin mr-2" /> Redirecting to checkout…</>
+              {checkout.isPending || portal.isPending || subscriptionLoading ? (
+                <><Loader2 className="h-5 w-5 animate-spin mr-2" /> Opening billing…</>
               ) : (
-                <>Upgrade to Pro <ArrowRight className="h-5 w-5 ml-2" /></>
+                <>{storedPlan === "free" ? "Upgrade to Pro" : "Manage plan"} <ArrowRight className="h-5 w-5 ml-2" /></>
               )}
             </Button>
 
@@ -498,7 +504,7 @@ export default function UpgradePage() {
                 <div>
                   <h3 className="font-bold text-slate-900">Agency</h3>
                   <p className="text-sm text-slate-600 mt-0.5">
-                    500 audits / 150 simulations per month, 50 monitored client sites, GA4 AI-referral reporting, and 2-year history
+                    500 audits / 150 simulations per month, 50 monitored client sites, everything in Pro, and 2-year history
                   </p>
                   <p className="text-xs text-slate-500 mt-1.5">
                     {agencyPrice ? formatPrice(agencyPrice.unitAmount) : "$249"}/mo · for teams managing multiple client sites
@@ -509,12 +515,12 @@ export default function UpgradePage() {
                 variant="outline"
                 className="border-purple-300 text-purple-700 hover:bg-purple-50"
                 onClick={() => handleUpgrade("agency")}
-                disabled={checkout.isPending && checkout.variables?.plan === "agency"}
+                disabled={checkout.isPending || portal.isPending || subscriptionLoading}
               >
-                {checkout.isPending && checkout.variables?.plan === "agency" ? (
-                  <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Redirecting…</>
+                {checkout.isPending || portal.isPending || subscriptionLoading ? (
+                  <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Opening billing…</>
                 ) : (
-                  <>Upgrade to Agency <ExternalLink className="h-3.5 w-3.5 ml-1.5" /></>
+                  <>{storedPlan === "free" ? "Upgrade to Agency" : "Manage plan"} <ExternalLink className="h-3.5 w-3.5 ml-1.5" /></>
                 )}
               </Button>
             </div>

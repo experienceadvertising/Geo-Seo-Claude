@@ -3,6 +3,15 @@ import { sql } from "drizzle-orm";
 
 /** Small app-owned migrations for product tables not managed by Stripe. */
 export async function runProductMigrations(): Promise<void> {
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS processed_webhook_events (
+      event_id TEXT PRIMARY KEY,
+      event_type TEXT NOT NULL,
+      processed_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `);
+  await db.execute(sql`ALTER TABLE processed_webhook_events ADD COLUMN IF NOT EXISTS processed_at TIMESTAMP NOT NULL DEFAULT NOW()`);
+  await db.execute(sql`DELETE FROM processed_webhook_events WHERE processed_at < NOW() - INTERVAL '30 days'`);
   await db.execute(sql`ALTER TABLE audits ADD COLUMN IF NOT EXISTS has_no_snippet JSONB`);
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS recommendation_progress (

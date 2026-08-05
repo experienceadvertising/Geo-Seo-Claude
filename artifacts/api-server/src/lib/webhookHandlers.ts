@@ -6,34 +6,43 @@ import { getUncachableStripeClient, getStripeSync } from "./stripeClient";
 import { EmailService } from "./emailService";
 import { logger } from "./logger";
 import { creditReferralIfEligible, applyPendingReferralRewards } from "../routes/referral";
+import { highestPaidPlan, isEntitlingSubscriptionStatus, planChangeDirection } from "./billingPolicy";
 
 function newUnsubToken(): string {
   return randomBytes(32).toString("hex");
 }
 
 async function updateDbPlan(userId: string, plan: "free" | "pro" | "agency") {
-  try {
-    await db
-      .update(usersTable)
-      .set({ plan })
-      .where(eq(usersTable.id, userId));
-  } catch (err) {
-    logger.error({ err, userId, plan }, "Failed to update DB plan");
-  }
+  const updated = await db
+    .update(usersTable)
+    .set({ plan })
+    .where(eq(usersTable.id, userId))
+    .returning({ id: usersTable.id });
+  if (updated.length === 0) throw new Error(`Cannot update billing plan for missing user ${userId}`);
 }
 
 async function getPlanFromPriceId(priceId: string): Promise<"pro" | "agency" | null> {
-  try {
-    const stripe = await getUncachableStripeClient();
-    const price = await stripe.prices.retrieve(priceId, { expand: ["product"] });
-    const product = price.product as any;
-    const planId = product?.metadata?.plan_id;
-    if (planId === "agency") return "agency";
-    if (planId === "pro") return "pro";
-    return null;
-  } catch {
-    return null;
-  }
+  const stripe = await getUncachableStripeClient();
+  const price = await stripe.prices.retrieve(priceId, { expand: ["product"] });
+  const product = price.product as any;
+  const planId = product?.metadata?.plan_id;
+  if (planId === "agency") return "agency";
+  if (planId === "pro") return "pro";
+  return null;
+}
+
+async function getCurrentPaidPlanForCustomer(customerId: string): Promise<"pro" | "agency" | null> {
+  const stripe = await getUncachableStripeClient();
+  const subscriptions = await stripe.subscriptions.list({ customer: customerId, status: "all", limit: 100 });
+  const plans = await Promise.all(
+    subscriptions.data
+      .filter((subscription) => isEntitlingSubscriptionStatus(subscription.status))
+      .map(async (subscription) => {
+        const priceId = subscription.items.data[0]?.price?.id;
+        return priceId ? getPlanFromPriceId(priceId) : null;
+      }),
+  );
+  return highestPaidPlan(plans);
 }
 
 // Resolve a Stripe customer id back to our local user row. Returns the
@@ -41,34 +50,28 @@ async function getPlanFromPriceId(priceId: string): Promise<"pro" | "agency" | n
 async function getUserFromCustomer(
   customerId: string,
 ): Promise<{ id: string; email: string | null; firstName: string | null; plan: string } | null> {
-  try {
-    const result = await db.execute(
-      sql`SELECT id, email, first_name AS "firstName", plan FROM users WHERE stripe_customer_id = ${customerId} LIMIT 1`
-    );
-    const row = result.rows[0] as any;
-    if (row) return { id: row.id, email: row.email ?? null, firstName: row.firstName ?? null, plan: row.plan ?? "free" };
-  } catch { /* ignore */ }
+  const [directUser] = await db
+    .select({ id: usersTable.id, email: usersTable.email, firstName: usersTable.firstName, plan: usersTable.plan })
+    .from(usersTable)
+    .where(eq(usersTable.stripeCustomerId, customerId));
+  if (directUser) return directUser;
 
   // Fall back to the userId stashed in the Stripe customer metadata.
-  try {
-    const stripe = await getUncachableStripeClient();
-    const customer = await stripe.customers.retrieve(customerId);
-    if (customer.deleted) return null;
-    const userId = (customer as any).metadata?.userId;
-    if (!userId) return null;
-    const [row] = await db
-      .select({
-        id: usersTable.id,
-        email: usersTable.email,
-        firstName: usersTable.firstName,
-        plan: usersTable.plan,
-      })
-      .from(usersTable)
-      .where(eq(usersTable.id, userId));
-    return row ?? null;
-  } catch {
-    return null;
-  }
+  const stripe = await getUncachableStripeClient();
+  const customer = await stripe.customers.retrieve(customerId);
+  if (customer.deleted) return null;
+  const userId = (customer as any).metadata?.userId;
+  if (!userId) return null;
+  const [row] = await db
+    .select({
+      id: usersTable.id,
+      email: usersTable.email,
+      firstName: usersTable.firstName,
+      plan: usersTable.plan,
+    })
+    .from(usersTable)
+    .where(eq(usersTable.id, userId));
+  return row ?? null;
 }
 
 function planLabel(plan: string): string {
@@ -105,6 +108,11 @@ async function claimEvent(eventId: string, eventType: string): Promise<boolean> 
   }
 }
 
+async function releaseEvent(eventId: string): Promise<void> {
+  if (!eventId) return;
+  await db.execute(sql`DELETE FROM processed_webhook_events WHERE event_id = ${eventId}`);
+}
+
 export class WebhookHandlers {
   static async processWebhook(payload: Buffer, signature: string): Promise<void> {
     if (!Buffer.isBuffer(payload)) {
@@ -139,14 +147,17 @@ export class WebhookHandlers {
       return;
     }
 
+    try {
     if (type === "checkout.session.completed") {
       const userId: string | null = obj?.client_reference_id || obj?.metadata?.userId;
       const priceId: string | null = obj?.metadata?.price_id;
       const customerId: string | null = obj?.customer;
 
       if (userId) {
-        const plan = priceId ? await getPlanFromPriceId(priceId) : null;
-        if (plan) await updateDbPlan(userId, plan);
+        const plan = customerId
+          ? await getCurrentPaidPlanForCustomer(customerId)
+          : priceId ? await getPlanFromPriceId(priceId) : null;
+        if (!plan) throw new Error(`Completed checkout ${eventId} has no active approved subscription`);
 
         if (customerId) {
           // Insert path needs a token (NOT NULL); update path leaves the
@@ -162,9 +173,10 @@ export class WebhookHandlers {
             })
             .onConflictDoUpdate({
               target: usersTable.id,
-              set: { stripeCustomerId: customerId, ...(plan ? { plan } : {}) },
-            })
-            .catch((e) => logger.error({ err: e?.message, userId }, "Failed to upsert user"));
+              set: { stripeCustomerId: customerId, plan },
+            });
+        } else {
+          await updateDbPlan(userId, plan);
         }
 
         // Credit the referrer $25 if this user was referred
@@ -214,21 +226,20 @@ export class WebhookHandlers {
     if (type === "customer.subscription.updated") {
       const customerId: string = obj?.customer;
       const status: string = obj?.status;
-      const priceId: string | null = obj?.items?.data?.[0]?.price?.id ?? null;
       const user = customerId ? await getUserFromCustomer(customerId) : null;
 
       if (user) {
+        const plan = await getCurrentPaidPlanForCustomer(customerId);
+        await updateDbPlan(user.id, plan ?? "free");
         if (status === "active" || status === "trialing") {
-          const plan = priceId ? await getPlanFromPriceId(priceId) : null;
           if (plan) {
-            await updateDbPlan(user.id, plan);
             // Admin notification on tier change via the Stripe billing
             // portal (Pro→Agency upgrade, Agency→Pro downgrade). Skip when
             // the plan is unchanged — Stripe also fires `updated` for noisy
             // non-plan events like card-on-file changes, billing-cycle
             // anchor moves, and proration line items.
             if (plan !== user.plan) {
-              const direction = planLabel(plan) > planLabel(user.plan) ? "Upgrade" : "Plan change";
+              const direction = planChangeDirection(user.plan, plan);
               EmailService.sendAdminNotification(
                 `[${direction}] ${user.email || user.id} ${planLabel(user.plan)} → ${planLabel(plan)}`,
                 [
@@ -252,8 +263,6 @@ export class WebhookHandlers {
           // either fires customer.subscription.deleted or transitions the
           // sub to canceled/unpaid.
           logger.info({ userId: user.id, status }, "Subscription past_due — keeping plan during grace period");
-        } else if (status === "canceled" || status === "unpaid") {
-          await updateDbPlan(user.id, "free");
         }
       }
     }
@@ -263,13 +272,14 @@ export class WebhookHandlers {
       const user = customerId ? await getUserFromCustomer(customerId) : null;
       if (user) {
         const previousPlan = user.plan;
-        await updateDbPlan(user.id, "free");
-        if (user.email && previousPlan !== "free") {
+        const remainingPlan = await getCurrentPaidPlanForCustomer(customerId);
+        await updateDbPlan(user.id, remainingPlan ?? "free");
+        if (!remainingPlan && user.email && previousPlan !== "free") {
           EmailService.sendSubscriptionCanceled(user.email, user.firstName || "", planLabel(previousPlan)).catch(
             (err) => logger.error({ err, userId: user.id }, "Subscription-canceled email failed"),
           );
         }
-        if (previousPlan !== "free") {
+        if (!remainingPlan && previousPlan !== "free") {
           const reason: string = obj?.cancellation_details?.reason || obj?.cancellation_details?.feedback || "(no reason given)";
           EmailService.sendAdminNotification(`[Cancel] ${user.email || user.id} (was ${planLabel(previousPlan)})`, [
             `User canceled subscription`,
@@ -335,6 +345,14 @@ export class WebhookHandlers {
           );
         }
       }
+    }
+    } catch (err) {
+      try {
+        await releaseEvent(eventId);
+      } catch (releaseErr) {
+        logger.error({ err: releaseErr, eventId, type }, "Failed to release webhook event for retry");
+      }
+      throw err;
     }
   }
 }

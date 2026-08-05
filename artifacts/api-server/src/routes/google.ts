@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { db, googleConnectionsTable } from "@workspace/db";
 import { requireAuth } from "../middlewares/auth";
 import { readRateLimiter } from "../middlewares/rateLimiters";
-import { getUserPlan, planAtLeast } from "../lib/planUtils";
+import { getStoredPlan, getUserPlan, planAtLeast } from "../lib/planUtils";
 import { canonicalBaseUrl } from "../lib/publicUrl";
 import {
   isGoogleConfigured, getAuthUrl, exchangeCode, getValidAccessToken,
@@ -23,6 +23,10 @@ async function getConnection(userId: string) {
 
 async function requirePro(userId: string): Promise<boolean> {
   return planAtLeast(await getUserPlan(userId), "pro");
+}
+
+async function requirePaidSubscription(userId: string): Promise<boolean> {
+  return planAtLeast(await getStoredPlan(userId), "pro");
 }
 
 // Connection state for the Integrations UI.
@@ -104,6 +108,10 @@ router.get(`${PREFIX}/callback`, requireAuth, async (req, res): Promise<void> =>
 
 // List GA4 properties the connected account can read (for the property picker).
 router.get(`${PREFIX}/properties`, requireAuth, readRateLimiter, async (req, res): Promise<void> => {
+  if (!(await requirePaidSubscription(req.userId!))) {
+    res.status(403).json({ error: "Google Analytics AI-referral reporting requires a paid plan.", upgradeRequired: true });
+    return;
+  }
   const conn = await getConnection(req.userId!);
   if (!conn) {
     res.status(404).json({ error: "Google account not connected" });
@@ -121,6 +129,10 @@ router.get(`${PREFIX}/properties`, requireAuth, readRateLimiter, async (req, res
 
 // Select which GA4 property to report on.
 router.post(`${PREFIX}/property`, requireAuth, readRateLimiter, async (req, res): Promise<void> => {
+  if (!(await requirePaidSubscription(req.userId!))) {
+    res.status(403).json({ error: "Google Analytics AI-referral reporting requires a paid plan.", upgradeRequired: true });
+    return;
+  }
   const propertyId = typeof req.body?.propertyId === "string" ? req.body.propertyId.trim().slice(0, 64) : "";
   const propertyName = typeof req.body?.propertyName === "string" ? req.body.propertyName.trim().slice(0, 200) : null;
   if (!propertyId) {
@@ -140,6 +152,10 @@ router.post(`${PREFIX}/property`, requireAuth, readRateLimiter, async (req, res)
 
 // AI-referral traffic from GA4 for the selected property.
 router.get(`${PREFIX}/ai-referrals`, requireAuth, readRateLimiter, async (req, res): Promise<void> => {
+  if (!(await requirePaidSubscription(req.userId!))) {
+    res.status(403).json({ error: "Google Analytics AI-referral reporting requires a paid plan.", upgradeRequired: true });
+    return;
+  }
   const conn = await getConnection(req.userId!);
   if (!conn) {
     res.status(404).json({ error: "Google account not connected" });
