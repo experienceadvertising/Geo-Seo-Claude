@@ -156,6 +156,7 @@ const PLAN_FEATURES = {
     "25 prompts per audit",
     "ChatGPT, Claude, Gemini & Perplexity",
     "Fan-out mode + Topical Breadth score",
+    "Google Search Console query opportunities",
     "Sentiment & tone analysis",
     "Fix Generator (JSON-LD, robots.txt, optional llms.txt)",
     "Competitor citation gap + Share of Voice",

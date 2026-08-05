@@ -64,7 +64,7 @@ function displayUrl(raw: string): string {
   }
 }
 
-interface GoogleStatus { configured: boolean; connected: boolean; propertyId: string | null; propertyName: string | null }
+interface GoogleStatus { configured: boolean; connected: boolean; searchConsoleGranted: boolean; propertyId: string | null; propertyName: string | null }
 interface Ga4Property { property: string; displayName: string; account: string }
 interface AiReferrals {
   property: string;
@@ -93,7 +93,7 @@ function GoogleAnalyticsSection() {
     const p = new URLSearchParams(window.location.search);
     const g = p.get("google");
     if (!g) return;
-    if (g === "connected") toast({ title: "Google connected", description: "Pick the GA4 property you want to report on." });
+    if (g === "connected") toast({ title: "Google connected", description: "Analytics and Search Console read access are ready." });
     else if (g === "denied") toast({ title: "Connection cancelled", variant: "destructive" });
     else toast({ title: "Couldn't connect Google", description: "Please try again.", variant: "destructive" });
     p.delete("google");
@@ -133,8 +133,8 @@ function GoogleAnalyticsSection() {
     return (
       <Card className="border-dashed">
         <CardContent className="py-6 text-sm text-muted-foreground">
-          Google Analytics integration isn't configured on this server yet. Once it's set up you'll be able to connect a
-          GA4 property here and see how much traffic AI engines are actually driving to your site.
+          Google integrations aren't configured on this server yet. Once set up, you can connect GA4 for AI referral
+          traffic and Search Console for page-level ranking opportunities.
         </CardContent>
       </Card>
     );
@@ -146,7 +146,7 @@ function GoogleAnalyticsSection() {
         <div className="flex items-center justify-between gap-2">
           <div>
             <CardTitle className="text-base flex items-center gap-2"><LineChartIcon className="h-4 w-4 text-emerald-600" /> AI referral traffic (Google Analytics)</CardTitle>
-            <CardDescription>Real sessions AI answer engines sent to your site — the payoff for getting cited.</CardDescription>
+            <CardDescription>Real sessions AI answer engines sent to your site, showing the payoff from citations.</CardDescription>
           </div>
           {connected && (
             <Button size="sm" variant="ghost" onClick={() => disconnect.mutate()} disabled={disconnect.isPending} className="text-muted-foreground">
@@ -156,12 +156,21 @@ function GoogleAnalyticsSection() {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {connected && !status.data.searchConsoleGranted && (
+          <div className="rounded-md border border-amber-300 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/30">
+            <p className="text-sm font-medium">Reconnect to add Search Console</p>
+            <p className="text-xs text-muted-foreground mt-1">Your current connection only includes Analytics. Search Console access is read-only and powers ranking opportunity suggestions.</p>
+            <Button size="sm" variant="outline" className="mt-2" onClick={() => { window.location.href = "/api/integrations/google/connect"; }}>
+              Reconnect Google
+            </Button>
+          </div>
+        )}
         {!connected ? (
           <div className="flex items-center gap-3">
             <Button onClick={() => { window.location.href = "/api/integrations/google/connect"; }}>
-              <Link2 className="h-4 w-4 mr-1.5" /> Connect Google Analytics
+              <Link2 className="h-4 w-4 mr-1.5" /> Connect Google
             </Button>
-            <span className="text-xs text-muted-foreground">Read-only. We only read AI-referral session counts.</span>
+            <span className="text-xs text-muted-foreground">Read-only Analytics and Search Console access.</span>
           </div>
         ) : !propertyId ? (
           <div className="space-y-2">

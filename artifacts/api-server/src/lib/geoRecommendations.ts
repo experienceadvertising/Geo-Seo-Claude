@@ -369,13 +369,14 @@ export interface RecommendationContext {
   hasArticleSchema: boolean;
   hasOrgSchema: boolean;
   hasHowToSchema: boolean;
-  hasLlmsTxt: boolean;
   brandName: string | null;
   brandFound: boolean;
   blockedAiCrawlers: string[];
   avgCitabilityScore: number;
   /** True when a nosnippet / max-snippet:0 directive was detected. Critical finding. */
   hasNoSnippet?: boolean;
+  /** Number of words inside section-level data-nosnippet elements. */
+  dataNoSnippetWordCount?: number;
   /**
    * 0-100 score for how early the first substantive content block appears.
    * Lower score = content is buried and risks being cut off by AI retrieval caps.
@@ -513,13 +514,13 @@ export function generateGeoRecommendations(ctx: RecommendationContext): GeoRecom
   // === STRUCTURE ===
   if (s.totalHeadings >= 3 && s.questionHeadingRatio < 0.3) {
     recs.push(composeRec("question-headings", {
-      detail: `Only ${Math.round(s.questionHeadingRatio * 100)}% of headings are phrased as questions or use question words (who/what/why/how). Mirror real prompts — change "Pricing Information" to "How Much Does X Cost?" — AI engines treat H2/H3 as a query map.`,
+      detail: `Only ${Math.round(s.questionHeadingRatio * 100)}% of headings are phrased as questions or use question words such as who, what, why, and how. Start with the main query this page already ranks for, identify tightly related fan-out questions, and use the most relevant ones as headings when the page genuinely answers them.`,
     }));
   }
 
   if (s.faqCount < 5) {
     recs.push(composeRec("add-faq", {
-      detail: `Only ${s.faqCount} question-style entries detected. One detailed FAQ page with 10-15 questions is reliably one of the strongest on-page tactics for AI citations — and far out-performs publishing an llms.txt file.`,
+      detail: `Only ${s.faqCount} question-style entries were detected. Review People Also Ask results and a fan-out query cluster for a topic this page already ranks for. Add only the questions that fit the page's main intent, and update the existing page before creating separate pages for every variation.`,
       priority: ctx.hasFaqSchema ? "medium" : "high",
     }));
   }
@@ -620,17 +621,18 @@ export function generateGeoRecommendations(ctx: RecommendationContext): GeoRecom
     }));
   }
 
-  if (!ctx.hasLlmsTxt) {
-    recs.push(composeRec("llms-txt", {
-      detail: "No /llms.txt found. The 2026 evidence is mixed — only a small fraction of the most-cited domains use one, and major engines do not appear to rely on it. Publishing one is cheap and harmless, but prioritize FAQ content and answer capsules first; they deliver far higher citation ROI.",
-    }));
-  }
-
   // nosnippet directive — Critical: directly blocks AI extraction (Zyppy Signal score 9.2/10)
   if (ctx.hasNoSnippet) {
     recs.push(composeRec("nosnippet-directive", {
       detail: "A nosnippet or max-snippet:0 directive was found in your meta robots tag or x-robots-tag HTTP header. This explicitly instructs AI engines not to extract content from your page, making citation impossible regardless of how good your content is. Remove the nosnippet value from the robots tag — if you need to block traditional featured snippets for specific pages, use max-snippet with a positive value instead.",
       priority: "critical",
+    }));
+  }
+
+  if ((ctx.dataNoSnippetWordCount ?? 0) > 0) {
+    recs.push(composeRec("review-data-nosnippet", {
+      detail: `${ctx.dataNoSnippetWordCount} word(s) are inside data-nosnippet elements. Review those sections and remove the attribute from any facts, answers, product details, or evidence you want search and AI surfaces to quote. Keep it only where hiding that content is intentional.`,
+      priority: (ctx.dataNoSnippetWordCount ?? 0) >= 100 ? "medium" : "low",
     }));
   }
 

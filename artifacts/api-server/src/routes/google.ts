@@ -8,7 +8,8 @@ import { getUserPlan, planAtLeast } from "../lib/planUtils";
 import { canonicalBaseUrl } from "../lib/publicUrl";
 import {
   isGoogleConfigured, getAuthUrl, exchangeCode, getValidAccessToken,
-  listGa4Properties, fetchAiReferrals,
+  listGa4Properties, fetchAiReferrals, hasSearchConsoleScope,
+  listSearchConsoleSites, fetchSearchConsoleOpportunities,
 } from "../lib/googleIntegration";
 
 const router: IRouter = Router();
@@ -30,6 +31,7 @@ router.get(`${PREFIX}/status`, requireAuth, readRateLimiter, async (req, res): P
   res.json({
     configured: isGoogleConfigured(),
     connected: !!conn,
+    searchConsoleGranted: !!conn && hasSearchConsoleScope(conn.scope),
     propertyId: conn?.ga4PropertyId ?? null,
     propertyName: conn?.ga4PropertyName ?? null,
   });
@@ -42,26 +44,34 @@ router.get(`${PREFIX}/connect`, requireAuth, async (req, res): Promise<void> => 
     return;
   }
   if (!(await requirePro(req.userId!))) {
-    res.status(403).json({ error: "Connecting Google Analytics is a Pro feature.", upgradeRequired: true });
+    res.status(403).json({ error: "Connecting Google Analytics and Search Console is a Pro feature.", upgradeRequired: true });
     return;
   }
   const state = randomBytes(16).toString("hex");
+  const requestedReturnTo = typeof req.query.returnTo === "string" ? req.query.returnTo : "";
+  const returnTo = requestedReturnTo.startsWith("/") && !requestedReturnTo.startsWith("//") && requestedReturnTo.length <= 500
+    ? requestedReturnTo
+    : "/projects";
   req.session.googleOAuthState = state;
+  req.session.googleOAuthReturnTo = returnTo;
   req.session.save(() => res.redirect(getAuthUrl(state)));
 });
 
 // OAuth redirect target — exchange the code, store tokens, bounce back to the app.
 router.get(`${PREFIX}/callback`, requireAuth, async (req, res): Promise<void> => {
   const base = canonicalBaseUrl();
-  const fail = (status: string) => res.redirect(`${base}/projects?google=${status}`);
+  const returnTo = req.session.googleOAuthReturnTo || "/projects";
+  delete req.session.googleOAuthReturnTo;
+  const separator = returnTo.includes("?") ? "&" : "?";
+  const finish = (status: string) => res.redirect(`${base}${returnTo}${separator}google=${status}`);
 
   try {
-    if (req.query.error) return fail("denied");
+    if (req.query.error) return finish("denied");
     const code = typeof req.query.code === "string" ? req.query.code : "";
     const state = typeof req.query.state === "string" ? req.query.state : "";
     const expected = req.session.googleOAuthState;
     delete req.session.googleOAuthState;
-    if (!code || !state || !expected || state !== expected) return fail("invalid");
+    if (!code || !state || !expected || state !== expected) return finish("invalid");
 
     const tokens = await exchangeCode(code);
     const expiresAt = tokens.expires_in ? new Date(Date.now() + tokens.expires_in * 1000) : null;
@@ -85,10 +95,10 @@ router.get(`${PREFIX}/callback`, requireAuth, async (req, res): Promise<void> =>
       },
     });
 
-    return fail("connected");
+    return finish("connected");
   } catch (err) {
     req.log.error({ err }, "Google OAuth callback failed");
-    return fail("error");
+    return finish("error");
   }
 });
 
@@ -147,6 +157,75 @@ router.get(`${PREFIX}/ai-referrals`, requireAuth, readRateLimiter, async (req, r
   } catch (err) {
     req.log.error({ err }, "GA4 AI-referrals fetch failed");
     res.status(502).json({ error: "Couldn't load GA4 data. Try reconnecting Google." });
+  }
+});
+
+router.get(`${PREFIX}/search-console/sites`, requireAuth, readRateLimiter, async (req, res): Promise<void> => {
+  if (!(await requirePro(req.userId!))) {
+    res.status(403).json({ error: "Search Console opportunities are a Pro feature.", upgradeRequired: true });
+    return;
+  }
+  const conn = await getConnection(req.userId!);
+  if (!conn) {
+    res.status(404).json({ error: "Google account not connected" });
+    return;
+  }
+  if (!hasSearchConsoleScope(conn.scope)) {
+    res.status(409).json({ error: "Reconnect Google to grant read-only Search Console access.", needsReconnect: true });
+    return;
+  }
+  try {
+    const token = await getValidAccessToken(conn);
+    const sites = await listSearchConsoleSites(token);
+    res.json({ sites });
+  } catch (err) {
+    req.log.error({ err }, "Search Console site list failed");
+    res.status(502).json({ error: "Couldn't load your Search Console properties. Try reconnecting Google." });
+  }
+});
+
+router.get(`${PREFIX}/search-console/opportunities`, requireAuth, readRateLimiter, async (req, res): Promise<void> => {
+  if (!(await requirePro(req.userId!))) {
+    res.status(403).json({ error: "Search Console opportunities are a Pro feature.", upgradeRequired: true });
+    return;
+  }
+  const siteUrl = typeof req.query.siteUrl === "string" ? req.query.siteUrl.trim().slice(0, 500) : "";
+  const pageUrl = typeof req.query.pageUrl === "string" ? req.query.pageUrl.trim().slice(0, 2000) : "";
+  const days = Math.min(180, Math.max(28, parseInt(String(req.query.days ?? "90"), 10) || 90));
+  let parsedPage: URL;
+  try {
+    parsedPage = new URL(pageUrl);
+    if (!/^https?:$/.test(parsedPage.protocol)) throw new Error("invalid protocol");
+  } catch {
+    res.status(400).json({ error: "A valid http(s) pageUrl is required." });
+    return;
+  }
+  if (!siteUrl) {
+    res.status(400).json({ error: "siteUrl is required." });
+    return;
+  }
+
+  const conn = await getConnection(req.userId!);
+  if (!conn) {
+    res.status(404).json({ error: "Google account not connected" });
+    return;
+  }
+  if (!hasSearchConsoleScope(conn.scope)) {
+    res.status(409).json({ error: "Reconnect Google to grant read-only Search Console access.", needsReconnect: true });
+    return;
+  }
+  try {
+    const token = await getValidAccessToken(conn);
+    const sites = await listSearchConsoleSites(token);
+    if (!sites.some((site) => site.siteUrl === siteUrl)) {
+      res.status(403).json({ error: "That Search Console property is not available to this Google account." });
+      return;
+    }
+    const report = await fetchSearchConsoleOpportunities(token, siteUrl, parsedPage.toString(), days);
+    res.json(report);
+  } catch (err) {
+    req.log.error({ err, siteUrl, pageUrl: parsedPage.toString() }, "Search Console opportunity fetch failed");
+    res.status(502).json({ error: "Couldn't load Search Console query data. Try reconnecting Google." });
   }
 });
 

@@ -20,6 +20,13 @@ function displayUrl(u: string): string {
     return parsed.toString().replace(/\/$/, parsed.pathname === "/" && !u.endsWith("/") ? "" : "/");
   } catch { return u.replace(/^(https?:\/\/)([^/]+)/i, (_, p, h) => p + h.toLowerCase()); }
 }
+
+/** Stored audits can predate newer score dimensions even though the generated
+ * API type reflects the current schema. Never present a missing legacy value as
+ * a real zero (or as an empty `/100` score). */
+function isStoredScore(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip } from "recharts";
 import ReactMarkdown from "react-markdown";
 import { useToast } from "@/hooks/use-toast";
@@ -59,7 +66,7 @@ export default function Results() {
       { subject: 'Technical SEO', A: audit.scores.technicalSeo, fullMark: 100 },
       { subject: 'Structured Data', A: audit.scores.structuredData, fullMark: 100 },
       { subject: 'Platform Opt', A: audit.scores.platformOptimization, fullMark: 100 },
-    ];
+    ].filter((item) => isStoredScore(item.A));
   }, [audit]);
 
   const domain = useMemo(() => {
@@ -930,13 +937,15 @@ function ScoreCard({
   title, score, weight, desc, icon, formula, signals,
 }: {
   title: string;
-  score: number;
+  score: number | null | undefined;
   weight: string;
   desc: string;
   icon: React.ReactNode;
   formula?: string;
   signals?: ScoreSignal[];
 }) {
+  const storedScore = isStoredScore(score) ? score : null;
+  const unavailableDescription = "This dimension was not stored for the legacy audit. Re-run the URL to calculate it with the current methodology.";
   const card = (
     <Card className="bg-card border-border shadow-sm flex flex-col hover:border-primary/30 transition-colors group h-full">
       <CardHeader className="p-4 pb-2">
@@ -957,17 +966,32 @@ function ScoreCard({
       <CardContent className="p-4 pt-2 flex-1 flex flex-col justify-end">
         <div className="flex items-end justify-between mt-2 mb-3">
           <div className="text-3xl font-black font-mono tracking-tighter">
-            {score}<span className="text-base text-muted-foreground/60">/100</span>
+            {storedScore === null ? (
+              <span className="text-xl tracking-normal text-muted-foreground">Not available</span>
+            ) : (
+              <>{storedScore}<span className="text-base text-muted-foreground/60">/100</span></>
+            )}
           </div>
-          <ScoreBadge score={score} />
+          {storedScore === null ? (
+            <Badge variant="outline" className="font-mono text-[10px] uppercase">Re-run</Badge>
+          ) : (
+            <ScoreBadge score={storedScore} />
+          )}
         </div>
         <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden mb-2">
-          <div
-            className={`h-full rounded-full ${score >= 80 ? 'bg-green-500' : score >= 60 ? 'bg-yellow-500' : 'bg-red-500'}`}
-            style={{ width: `${score}%` }}
-          />
+          {storedScore !== null && (
+            <div
+              className={`h-full rounded-full ${storedScore >= 80 ? 'bg-green-500' : storedScore >= 60 ? 'bg-yellow-500' : 'bg-red-500'}`}
+              style={{ width: `${storedScore}%` }}
+            />
+          )}
         </div>
-        <p className="text-xs text-muted-foreground line-clamp-1" title={desc}>{desc}</p>
+        <p
+          className="text-xs text-muted-foreground line-clamp-2"
+          title={storedScore === null ? unavailableDescription : desc}
+        >
+          {storedScore === null ? unavailableDescription : desc}
+        </p>
       </CardContent>
     </Card>
   );
