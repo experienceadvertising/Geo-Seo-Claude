@@ -219,12 +219,12 @@ function SignedOutLanding() {
                 <Sparkles className="h-3 w-3" /> Answer Engine Optimization
               </div>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.05]">
-                See why AI engines cite your competitors
+                Your buyers ask AI who to trust. Find out if you show up.
               </h1>
               <p className="text-lg md:text-xl text-muted-foreground max-w-[560px]">
-                Audit your site's citability across ChatGPT, Claude, Gemini, and Perplexity.
+                Audit your citability across ChatGPT, Claude, Gemini, and Perplexity.
                 Get a 6-dimension AEO score, live prompt simulations, and 29 evidence-backed
-                fixes you can ship today.
+                fixes ranked by impact — so you know exactly what to do next.
               </p>
 
               <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm text-foreground/80 max-w-md">
