@@ -453,7 +453,7 @@ export default function PricingPage() {
       // Render the price immediately from the static fallback (which matches the
       // live Stripe price); live data replaces it seamlessly with no skeleton flash.
       priceLoading: false,
-      description: "For marketers & SEO professionals",
+      description: "For marketers who want more than a score",
       features: PLAN_FEATURES.pro,
       isHighlighted: true,
     },
@@ -462,7 +462,7 @@ export default function PricingPage() {
       name: "Agency",
       ...agencyDisplay,
       priceLoading: false,
-      description: "For agencies managing multiple clients",
+      description: "For agencies tracking AI visibility across every client",
       features: PLAN_FEATURES.agency,
       isHighlighted: false,
     },
@@ -482,12 +482,12 @@ export default function PricingPage() {
             Plans &amp; Pricing
           </Badge>
           <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">
-            Rank in AI answers, not just search
+            Start getting cited in AI answers
           </h1>
           <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-            Your first month is completely free with all core audit features unlocked. No credit card.
-            After that, stay free or upgrade to keep all four AI engines,
-            automated fixes, continuous monitoring, real crawler tracking, and competitor intelligence.
+            Your first month is completely free with every feature unlocked and no credit card.
+            After that, stay free for basic audits or upgrade to keep all four AI engines,
+            research-backed fix recommendations, continuous monitoring, and competitor citation tracking.
           </p>
 
           {/* Billing interval toggle */}

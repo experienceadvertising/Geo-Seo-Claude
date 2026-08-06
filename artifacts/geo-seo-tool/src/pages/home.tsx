@@ -19,23 +19,23 @@ function MarketStats() {
     {
       icon: TrendingUp,
       accent: "from-emerald-500 to-teal-500",
-      label: "Where attention is moving",
-      title: "AI search is becoming a discovery channel",
-      body: "ChatGPT, Claude, Perplexity, and Google AI Overviews now answer queries that used to start a 10-blue-link search session. If your page isn't shaped to be cited, you're invisible in that flow.",
+      label: "Where buyers are going",
+      title: "Your buyers skip Google. They ask AI.",
+      body: "ChatGPT, Claude, Perplexity, and Google AI Overviews now handle queries that used to send people to a list of links. If your site is not shaped to be cited, you are invisible to a growing share of your market.",
     },
     {
       icon: Zap,
       accent: "from-teal-500 to-cyan-500",
-      label: "Why the visits matter",
-      title: "AI-referred visitors convert at a different rate",
-      body: "A user who clicks a citation inside an AI answer has already read a recommendation about your brand. Research from major publishers shows AI-referred visitors convert at 4 to 5 times the rate of visitors from traditional search.",
+      label: "Why it pays to be cited",
+      title: "AI-referred visitors already trust you when they arrive.",
+      body: "A visitor who clicks a citation in an AI answer has already read a recommendation for your brand. Research from major publishers shows AI-referred visitors convert at 4 to 5 times the rate of visitors from traditional search.",
     },
     {
       icon: BarChart3,
       accent: "from-cyan-500 to-emerald-500",
-      label: "What we measure",
-      title: "AI citation is volatile. Track it regularly.",
-      body: "Between 40% and 60% of cited sources change month-to-month across major AI platforms. Our AEO score tracks the six dimensions that predict whether you get picked and flags when your standing shifts.",
+      label: "Why tracking matters",
+      title: "Citation status changes every month. Most brands find out too late.",
+      body: "Between 40% and 60% of cited sources rotate month-to-month across major AI platforms. Without continuous tracking, a drop goes unnoticed until traffic falls. AEO Improvement monitors your standing and alerts you the moment it shifts.",
     },
   ];
 
@@ -216,25 +216,25 @@ function SignedOutLanding() {
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <div className="flex flex-col items-center lg:items-start text-center lg:text-left space-y-6">
               <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400 backdrop-blur-sm">
-                <Sparkles className="h-3 w-3" /> Answer Engine Optimization
+                <Sparkles className="h-3 w-3" /> Built on 2026 expert research
               </div>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.05]">
-                Your buyers ask AI who to trust. Find out if you show up.
+                Get cited in AI answers with strategies your competitors have not found yet.
               </h1>
               <p className="text-lg md:text-xl text-muted-foreground max-w-[560px]">
-                Audit your citability across ChatGPT, Claude, Gemini, and Perplexity.
-                Get a 6-dimension AEO score, live prompt simulations, and 29 evidence-backed
-                fixes ranked by impact — so you know exactly what to do next.
+                Most tools tell you what is wrong. AEO Improvement tells you exactly what to fix,
+                ranked by impact, backed by the latest expert research. Audit, simulate, fix, and
+                monitor your visibility across ChatGPT, Claude, Gemini, and Perplexity.
               </p>
 
               <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm text-foreground/80 max-w-md">
                 {[
-                  "Live prompts across 4 AI engines",
-                  "AI crawler pixel request tracking",
-                  "Continuous site monitoring & alerts",
-                  "Fix Generator for JSON-LD & robots.txt",
-                  "Google Analytics AI-referral traffic",
-                  "First month free, all core audit features, no card",
+                  "See if buyers find you when they ask AI",
+                  "Confirm AI bots actually crawl your pages",
+                  "Get alerted the moment your score drops",
+                  "Auto-generated JSON-LD and robots.txt fixes",
+                  "Connect GA4 to track AI-referred revenue",
+                  "First month free, all features, no card",
                 ].map(item => (
                   <li key={item} className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-shrink-0" />
@@ -274,9 +274,9 @@ function SignedOutLanding() {
 
         <section className="space-y-8">
           <div className="text-center space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Full platform overview</p>
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Everything you need to rank in AI answers</h2>
-            <p className="text-muted-foreground max-w-xl mx-auto">Audit, simulate, fix, monitor — one platform, from first crawl to continuous citability.</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">What you get</p>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Everything you need to get cited and stay cited</h2>
+            <p className="text-muted-foreground max-w-xl mx-auto">Audit your gaps, simulate real buyer queries, fix what is blocking you, and monitor your progress. One tool, the full loop.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -285,43 +285,43 @@ function SignedOutLanding() {
                 icon: Bot,
                 gradient: "from-violet-500 to-purple-600",
                 badge: null,
-                title: "Live AI prompt simulation",
-                body: "Run the exact queries your buyers type — \"best project management tool for agencies\", \"alternatives to X\" — and see whether ChatGPT, Claude, Gemini, and Perplexity name you, cite your site, and what they say. Fan-out mode covers 6 topical clusters in one go and scores your topical breadth.",
+                title: "See if buyers find you when they ask AI",
+                body: "Run the exact questions your buyers type into ChatGPT, Claude, Gemini, and Perplexity. See whether you get cited, what your competitors share looks like, and what AI actually says about your brand. Fan-out mode tests 6 topic clusters at once.",
               },
               {
                 icon: BarChart3,
                 gradient: "from-emerald-500 to-teal-600",
                 badge: null,
-                title: "6-dimension AEO score",
-                body: "Citability, AI Crawler Access, Brand Authority, Schema, Technical SEO, and Platform Optimization — each scored 0–100 and visualized as a radar chart. Includes nosnippet detection, content-placement checks, and 29 evidence-backed recommendations.",
+                title: "Know exactly what is blocking your citations",
+                body: "Six dimensions scored 0 to 100: Citability, AI Crawler Access, Brand Authority, Schema, Technical SEO, and Platform Optimization. Every score comes with ranked fixes tied to specific 2026 research, so you know the exact reason behind each recommendation.",
               },
               {
                 icon: Zap,
                 gradient: "from-amber-500 to-orange-500",
                 badge: null,
-                title: "Fix Generator",
-                body: "Auto-drafts JSON-LD schema blocks (FAQPage, Organization) and citation-bot robots.txt entries based on your specific audit gaps. An optional llms.txt draft is included but does not affect recommendations.",
+                title: "Get the exact code to fix it. Copy, paste, ship.",
+                body: "Instead of figuring out what to write, AEO Improvement auto-drafts your JSON-LD schema blocks, citation-bot robots.txt entries, and optional llms.txt based on your actual audit gaps. No guesswork. No dev backlog. Ready to deploy in minutes.",
               },
               {
                 icon: Activity,
                 gradient: "from-blue-500 to-cyan-500",
                 badge: "New",
-                title: "Real AI crawler hit tracking",
-                body: "Go beyond robots.txt checks. Embed one line of tracking and see exactly when GPTBot, ClaudeBot, PerplexityBot, and Google-Extended actually crawl your pages — dates, paths, frequency. Know your site is being indexed, not just allowed.",
+                title: "Confirm AI bots actually read your pages",
+                body: "Allowing bots in robots.txt does not mean they visit. Embed one tracking line and see exactly when GPTBot, ClaudeBot, PerplexityBot, and Google-Extended crawl your pages, which paths they hit, and how often. Know your content is being indexed, not just allowed.",
               },
               {
                 icon: Bell,
                 gradient: "from-rose-500 to-pink-500",
                 badge: "New",
-                title: "Projects — continuous monitoring",
-                body: "Add any domain to a Project and we re-audit it on your schedule. Get alerted the moment your AEO score drops or your crawler access changes. Stop discovering problems weeks late.",
+                title: "Never get blindsided by a citation drop",
+                body: "Add any domain and we re-audit on your schedule. The moment your AEO score drops or your crawler access changes, you get an alert — not weeks later when it shows up in traffic, but while you can still act on it.",
               },
               {
                 icon: LineChart,
                 gradient: "from-teal-500 to-emerald-500",
                 badge: "New",
-                title: "Share of Voice + GA4 analytics",
-                body: "Track your citation share vs. competitors across every simulation run. Connect Google Analytics to see AI-referred traffic alongside your AEO score — close the loop between optimization and real business results.",
+                title: "Close the loop between citations and real revenue",
+                body: "Track your citation share against competitors across every simulation run. Connect Google Analytics to see AI-referred traffic alongside your AEO score. Know whether your improvements are translating to visits and conversions, not just a better number.",
               },
             ].map(({ icon: Icon, gradient, badge, title, body }) => (
               <div
@@ -357,25 +357,25 @@ function SignedOutLanding() {
                 step: "01",
                 gradient: "from-violet-500 to-purple-600",
                 title: "Audit",
-                body: "Paste any URL. In under 60 seconds, get a full AEO score across 6 dimensions — crawler access, schema, authority, citability, and more.",
+                body: "Paste any URL. In 60 seconds, see your score across 6 dimensions with every gap ranked by the impact fixing it will have on your citation rate.",
               },
               {
                 step: "02",
                 gradient: "from-amber-500 to-orange-500",
                 title: "Simulate",
-                body: "Run real queries across ChatGPT, Claude, Gemini, and Perplexity. See your citation rate, competitor Share of Voice, and topical breadth.",
+                body: "Run the exact queries your buyers type. See whether ChatGPT, Claude, Gemini, and Perplexity cite you, what your competitors share looks like, and what AI says about your brand.",
               },
               {
                 step: "03",
                 gradient: "from-emerald-500 to-teal-600",
                 title: "Fix",
-                body: "Copy ready-to-ship JSON-LD and citation-bot robots.txt snippets from the Fix Generator. Track each recommendation to completion and re-scan to measure the change.",
+                body: "Get specific changes ranked by research-proven impact, with ready-to-copy code for technical fixes and clear guidance for content ones. Strategies built on 2026 expert research, not guesses.",
               },
               {
                 step: "04",
                 gradient: "from-rose-500 to-pink-500",
                 title: "Monitor",
-                body: "Add sites to Projects for scheduled re-audits and score-drop alerts. Connect Google Analytics to measure AI-referred traffic from your wins.",
+                body: "Set automatic re-audits and get instant alerts on score drops. Connect Google Analytics to measure whether your improvements are driving real AI-referred traffic.",
               },
             ].map(({ step, gradient, title, body }) => (
               <div key={step} className="relative rounded-2xl border border-border bg-card p-6">
@@ -420,10 +420,10 @@ function SignedOutLanding() {
                 <CheckCircle2 className="h-3 w-3" /> First month free — all features, no credit card
               </div>
               <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight leading-tight">
-                Find out how AI engines see your site in 60 seconds.
+                Find out whether AI engines cite you. Then fix what is stopping them.
               </h2>
               <p className="text-emerald-100/70 text-base">
-                Get your AEO score, crawler audit, and top fixes. Free to start.
+                Full AEO score, crawler audit, and research-backed recommendations. Free for your first month.
               </p>
             </div>
             <div className="shrink-0 flex flex-col sm:flex-row gap-3">
