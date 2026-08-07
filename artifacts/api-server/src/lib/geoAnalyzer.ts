@@ -228,6 +228,7 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
   let renderedWordCount = 0;
   let renderedSuccessfully = false;
   let rawFetchSucceeded = false;
+  let botManagementProvider: string | null = null;
   let structuredDataTypes: SchemaItem[] = [];
   let orgSchemaName: string | null = null;
   let citabilityBlocks: CitabilityBlock[] = [];
@@ -282,6 +283,17 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
   try {
     const response = await rawFetchPromise;
     if (response.ok) {
+      const serverHeader = response.headers.get("server") || "";
+      const headerNames: string[] = [];
+      response.headers.forEach((_, name) => headerNames.push(name));
+      const headerKeys = headerNames.join(" ").toLowerCase();
+      const infrastructureSignals = [
+        { label: "Cloudflare", matches: /cloudflare/i.test(serverHeader) || headerKeys.includes("cf-ray") },
+        { label: "Akamai", matches: /akamai/i.test(serverHeader) || headerKeys.includes("akamai") },
+        { label: "Sucuri", matches: /sucuri/i.test(serverHeader) || headerKeys.includes("x-sucuri") },
+        { label: "Imperva", matches: /imperva|incapsula/i.test(serverHeader) || headerKeys.includes("x-iinfo") },
+      ];
+      botManagementProvider = infrastructureSignals.find((signal) => signal.matches)?.label ?? null;
       const ct = (response.headers.get("content-type") || "").toLowerCase();
       if (ct.includes("html") || ct === "" || ct.includes("xml")) {
         rawHtml = await response.text();
@@ -691,6 +703,10 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
       hasNoSnippet,
       dataNoSnippetWordCount,
       contentPlacementScore,
+      requiresJavaScript,
+      rawHtmlWordCount,
+      renderedWordCount,
+      botManagementProvider,
     });
   }
 

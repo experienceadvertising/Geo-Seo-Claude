@@ -382,6 +382,15 @@ export interface RecommendationContext {
    * Lower score = content is buried and risks being cut off by AI retrieval caps.
    */
   contentPlacementScore?: number;
+  /** Important page content is available only after client-side JavaScript runs. */
+  requiresJavaScript?: boolean;
+  rawHtmlWordCount?: number;
+  renderedWordCount?: number;
+  /**
+   * A CDN, WAF, or bot-management layer was detected from response headers.
+   * This is advisory only: its presence does not prove an AI crawler is blocked.
+   */
+  botManagementProvider?: string | null;
 }
 
 /**
@@ -520,7 +529,7 @@ export function generateGeoRecommendations(ctx: RecommendationContext): GeoRecom
 
   if (s.faqCount < 5) {
     recs.push(composeRec("add-faq", {
-      detail: `Only ${s.faqCount} question-style entries were detected. Review People Also Ask results and a fan-out query cluster for a topic this page already ranks for. Add only the questions that fit the page's main intent, and update the existing page before creating separate pages for every variation.`,
+      detail: `Only ${s.faqCount} question-style entries were detected. Start with a topic this page already ranks for, then review People Also Ask and fan-out queries. Expand this page only with questions that share its core intent. Create a separate supporting page only when a query needs a distinct format, audience, or decision stage — not for every wording variation.`,
       priority: ctx.hasFaqSchema ? "medium" : "high",
     }));
   }
@@ -650,6 +659,20 @@ export function generateGeoRecommendations(ctx: RecommendationContext): GeoRecom
     recs.push(composeRec("unblock-crawlers", {
       detail: `Citation-critical crawlers blocked in robots.txt: ${ctx.blockedAiCrawlers.join(", ")}. These are the search indexers and user-request fetchers AI answers rely on — while blocked, those engines cannot cite this site. (Blocking training-only bots like GPTBot or ClaudeBot is a separate choice and does not affect citations.)`,
       priority: "high",
+    }));
+  }
+
+  if (ctx.requiresJavaScript) {
+    recs.push(composeRec("server-render-ai-content", {
+      detail: `Your rendered page contains ${ctx.renderedWordCount?.toLocaleString() ?? "many"} words, but the raw HTML exposes only ${ctx.rawHtmlWordCount?.toLocaleString() ?? "few"}. Put your core answer, headings, product details, evidence, and internal links in server-rendered or prerendered HTML. AI crawlers may not execute the JavaScript required to see the current content.`,
+      priority: "high",
+    }));
+  }
+
+  if (ctx.botManagementProvider) {
+    recs.push(composeRec("review-infrastructure-bot-controls", {
+      detail: `${ctx.botManagementProvider} was detected in this page's response headers. This does not prove that AI bots are blocked, but robots.txt is only one layer of access control. Review CDN, firewall, WAF, and bot-management rules to make sure legitimate citation-path crawlers follow the same policy as your robots.txt.`,
+      priority: "medium",
     }));
   }
 

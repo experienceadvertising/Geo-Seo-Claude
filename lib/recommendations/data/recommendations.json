@@ -522,5 +522,38 @@
     "expiresAt": "2027-06-26",
     "updatedAt": "2026-06-26",
     "notes": "No controlled lift number is published for content placement in isolation. The Zyppy Signal framework assigns a practitioner-consensus score of 8.8/10 based on cross-referencing 54 published AI citation experiments; the ranking reflects expert judgment, not a measured percentage improvement attributable to placement alone."
+  },
+  {
+    "id": "server-render-ai-content",
+    "titleTemplate": "Make your core content readable without JavaScript",
+    "claim": "AI crawlers may not consistently render client-side JavaScript. Core answers, headings, and evidence available in raw HTML are more reliably discoverable and eligible for citation.",
+    "severity": "high",
+    "category": "technical",
+    "expectedLift": null,
+    "sourceType": "practitioner_consensus",
+    "sourceUrl": "https://signal.zyppy.com/p/seo-strategies-for-ai-search",
+    "sourceCitation": "Cyrus Shepard, Zyppy Signal, August 2026: many AI crawlers do not routinely render JavaScript, which can leave important page content invisible even when the browser-rendered page looks complete.",
+    "verified": true,
+    "lastVerifiedAt": "2026-08-04",
+    "lastReviewedAt": "2026-08-07",
+    "expiresAt": "2027-02-04",
+    "updatedAt": "2026-08-07"
+  },
+  {
+    "id": "review-infrastructure-bot-controls",
+    "titleTemplate": "Review CDN and firewall AI-bot controls",
+    "claim": "Robots.txt is only one access-control layer. CDN, WAF, and bot-management rules can block legitimate AI search and fetch crawlers even when robots.txt allows them.",
+    "severity": "medium",
+    "category": "technical",
+    "expectedLift": null,
+    "sourceType": "practitioner_consensus",
+    "sourceUrl": "https://signal.zyppy.com/p/seo-strategies-for-ai-search",
+    "sourceCitation": "Cyrus Shepard, Zyppy Signal, August 2026: CDN and bot-control platforms can manage AI access independently of robots.txt, so both policies should be checked together.",
+    "verified": true,
+    "lastVerifiedAt": "2026-08-04",
+    "lastReviewedAt": "2026-08-07",
+    "expiresAt": "2027-02-04",
+    "updatedAt": "2026-08-07",
+    "notes": "Detection of an infrastructure provider is advisory, not evidence that it blocks AI bots. The recommendation asks for a policy review rather than claiming a block."
   }
 ]

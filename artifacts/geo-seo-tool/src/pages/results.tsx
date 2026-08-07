@@ -584,6 +584,24 @@ export default function Results() {
         </Card>
       )}
 
+      <Card className="border-emerald-200 bg-emerald-50/40 shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-sm font-mono uppercase tracking-wider">
+            <LineChart className="h-4 w-4 text-emerald-700" /> Measure the change after you ship fixes
+          </CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">
+            AI citations are probabilistic and can change from one query to the next. Judge progress from a trend, not one answer.
+          </p>
+        </CardHeader>
+        <CardContent className="pt-1">
+          <ol className="grid gap-3 text-sm text-muted-foreground sm:grid-cols-3">
+            <li><span className="mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold text-white">1</span>Deploy the change, then re-run this audit to confirm the technical gap is resolved.</li>
+            <li><span className="mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold text-white">2</span>Re-run the same buyer prompts and compare citation share, not a single AI response.</li>
+            <li><span className="mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold text-white">3</span>Use Bing Webmaster AI Performance and Google Search Console AI Features alongside your audit history when available.</li>
+          </ol>
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Quick Wins */}
         <Card className="flex flex-col shadow-sm border-border">
