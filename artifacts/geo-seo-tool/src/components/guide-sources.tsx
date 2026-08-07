@@ -2,6 +2,7 @@ import { ExternalLink } from "lucide-react";
 
 export function GuideSources() {
   const sources = [
+    ["Cyrus Shepard, Zyppy Signal — SEO Strategies for AI Search", "https://signal.zyppy.com/p/seo-strategies-for-ai-search"],
     ["OpenAI crawler roles", "https://platform.openai.com/docs/bots"],
     ["Google structured data guidance", "https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data"],
     ["GEO research paper (KDD 2024)", "https://dl.acm.org/doi/10.1145/3637528.3671900"],

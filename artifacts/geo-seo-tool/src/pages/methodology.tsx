@@ -28,6 +28,13 @@ const articleJsonLd = {
       author: "Aggarwal, Murahari et al.",
       publisher: "Princeton University / IIT Delhi (KDD 2024)",
     },
+    {
+      "@type": "Article",
+      name: "SEO Strategies for AI Search",
+      author: "Cyrus Shepard",
+      publisher: "Zyppy Signal",
+      url: "https://signal.zyppy.com/p/seo-strategies-for-ai-search",
+    },
   ],
 };
 
@@ -176,9 +183,14 @@ export default function Methodology() {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle className="text-base">Primary technical references</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-base">Primary references</CardTitle></CardHeader>
         <CardContent className="text-sm leading-relaxed">
           <ul className="list-disc pl-5 space-y-2">
+            <li>
+              <a className="text-emerald-700 underline" href="https://signal.zyppy.com/p/seo-strategies-for-ai-search" target="_blank" rel="noreferrer">SEO Strategies for AI Search</a>
+              {" "}by <strong>Cyrus Shepard</strong>, Zyppy Signal — cross-references 54 AI citation studies and ranks the top citation factors by score. Several of our highest-weighted recommendations, including snippet controls (Preview Controls, 9.2/10) and content placement (8.8/10), trace directly to this analysis.
+            </li>
+            <li><a className="text-emerald-700 underline" href="https://dl.acm.org/doi/10.1145/3637528.3671900" target="_blank" rel="noreferrer">GEO: Generative Engine Optimization</a> — Aggarwal, Murahari et al. (Princeton / IIT Delhi, KDD 2024). The academic foundation for our research-tagged recommendations around quotation addition and statistics with sources.</li>
             <li><a className="text-emerald-700 underline" href="https://platform.openai.com/docs/bots" target="_blank" rel="noreferrer">OpenAI crawler documentation</a> for OAI-SearchBot, ChatGPT-User, and GPTBot roles.</li>
             <li><a className="text-emerald-700 underline" href="https://developers.google.com/search/docs/crawling-indexing/robots/intro" target="_blank" rel="noreferrer">Google robots.txt documentation</a> and <a className="text-emerald-700 underline" href="https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data" target="_blank" rel="noreferrer">structured data guidance</a>.</li>
             <li><a className="text-emerald-700 underline" href="https://schema.org/Organization" target="_blank" rel="noreferrer">Schema.org Organization</a> and <a className="text-emerald-700 underline" href="https://schema.org/FAQPage" target="_blank" rel="noreferrer">FAQPage</a> definitions.</li>
