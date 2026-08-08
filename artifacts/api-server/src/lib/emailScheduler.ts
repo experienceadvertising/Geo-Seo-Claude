@@ -391,6 +391,58 @@ async function runWeeklyInsights() {
   logger.info({ sent, weekIndex, total: users.length }, "Weekly insights complete");
 }
 
+// ── Prompt-simulation follow-up (daily) ───────────────────────────────────────
+async function runSimulationFollowUps() {
+  logger.info("Email scheduler: running prompt-simulation follow-up");
+
+  // Each eligible audit appears in one 24-hour window, so this sends one
+  // reminder without adding another tracking column or a migration. It is
+  // audit-specific: a different completed simulation does not suppress it.
+  const result = await db.execute(sql`
+    SELECT DISTINCT ON (a.user_id)
+      a.id AS audit_id,
+      a.url,
+      u.email,
+      u.first_name,
+      u.unsubscribe_token
+    FROM audits a
+    INNER JOIN users u ON u.id = a.user_id
+    WHERE a.user_id IS NOT NULL
+      AND u.email_verified = true
+      AND u.email_opt_out = false
+      AND u.email IS NOT NULL
+      AND a.created_at <= NOW() - INTERVAL '24 hours'
+      AND a.created_at > NOW() - INTERVAL '48 hours'
+      AND NOT EXISTS (
+        SELECT 1
+        FROM prompt_simulations ps
+        WHERE ps.audit_id = a.id
+          AND ps.user_id = a.user_id
+          AND ps.status = 'complete'
+      )
+    ORDER BY a.user_id, a.created_at DESC
+  `);
+
+  let sent = 0;
+  for (const row of result.rows as Array<{
+    audit_id: number;
+    url: string;
+    email: string;
+    first_name: string | null;
+    unsubscribe_token: string | null;
+  }>) {
+    const ok = await EmailService.sendSimulationReminder(
+      row.email,
+      row.first_name || row.email.split("@")[0] || "",
+      row.url,
+      Number(row.audit_id),
+      unsubUrl(row.unsubscribe_token),
+    );
+    if (ok) sent++;
+  }
+  logger.info({ sent, eligible: result.rows.length }, "Prompt-simulation follow-up complete");
+}
+
 // ── Start all schedules ───────────────────────────────────────────────────────
 export function startEmailScheduler() {
   // Continuous monitoring sweep runs independently of email config — the
@@ -433,6 +485,14 @@ export function startEmailScheduler() {
       logger.error({ err }, "Trial lifecycle startup run error")
     );
   }, 60_000);
+
+  // One day after an audit, remind users only when that audit has not yet
+  // been simulated. The job's 24-hour eligibility window prevents repeats.
+  cron.schedule("0 11 * * *", () => {
+    withSchedulerLock("simulation-followup", runSimulationFollowUps).catch((err) =>
+      logger.error({ err }, "Prompt-simulation follow-up cron error")
+    );
+  });
 
   cron.schedule("0 8 * * 1", () => {
     withSchedulerLock("weekly-digest", runWeeklyDigests).catch((err) =>
