@@ -284,6 +284,27 @@ export default function Results() {
         </div>
       )}
 
+      <Card className="border-violet-200 bg-violet-50/70 shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base text-violet-950 dark:text-violet-100">
+            <Sparkles className="h-4 w-4 text-violet-700 dark:text-violet-300" /> Next step: test your real AI visibility
+          </CardTitle>
+          <CardDescription className="text-sm leading-relaxed">
+            This audit shows what your page can improve. Run a prompt simulation to see whether AI answers mention your brand, cite your site, or recommend other options for buyer questions.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            Start with three focused prompts based on this audit. You can edit them before the run.
+          </p>
+          <Link href={`/simulate/${audit.id}`}>
+            <Button className="gap-2 whitespace-nowrap" data-testid="button-next-step-simulation">
+              <Sparkles className="h-4 w-4" /> Test AI visibility
+            </Button>
+          </Link>
+        </CardContent>
+      </Card>
+
       {/* AI Insights Summary */}
       {audit.aiInsights && (
         <Card className="bg-primary/5 border-primary/20 shadow-sm">

@@ -667,6 +667,39 @@ export function auditCompleteEmail(
   return { subject, html, text };
 }
 
+// ── Email: Simulation reminder ───────────────────────────────────────────────
+export function simulationReminderEmail(
+  firstName: string,
+  url: string,
+  auditId: number,
+  unsubscribeUrl?: string,
+) {
+  const hostname = (() => { try { return new URL(url).hostname; } catch { return url; } })();
+  const safeHostname = esc(hostname);
+  const safeFirstName = esc(firstName) || "there";
+  const simulateUrl = `${BASE_URL}/simulate/${auditId}`;
+  const subject = `See what AI answers say about ${hostname}`;
+  const html = layout(
+    `${h1("One useful next step for your audit")}
+    ${p(`Hi ${safeFirstName}, you have your AEO audit for <strong>${safeHostname}</strong>. A prompt simulation turns the audit into a real-world check: it shows whether AI engines mention your brand, cite your site, or favor other options for the questions buyers ask.`)}
+
+    <div style="background:#f5f3ff;border-radius:10px;padding:18px 20px;margin:20px 0;">
+      <div style="font-size:13px;font-weight:700;color:#5b21b6;margin-bottom:6px;">Start with three focused prompts</div>
+      <div style="font-size:13px;color:#374151;line-height:1.6;">We will suggest a small set of relevant questions based on your audit. You can edit them before running the check.</div>
+    </div>
+
+    <div style="text-align:center;margin:28px 0;">
+      ${btn("Run prompt simulation", simulateUrl)}
+    </div>
+
+    ${p("This reminder is for this specific audit. If you have already tested it, you do not need to do anything.", "color:#6b7280;font-size:13px;")}`,
+    `Your AEO audit for ${hostname} has one useful next step: run a prompt simulation to see whether AI engines mention your brand, cite your site, or favor other options. Start here: ${simulateUrl}`,
+    unsubscribeUrl,
+  );
+  const text = `Hi ${firstName || "there"},\n\nYou have your AEO audit for ${hostname}. A prompt simulation shows whether AI engines mention your brand, cite your site, or favor other options for the questions buyers ask.\n\nWe will suggest three focused prompts, which you can edit before running the check.\n\nRun prompt simulation: ${simulateUrl}\n\nThis reminder is for this specific audit. If you have already tested it, you do not need to do anything.`;
+  return { subject, html, text };
+}
+
 // ── Email: Simulation Complete (transactional — fires after every simulation) ─
 // Simulations can take 1-3 minutes. This email lets users close the tab and
 // come back when the results are in rather than watching a spinner.
