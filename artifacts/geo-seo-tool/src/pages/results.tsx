@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, Link, useLocation } from "wouter";
 import { useGetAudit, getGetAuditQueryKey, useAnalyzeUrl, customFetch } from "@workspace/api-client-react";
-import { ArrowLeft, CheckCircle2, XCircle, AlertTriangle, Bot, TerminalSquare, FileText, Code2, ShieldAlert, Sparkles, Loader2, Download, Building2, RefreshCw, TrendingUp, Wrench, Lock, ChevronDown, ChevronUp, Copy, Check, BookOpen, Users } from "lucide-react";
+import { ArrowLeft, CheckCircle2, XCircle, AlertTriangle, Bot, TerminalSquare, FileText, Code2, ShieldAlert, Sparkles, Loader2, Download, Building2, RefreshCw, TrendingUp, Wrench, Lock, ChevronDown, ChevronUp, Copy, Check, BookOpen, Users, LineChart as LineChartIcon } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -587,7 +587,7 @@ export default function Results() {
       <Card className="border-emerald-200 bg-emerald-50/40 shadow-sm">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-sm font-mono uppercase tracking-wider">
-            <LineChart className="h-4 w-4 text-emerald-700" /> Measure the change after you ship fixes
+            <LineChartIcon className="h-4 w-4 text-emerald-700" /> Measure the change after you ship fixes
           </CardTitle>
           <p className="text-xs text-muted-foreground mt-1">
             AI citations are probabilistic and can change from one query to the next. Judge progress from a trend, not one answer.

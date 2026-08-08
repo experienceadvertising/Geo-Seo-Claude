@@ -233,8 +233,8 @@ function SignedOutLanding() {
                   "Confirm AI bots actually crawl your pages",
                   "Get alerted the moment your score drops",
                   "Auto-generated JSON-LD and robots.txt fixes",
-                  "Connect GA4 to track AI-referred revenue",
-                  "First month free, all features, no card",
+                  "Connect GA4 to track AI-referred traffic",
+                  "First month free, all core audit features, no card",
                 ].map(item => (
                   <li key={item} className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-shrink-0" />
@@ -320,8 +320,8 @@ function SignedOutLanding() {
                 icon: LineChart,
                 gradient: "from-teal-500 to-emerald-500",
                 badge: "New",
-                title: "Close the loop between citations and real revenue",
-                body: "Track your citation share against competitors across every simulation run. Connect Google Analytics to see AI-referred traffic alongside your AEO score. Know whether your improvements are translating to visits and conversions, not just a better number.",
+                title: "Close the loop between citations and real traffic",
+                body: "Track your citation share against competitors across every simulation run. Connect Google Analytics to see AI-referred traffic alongside your AEO score. Know whether your improvements are translating to measurable AI-referred visits, not just a better number.",
               },
             ].map(({ icon: Icon, gradient, badge, title, body }) => (
               <div
@@ -417,7 +417,7 @@ function SignedOutLanding() {
           <div className="relative px-8 md:px-16 py-14 md:py-20 flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="text-center md:text-left space-y-4 max-w-xl">
               <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 px-3 py-1 text-xs font-semibold text-emerald-300">
-                <CheckCircle2 className="h-3 w-3" /> First month free — all features, no credit card
+                <CheckCircle2 className="h-3 w-3" /> First month free, core audit features, no credit card
               </div>
               <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight leading-tight">
                 Find out whether AI engines cite you. Then fix what is stopping them.

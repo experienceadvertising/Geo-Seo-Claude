@@ -485,7 +485,7 @@ export default function PricingPage() {
             Start getting cited in AI answers
           </h1>
           <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-            Your first month is completely free with every feature unlocked and no credit card.
+            Your first month is completely free with all core audit features unlocked and no credit card.
             After that, stay free for basic audits or upgrade to keep all four AI engines,
             research-backed fix recommendations, continuous monitoring, and competitor citation tracking.
           </p>
