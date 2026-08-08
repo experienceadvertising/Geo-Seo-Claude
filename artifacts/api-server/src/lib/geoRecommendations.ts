@@ -509,13 +509,13 @@ export function generateGeoRecommendations(ctx: RecommendationContext): GeoRecom
   // === DIRECT ANSWERABILITY ===
   if (!s.hasDirectAnswerOpening) {
     recs.push(composeRec("direct-answer-block", {
-      detail: "The opening doesn't begin with a definition pattern (\"X is...\", \"The best Y for Z is...\"). AI engines extract opening statements far more often than buried conclusions. Rewrite the first paragraph to answer the page's core question immediately.",
+      detail: "The opening doesn't begin with a definition pattern (\"X is...\", \"The best Y for Z is...\"). A concise opening answer gives search and AI systems a clearer summary to retrieve. Rewrite the first paragraph to answer the page's core question immediately.",
     }));
   }
 
   if (s.answerCapsuleCount < 2 && s.totalHeadings >= 3) {
     recs.push(composeRec("answer-capsules", {
-      detail: `Detected ${s.answerCapsuleCount} answer capsule(s). After every major H2, place a 40-60 word self-contained answer that states the conclusion definitively before elaboration. This is among the most extractable patterns in 2026 — AI engines literally lift this block as a citation.`,
+      detail: `Detected ${s.answerCapsuleCount} answer capsule(s). After every major H2, consider a 40-60 word self-contained answer that states the conclusion before elaboration. These blocks are easier to retrieve and are worth validating in prompt simulations.`,
       priority: s.answerCapsuleCount === 0 ? "high" : "medium",
     }));
   }
