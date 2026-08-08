@@ -12,6 +12,7 @@ import { usePlan } from "@/hooks/usePlan";
 import { useStripeProducts, useStripeSubscription, useCheckout, useCustomerPortal } from "@/hooks/useStripe";
 import { useToast } from "@/hooks/use-toast";
 import { SEO, breadcrumbJsonLd } from "@/components/seo";
+import { trackEvent } from "@/lib/analytics";
 
 const PRICING_TITLE = "Pricing — AEO Improvement | Free, Pro, Agency plans for AI search optimization";
 const PRICING_DESC =
@@ -306,7 +307,7 @@ function PlanCard({
           ) : (
             <Link href="/sign-up">
               <Button variant="outline" className="w-full">
-                Start free — all features, 1 month
+                Start free, core audit features for 1 month
               </Button>
             </Link>
           )
@@ -384,6 +385,7 @@ export default function PricingPage() {
 
   function handleUpgrade(planId: "pro" | "agency") {
     if (currentPlan !== "free" || subData?.canManageBilling) {
+      trackEvent("billing_portal_opened", { current_plan: currentPlan });
       portal.mutate();
       return;
     }
@@ -396,6 +398,7 @@ export default function PricingPage() {
       });
       return;
     }
+    trackEvent("checkout_started", { plan: planId, billing_interval: billing });
     checkout.mutate({ priceId: price.priceId, plan: planId });
   }
 

@@ -13,6 +13,7 @@ import { usePlan } from "@/hooks/usePlan";
 import { AuthoritySignalsCard } from "@/components/authority-signals-card";
 import { ReferralCard } from "@/components/referral-card";
 import { CHANGELOG } from "@/data/changelog";
+import { trackEvent, trackGoogleAdsConversion } from "@/lib/analytics";
 
 function MarketStats() {
   const items = [
@@ -952,7 +953,9 @@ function WhatsNewCard() {
 }
 
 function SignedInDashboard() {
-  const [url, setUrl] = React.useState(() => localStorage.getItem("pendingAuditUrl") || "");
+  const pendingAuditUrl = React.useRef(localStorage.getItem("pendingAuditUrl") || "");
+  const autoAuditStarted = React.useRef(false);
+  const [url, setUrl] = React.useState(() => pendingAuditUrl.current);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -962,7 +965,6 @@ function SignedInDashboard() {
   const analyzeUrl = useAnalyzeUrl();
   const queryClient = useQueryClient();
 
-  React.useEffect(() => { localStorage.removeItem("pendingAuditUrl"); }, []);
 
   // Post-checkout success handling. Stripe redirects successful upgrades to
   // `/?checkout=success` so users land on their dashboard (where they can
@@ -989,14 +991,19 @@ function SignedInDashboard() {
     return () => refreshTimers.forEach((timer) => window.clearTimeout(timer));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const trimmed = url.trim();
+  function runAudit(rawUrl: string, source: "dashboard_manual" | "post_signup_landing") {
+    const trimmed = rawUrl.trim();
     if (!trimmed) return;
     let normalized = trimmed;
     if (!/^https?:\/\//.test(normalized)) normalized = "https://" + normalized;
+    trackEvent("audit_started", { source });
     analyzeUrl.mutate({ data: { url: normalized } }, {
       onSuccess: (data: any) => {
+        trackEvent("audit_completed", { source });
+        if (!localStorage.getItem("aeo.activationConverted")) {
+          localStorage.setItem("aeo.activationConverted", "true");
+          trackGoogleAdsConversion("activation");
+        }
         setLocation(`/results/${data.id}`);
       },
       onError: (err: any) => {
@@ -1007,6 +1014,18 @@ function SignedInDashboard() {
         });
       },
     });
+  }
+
+  React.useEffect(() => {
+    if (!pendingAuditUrl.current || autoAuditStarted.current) return;
+    autoAuditStarted.current = true;
+    localStorage.removeItem("pendingAuditUrl");
+    runAudit(pendingAuditUrl.current, "post_signup_landing");
+  }, []); // A saved landing-page audit should run once after authentication.
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    runAudit(url, "dashboard_manual");
   }
 
   const greeting = firstName ? `Welcome back, ${firstName}` : "Welcome back";

@@ -103,7 +103,7 @@ function buildHero(
       badgeTone: "emerald",
       headline: "You already have everything — keep it that way",
       subhead:
-        "All core product features are unlocked free during your first month. Subscribe any time to keep all 4 engines, the Fix Generator, and monitoring, plus add connected GA4 reporting.",
+        "Core audit features are unlocked free during your first month. Subscribe any time to keep all 4 engines, the Fix Generator, and monitoring, plus add connected GA4 reporting.",
       showUsage: false,
     };
   }
@@ -286,7 +286,7 @@ const SOURCE_ICON: Record<HeroContent["badgeTone"], React.ReactNode> = {
 export default function UpgradePage() {
   const [, setLocation] = useLocation();
   const { isSignedIn, isLoaded } = useAuth();
-  // storedPlan, not the effective plan: during the free all-access first
+  // storedPlan, not the effective plan: during the free core-feature first
   // month the effective plan is "agency", which would render the
   // "thanks for being a subscriber" hero to users who pay nothing.
   const { storedPlan, trialActive, trialEndsAt, usage, isLoading: planLoading } = usePlan();
@@ -543,7 +543,7 @@ export default function UpgradePage() {
           </p>
           <p className="text-xs text-slate-400 pt-2">
             Plan: <span className="capitalize font-medium text-slate-600">{storedPlan}</span>
-            {trialActive && <span className="text-emerald-600"> · free all-access month active</span>}
+            {trialActive && <span className="text-emerald-600"> · free core-feature month active</span>}
           </p>
         </div>
       </div>

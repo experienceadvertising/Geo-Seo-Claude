@@ -134,15 +134,15 @@ export function welcomeEmail(firstName: string, unsubscribeUrl?: string) {
   // greeting — Gmail truncates after ~50 chars on mobile, so the action
   // verb has to land in the first words.
   const subject = firstName
-    ? `${firstName}, your free all-access month starts now`
-    : `Your free all-access month starts now`;
+    ? `${firstName}, your free core-feature month starts now`
+    : `Your free core-feature month starts now`;
   const html = layout(
     `${h1(`Welcome, ${firstName || "there"} 👋`)}
     ${p("You're now set up to track and improve your website's citability across ChatGPT, Claude, Gemini, and Perplexity.")}
     <table cellpadding="0" cellspacing="0" width="100%" style="margin:16px 0;background:#ecfdf5;border-radius:8px;border:1px solid #a7f3d0;">
       <tr><td style="padding:18px 20px;font-size:14px;color:#065f46;">
-        <strong>Your first month is completely free with all core product features unlocked.</strong><br/>
-        All 4 AI engines, the Fix Generator, competitor tracking, continuous monitoring, sentiment analysis. No credit card, nothing to activate — it's already on.
+        <strong>Your first month is completely free with all core audit features unlocked.</strong><br/>
+        All 4 AI engines, the Fix Generator, competitor tracking, continuous monitoring, sentiment analysis. No credit card, nothing to activate. It is already on.
       </td></tr>
     </table>
     ${p("Here's how to make the most of it:")}
@@ -158,11 +158,11 @@ export function welcomeEmail(firstName: string, unsubscribeUrl?: string) {
     </div>
 
     ${divider()}
-    ${p("Questions? Just reply to this email — we read every one.", "color:#6b7280;font-size:14px;")}`,
-    "All core product features are unlocked free for your first month. Run your first AEO audit now →",
+    ${p("Questions? Just reply to this email. We read every one.", "color:#6b7280;font-size:14px;")}`,
+    "All core audit features are unlocked free for your first month. Run your first AEO audit now →",
     unsubscribeUrl,
   );
-  const text = `Welcome to AEO Improvement!\n\nYour first month is completely free with all core product features unlocked: all 4 AI engines, Fix Generator, competitor tracking, monitoring, and sentiment analysis. Connected GA4 reporting is available on paid plans. No credit card is needed for the free month.\n\nRun your first audit: ${BASE_URL}\n\nQuestions? Reply to this email.`;
+  const text = `Welcome to AEO Improvement!\n\nYour first month is completely free with all core audit features unlocked: all 4 AI engines, Fix Generator, competitor tracking, monitoring, and sentiment analysis. Connected GA4 reporting is available on paid plans. No credit card is needed for the free month.\n\nRun your first audit: ${BASE_URL}\n\nQuestions? Reply to this email.`;
   return { subject, html, text };
 }
 
@@ -174,7 +174,7 @@ export function welcomeD3Email(firstName: string, hasAudit: boolean, unsubscribe
     : "Your free month is running — start with this 60-second audit";
   const html = layout(
     `${h1(hasAudit ? "3 quick wins for better AI citations" : "Start your optimization journey")}
-    ${p(hasAudit ? `Hi ${firstName || "there"}, your first audit is in. Here are three high-impact improvements to check against its task list:` : `Hi ${firstName || "there"}, you still have all core product features unlocked. Run your first audit now so we can build a prioritized, trackable optimization journey for your domain.`)}
+    ${p(hasAudit ? `Hi ${firstName || "there"}, your first audit is in. Here are three high-impact improvements to check against its task list:` : `Hi ${firstName || "there"}, you still have all core audit features unlocked. Run your first audit now so we can build a prioritized, trackable optimization journey for your domain.`)}
 
     <table cellpadding="0" cellspacing="0" width="100%" style="margin:8px 0 24px;">
       ${feature("1️⃣", "Show a visible 'Last updated' date", "AI engines strongly prefer fresh content — the overwhelming majority of ChatGPT citations go to recently updated pages. Add a visible updated date (and dateModified schema) to your key pages, and actually refresh them.")}
@@ -187,7 +187,7 @@ export function welcomeD3Email(firstName: string, hasAudit: boolean, unsubscribe
     </div>
 
     ${divider()}
-    ${p("The Fix Generator — unlocked during your free first month — writes your JSON-LD and citation-bot robots.txt patches automatically. Copy and deploy in minutes.", "color:#6b7280;font-size:13px;")}`,
+    ${p("The Fix Generator, unlocked during your free first month, writes your JSON-LD and citation-bot robots.txt patches automatically. Copy and deploy in minutes.", "color:#6b7280;font-size:13px;")}`,
     "3 high-impact improvements most sites can make this week →",
     unsubscribeUrl,
   );
@@ -196,13 +196,13 @@ export function welcomeD3Email(firstName: string, hasAudit: boolean, unsubscribe
 }
 
 // ── Email 3: Day-7 Check-in ──────────────────────────────────────────────────
-// Recipients are one week into their free all-access first month (paid users
+// Recipients are one week into their free core-feature first month (paid users
 // are excluded by the scheduler), so this is NOT an upgrade pitch — it's a
 // "use the good stuff while it's free" nudge that seeds the upgrade decision.
 export function welcomeD7Email(firstName: string, unsubscribeUrl?: string) {
   const subject = "One week in — the features worth trying before your free month ends";
   const html = layout(
-    `${h1("You're one week into your free all-access month")}
+    `${h1("You're one week into your free core-feature month")}
     ${p(`Hi ${firstName || "there"}, everything below is already unlocked on your account — no upgrade needed. These are the features users tell us move the needle most:`)}
 
     <table cellpadding="0" cellspacing="0" width="100%" style="margin:8px 0 24px;background:#f0fdf4;border-radius:8px;padding:16px;">
@@ -221,7 +221,7 @@ export function welcomeD7Email(firstName: string, unsubscribeUrl?: string) {
     "Everything is unlocked on your account right now — here's what to try →",
     unsubscribeUrl,
   );
-  const text = `Hi ${firstName || "there"},\n\nYou're one week into your free all-access month. Already unlocked on your account:\n- All 4 AI engines (ChatGPT, Claude, Gemini, Perplexity)\n- Fix Generator (JSON-LD, citation-bot robots.txt, optional llms.txt)\n- Competitor citation gap table\n- Continuous monitoring with alerts\n- Sentiment analysis\n\nUse them now: ${BASE_URL}\n\nWhen your free month ends you'll move to the free plan unless you subscribe: ${BASE_URL}/upgrade?source=welcome-d7`;
+  const text = `Hi ${firstName || "there"},\n\nYou're one week into your free core-feature month. Already unlocked on your account:\n- All 4 AI engines (ChatGPT, Claude, Gemini, Perplexity)\n- Fix Generator (JSON-LD, citation-bot robots.txt, optional llms.txt)\n- Competitor citation gap table\n- Continuous monitoring with alerts\n- Sentiment analysis\n\nUse them now: ${BASE_URL}\n\nWhen your free month ends you'll move to the free plan unless you subscribe: ${BASE_URL}/upgrade?source=welcome-d7`;
   return { subject, html, text };
 }
 
@@ -296,7 +296,7 @@ export function verificationEmail(firstName: string, verifyUrl: string) {
   const subject = "Verify your AEO Improvement email address";
   const html = layout(
     `${h1("Confirm your email")}
-    ${p(`Hi ${firstName || "there"}, welcome to AEO Improvement! Click the button below to verify your email address and activate your account. Your first month is completely free with all core product features unlocked.`)}
+    ${p(`Hi ${firstName || "there"}, welcome to AEO Improvement! Click the button below to verify your email address and activate your account. Your first month is completely free with all core audit features unlocked.`)}
     <div style="text-align:center;margin:32px 0;">
       ${btn("Verify my email →", verifyUrl)}
     </div>
@@ -1181,10 +1181,10 @@ export function whatYouMissedEmail(
 export function freeMonthPromoEmail(firstName: string, endsAt: Date, unsubscribeUrl?: string) {
   const safeFirstName = esc(firstName) || "there";
   const endDate = endsAt.toLocaleDateString("en-US", { month: "long", day: "numeric" });
-  const subject = "Your core product features are free for a full month 🎁";
+  const subject = "Your core audit features are free for a full month 🎁";
   const html = layout(
     `${h1("We unlocked everything for you")}
-    ${p(`Hi ${safeFirstName}, good news: for the next month, <strong>all core product features are free on your account</strong>. No credit card and nothing to activate. It's already on.`)}
+    ${p(`Hi ${safeFirstName}, good news: for the next month, <strong>all core audit features are free on your account</strong>. No credit card and nothing to activate. It's already on.`)}
     <table cellpadding="0" cellspacing="0" width="100%" style="margin:8px 0 24px;">
       ${feature("🔬", "All 4 AI engines", "Run simulations against ChatGPT, Claude, Gemini, and Perplexity — see exactly who cites you where.")}
       ${feature("🔧", "Fix Generator", "Auto-drafts JSON-LD schema and citation-bot robots.txt patches. Copy and ship.")}
@@ -1194,7 +1194,7 @@ export function freeMonthPromoEmail(firstName: string, endsAt: Date, unsubscribe
     </table>
     <table cellpadding="0" cellspacing="0" width="100%" style="margin:16px 0;background:#ecfdf5;border-radius:8px;border:1px solid #a7f3d0;">
       <tr><td style="padding:18px 20px;font-size:14px;color:#065f46;text-align:center;">
-        Free with all core product features until <strong>${endDate}</strong>
+        Free with all core audit features until <strong>${endDate}</strong>
       </td></tr>
     </table>
     <div style="text-align:center;margin:24px 0;">
@@ -1205,21 +1205,21 @@ export function freeMonthPromoEmail(firstName: string, endsAt: Date, unsubscribe
     `All 4 engines, Fix Generator, monitoring, competitor tracking — free on your account until ${endDate}.`,
     unsubscribeUrl,
   );
-  const text = `Hi ${firstName || "there"},\n\nGood news: for the next month, all core product features are free on your account. No credit card and nothing to activate.\n\nNow unlocked for you:\n- All 4 AI engines (ChatGPT, Claude, Gemini, Perplexity)\n- Fix Generator (JSON-LD, citation-bot robots.txt, optional llms.txt)\n- Continuous monitoring with alerts\n- Competitor tracking & sentiment analysis\n- 500 audits + 150 simulations this month\n\nConnected GA4 reporting is available on paid plans.\n\nFree until ${endDate}: ${BASE_URL}\n\nAfter that your account simply returns to your current plan and nothing is charged. We'll remind you a few days before.`;
+  const text = `Hi ${firstName || "there"},\n\nGood news: for the next month, all core audit features are free on your account. No credit card and nothing to activate.\n\nNow unlocked for you:\n- All 4 AI engines (ChatGPT, Claude, Gemini, Perplexity)\n- Fix Generator (JSON-LD, citation-bot robots.txt, optional llms.txt)\n- Continuous monitoring with alerts\n- Competitor tracking & sentiment analysis\n- 500 audits + 150 simulations this month\n\nConnected GA4 reporting is available on paid plans.\n\nFree until ${endDate}: ${BASE_URL}\n\nAfter that your account simply returns to your current plan and nothing is charged. We'll remind you a few days before.`;
   return { subject, html, text };
 }
 
 // ── Email: Free-month ending soon (T-3 days) ─────────────────────────────────
 // Sent once by the daily trial-lifecycle scheduler job when a (still-free)
-// user's all-access first month has ≤3 days left. The one moment where the
+// user's core-feature first month has ≤3 days left. The one moment where the
 // upgrade ask is strongest: they've had everything, now it's about to go away.
 export function trialEndingSoonEmail(firstName: string, endsAt: Date, unsubscribeUrl?: string) {
   const safeFirstName = esc(firstName) || "there";
   const endDate = endsAt.toLocaleDateString("en-US", { month: "long", day: "numeric" });
-  const subject = `Your free all-access month ends ${endDate}`;
+  const subject = `Your free core-feature month ends ${endDate}`;
   const html = layout(
     `${h1("Your free month is almost up")}
-    ${p(`Hi ${safeFirstName}, your free month of AEO Improvement with all core product features unlocked ends on <strong>${endDate}</strong>.`)}
+    ${p(`Hi ${safeFirstName}, your free month of AEO Improvement with all core audit features unlocked ends on <strong>${endDate}</strong>.`)}
     ${p("After that, your account moves to the free plan and you'll lose:")}
     <table cellpadding="0" cellspacing="0" width="100%" style="margin:8px 0 24px;">
       ${feature("🔬", "All 4 AI engines", "Simulations drop back to ChatGPT only — no more Claude, Gemini, or Perplexity results.")}
@@ -1238,24 +1238,24 @@ export function trialEndingSoonEmail(firstName: string, endsAt: Date, unsubscrib
     </div>
     ${divider()}
     ${p("Do nothing and you'll land on the free plan — 5 audits and 2 simulations a month, ChatGPT only. Your audit history and account stay safe either way.", "color:#6b7280;font-size:13px;")}`,
-    `Your core product features stay unlocked until ${endDate}. Here's how to keep them after that.`,
+    `Your core audit features stay unlocked until ${endDate}. Here's how to keep them after that.`,
     unsubscribeUrl,
   );
-  const text = `Hi ${firstName || "there"},\n\nYour free all-access month ends on ${endDate}. After that your account moves to the free plan and you'll lose:\n- All 4 AI engines (back to ChatGPT only)\n- Fix Generator\n- Continuous monitoring & alerts\n- Competitor tracking & sentiment analysis\n\nKeep everything with Pro ($79/mo or $750/yr): ${BASE_URL}/upgrade?source=trial-ending\n\nDo nothing and you'll land on the free plan. Your audit history and account stay safe either way.`;
+  const text = `Hi ${firstName || "there"},\n\nYour free core-feature month ends on ${endDate}. After that your account moves to the free plan and you'll lose:\n- All 4 AI engines (back to ChatGPT only)\n- Fix Generator\n- Continuous monitoring & alerts\n- Competitor tracking & sentiment analysis\n\nKeep everything with Pro ($79/mo or $750/yr): ${BASE_URL}/upgrade?source=trial-ending\n\nDo nothing and you'll land on the free plan. Your audit history and account stay safe either way.`;
   return { subject, html, text };
 }
 
 // ── Email: Free month ended ──────────────────────────────────────────────────
 // Sent once by the daily trial-lifecycle scheduler job right after a
-// still-free user's all-access month lapses. Honest downgrade notice +
+// still-free user's core-feature month lapses. Honest downgrade notice +
 // win-back CTA; the guard window in the scheduler keeps this from ever
 // firing for long-lapsed legacy accounts.
 export function trialEndedEmail(firstName: string, unsubscribeUrl?: string) {
   const safeFirstName = esc(firstName) || "there";
-  const subject = "Your free all-access month has ended";
+  const subject = "Your free core-feature month has ended";
   const html = layout(
     `${h1("Your free month has ended")}
-    ${p(`Hi ${safeFirstName}, your free month with all core product features unlocked is over, and your account is now on the <strong>free plan</strong>.`)}
+    ${p(`Hi ${safeFirstName}, your free month with all core audit features unlocked is over, and your account is now on the <strong>free plan</strong>.`)}
     ${p("You still have, free forever:")}
     <ul style="margin:0 0 16px 0;padding:0 0 0 20px;font-size:14px;line-height:1.8;color:#374151;">
       <li>5 AEO audits per month with full recommendations</li>
@@ -1276,7 +1276,7 @@ export function trialEndedEmail(firstName: string, unsubscribeUrl?: string) {
     "Your account is now on the free plan — here's what you keep, and how to get everything back.",
     unsubscribeUrl,
   );
-  const text = `Hi ${firstName || "there"},\n\nYour free all-access month has ended and your account is now on the free plan.\n\nYou keep, free forever:\n- 5 audits/month\n- 2 simulations/month (ChatGPT)\n- Your full audit history\n\nGet everything back with Pro ($79/mo or $750/yr): ${BASE_URL}/upgrade?source=trial-ended\n\nNo pressure. The free plan doesn't expire.`;
+  const text = `Hi ${firstName || "there"},\n\nYour free core-feature month has ended and your account is now on the free plan.\n\nYou keep, free forever:\n- 5 audits/month\n- 2 simulations/month (ChatGPT)\n- Your full audit history\n\nGet everything back with Pro ($79/mo or $750/yr): ${BASE_URL}/upgrade?source=trial-ended\n\nNo pressure. The free plan doesn't expire.`;
   return { subject, html, text };
 }
 

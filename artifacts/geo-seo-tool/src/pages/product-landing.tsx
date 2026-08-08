@@ -5,6 +5,7 @@ import { SEO } from "@/components/seo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
+import { trackEvent } from "@/lib/analytics";
 
 type Variant = "audit" | "visibility" | "citations";
 
@@ -39,6 +40,7 @@ export default function ProductLanding({ variant }: { variant: Variant }) {
     e.preventDefault();
     if (!url.trim()) return;
     localStorage.setItem("pendingAuditUrl", url.trim());
+    trackEvent("audit_url_submitted", { landing_variant: variant });
     navigate(isSignedIn ? "/" : "/sign-up");
   }
 
@@ -59,7 +61,7 @@ export default function ProductLanding({ variant }: { variant: Variant }) {
               </div>
               <Button type="submit" size="lg" className="h-12 bg-emerald-600 hover:bg-emerald-700">Run free audit <ArrowRight className="ml-2 h-4 w-4" /></Button>
             </form>
-            <p className="mt-3 text-xs text-slate-400">First month all features unlocked. No credit card.</p>
+            <p className="mt-3 text-xs text-slate-400">First month with all core audit features. No credit card.</p>
           </div>
         </div>
       </section>

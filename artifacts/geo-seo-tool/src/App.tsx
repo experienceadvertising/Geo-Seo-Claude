@@ -8,6 +8,8 @@ import { AuthProvider, useAuth } from "@/context/AuthContext";
 import Home from "@/pages/home";
 import { Layout } from "@/components/layout";
 import { ErrorBoundary } from "@/components/error-boundary";
+import { CookieConsent } from "@/components/cookie-consent";
+import { RouteTracker } from "@/components/route-tracker";
 import { Loader2 } from "lucide-react";
 
 const NotFound = lazy(() => import("@/pages/not-found"));
@@ -35,6 +37,9 @@ const VerifyEmailPage = lazy(() => import("@/pages/verify-email"));
 const ForgotPasswordPage = lazy(() => import("@/pages/forgot-password"));
 const ResetPasswordPage = lazy(() => import("@/pages/reset-password"));
 const UnsubscribePage = lazy(() => import("@/pages/unsubscribe"));
+const PrivacyPage = lazy(() => import("@/pages/privacy"));
+const TermsPage = lazy(() => import("@/pages/terms"));
+const GoogleDataUsePage = lazy(() => import("@/pages/google-data-use"));
 
 const queryClient = new QueryClient();
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -86,6 +91,9 @@ function AppRoutes() {
         <Route path="/methodology" component={Methodology} />
         <Route path="/about" component={About} />
         <Route path="/contact" component={Contact} />
+        <Route path="/privacy" component={PrivacyPage} />
+        <Route path="/terms" component={TermsPage} />
+        <Route path="/google-data-use" component={GoogleDataUsePage} />
         {/* SEO comparison pages — public, indexable, drive AEO-category
             search traffic. /vs/:slug is parameterized; the page reads
             from src/data/competitors.ts. */}
@@ -116,7 +124,9 @@ function App() {
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <TooltipProvider>
+              <RouteTracker />
               <ErrorBoundary><Suspense fallback={<PageLoading />}><AppRoutes /></Suspense></ErrorBoundary>
+              <CookieConsent />
               <Toaster />
             </TooltipProvider>
           </AuthProvider>
