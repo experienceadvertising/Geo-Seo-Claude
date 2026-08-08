@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { customFetch } from "@workspace/api-client-react";
+import { trackEvent, trackGoogleAdsConversion } from "@/lib/analytics";
 
 export default function SignUpPage() {
   const [firstName, setFirstName] = useState("");
@@ -48,11 +49,14 @@ export default function SignUpPage() {
     e.preventDefault();
     setError(null);
     setLoading(true);
+    trackEvent("sign_up_started");
     try {
       await customFetch("/api/auth/register", {
         method: "POST",
         body: JSON.stringify({ firstName, email, password, referralCode }),
       });
+      trackEvent("sign_up_complete");
+      trackGoogleAdsConversion("signup");
       setDone(true);
     } catch (err: any) {
       setError(err?.body?.error || err?.message || "Sign up failed. Please try again.");
@@ -74,7 +78,7 @@ export default function SignUpPage() {
             <h2 className="text-2xl font-bold">Check your email</h2>
             <p className="text-muted-foreground text-sm">
               We sent a verification link to <strong>{email}</strong>. Click the
-              link to activate your account — your free all-access month starts
+              link to activate your account. Your free core-feature month starts
               the moment you do.
             </p>
             <p className="text-xs text-muted-foreground">
@@ -117,7 +121,7 @@ export default function SignUpPage() {
           </div>
           <CardTitle className="text-2xl font-bold">Create your account</CardTitle>
           <CardDescription>
-            Your first month is completely free with all core product features unlocked.
+            Your first month is completely free with all core audit features unlocked.
             No credit card required.
           </CardDescription>
         </CardHeader>
@@ -167,6 +171,12 @@ export default function SignUpPage() {
             <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700" disabled={loading}>
               {loading ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Creating account…</> : "Create free account"}
             </Button>
+            <p className="text-center text-xs leading-relaxed text-muted-foreground">
+              By creating an account, you agree to our{" "}
+              <Link href="/terms" className="text-emerald-600 hover:underline">Terms of Service</Link>
+              {" "}and acknowledge our{" "}
+              <Link href="/privacy" className="text-emerald-600 hover:underline">Privacy Policy</Link>.
+            </p>
             <p className="text-center text-sm text-muted-foreground">
               Already have an account?{" "}
               <Link href="/sign-in" className="text-emerald-600 font-medium hover:underline">
