@@ -124,7 +124,6 @@ function initializeMeta(consent: TrackingConsent) {
   window._fbq = fbq;
   addScript("aeo-meta-pixel", "https://connect.facebook.net/en_US/fbevents.js");
   window.fbq("init", META_PIXEL_ID);
-  window.fbq("track", "PageView");
 }
 
 function initializeLinkedIn(consent: TrackingConsent) {
