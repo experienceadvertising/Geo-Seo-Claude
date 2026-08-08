@@ -331,6 +331,8 @@ Hard rules:
 - No filler ("In today's AI landscape..." etc.) — every sentence has a fact or instruction
 - Total length 350-500 words
 - NEVER recommend something that is already confirmed satisfied above (e.g. if Has llms.txt: true, do NOT suggest creating llms.txt; if no blocked crawlers, do NOT suggest unblocking them; if HTTPS is true, do NOT mention HTTPS)
+- Treat the audit as a diagnostic estimate, not proof of live citations. Do not say an engine will, always, or must cite content, and do not claim that any engine requires a specific content format. Use calibrated language such as "can", "may", or "is worth testing".
+- Only recommend FAQPage, BreadcrumbList, Article, or HowTo schema when the page already has the matching visible content and page type. Never present any of those schema types as a universal homepage fix.
 - DO NOT invent quantitative claims. You may NOT write percentages, multipliers ("4x"), or ranking-position numbers UNLESS that exact figure literally appears in the "TOP RULE-BASED FINDINGS" section above. No "extracted N% more often", no "Nx more reliably", no "deprioritize by N positions" — these are forbidden unless quoted verbatim from the findings.
 - When quoting any statistic that appears in the page content excerpt (e.g. "1.64735697% of GDP"), round to the precision a human would write: 1 decimal place for percentages and ratios, 2 decimal places only when the number is between 0 and 1. Never reproduce more than 4 significant figures from page-derived stats.
 - The ONLY number you may call "the score", "your score", or "the AEO/GEO score" is the Overall GEO score (${analysis.geoScore}/100). The six category figures (Citability, Brand Authority, AI Crawler Access, Technical SEO, Structured Data, Platform Optimization) are SUB-SCORES — if you cite one, name it explicitly (e.g. "your Citability sub-score of ${analysis.scores.citability}/100"). Never present a sub-score as the page's overall score.
@@ -827,32 +829,9 @@ Citation access is controlled in robots.txt. This file is a human-readable conte
     "inLanguage": "en-US",
   });
 
-  if (missingSchema.includes("FAQPage") || !schemaDetected.includes("FAQPage")) {
-    schemaBlocks.push({
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      "mainEntity": [
-        {
-          "@type": "Question",
-          "name": `What is ${brandName}?`,
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": description,
-          },
-        },
-      ],
-    });
-  }
-
-  if (missingSchema.includes("BreadcrumbList")) {
-    schemaBlocks.push({
-      "@context": "https://schema.org",
-      "@type": "BreadcrumbList",
-      "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Home", "item": audit.url },
-      ],
-    });
-  }
+  // FAQPage and BreadcrumbList describe visible page structures. A crawl
+  // cannot safely invent those structures, so users must add the matching
+  // visible content first and then create schema that mirrors it.
 
   // Robots.txt snippet for missing crawlers
   const robotsSnippet = crawlersBlocked.length > 0

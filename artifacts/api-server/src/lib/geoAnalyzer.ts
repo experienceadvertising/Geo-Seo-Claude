@@ -393,13 +393,27 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
       const schemaChecks = ["Organization", "LocalBusiness", "Article", "Product", "WebSite", "FAQPage", "HowTo", "BreadcrumbList"];
       structuredDataTypes = schemaChecks.map((type) => ({ type, present: detectedTypes.has(type) }));
 
-      // Extract text and score citability
-      $("script, style, nav, footer, header, aside, form").remove();
+      // Extract page content only. Consent banners and dialogs commonly sit
+      // outside <main>; including them makes boilerplate look like a poor
+      // opening passage and contaminates the citability score.
+      const $contentRoot = $("main, [role='main'], article").first();
+      const $contentScope = $contentRoot.length ? $contentRoot : $("body");
+      $contentScope.find("script, style, nav, footer, header, aside, form, [role='dialog'], [aria-modal='true']").remove();
+      $contentScope.find("[id], [class], [data-testid], [aria-label]").filter((_, el) => {
+        const marker = [
+          $(el).attr("id"),
+          $(el).attr("class"),
+          $(el).attr("data-testid"),
+          $(el).attr("aria-label"),
+        ].filter(Boolean).join(" ").toLowerCase();
+        return /cookie|consent|onetrust|trustarc|didomi|privacy[-_ ]?(?:banner|notice|settings|choices)|gdpr|\bcmp\b/.test(marker);
+      }).remove();
+
       const contentBlocks: { heading: string | null; content: string }[] = [];
       let currentHeading: string | null = "Introduction";
       let currentParas: string[] = [];
 
-      $("h1, h2, h3, h4, p, ul, ol").each((_, el) => {
+      $contentScope.find("h1, h2, h3, h4, p, ul, ol").each((_, el) => {
         const tagName = (el as any).tagName?.toLowerCase();
         if (["h1", "h2", "h3", "h4"].includes(tagName)) {
           if (currentParas.length > 0) {
@@ -425,7 +439,7 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
       }
 
       citabilityBlocks = contentBlocks.map((b) => scorePassage(b.content, b.heading));
-      const allText = $("body").text().replace(/\s+/g, " ").trim();
+      const allText = $contentScope.text().replace(/\s+/g, " ").trim();
       const analyzedWordCount = allText.split(/\s+/).filter(Boolean).length;
 
       // Content placement score: measures how early the first substantive content block
