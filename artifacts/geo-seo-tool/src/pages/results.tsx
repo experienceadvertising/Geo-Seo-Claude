@@ -809,9 +809,10 @@ export default function Results() {
               <CardTitle className="flex items-center gap-2 text-sm font-mono uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
                 <Wrench className="h-4 w-4" /> Fix Generator
               </CardTitle>
-              <CardDescription className="text-xs">Ready-to-deploy files generated from your audit. Copy each one into your site.</CardDescription>
+              <CardDescription className="text-xs">Implementation drafts from your audit. Review them with your developer before publishing.</CardDescription>
             </CardHeader>
             <CardContent className="pt-5 space-y-6">
+              <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-xs leading-relaxed text-amber-950">Generated schema is a starting point, not a publishing instruction. Only use markup that matches visible content on the page. FAQ and breadcrumb schema are not created automatically.</p>
               {fixesLoading && <div className="flex items-center gap-3 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Generating custom fix files…</div>}
               {fixesError && <p className="text-sm text-destructive">Failed to generate fixes. Try again.</p>}
               {fixesData && (
@@ -869,7 +870,7 @@ export default function Results() {
         ) : (
           <UpgradePrompt
             feature="Fix Generator"
-            description="Generate ready-to-deploy JSON-LD schema and citation-bot robots.txt additions, plus an optional llms.txt content map."
+            description="Review implementation drafts for JSON-LD, citation-bot robots.txt additions, and an optional llms.txt content map."
             requiredPlan="pro"
           />
         )
