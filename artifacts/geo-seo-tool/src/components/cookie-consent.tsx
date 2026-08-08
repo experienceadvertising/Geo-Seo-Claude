@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { getTrackingConsent, setTrackingConsent } from "@/lib/analytics";
+import { getTrackingConsent, setTrackingConsent, trackPageView } from "@/lib/analytics";
 
 export function CookieConsent() {
   const [decided, setDecided] = useState(() => getTrackingConsent() !== null);
@@ -10,6 +10,9 @@ export function CookieConsent() {
 
   function choose(choice: "all" | "essential") {
     setTrackingConsent(choice);
+    if (choice === "all") {
+      trackPageView(window.location.pathname + window.location.search);
+    }
     setDecided(true);
   }
 
@@ -37,7 +40,7 @@ export function CookieConsent() {
             Essential only
           </Button>
           <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => choose("all")}>
-            Accept analytics
+            Accept analytics and ads
           </Button>
         </div>
       </div>
