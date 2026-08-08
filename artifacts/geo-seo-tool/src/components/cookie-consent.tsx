@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { getTrackingConsent, setTrackingConsent, trackPageView } from "@/lib/analytics";
@@ -6,14 +6,22 @@ import { getTrackingConsent, setTrackingConsent, trackPageView } from "@/lib/ana
 export function CookieConsent() {
   const [decided, setDecided] = useState(() => getTrackingConsent() !== null);
 
+  useEffect(() => {
+    const openSettings = () => setDecided(false);
+    window.addEventListener("aeo:open-cookie-settings", openSettings);
+    return () => window.removeEventListener("aeo:open-cookie-settings", openSettings);
+  }, []);
+
   if (decided) return null;
 
   function choose(choice: "all" | "essential") {
+    const previous = getTrackingConsent();
     setTrackingConsent(choice);
     if (choice === "all") {
       trackPageView(window.location.pathname + window.location.search);
     }
     setDecided(true);
+    if (previous?.analytics && choice === "essential") window.location.reload();
   }
 
   return (
