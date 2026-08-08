@@ -17,6 +17,7 @@ import {
   firstAuditEmail,
   auditCompleteEmail,
   simulationCompleteEmail,
+  simulationReminderEmail,
   aeoInsightsEmail,
   scoreChangedEmail,
   approachingLimitEmail,
@@ -201,6 +202,19 @@ export const EmailService = {
   ): Promise<boolean> {
     const { subject, html, text } = auditCompleteEmail(firstName, url, geoScore, auditId, unsubscribeUrl);
     return send(email, subject, html, text, "audit-complete", unsubscribeUrl);
+  },
+
+  // Lifecycle reminder: sent only when a completed audit has no completed
+  // simulation after a day. The scheduler filters by audit, not merely user.
+  async sendSimulationReminder(
+    email: string,
+    firstName: string,
+    url: string,
+    auditId: number,
+    unsubscribeUrl?: string,
+  ): Promise<boolean> {
+    const { subject, html, text } = simulationReminderEmail(firstName, url, auditId, unsubscribeUrl);
+    return send(email, subject, html, text, "simulation-reminder", unsubscribeUrl);
   },
 
   // Transactional: fires after every completed prompt simulation so users who
