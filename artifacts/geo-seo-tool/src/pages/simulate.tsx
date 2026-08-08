@@ -702,7 +702,7 @@ export default function SimulatePage() {
                     type="button"
                     onClick={() => setSuggestMode("standard")}
                     className={`px-2.5 py-1.5 transition-colors ${suggestMode === "standard" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:text-foreground"}`}
-                    title="Generate 6 prompts matching your buyers' search intent"
+                    title="Generate 3 high-intent buyer queries"
                   >
                     Buyer queries
                   </button>
@@ -710,7 +710,7 @@ export default function SimulatePage() {
                     type="button"
                     onClick={() => setSuggestMode("fanout")}
                     className={`px-2.5 py-1.5 transition-colors border-l ${suggestMode === "fanout" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:text-foreground"}`}
-                    title="Generate 8 prompts covering the full topic cluster AI engines fan out to"
+                    title="Generate 3 related queries for a focused coverage check"
                   >
                     <Network className="h-3 w-3 inline-block mr-1" />Fan-out cluster
                   </button>
@@ -728,10 +728,10 @@ export default function SimulatePage() {
             </div>
             {suggestMode === "fanout" && (
               <p className="text-xs text-violet-700 dark:text-violet-400 bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-900 rounded-md px-3 py-2 mb-2">
-                <strong>Fan-out cluster mode:</strong> generates 8 tightly related queries across primary intent, supporting topics, comparisons, problems, use cases, and decision-stage research. {seedQuery ? <>Using Search Console seed: <strong>{seedQuery}</strong>.</> : <>Select a Search Console opportunity above for the strongest starting point.</>}
+                <strong>Focused fan-out mode:</strong> generates 3 related queries across primary intent, decision research, and a supporting use case. {seedQuery ? <>Using Search Console seed: <strong>{seedQuery}</strong>.</> : <>Select a Search Console opportunity above for the strongest starting point.</>}
                 {!isPro && (
                   <span className="block mt-1 text-amber-700 dark:text-amber-400">
-                    Free plan runs the first {maxPrompts} prompts. <a href="/pricing" className="underline font-medium">Upgrade to Pro</a> to run the full cluster.
+                    Free plan runs up to {maxPrompts} prompts. <a href="/pricing" className="underline font-medium">Upgrade to Pro</a> to test up to 25 prompts and all four engines.
                   </span>
                 )}
               </p>
@@ -755,7 +755,7 @@ export default function SimulatePage() {
                 </p>
               )}
               {!isPro && prompts.length > maxPrompts && (
-                <p className="text-xs text-amber-600 font-medium">Only first {maxPrompts} prompts will run on the Free plan</p>
+                <p className="text-xs text-amber-600 font-medium">Only the first {maxPrompts} prompts will run. Upgrade to test up to 25 prompts across all four engines.</p>
               )}
             </div>
 
