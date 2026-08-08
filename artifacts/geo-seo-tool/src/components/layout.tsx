@@ -227,9 +227,11 @@ function SiteFooter() {
           style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}
         >
           <span>© {year} AEO Improvement. All rights reserved.</span>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
             <Link href="/contact" className="hover:text-gray-300 transition-colors">Contact</Link>
-            <span className="text-gray-700">·</span>
+            <Link href="/privacy" className="hover:text-gray-300 transition-colors">Privacy</Link>
+            <Link href="/terms" className="hover:text-gray-300 transition-colors">Terms</Link>
+            <Link href="/google-data-use" className="hover:text-gray-300 transition-colors">Google data use</Link>
             <span className="text-emerald-500 font-medium">aeoimprovement.com</span>
           </div>
         </div>
