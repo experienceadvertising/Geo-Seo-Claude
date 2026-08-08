@@ -480,7 +480,7 @@ export function generateGeoRecommendations(ctx: RecommendationContext): GeoRecom
 
   if (s.expertQuoteCount < 1) {
     recs.push(composeRec("add-expert-quotes", {
-      detail: "No quoted statements with named attribution detected. Add direct quotes from named experts (\"...,\" said Jane Doe, CEO of Acme) — AI engines weight attributed claims much higher than unsourced opinions.",
+      detail: "No quoted statements with named attribution detected. Where a relevant expert statement is already available and approved, add it with a clear source. Attribution makes a claim easier for readers and retrieval systems to verify.",
     }));
   }
 
