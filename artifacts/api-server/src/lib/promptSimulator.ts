@@ -665,42 +665,38 @@ export async function generatePromptsForBrand(
     ? contextLines.join("\n")
     : "(no additional context)";
 
-  const standardSys = `You are an expert in Answer Engine Optimization (AEO). Your task is to generate 6 realistic search prompts that real users type into ChatGPT, Perplexity, Claude, or Google AI Overviews when researching a topic that ${brandName} should ideally be cited for.
+  const standardSys = `You are an expert in Answer Engine Optimization (AEO). Your task is to generate 3 realistic search prompts that real users type into ChatGPT, Perplexity, Claude, or Google AI Overviews when researching a topic that ${brandName} should ideally be cited for.
 
-IMPORTANT: Read the site context carefully below to understand what ${brandName} actually does — community platform, SaaS tool, marketplace, agency, media brand, etc. — and generate prompts that match those specific use cases, not generic category prompts.
+IMPORTANT: Read the site context carefully below to understand what ${brandName} actually does, such as a community platform, SaaS tool, marketplace, agency, or media brand. Generate prompts that match those specific use cases, not generic category prompts.
 
 Rules:
-- Generate exactly 6 prompts
-- Mix funnel stages: 2 top-of-funnel ("best X for Y"), 2 comparison/how-to, 2 specific informational
-- Each prompt must be 8–15 words — short and natural, the way real users actually type queries (NOT a 25-word sentence with multiple sub-clauses)
-- Match the prompts to the ACTUAL product/service/community type inferred from the context
-- Do NOT include the brand name "${brandName}" in any prompt — they must be neutral category prompts the brand could be cited for
-- Write in natural human language (not marketing language, not B2B jargon)
-- Target the actual audience inferred from the context (B2B vs B2C, skill level, industry, etc.)
-- Return ONLY the 6 prompts, one per line, no numbering, no bullets, no quotes, no explanation`;
+- Generate exactly 3 prompts
+- Cover one high-intent category query, one comparison or alternative query, and one job-to-be-done or implementation query
+- Each prompt must be 8 to 15 words, short and natural, the way real users actually type queries
+- Match the prompts to the actual product, service, or community type inferred from the context
+- Do not include the brand name "${brandName}" in any prompt. They must be neutral category prompts the brand could be cited for
+- Write in natural human language, not marketing language or B2B jargon
+- Target the actual audience inferred from the context
+- Return ONLY the 3 prompts, one per line, no numbering, no bullets, no quotes, no explanation`;
 
-  // Fan-out mode: generate the broader topic cluster that AI engines internally fan out to.
-  // Based on Zyppy Signal research: AI engines spawn 5-20 sub-queries beyond the primary
-  // query. Ranking for this full cluster (score 8.9/10) is a top citation factor.
-  // Generates a balanced cluster across intent, subtopics, comparisons,
-  // problems, use cases, and decision-stage questions.
-  const fanoutSys = `You are an AI search engine researcher. When a user asks a question, AI engines like ChatGPT and Google Gemini internally generate 5-20 "fan-out" sub-queries to research different facets of the topic before writing their answer.
-
-Your task: generate 8 queries that represent a useful fan-out cluster for the primary query in the site context. If no primary query is supplied, infer the narrowest reasonable topic from the page and brand context. These are related queries the existing page can evaluate for useful coverage gaps.
+  // Fan-out mode gives the user a compact related-query set for a focused
+  // coverage check instead of a broad, repetitive cluster.
+  const fanoutSys = `You are an AI search researcher. Generate 3 tightly related queries that represent the most useful coverage check for the primary query in the site context. If no primary query is supplied, infer the narrowest reasonable topic from the page and brand context.
 
 IMPORTANT: Read the site context carefully below to understand ${brandName}'s category, audience, and use cases.
 
 Rules:
-- Generate exactly 8 prompts covering the full topic cluster, not only buyer intent
-- Cover these categories across the set: primary intent, supporting subtopic, comparison, problem and solution, audience or use case, and decision stage
+- Generate exactly 3 prompts
+- Cover one primary-intent query, one decision or comparison query, and one supporting use case or problem query
 - Include only categories that naturally fit the site context
 - Each prompt must be 6 to 14 words in natural query-style phrasing
 - Do not include "${brandName}" in any prompt. These must be neutral category queries the site could be cited for
-- Keep every query tightly connected to the likely primary topic and remove broad, generic, awkward, or repetitive variations
-- Return ONLY the 8 prompts, one per line, no numbering, no bullets, no quotes, no explanation`;
+- Keep every query tightly connected to the likely primary topic. Remove broad, generic, awkward, or repetitive variations
+- Return ONLY the 3 prompts, one per line, no numbering, no bullets, no quotes, no explanation`;
 
   const sys = mode === "fanout" ? fanoutSys : standardSys;
-  const maxPrompts = mode === "fanout" ? 8 : 6;
+  const maxPrompts = 3;
+
   const user = `Brand: ${brandName}\n\n${contextBlock}`;
 
   const resp = await openaiClient.chat.completions.create({
