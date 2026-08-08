@@ -225,7 +225,16 @@ export function trackEvent(name: string, parameters: Record<string, unknown> = {
 
   const payload = { ...eventContext(), ...parameters };
   window.gtag?.("event", name, payload);
-  if (consent.ads) window.fbq?.("trackCustom", name, payload);
+  if (consent.ads) {
+    const metaStandardEvents: Record<string, string> = {
+      sign_up_complete: "CompleteRegistration",
+      audit_completed: "Lead",
+      checkout_started: "InitiateCheckout",
+    };
+    const standardEvent = metaStandardEvents[name];
+    if (standardEvent) window.fbq?.("track", standardEvent, payload);
+    else window.fbq?.("trackCustom", name, payload);
+  }
 }
 
 export function trackPageView(path: string) {
