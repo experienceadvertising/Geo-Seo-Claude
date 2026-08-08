@@ -15,9 +15,9 @@ Success measure: cost per first audit completed, not cost per account created.
 ## Next: improve activation and retention
 
 - Example audit that shows the depth and credibility of recommendations before signup
-- Weekly email digest covering score changes, new issues, and the next best action
-- Recommendation status tracking: planned, in progress, completed, or dismissed
-- Before and after score history tied to completed recommendations
+- Add score changes and completed wins to the existing paid-user weekly digest
+- Expand the existing recommendation completion workflow with planned, in progress, completed, and dismissed states
+- Tie completed recommendations to before and after score history
 - Clear empty states that direct new users to one useful next step
 
 Success measure: new accounts completing an audit and returning within seven days.
