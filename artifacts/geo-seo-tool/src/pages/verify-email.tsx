@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
+import { useAuth } from "@/context/AuthContext";
 import { Loader2, CheckCircle2, XCircle, Mail } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,8 @@ export default function VerifyEmailPage() {
   const [resendEmail, setResendEmail] = useState("");
   const [resent, setResent] = useState(false);
   const [resending, setResending] = useState(false);
+  const { refresh } = useAuth();
+  const [, setLocation] = useLocation();
 
   useEffect(() => {
     const token = new URLSearchParams(window.location.search).get("token");
@@ -26,10 +29,17 @@ export default function VerifyEmailPage() {
       setMessage("Missing verification token. Please use the link from your email.");
       return;
     }
-    customFetch(`/api/auth/verify-email?token=${encodeURIComponent(token)}`)
-      .then(() => {
+    customFetch<{ sessionStarted?: boolean }>(`/api/auth/verify-email?token=${encodeURIComponent(token)}`)
+      .then(async (data) => {
+        if (data.sessionStarted) {
+          await refresh();
+          setStatus("success");
+          setMessage("Your email is verified. You are signed in and we are taking you to your dashboard.");
+          window.setTimeout(() => setLocation("/"), 1200);
+          return;
+        }
         setStatus("success");
-        setMessage("Your email is verified! You can now sign in.");
+        setMessage("Your email is verified. Please sign in to continue.");
       })
       .catch((err: any) => {
         setStatus("error");
@@ -75,9 +85,15 @@ export default function VerifyEmailPage() {
               <CheckCircle2 className="h-14 w-14 text-emerald-500 mx-auto" />
               <h2 className="text-xl font-bold">Email verified!</h2>
               <p className="text-muted-foreground text-sm">{message}</p>
-              <Link href="/sign-in">
-                <Button className="bg-emerald-600 hover:bg-emerald-700">Sign in now</Button>
-              </Link>
+              {message.includes("signed in") ? (
+                <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setLocation("/")}>
+                  Continue to dashboard
+                </Button>
+              ) : (
+                <Link href="/sign-in">
+                  <Button className="bg-emerald-600 hover:bg-emerald-700">Sign in now</Button>
+                </Link>
+              )}
             </>
           )}
 

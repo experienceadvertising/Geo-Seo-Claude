@@ -354,8 +354,35 @@ router.get("/auth/verify-email", async (req, res): Promise<void> => {
     }
   }
 
-  logger.info({ userId: user.id }, "Email verified");
-  res.json({ ok: true, message: "Email verified! You can now sign in." });
+  // A valid, one-time verification link proves control of the email address.
+  // Start a fresh session so the user can continue directly to the product
+  // without typing the password they just created. Regenerating first protects
+  // against session fixation.
+  let sessionStarted = false;
+  try {
+    await new Promise<void>((resolve, reject) => {
+      req.session.regenerate((err) => (err ? reject(err) : resolve()));
+    });
+    req.session.userId = user.id;
+    req.session.email = user.email!;
+    await new Promise<void>((resolve, reject) => {
+      req.session.save((err) => (err ? reject(err) : resolve()));
+    });
+    sessionStarted = true;
+  } catch (err) {
+    // Verification remains valid even if the session store is temporarily
+    // unavailable. The client will fall back to the normal sign-in route.
+    logger.error({ err, userId: user.id }, "Could not start session after email verification");
+  }
+
+  logger.info({ userId: user.id, sessionStarted }, "Email verified");
+  res.json({
+    ok: true,
+    message: sessionStarted
+      ? "Email verified. You are now signed in."
+      : "Email verified. Please sign in to continue.",
+    sessionStarted,
+  });
 });
 
 // ── Resend Verification ───────────────────────────────────────────────────────
