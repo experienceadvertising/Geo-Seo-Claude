@@ -320,7 +320,7 @@ function SignedOutLanding() {
                 icon: LineChart,
                 gradient: "from-teal-500 to-emerald-500",
                 badge: "New",
-                title: "Close the loop between citations and real revenue",
+                title: "Close the loop between citations and real traffic",
                 body: "Track your citation share against competitors across every simulation run. Connect Google Analytics to see AI-referred traffic alongside your AEO score. Know whether your improvements are translating to measurable AI-referred visits, not just a better number.",
               },
             ].map(({ icon: Icon, gradient, badge, title, body }) => (
