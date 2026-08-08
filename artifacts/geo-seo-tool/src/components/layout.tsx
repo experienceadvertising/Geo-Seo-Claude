@@ -232,6 +232,13 @@ function SiteFooter() {
             <Link href="/privacy" className="hover:text-gray-300 transition-colors">Privacy</Link>
             <Link href="/terms" className="hover:text-gray-300 transition-colors">Terms</Link>
             <Link href="/google-data-use" className="hover:text-gray-300 transition-colors">Google data use</Link>
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new Event("aeo:open-cookie-settings"))}
+              className="hover:text-gray-300 transition-colors"
+            >
+              Cookie settings
+            </button>
             <span className="text-emerald-500 font-medium">aeoimprovement.com</span>
           </div>
         </div>
