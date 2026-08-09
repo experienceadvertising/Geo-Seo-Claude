@@ -103,6 +103,7 @@ export const PLAN_LIMITS = {
     auditHistoryDays: 30,
     // Continuous monitoring (scheduled re-audits + alerts) is a paid feature.
     monitoredSites: 0,
+    dailyMonitoredSites: 0,
     competitorTracking: false,
     fixGenerator: false,
     sitemapScanner: false,
@@ -119,22 +120,24 @@ export const PLAN_LIMITS = {
     monthlySimulations: 30,
     auditHistoryDays: 365,
     monitoredSites: 10,
+    dailyMonitoredSites: 1,
     competitorTracking: true,
     fixGenerator: true,
     sitemapScanner: false,
     sentimentAnalysis: true,
   },
   agency: {
-    simulationPrompts: 25,
+    // Agency is priced for a deliberate client portfolio, not unlimited
+    // experiment volume. Ten prompts still supports focused paid research.
+    simulationPrompts: 10,
     simulationEngines: ["chatgpt", "claude", "gemini", "perplexity"] as string[],
-    // At $249/mo Agency, worst-case cost ≈ $230 (margin floor 8%) and
-    // typical agency use (~50 audits, 30 simulations across clients) ≈
-    // $50 cost → 80% margin. Caps high enough that legitimate agencies
-    // never hit them.
-    monthlyAudits: 500,
-    monthlySimulations: 150,
+    monthlyAudits: 150,
+    monthlySimulations: 40,
     auditHistoryDays: 730,
-    monitoredSites: 50,
+    // One monitored site represents one active client in the current
+    // workspace model. Daily monitoring is capped separately for cost control.
+    monitoredSites: 10,
+    dailyMonitoredSites: 2,
     competitorTracking: true,
     fixGenerator: true,
     sitemapScanner: true,
