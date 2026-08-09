@@ -90,7 +90,7 @@ async function createProducts() {
     },
     {
       name: "Agency Plan",
-      description: "500 audits/month, 150 simulations/month, everything in Pro plus 50 monitored sites, GA4 integration, 2-year trend history, and priority support.",
+      description: "150 audits/month, 40 simulations/month, everything in Pro plus up to 10 active client sites, two daily monitoring slots, one GA4 property per workspace while connection capacity is limited, 2-year trend history, and priority support.",
       plan_id: "agency",
       // $249/mo, $2,390/yr (about 20% off, $199.17/mo)
       monthly: 24900,

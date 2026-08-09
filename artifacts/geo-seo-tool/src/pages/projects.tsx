@@ -33,6 +33,7 @@ interface MonitoredSite {
 interface ListResponse {
   sites: MonitoredSite[];
   limit: number;
+  dailyLimit: number;
   plan: string;
 }
 
@@ -310,6 +311,8 @@ export default function ProjectsPage() {
   const sites = data?.sites ?? [];
   const limit = data?.limit ?? 0;
   const plan = data?.plan ?? "free";
+  const dailyLimit = data?.dailyLimit ?? 0;
+  const dailyUsed = sites.filter((site) => site.frequency === "daily").length;
   const atLimit = limit > 0 && sites.length >= limit;
   const monitoringLocked = limit === 0;
 
@@ -366,7 +369,7 @@ export default function ProjectsPage() {
                 disabled={atLimit}
               />
               <Input
-                placeholder="Label (optional)"
+                placeholder={plan === "agency" ? "Client name" : "Label (optional)"}
                 value={label}
                 onChange={(e) => setLabel(e.target.value)}
                 className="sm:w-40"
@@ -379,7 +382,7 @@ export default function ProjectsPage() {
                 className="h-10 rounded-md border border-input bg-background px-3 text-sm"
               >
                 <option value="weekly">Weekly</option>
-                <option value="daily">Daily</option>
+                <option value="daily" disabled={dailyLimit === 0 || dailyUsed >= dailyLimit}>Daily{dailyLimit > 0 ? ` (${dailyUsed}/${dailyLimit} used)` : ""}</option>
               </select>
               <Button type="submit" disabled={atLimit || addSite.isPending}>
                 {addSite.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Plus className="h-4 w-4 mr-1" /> Add</>}
@@ -391,6 +394,15 @@ export default function ProjectsPage() {
                 <Link href="/pricing" className="underline">upgrade</Link> to add more.
               </p>
             )}
+          </CardContent>
+        </Card>
+      )}
+
+      {plan === "agency" && (
+        <Card className="border-purple-200 bg-purple-50/60">
+          <CardContent className="py-4 text-sm text-purple-950 dark:text-purple-100">
+            <p className="font-semibold">Agency workspace limits</p>
+            <p className="mt-1 leading-relaxed">Manage up to {limit} active client sites. Two can run daily; the rest run weekly. One GA4 property can be connected to this workspace while the Google connection cap is in place.</p>
           </CardContent>
         </Card>
       )}
@@ -442,7 +454,7 @@ export default function ProjectsPage() {
                       title="Cadence"
                     >
                       <option value="weekly">Weekly</option>
-                      <option value="daily">Daily</option>
+                      <option value="daily" disabled={site.frequency !== "daily" && (dailyLimit === 0 || dailyUsed >= dailyLimit)}>Daily</option>
                     </select>
                     <Button size="sm" variant="outline" onClick={() => runNow.mutate(site.id)} disabled={runNow.isPending} title="Re-audit now" aria-label={`Re-audit ${site.label || displayUrl(site.url)} now`}>
                       {runNow.isPending && runNow.variables === site.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
