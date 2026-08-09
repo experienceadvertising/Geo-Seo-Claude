@@ -34,6 +34,7 @@ router.get("/geo/monitored-sites", requireAuth, readRateLimiter, async (req, res
   res.json({
     sites: rows.map((s) => ({ ...s, createdAt: s.createdAt.toISOString(), lastRunAt: s.lastRunAt?.toISOString() ?? null, nextRunAt: s.nextRunAt?.toISOString() ?? null })),
     limit: PLAN_LIMITS[plan].monitoredSites,
+    dailyLimit: PLAN_LIMITS[plan].dailyMonitoredSites,
     plan,
   });
 });
@@ -58,7 +59,7 @@ router.post("/geo/monitored-sites", requireAuth, readRateLimiter, async (req, re
   }
 
   const existing = await db
-    .select({ id: monitoredSitesTable.id, url: monitoredSitesTable.url })
+    .select({ id: monitoredSitesTable.id, url: monitoredSitesTable.url, frequency: monitoredSitesTable.frequency })
     .from(monitoredSitesTable)
     .where(eq(monitoredSitesTable.userId, req.userId!));
   if (existing.length >= cap) {
@@ -68,6 +69,18 @@ router.post("/geo/monitored-sites", requireAuth, readRateLimiter, async (req, re
   if (existing.some((e) => e.url === url)) {
     res.status(409).json({ error: "That site is already being monitored." });
     return;
+  }
+  if (frequency === "daily") {
+    const dailyUsed = existing.filter((site) => site.frequency === "daily").length;
+    const dailyLimit = PLAN_LIMITS[plan].dailyMonitoredSites;
+    if (dailyUsed >= dailyLimit) {
+      res.status(403).json({
+        error: `Your ${plan} plan includes up to ${dailyLimit} daily monitored site${dailyLimit === 1 ? "" : "s"}. Add this site weekly or change another site's cadence.`,
+        plan,
+        limit: dailyLimit,
+      });
+      return;
+    }
   }
 
   // Schedule the first run shortly (next sweep) by leaving nextRunAt in the past.
@@ -94,6 +107,23 @@ router.patch("/geo/monitored-sites/:id", requireAuth, readRateLimiter, async (re
   const updates: Partial<{ label: string | null; frequency: Frequency; active: boolean; nextRunAt: Date }> = {};
   if (typeof body.label === "string") updates.label = body.label.trim().slice(0, 80) || null;
   if (VALID_FREQUENCIES.includes(body.frequency)) {
+    const plan = await getUserPlan(req.userId!);
+    if (body.frequency === "daily") {
+      const dailySites = await db
+        .select({ id: monitoredSitesTable.id })
+        .from(monitoredSitesTable)
+        .where(and(eq(monitoredSitesTable.userId, req.userId!), eq(monitoredSitesTable.frequency, "daily")));
+      const alreadyDaily = dailySites.some((site) => site.id === id);
+      const dailyLimit = PLAN_LIMITS[plan].dailyMonitoredSites;
+      if (!alreadyDaily && dailySites.length >= dailyLimit) {
+        res.status(403).json({
+          error: `Your ${plan} plan includes up to ${dailyLimit} daily monitored site${dailyLimit === 1 ? "" : "s"}. Change another site's cadence first.`,
+          plan,
+          limit: dailyLimit,
+        });
+        return;
+      }
+    }
     updates.frequency = body.frequency;
     updates.nextRunAt = nextRunFrom(body.frequency);
   }
