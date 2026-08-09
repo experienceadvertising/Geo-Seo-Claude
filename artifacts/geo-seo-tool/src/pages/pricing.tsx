@@ -113,7 +113,7 @@ const pricingFaqJsonLd = {
       name: "What's the difference between Pro and Agency?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Pro ($79/mo or $750/yr) includes 100 audits/month, 30 simulations/month, all four engines, fan-out mode, the Fix Generator, Projects monitoring, crawler pixel request tracking, Google Analytics AI-referral reporting, competitor Share of Voice, and 1-year history. Agency ($249/mo or $2,390/yr) raises limits to 500 audits, 150 simulations, 50 monitored sites, and 2-year history.",
+        text: "Pro ($79/mo or $750/yr) includes 100 audits/month, 30 simulations/month, all four engines, fan-out mode, the Fix Generator, Projects monitoring, crawler pixel request tracking, Google Analytics AI-referral reporting, competitor Share of Voice, and 1-year history. Agency ($249/mo or $2,390/yr) is designed for a controlled portfolio of up to 10 active client sites, with 150 audits, 40 simulations, two daily-monitoring slots, and 2-year history. One GA4 property can be connected per Agency workspace while connection capacity is limited.",
       },
     },
     {
@@ -168,11 +168,13 @@ const PLAN_FEATURES = {
     "Priority email support",
   ],
   agency: [
-    "500 audits / month",
-    "150 simulations / month",
-    "Everything in Pro",
-    "2-year visibility trend history",
-    "Up to 50 client sites in Projects",
+    "150 audits / month",
+    "40 simulations / month",
+    "10 prompts per simulation",
+    "Up to 10 active client sites in Projects",
+    "2 daily monitoring slots, weekly monitoring for the rest",
+    "One connected GA4 property per workspace for now",
+    "Everything in Pro + 2-year visibility trend history",
     "Priority email support",
   ],
 };
@@ -465,7 +467,7 @@ export default function PricingPage() {
       name: "Agency",
       ...agencyDisplay,
       priceLoading: false,
-      description: "For agencies tracking AI visibility across every client",
+      description: "For agencies managing a focused portfolio of client sites",
       features: PLAN_FEATURES.agency,
       isHighlighted: false,
     },
