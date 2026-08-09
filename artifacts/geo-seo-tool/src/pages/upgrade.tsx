@@ -504,7 +504,7 @@ export default function UpgradePage() {
                 <div>
                   <h3 className="font-bold text-slate-900">Agency</h3>
                   <p className="text-sm text-slate-600 mt-0.5">
-                    500 audits / 150 simulations per month, 50 monitored client sites, everything in Pro, and 2-year history
+                    150 audits / 40 simulations per month, up to 10 active client sites, two daily monitoring slots, and 2-year history
                   </p>
                   <p className="text-xs text-slate-500 mt-1.5">
                     {agencyPrice ? formatPrice(agencyPrice.unitAmount) : "$249"}/mo · for teams managing multiple client sites
