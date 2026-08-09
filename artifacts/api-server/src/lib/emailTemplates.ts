@@ -1223,7 +1223,7 @@ export function freeMonthPromoEmail(firstName: string, endsAt: Date, unsubscribe
       ${feature("🔧", "Fix Generator", "Auto-drafts JSON-LD schema and citation-bot robots.txt patches. Copy and ship.")}
       ${feature("📡", "Continuous monitoring", "Add your sites once and get re-audited on a schedule, with alerts when your score moves.")}
       ${feature("📊", "Competitor tracking & sentiment", "The citation gap table and brand sentiment analysis, fully unlocked.")}
-      ${feature("📈", "Top-tier limits", "500 audits and 150 simulations this month, with 25 prompts per run.")}
+      ${feature("📈", "Top-tier limits", "150 audits and 40 simulations this month, with 10 prompts per run.")}
     </table>
     <table cellpadding="0" cellspacing="0" width="100%" style="margin:16px 0;background:#ecfdf5;border-radius:8px;border:1px solid #a7f3d0;">
       <tr><td style="padding:18px 20px;font-size:14px;color:#065f46;text-align:center;">
@@ -1238,7 +1238,7 @@ export function freeMonthPromoEmail(firstName: string, endsAt: Date, unsubscribe
     `All 4 engines, Fix Generator, monitoring, competitor tracking — free on your account until ${endDate}.`,
     unsubscribeUrl,
   );
-  const text = `Hi ${firstName || "there"},\n\nGood news: for the next month, all core audit features are free on your account. No credit card and nothing to activate.\n\nNow unlocked for you:\n- All 4 AI engines (ChatGPT, Claude, Gemini, Perplexity)\n- Fix Generator (JSON-LD, citation-bot robots.txt, optional llms.txt)\n- Continuous monitoring with alerts\n- Competitor tracking & sentiment analysis\n- 500 audits + 150 simulations this month\n\nConnected GA4 reporting is available on paid plans.\n\nFree until ${endDate}: ${BASE_URL}\n\nAfter that your account simply returns to your current plan and nothing is charged. We'll remind you a few days before.`;
+  const text = `Hi ${firstName || "there"},\n\nGood news: for the next month, all core audit features are free on your account. No credit card and nothing to activate.\n\nNow unlocked for you:\n- All 4 AI engines (ChatGPT, Claude, Gemini, Perplexity)\n- Fix Generator (JSON-LD, citation-bot robots.txt, optional llms.txt)\n- Continuous monitoring with alerts\n- Competitor tracking & sentiment analysis\n- 150 audits + 40 simulations this month\n\nConnected GA4 reporting is available on paid plans.\n\nFree until ${endDate}: ${BASE_URL}\n\nAfter that your account simply returns to your current plan and nothing is charged. We'll remind you a few days before.`;
   return { subject, html, text };
 }
 
