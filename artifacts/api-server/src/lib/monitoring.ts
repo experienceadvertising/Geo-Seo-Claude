@@ -102,7 +102,7 @@ export async function runMonitoredSite(site: MonitoredSite): Promise<MonitoredRu
  * fleet can't stampede the audit pipeline; remaining due sites are picked up on
  * the next sweep. Each site is isolated — one failure never aborts the sweep.
  */
-export async function runDueMonitoredSites(maxPerSweep = 50): Promise<void> {
+export async function runDueMonitoredSites(maxPerSweep = 200): Promise<void> {
   // Replit autoscale can run several API instances. A session-level advisory
   // lock ensures only one instance performs a sweep at a time.
   const lockClient = await pool.connect();
