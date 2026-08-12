@@ -158,6 +158,14 @@ function GoogleAnalyticsSection() {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {connected && status.data.searchConsoleGranted && (
+          <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-900 dark:bg-emerald-950/30">
+            <p className="text-sm font-medium text-emerald-900 dark:text-emerald-100">Search Console connected</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Use page-level query opportunities in the AI Prompt Simulator after you run an audit.
+            </p>
+          </div>
+        )}
         {connected && !status.data.searchConsoleGranted && (
           <div className="rounded-md border border-amber-300 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/30">
             <p className="text-sm font-medium">Reconnect to add Search Console</p>

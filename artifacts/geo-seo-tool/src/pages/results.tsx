@@ -191,6 +191,27 @@ export default function Results() {
     );
   }
 
+  const auditCreatedAt = new Date(audit.createdAt);
+  const auditAgeDays = Number.isNaN(auditCreatedAt.getTime())
+    ? 0
+    : Math.floor((Date.now() - auditCreatedAt.getTime()) / 86_400_000);
+  const hasLegacyScores = !isStoredScore(audit.scores.aiCrawlerAccess);
+  const needsRefresh = auditAgeDays > 45 || hasLegacyScores;
+
+  const reScanAudit = () => {
+    reRun.mutate(
+      { data: { url: audit.url } },
+      {
+        onSuccess: (result) => setLocation(`/results/${result.id}`),
+        onError: (err: any) => toast({
+          title: "Re-scan failed",
+          description: err?.error || "Could not re-analyze this URL.",
+          variant: "destructive",
+        }),
+      },
+    );
+  };
+
   let overallColorClass = "text-red-500 border-red-500/20 bg-red-500/5";
   if (audit.geoScore >= 70) overallColorClass = "text-green-500 border-green-500/20 bg-green-500/5";
   else if (audit.geoScore >= 40) overallColorClass = "text-yellow-500 border-yellow-500/20 bg-yellow-500/5";
@@ -244,19 +265,7 @@ export default function Results() {
               size="sm"
               className="font-mono text-xs gap-2"
               disabled={reRun.isPending}
-              onClick={() => {
-                reRun.mutate(
-                  { data: { url: audit.url } },
-                  {
-                    onSuccess: (result) => setLocation(`/results/${result.id}`),
-                    onError: (err: any) => toast({
-                      title: "Re-scan failed",
-                      description: err?.error || "Could not re-analyze this URL.",
-                      variant: "destructive",
-                    }),
-                  }
-                );
-              }}
+              onClick={reScanAudit}
               data-testid="button-rerun"
             >
               {reRun.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
@@ -282,6 +291,27 @@ export default function Results() {
           <Loader2 className="h-5 w-5 animate-spin text-primary" />
           <div><div className="font-medium">Re-scanning {domain}</div><div className="text-xs text-muted-foreground">Fetching the page, checking crawler rules, recomputing scores, and generating a new briefing.</div></div>
         </div>
+      )}
+
+      {needsRefresh && (
+        <Card className="border-amber-300 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30">
+          <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex gap-3">
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-700 dark:text-amber-300" />
+              <div>
+                <p className="text-sm font-semibold">Refresh this audit before acting on it</p>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                  {hasLegacyScores
+                    ? "This report was created before all current score dimensions were available. Treat its recommendations as historical context, not a current diagnosis."
+                    : `This report is ${auditAgeDays} days old. Site content, crawl access, and AI results can change, so re-scan before using this report to make decisions.`}
+                </p>
+              </div>
+            </div>
+            <Button size="sm" className="shrink-0" onClick={reScanAudit} disabled={reRun.isPending}>
+              <RefreshCw className="mr-1.5 h-3.5 w-3.5" /> Re-scan now
+            </Button>
+          </CardContent>
+        </Card>
       )}
 
       <Card className="border-violet-200 bg-violet-50/70 shadow-sm">
@@ -496,7 +526,9 @@ export default function Results() {
               <CheckCircle2 className="h-4 w-4 text-primary" /> Prioritized GEO Recommendations
             </CardTitle>
             <p className="text-xs text-muted-foreground mt-1">
-              Each recommendation is labeled with its source — peer-reviewed research, internal benchmark, or practitioner consensus. Apply top items first.{" "}
+              {needsRefresh
+                ? "This is a historical recommendation set. Re-scan before marking changes complete or applying a recommendation. "
+                : "Each recommendation is labeled with its source: peer-reviewed research, internal benchmark, or practitioner consensus. Apply top items first. "}
               <Link href="/methodology" className="text-primary hover:underline">
                 Read our methodology
               </Link>.
@@ -623,9 +655,10 @@ export default function Results() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Quick Wins */}
-        <Card className="flex flex-col shadow-sm border-border">
+      <div className={`grid grid-cols-1 gap-6 ${audit.recommendations?.length ? "" : "lg:grid-cols-2"}`}>
+        {/* Quick wins only appear when the audit did not already provide a
+            prioritized recommendation set, avoiding the same advice twice. */}
+        {!audit.recommendations?.length && <Card className="flex flex-col shadow-sm border-border">
           <CardHeader className="bg-muted/30 pb-4 border-b">
             <CardTitle className="flex items-center gap-2 text-sm font-mono uppercase tracking-wider">
               <CheckCircle2 className="h-4 w-4 text-primary" /> Actionable Quick Wins
@@ -648,7 +681,7 @@ export default function Results() {
               </div>
             )}
           </CardContent>
-        </Card>
+        </Card>}
 
         {/* Technical Issues */}
         <Card className="flex flex-col shadow-sm border-border">

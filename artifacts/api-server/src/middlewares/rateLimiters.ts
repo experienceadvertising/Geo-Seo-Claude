@@ -33,6 +33,18 @@ export const readRateLimiter = rateLimit({
 // ── Auth limiters (IP-based; auth endpoints are unauthenticated) ─────────────
 const ipKey = (req: Request) => ipKeyGenerator(req.ip || "anon") || "anon";
 
+// Client errors are intentionally unauthenticated so we can capture failures
+// that happen before sign-in. Keep the allowance small enough to prevent this
+// endpoint from being used as a log-ingestion sink.
+export const telemetryRateLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 30,
+  standardHeaders: false,
+  legacyHeaders: false,
+  keyGenerator: ipKey,
+  message: { error: "Too many telemetry reports" },
+});
+
 // Crawler tracking-pixel ingest. Public + unauthenticated and hit by bots, so
 // keyed by IP and set generously (real crawlers fetch infrequently per IP);
 // the cap exists only to bound abuse of the public endpoint.
