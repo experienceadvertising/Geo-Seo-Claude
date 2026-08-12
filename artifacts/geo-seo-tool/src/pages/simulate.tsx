@@ -229,7 +229,7 @@ function SearchConsoleOpportunityCard({
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">
-              No qualifying queries were found for this exact page in the last 90 days. Check the selected property and the audited URL.
+              No eligible queries were found for this exact audited URL in the last 90 days. Your Google connection is still active. Try a page with organic visits, confirm the matching property, or generate buyer queries below.
             </p>
           )}
         </div>
@@ -738,7 +738,7 @@ export default function SimulatePage() {
             )}
             <Textarea
               rows={8}
-              placeholder={"best CRM for small teams\nhow do I improve email deliverability\nstripe vs square comparison"}
+              placeholder="Click Generate for buyer queries tailored to this audit, or write your own prompts here."
               value={promptsText}
               onChange={(e) => setPromptsText(e.target.value)}
             />

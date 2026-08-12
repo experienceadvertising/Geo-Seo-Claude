@@ -13,29 +13,39 @@ function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
 
 /**
  * Retry wrapper for rate-limited engine calls.
- * Retries up to 2 times on 429 / rate-limit errors with exponential backoff
- * (6 s then 12 s). Non-rate-limit errors are rethrown immediately.
+ * Retries rate-limit errors up to twice, and transient timeout/service errors
+ * once. A final failed response is still reported as an error and excluded
+ * from visibility-rate denominators.
  * An outer ENGINE_TIMEOUT_MS hard cap is applied around the whole attempt chain.
  */
 async function withRetry<T>(
   fn: () => Promise<T>,
   label: string,
 ): Promise<T> {
-  const RETRY_DELAYS_MS = [6_000, 12_000];
+  const RATE_LIMIT_DELAYS_MS = [6_000, 12_000];
   const isRateLimit = (err: unknown) =>
     /rate.?limit|429|RATELIMIT|too many requests/i.test(
       err instanceof Error ? err.message : String(err),
     );
+  const isTransient = (err: unknown) =>
+    /timed?\s*out|502|503|504|service\s+unavailable|bad\s+gateway|network\s+error|fetch\s+failed/i.test(
+      err instanceof Error ? err.message : String(err),
+    );
 
-  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+  let retries = 0;
+  let retryLimit = 0;
+
+  for (;;) {
     try {
-      return await withTimeout(fn(), PER_ATTEMPT_TIMEOUT_MS, `${label} (attempt ${attempt + 1})`);
+      return await withTimeout(fn(), PER_ATTEMPT_TIMEOUT_MS, `${label} (attempt ${retries + 1})`);
     } catch (err) {
-      if (!isRateLimit(err) || attempt >= RETRY_DELAYS_MS.length) throw err;
-      await new Promise<void>((r) => setTimeout(r, RETRY_DELAYS_MS[attempt]));
+      retryLimit = isRateLimit(err) ? 2 : isTransient(err) ? 1 : 0;
+      if (retries >= retryLimit) throw err;
+      const delay = isRateLimit(err) ? RATE_LIMIT_DELAYS_MS[retries] : 3_000;
+      retries++;
+      await new Promise<void>((r) => setTimeout(r, delay));
     }
   }
-  throw new Error(`${label}: all retry attempts exhausted`);
 }
 
 function sanitizeError(err: unknown): string {

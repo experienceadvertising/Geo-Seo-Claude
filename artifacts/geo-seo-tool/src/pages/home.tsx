@@ -22,21 +22,21 @@ function MarketStats() {
       accent: "from-emerald-500 to-teal-500",
       label: "Where buyers are going",
       title: "Your buyers skip Google. They ask AI.",
-      body: "ChatGPT, Claude, Perplexity, and Google AI Overviews now handle queries that used to send people to a list of links. If your site is not shaped to be cited, you are invisible to a growing share of your market.",
+      body: "ChatGPT, Claude, Perplexity, and Google AI Overviews increasingly answer questions that once started with a list of links. Make it easy for them to understand, retrieve, and cite your site.",
     },
     {
       icon: Zap,
       accent: "from-teal-500 to-cyan-500",
       label: "Why it pays to be cited",
       title: "AI-referred visitors already trust you when they arrive.",
-      body: "A visitor who clicks a citation in an AI answer has already read a recommendation for your brand. Research from major publishers shows AI-referred visitors convert at 4 to 5 times the rate of visitors from traditional search.",
+      body: "A visitor who clicks a citation has already seen your brand in the answer. Connect GA4 to measure whether that traffic is helping your own business.",
     },
     {
       icon: BarChart3,
       accent: "from-cyan-500 to-emerald-500",
       label: "Why tracking matters",
       title: "Citation status changes every month. Most brands find out too late.",
-      body: "Between 40% and 60% of cited sources rotate month-to-month across major AI platforms. Without continuous tracking, a drop goes unnoticed until traffic falls. AEO Improvement monitors your standing and alerts you the moment it shifts.",
+      body: "AI answers and cited sources can change as content and retrieval systems change. Scheduled re-audits help you spot meaningful shifts before they become a blind spot.",
     },
   ];
 
@@ -164,7 +164,7 @@ function HeroVisual() {
               best AEO optimization tool for AI search
             </span>
           </div>
-          <p className="text-[10px] text-muted-foreground mt-1.5 px-0.5">4 AI engines cited your site</p>
+          <p className="text-[10px] text-muted-foreground mt-1.5 px-0.5">Illustrative multi-engine result</p>
         </div>
 
         {/* Response cards */}
@@ -178,7 +178,7 @@ function HeroVisual() {
                 <Icon />
                 <span className="text-xs font-semibold">{name}</span>
                 <span className="ml-auto flex items-center gap-1 text-emerald-600 dark:text-emerald-400 text-[10px] font-semibold">
-                  <CheckCircle2 className="h-3 w-3" /> Cited
+                  <CheckCircle2 className="h-3 w-3" /> Example citation
                 </span>
               </div>
               <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">{snippet}</p>
@@ -208,6 +208,28 @@ function HeroVisual() {
 }
 
 function SignedOutLanding() {
+  const [, setLocation] = useLocation();
+  const [auditUrl, setAuditUrl] = React.useState("");
+  const [auditUrlError, setAuditUrlError] = React.useState("");
+
+  function startFreeAudit(event: React.FormEvent) {
+    event.preventDefault();
+    const enteredUrl = auditUrl.trim();
+    if (!enteredUrl) {
+      setAuditUrlError("Enter your website URL to start a free audit.");
+      return;
+    }
+    const normalized = /^https?:\/\//i.test(enteredUrl) ? enteredUrl : `https://${enteredUrl}`;
+    try {
+      const parsed = new URL(normalized);
+      if (!/^https?:$/.test(parsed.protocol) || !parsed.hostname.includes(".")) throw new Error("Invalid URL");
+      localStorage.setItem("pendingAuditUrl", parsed.toString());
+      setLocation("/sign-up");
+    } catch {
+      setAuditUrlError("Enter a publicly reachable website, such as example.com.");
+    }
+  }
+
   return (
     <div className="flex-1 w-full">
       <section className="relative overflow-hidden">
@@ -244,12 +266,22 @@ function SignedOutLanding() {
                 ))}
               </ul>
 
-              <div className="flex flex-col sm:flex-row gap-3 mt-2">
-                <Link href="/sign-up">
-                  <Button size="lg" className="h-12 px-8 font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg shadow-emerald-500/25">
-                    Audit my site, free <ArrowRight className="ml-2 h-5 w-5" />
+              <form onSubmit={startFreeAudit} className="w-full max-w-md space-y-2 mt-2">
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Input
+                    aria-label="Website URL to audit"
+                    className="h-12 bg-background"
+                    placeholder="yourwebsite.com"
+                    value={auditUrl}
+                    onChange={(event) => { setAuditUrl(event.target.value); setAuditUrlError(""); }}
+                  />
+                  <Button type="submit" size="lg" className="h-12 px-6 font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg shadow-emerald-500/25 whitespace-nowrap">
+                    Audit my site <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
-                </Link>
+                </div>
+                {auditUrlError && <p className="text-xs text-destructive" role="alert">{auditUrlError}</p>}
+              </form>
+              <div className="flex flex-col sm:flex-row gap-3">
                 <Link href="/sign-in">
                   <Button size="lg" variant="outline" className="h-12 px-8 font-semibold border-emerald-500/30 hover:bg-emerald-500/10">
                     Sign in
@@ -706,6 +738,11 @@ const AEO_TIPS: Array<{ icon: string; title: string; body: string }> = [
     body: "If your brand name is a common word (or shares a name with anything else), AI engines may confuse you with someone else. Add Organization JSON-LD with sameAs links to your Wikipedia, LinkedIn, Crunchbase, and X profiles to anchor the entity.",
   },
   {
+    icon: "📌",
+    title: "Make your brand facts easy to repeat",
+    body: "On your homepage, About page, and key product pages, plainly state who you are, what you do, who you help, the problem you solve, and your specialty. A useful starting point: “[Brand] is a [category] for [customer], helping them [solve problem] through [differentiator].” Keep the facts consistent across the pages and profiles you control.",
+  },
+  {
     icon: "⚡",
     title: "Make sure your content survives without JS",
     body: "Most AI crawlers do not execute JavaScript reliably. Right-click → View Source on your top page. If the body is mostly empty divs, your content is invisible to AI. Server-side render or pre-render at least the first viewport's content.",
@@ -996,6 +1033,18 @@ function SignedInDashboard() {
     if (!trimmed) return;
     let normalized = trimmed;
     if (!/^https?:\/\//.test(normalized)) normalized = "https://" + normalized;
+    try {
+      const parsed = new URL(normalized);
+      if (!/^https?:$/.test(parsed.protocol) || !parsed.hostname.includes(".")) throw new Error("Invalid URL");
+      normalized = parsed.toString();
+    } catch {
+      toast({
+        title: "Enter a valid website URL",
+        description: "Use a publicly reachable address, such as https://example.com.",
+        variant: "destructive",
+      });
+      return;
+    }
     trackEvent("audit_started", { source });
     analyzeUrl.mutate({ data: { url: normalized } }, {
       onSuccess: (data: any) => {
@@ -1075,7 +1124,7 @@ function SignedInDashboard() {
 
       {!analyzeUrl.isPending && <WhatsNewCard />}
 
-      {!analyzeUrl.isPending && <DashboardLearningHub />}
+      {!analyzeUrl.isPending && (!audits || audits.length === 0) && <DashboardLearningHub />}
 
       {!analyzeUrl.isPending && (
         <div className="space-y-4">

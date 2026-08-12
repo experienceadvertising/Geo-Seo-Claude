@@ -66,6 +66,10 @@ export interface ContentSignals {
   contentAgeMonths: number | null;
   hasByline: boolean;
   brandMentionsEarly: boolean;
+  /** Home/About/product pages clearly state what the company is and who it helps. */
+  hasBrandFactsStatement: boolean;
+  /** Brand-description advice belongs on identity pages, not every article. */
+  isIdentityPage: boolean;
   fillerPhraseCount: number;
   longParagraphRatio: number;
   keywordStuffingDetected: boolean;
@@ -256,6 +260,23 @@ export function extractContentSignals($: cheerio.CheerioAPI, url: string, brandN
     ? new RegExp(`\\b${brandName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(bodyText.slice(0, 1500))
     : false;
 
+  // Brand facts: on a page that represents the company, look for a factual
+  // description that ties the brand to a category and a customer, problem, or
+  // differentiator. This deliberately uses a broad heuristic: it identifies
+  // a missing positioning statement, not whether the positioning is persuasive.
+  let isIdentityPage = false;
+  try {
+    const path = new URL(url).pathname.replace(/\/+$/, "") || "/";
+    isIdentityPage = path === "/" || /^\/(?:about|company|product|products|solution|solutions|service|services)(?:\/|$)/i.test(path);
+  } catch { /* invalid URL is handled elsewhere */ }
+  const openingFacts = bodyText.slice(0, 1800);
+  const escapedBrand = brandName?.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const statesCategory = escapedBrand
+    ? new RegExp(`\\b${escapedBrand}\\b[^.]{0,180}\\b(?:is|are|provides|offers|builds|makes|helps)\\b`, "i").test(openingFacts)
+    : false;
+  const statesAudienceOrProblem = /\\b(?:for|serving|built for|helps?|enables?|solve|solving|reduce|improve|avoid|specializ(?:e|es|ing)|because|using|through)\\b/i.test(openingFacts);
+  const hasBrandFactsStatement = statesCategory && statesAudienceOrProblem;
+
   // Filler phrases
   const fillerPhraseCount = FILLER_PHRASES.reduce((n, re) => n + (re.test(bodyText) ? 1 : 0), 0);
 
@@ -354,6 +375,8 @@ export function extractContentSignals($: cheerio.CheerioAPI, url: string, brandN
     contentAgeMonths,
     hasByline,
     brandMentionsEarly,
+    hasBrandFactsStatement,
+    isIdentityPage,
     fillerPhraseCount,
     longParagraphRatio,
     keywordStuffingDetected,
@@ -587,6 +610,14 @@ export function generateGeoRecommendations(ctx: RecommendationContext): GeoRecom
     recs.push(composeRec("brand-mention-early", {
       title: `Name "${ctx.brandName}" in the first 200 words`,
       detail: "Brand name not detected early on the page. AI engines match entities by literal name — replace pronouns and \"the platform\" with the brand name in the opening sections.",
+    }));
+  }
+
+  if (ctx.brandName && s.isIdentityPage && !s.hasBrandFactsStatement) {
+    recs.push(composeRec("brand-facts", {
+      title: `State ${ctx.brandName}'s brand facts plainly`,
+      detail: `This core company page does not clearly state, in one factual opening sentence, what ${ctx.brandName} is, who it helps, the problem it solves, and what it specializes in. Add a plain-text statement such as “${ctx.brandName} is a [category] for [customer], helping them [solve problem] through [differentiator].” Keep those facts consistent across your homepage, About page, product pages, and profiles you control.`,
+      priority: "high",
     }));
   }
 

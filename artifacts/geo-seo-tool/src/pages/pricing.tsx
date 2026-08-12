@@ -348,7 +348,7 @@ export default function PricingPage() {
   // "Current Plan" and hide every checkout button from trial users.
   const { storedPlan: currentPlan, trialActive, trialEndsAt } = usePlan();
   const { data: productsData } = useStripeProducts();
-  const { data: subData, isLoading: subscriptionLoading } = useStripeSubscription();
+  const { data: subData } = useStripeSubscription();
   const checkout = useCheckout();
   const portal = useCustomerPortal();
   const { toast } = useToast();
@@ -572,7 +572,7 @@ export default function PricingPage() {
               isCurrentPlan={!!isSignedIn && currentPlan === p.planId}
               isSignedIn={!!isSignedIn}
               onUpgrade={() => handleUpgrade(p.planId as "pro" | "agency")}
-              upgradeLoading={checkout.isPending || portal.isPending || (!!isSignedIn && subscriptionLoading)}
+              upgradeLoading={checkout.isPending || portal.isPending}
               actionLabel={currentPlan !== "free" ? "Manage plan" : undefined}
               badgeLabel={!!isSignedIn && currentPlan === p.planId ? "Current" : undefined}
             />

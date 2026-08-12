@@ -325,6 +325,9 @@ Write a briefing in this exact markdown structure:
 **Quick wins this week**
 3 bullets — fastest things ${brand} can ship in <1 day each.
 
+**Brand facts check**
+For a homepage, About page, product page, or service page, assess whether the visible copy makes these facts unmistakable: who ${brand} is, what it is, who it helps, the problem it solves, and its specialty or differentiator. If any are unclear, give one concrete rewrite in this form: "${brand} is a [category] for [customer], helping them [solve problem] through [differentiator]." Do not force this recommendation on an article or other non-company page.
+
 Hard rules:
 - Mention "${brand}" by name in at least 3 places
 - Reference at least 2 specific headings or phrases from the actual page content above

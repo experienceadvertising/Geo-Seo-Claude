@@ -312,6 +312,22 @@
     "updatedAt": "2026-05-04"
   },
   {
+    "id": "brand-facts",
+    "titleTemplate": "State your brand facts plainly",
+    "claim": "A consistent, factual description of the company helps people and AI systems identify what the business is, who it serves, the problem it solves, and its area of specialization.",
+    "severity": "high",
+    "category": "entity",
+    "expectedLift": null,
+    "sourceType": "practitioner_consensus",
+    "sourceUrl": null,
+    "sourceCitation": "Practitioner consensus 2025-2026; aligns with entity clarity and information-retrieval best practices.",
+    "verified": false,
+    "lastVerifiedAt": null,
+    "lastReviewedAt": "2026-08-12",
+    "expiresAt": "2027-02-12",
+    "updatedAt": "2026-08-12"
+  },
+  {
     "id": "add-byline",
     "titleTemplate": "Add a named-author byline with credentials",
     "claim": "Visible author credibility is part of the 2026 baseline for content cited across major AI engines; Claude in particular weights author credentials heavily.",

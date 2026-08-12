@@ -1,11 +1,15 @@
 import React from "react";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { reportClientError } from "@/lib/error-reporting";
 
 export class ErrorBoundary extends React.Component<React.PropsWithChildren, { failed: boolean }> {
   state = { failed: false };
   static getDerivedStateFromError() { return { failed: true }; }
-  componentDidCatch(error: unknown) { console.error("Application render failed", error); }
+  componentDidCatch(error: unknown) {
+    console.error("Application render failed", error);
+    reportClientError("render_error", error);
+  }
 
   render() {
     if (!this.state.failed) return this.props.children;
