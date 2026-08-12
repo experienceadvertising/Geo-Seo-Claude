@@ -26,10 +26,9 @@ const AuthContext = createContext<AuthContextValue>({
   refresh: async () => {},
 });
 
-// Last-known user is stashed in sessionStorage purely for first-paint UX —
-// it lets signed-in users avoid a flash of the unauthenticated header on
-// reload. Authority always comes from /api/auth/me; the session cookie
-// (httpOnly) is the only thing that actually authenticates.
+// Keep the last-known user only as a hint for the eventual authenticated state.
+// Never render account-specific UI from it. The session cookie and /api/auth/me
+// remain the source of truth.
 const CACHE_KEY = "aeo.lastUser";
 
 function readCachedUser(): AuthUser | null {
@@ -56,10 +55,9 @@ function writeCachedUser(user: AuthUser | null) {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const cached = readCachedUser();
   const [user, setUser] = useState<AuthUser | null>(cached);
-  // If we had a cached user we can show the signed-in header right away while
-  // /api/auth/me revalidates in the background — no flash, but still secure
-  // because the server is the source of truth.
-  const [isLoaded, setIsLoaded] = useState(cached !== null);
+  // Keep the first paint neutral until the server confirms the session. A
+  // cached user can be stale after logout, account switching, or expiry.
+  const [isLoaded, setIsLoaded] = useState(false);
   const qc = useQueryClient();
 
   const fetchUser = useCallback(async () => {
@@ -93,7 +91,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         user,
         isLoaded,
-        isSignedIn: !!user,
+        // A cached user is not an authenticated user. Consumers must wait for
+        // the session check before loading account data or changing routes.
+        isSignedIn: isLoaded && !!user,
         signOut,
         refresh: fetchUser,
       }}
