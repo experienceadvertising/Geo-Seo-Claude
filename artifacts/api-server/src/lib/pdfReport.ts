@@ -41,7 +41,7 @@ interface Platform { platform: string; score: number; status: string; recommenda
 interface CitBlock { heading: string | null; wordCount: number; score: number; grade: string; preview: string }
 interface BrandSignal { source: string; found: boolean; detail: string | null; state?: string }
 
-type RecSourceType = "research" | "internal_benchmark" | "practitioner_consensus";
+type RecSourceType = "research" | "internal_benchmark" | "practitioner_consensus" | "expert_guidance";
 interface RecSource {
   type: RecSourceType;
   url: string | null;

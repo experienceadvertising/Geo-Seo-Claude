@@ -26,3 +26,4 @@ export * from "./users";
 export * from "./monthlyUsage";
 export * from "./referralRewards";
 export * from "./recommendationProgress";
+export * from "./seoTracking";

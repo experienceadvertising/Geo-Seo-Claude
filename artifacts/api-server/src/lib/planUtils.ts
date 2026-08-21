@@ -108,6 +108,8 @@ export const PLAN_LIMITS = {
     fixGenerator: false,
     sitemapScanner: false,
     sentimentAnalysis: false,
+    seoKeywordTargets: 0,
+    manualRankRefreshes: 0,
   },
   pro: {
     simulationPrompts: 25,
@@ -125,6 +127,8 @@ export const PLAN_LIMITS = {
     fixGenerator: true,
     sitemapScanner: false,
     sentimentAnalysis: true,
+    seoKeywordTargets: 25,
+    manualRankRefreshes: 10,
   },
   agency: {
     // Agency is priced for a deliberate client portfolio, not unlimited
@@ -142,5 +146,7 @@ export const PLAN_LIMITS = {
     fixGenerator: true,
     sitemapScanner: true,
     sentimentAnalysis: true,
+    seoKeywordTargets: 100,
+    manualRankRefreshes: 50,
   },
 } satisfies Record<Plan, object>;

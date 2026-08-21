@@ -79,6 +79,14 @@ export interface ContentSignals {
   hasProprietaryData: boolean;
   /** True if the page has at least one ordered list with 3+ items (step-by-step candidate). */
   hasNumberedStepList: boolean;
+  /** Visible evidence only. This does not verify that underlying work occurred. */
+  hasMethodologyEvidence: boolean;
+  /** Visible editorial organization such as a meaningful heading hierarchy. */
+  hasEditorialCuration: boolean;
+  /** Visible analysis, trade-offs, testing, or informed perspective. */
+  hasInformedPerspective: boolean;
+  /** A transparent 0-100 summary of Content Effort signals, not a ranking score. */
+  contentEffortReadiness: number;
 }
 
 const FILLER_PHRASES = [
@@ -296,6 +304,20 @@ export function extractContentSignals($: cheerio.CheerioAPI, url: string, brandN
   // Numbered step list: at least one <ol> with 3+ <li> items
   const hasNumberedStepList = $("ol").toArray().some((ol) => $(ol).find("li").length >= 3);
 
+  // Content Effort uses only what is visible on the page. These signals do
+  // not assert that a company performed research, testing, or interviews.
+  const hasMethodologyEvidence = /\b(?:methodology|how we (?:tested|researched|measured|collected)|we (?:tested|interviewed|surveyed|analyzed)|test setup|data collection|case study|screenshots?|interviews?)\b/i.test(bodyText);
+  const hasEditorialCuration = totalHeadings >= 3 && (listCount + tableCount > 0 || answerCapsuleCount > 0);
+  const hasInformedPerspective = /\b(?:trade-?offs?|in our experience|we recommend|we found|our analysis|limitation|limitations|however|depends on|instead of)\b/i.test(bodyText);
+  const helpfulOpening = hasDirectAnswerOpening || hasTldr || answerCapsuleCount > 0;
+  const contentEffortReadiness = Math.round(
+    (hasEditorialCuration ? 20 : 0) +
+    (hasProprietaryData || expertQuoteCount > 0 ? 20 : 0) +
+    (hasMethodologyEvidence ? 20 : 0) +
+    (helpfulOpening && fillerPhraseCount === 0 ? 20 : 0) +
+    (hasInformedPerspective ? 20 : 0),
+  );
+
   // Keyword stuffing: any non-stopword that occurs > 2.5% of total words.
   // We exclude the brand's own name, domain root, and any tokens drawn from the
   // page <title> or Organization schema name — repeating your own brand on your
@@ -383,6 +405,10 @@ export function extractContentSignals($: cheerio.CheerioAPI, url: string, brandN
     hasTldr,
     hasProprietaryData,
     hasNumberedStepList,
+    hasMethodologyEvidence,
+    hasEditorialCuration,
+    hasInformedPerspective,
+    contentEffortReadiness,
   };
 }
 
@@ -483,6 +509,35 @@ function composeRec(
 export function generateGeoRecommendations(ctx: RecommendationContext): GeoRecommendation[] {
   const { signals: s } = ctx;
   const recs: GeoRecommendation[] = [];
+
+  // === CONTENT EFFORT (visible signals, Zyppy Signal expert guidance) ===
+  if (!s.hasEditorialCuration && s.wordCount >= 400) {
+    recs.push(composeRec("content-effort-curation", {
+      detail: "The page has limited visible editorial curation. Organize it around a clear question, useful sections, and selective lists or tables so the important information is easier to evaluate before expanding length.",
+    }));
+  }
+  if (!s.hasProprietaryData && s.expertQuoteCount === 0 && s.wordCount >= 500) {
+    recs.push(composeRec("content-effort-original-evidence", {
+      detail: "No visible first-party information, named interview, or original evidence was detected. Add material you can substantiate, such as an example, tested workflow, customer pattern, screenshot, or clearly sourced original analysis. This check cannot verify whether underlying work happened.",
+    }));
+  }
+  if (!s.hasMethodologyEvidence && s.wordCount >= 700) {
+    recs.push(composeRec("content-effort-methodology", {
+      detail: "The page does not visibly explain how conclusions, examples, or data were produced. Where true, document the method, scope, inputs, and limitations so readers can judge the work behind the advice.",
+    }));
+  }
+  if (s.fillerPhraseCount > 0 || (!s.hasDirectAnswerOpening && s.wordCount >= 700)) {
+    recs.push(composeRec("content-effort-helpfulness", {
+      detail: s.fillerPhraseCount > 0
+        ? `Detected ${s.fillerPhraseCount} generic filler pattern(s). Put the direct answer and useful evidence ahead of scene-setting language, then remove phrases that do not help a reader make a decision.`
+        : "The page does not lead with a direct answer. Put the useful conclusion, constraints, and supporting evidence before general background so readers can assess value quickly.",
+    }));
+  }
+  if (!s.hasInformedPerspective && s.wordCount >= 700) {
+    recs.push(composeRec("content-effort-perspective", {
+      detail: "The page has limited visible analysis of trade-offs, constraints, or informed perspective. Add the decisions, exceptions, and practical judgment that help a reader apply the information instead of repeating common facts.",
+    }));
+  }
 
   // === HIGHEST IMPACT — Authority signals ===
   if (s.statisticCount < 3) {

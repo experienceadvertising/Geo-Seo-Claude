@@ -10,6 +10,7 @@ import referralRouter from "./referral";
 import crawlerPixelRouter from "./crawlerPixel";
 import googleRouter from "./google";
 import telemetryRouter from "./telemetry";
+import seoRouter from "./seo";
 
 const router: IRouter = Router();
 
@@ -24,5 +25,6 @@ router.use(referralRouter);
 router.use(crawlerPixelRouter);
 router.use(googleRouter);
 router.use(telemetryRouter);
+router.use(seoRouter);
 
 export default router;

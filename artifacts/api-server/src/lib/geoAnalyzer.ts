@@ -78,6 +78,8 @@ export interface AnalysisResult {
    * Based on Zyppy Signal's Content Placement factor (score 8.8/10).
    */
   contentPlacementScore: number;
+  /** Visible Content Effort signals. This is separate from the GEO score. */
+  contentEffortReadiness: number | null;
   brandName: string;
   brandSignals: BrandSignal[];
   recommendations: GeoRecommendation[];
@@ -702,8 +704,10 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
   // shouldn't generate "unblock" advice.
   const blockedAiCrawlers = [...blockedSearchBots, ...blockedFetchBots].map((c) => c.name);
   let recommendations: GeoRecommendation[] = [];
+  let contentEffortReadiness: number | null = null;
   if ($page) {
     const signals = extractContentSignals($page, url, brandAuthority.brandName || null, wordCount);
+    contentEffortReadiness = signals.contentEffortReadiness;
     recommendations = generateGeoRecommendations({
       signals,
       hasFaqSchema,
@@ -767,6 +771,7 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
     requiresJavaScript,
     renderedSuccessfully,
     contentPlacementScore,
+    contentEffortReadiness,
     brandName: brandAuthority.brandName,
     brandSignals: brandAuthority.signals,
     recommendations,

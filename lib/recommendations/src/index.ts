@@ -18,7 +18,7 @@ const VALID_CATEGORIES: ReadonlySet<Category> = new Set([
   "answerability", "authority", "structure", "depth", "freshness", "technical", "entity",
 ]);
 const VALID_SOURCE_TYPES: ReadonlySet<SourceType> = new Set([
-  "research", "internal_benchmark", "practitioner_consensus",
+  "research", "internal_benchmark", "practitioner_consensus", "expert_guidance",
 ]);
 
 function isIsoDate(s: unknown): s is string {
@@ -105,7 +105,7 @@ function validate(rec: unknown, idx: number): Recommendation {
   if (sourceUrl !== null && typeof sourceUrl !== "string") {
     throw new Error(`${where} \`sourceUrl\` must be string or null`);
   }
-  if ((sourceType === "research" || sourceType === "internal_benchmark") && sourceUrl === null) {
+  if ((sourceType === "research" || sourceType === "internal_benchmark" || sourceType === "expert_guidance") && sourceUrl === null) {
     throw new Error(`${where} \`sourceUrl\` is required when sourceType="${sourceType}"`);
   }
 

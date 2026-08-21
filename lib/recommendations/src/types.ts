@@ -39,7 +39,12 @@ export type Category =
   | "technical"
   | "entity";
 
-export type SourceType = "research" | "internal_benchmark" | "practitioner_consensus";
+/**
+ * `expert_guidance` is attributed practitioner analysis. It is intentionally
+ * distinct from primary research so the product never presents an expert
+ * framework as a measured ranking guarantee.
+ */
+export type SourceType = "research" | "internal_benchmark" | "practitioner_consensus" | "expert_guidance";
 
 /**
  * Quantitative lift claim, structured so the UI can render the unit correctly.
@@ -89,8 +94,9 @@ export interface Recommendation {
   sourceType: SourceType;
 
   /**
-   * URL to the source. REQUIRED when sourceType is "research" or
-   * "internal_benchmark"; allowed-null only for "practitioner_consensus".
+   * URL to the source. REQUIRED when sourceType is "research",
+   * "internal_benchmark", or "expert_guidance"; allowed-null only for
+   * "practitioner_consensus".
    */
   sourceUrl: string | null;
 
