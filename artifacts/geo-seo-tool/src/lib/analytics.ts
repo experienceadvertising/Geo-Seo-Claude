@@ -36,7 +36,11 @@ const CONSENT_KEY = "aeo.trackingConsent";
 const FIRST_TOUCH_KEY = "aeo.firstTouch";
 const LAST_TOUCH_KEY = "aeo.lastTouch";
 
-const GA4_MEASUREMENT_ID = import.meta.env.VITE_GA4_MEASUREMENT_ID as string | undefined;
+// GA4 measurement IDs are public identifiers. Keep the production property as a
+// fallback so a Replit build cannot silently remove analytics when Vite does not
+// receive the environment variable during its build step.
+const GA4_MEASUREMENT_ID =
+  (import.meta.env.VITE_GA4_MEASUREMENT_ID as string | undefined) || "G-H3L37CSDKR";
 const GOOGLE_ADS_ID = import.meta.env.VITE_GOOGLE_ADS_ID as string | undefined;
 const GOOGLE_ADS_SIGNUP_LABEL = import.meta.env.VITE_GOOGLE_ADS_SIGNUP_LABEL as string | undefined;
 const GOOGLE_ADS_ACTIVATION_LABEL = import.meta.env.VITE_GOOGLE_ADS_ACTIVATION_LABEL as string | undefined;
@@ -194,6 +198,13 @@ export function setTrackingConsent(choice: ConsentChoice) {
   safeWrite(CONSENT_KEY, consent);
   applyGoogleConsent(consent);
   initializeVendors(consent);
+  if (consent.analytics) {
+    window.gtag?.("event", "page_view", {
+      page_path: window.location.pathname + window.location.search,
+      page_title: document.title,
+      page_location: window.location.href,
+    });
+  }
   window.dispatchEvent(new CustomEvent("aeo:consent-updated", { detail: consent }));
 }
 
