@@ -198,13 +198,6 @@ export function setTrackingConsent(choice: ConsentChoice) {
   safeWrite(CONSENT_KEY, consent);
   applyGoogleConsent(consent);
   initializeVendors(consent);
-  if (consent.analytics) {
-    window.gtag?.("event", "page_view", {
-      page_path: window.location.pathname + window.location.search,
-      page_title: document.title,
-      page_location: window.location.href,
-    });
-  }
   window.dispatchEvent(new CustomEvent("aeo:consent-updated", { detail: consent }));
 }
 
