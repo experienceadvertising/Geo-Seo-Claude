@@ -171,6 +171,11 @@ export interface SearchConsoleOpportunityReport {
   opportunities: SearchOpportunity[];
 }
 
+export interface SearchConsolePagePerformance {
+  current: { clicks: number; impressions: number; ctr: number; position: number; startDate: string; endDate: string };
+  previous: { clicks: number; impressions: number; ctr: number; position: number; startDate: string; endDate: string };
+}
+
 function isoDateDaysAgo(days: number): string {
   return new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
 }
@@ -238,6 +243,31 @@ export async function fetchSearchConsoleOpportunities(
     rowsReturned: rows.length,
     opportunities: rankSearchOpportunities(rows),
   };
+}
+
+/** Page-level 28-day comparison. Search Console remains the source of truth
+ * for clicks, impressions, CTR, and its aggregated average position. */
+export async function fetchSearchConsolePagePerformance(accessToken: string, siteUrl: string, pageUrl: string): Promise<SearchConsolePagePerformance> {
+  const variants = buildPageUrlVariants(pageUrl);
+  if (!variants.length) throw new Error("Invalid page URL");
+  const endDate = isoDateDaysAgo(3);
+  const currentStart = isoDateDaysAgo(30);
+  const previousEnd = isoDateDaysAgo(31);
+  const previousStart = isoDateDaysAgo(58);
+  const load = async (startDate: string, finishDate: string) => {
+    const rows = await Promise.all(variants.map((variant) => googlePost<{ rows?: Array<{ clicks?: number; impressions?: number; ctr?: number; position?: number }> }>(
+      `${SEARCH_CONSOLE_API}/sites/${encodeURIComponent(siteUrl)}/searchAnalytics/query`, accessToken,
+      { startDate, endDate: finishDate, dimensions: [], type: "web", aggregationType: "auto", dataState: "final", rowLimit: 1,
+        dimensionFilterGroups: [{ groupType: "and", filters: [{ dimension: "page", operator: "equals", expression: variant }] }] },
+    )));
+    const values = rows.flatMap((entry) => entry.rows ?? []);
+    const clicks = values.reduce((sum, row) => sum + Number(row.clicks ?? 0), 0);
+    const impressions = values.reduce((sum, row) => sum + Number(row.impressions ?? 0), 0);
+    const weightedPosition = values.reduce((sum, row) => sum + Number(row.position ?? 0) * Number(row.impressions ?? 0), 0);
+    return { clicks, impressions, ctr: impressions ? clicks / impressions : 0, position: impressions ? weightedPosition / impressions : 0, startDate, endDate: finishDate };
+  };
+  const [current, previous] = await Promise.all([load(currentStart, endDate), load(previousStart, previousEnd)]);
+  return { current, previous };
 }
 
 /** List the GA4 properties the connected account can read, for selection. */

@@ -125,6 +125,7 @@ export const RecommendationSourceType = {
   research: "research",
   internal_benchmark: "internal_benchmark",
   practitioner_consensus: "practitioner_consensus",
+  expert_guidance: "expert_guidance",
 } as const;
 
 /**

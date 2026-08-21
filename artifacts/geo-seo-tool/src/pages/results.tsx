@@ -34,6 +34,7 @@ import { Helmet } from "react-helmet-async";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { usePlan } from "@/hooks/usePlan";
 import { UpgradePrompt } from "@/components/upgrade-prompt";
+import { SeoTrackingPanel } from "@/components/seo-tracking-panel";
 
 export default function Results() {
   const params = useParams<{ id: string }>();
@@ -197,6 +198,9 @@ export default function Results() {
     : Math.floor((Date.now() - auditCreatedAt.getTime()) / 86_400_000);
   const hasLegacyScores = !isStoredScore(audit.scores.aiCrawlerAccess);
   const needsRefresh = auditAgeDays > 45 || hasLegacyScores;
+  const seoRecommendations = (audit.recommendations ?? []).filter((recommendation) =>
+    ["technical", "structure", "depth", "freshness"].includes(recommendation.category) || recommendation.id.startsWith("content-effort-"),
+  );
 
   const reScanAudit = () => {
     reRun.mutate(
@@ -517,6 +521,26 @@ export default function Results() {
           </div>
         </TooltipProvider>
       </div>
+
+      <Card className="shadow-sm border-border mb-6" id="seo-opportunities">
+        <CardHeader className="bg-muted/30 pb-4 border-b">
+          <CardTitle className="flex items-center gap-2 text-sm font-mono uppercase tracking-wider">
+            <TrendingUp className="h-4 w-4 text-primary" /> SEO Opportunities
+          </CardTitle>
+          <CardDescription>
+            SEO readiness is shown separately from AI visibility. Connect Search Console in Projects for clicks, impressions, CTR, average position, and page-query opportunities.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="pt-5 grid gap-4 md:grid-cols-3">
+          <div className="rounded-lg border p-4"><p className="text-xs text-muted-foreground">Technical SEO readiness</p><p className="mt-1 text-2xl font-semibold">{audit.scores.technicalSeo}/100</p><p className="mt-1 text-xs text-muted-foreground">Crawlability, canonicalization, HTTPS, and visible content signals.</p></div>
+          <div className="rounded-lg border p-4"><p className="text-xs text-muted-foreground">Content Effort readiness</p><p className="mt-1 text-2xl font-semibold">{isStoredScore((audit as any).contentEffortReadiness) ? `${(audit as any).contentEffortReadiness}/100` : "Re-scan needed"}</p><p className="mt-1 text-xs text-muted-foreground">Visible curation, evidence, method, helpfulness, and perspective. Not a ranking score.</p></div>
+          <div className="rounded-lg border p-4"><p className="text-xs text-muted-foreground">Next SEO actions</p><p className="mt-1 text-2xl font-semibold">{seoRecommendations.length}</p><p className="mt-1 text-xs text-muted-foreground">Prioritized technical and content improvements below.</p></div>
+        </CardContent>
+        <CardContent className="pt-0 text-sm text-muted-foreground">
+          <Link href="/projects" className="text-primary hover:underline">Open Projects to connect Search Console and manage paid keyword tracking</Link>. Rank movement is displayed as an observed outcome, not proof that a change caused it.
+          {isPro && domain && <SeoTrackingPanel domain={domain} />}
+        </CardContent>
+      </Card>
 
       {/* Prioritized GEO Recommendations */}
       {audit.recommendations && audit.recommendations.length > 0 && (

@@ -5,6 +5,7 @@ export const recommendationProgressTable = pgTable("recommendation_progress", {
   userId: text("user_id").notNull(),
   domain: text("domain").notNull(),
   recommendationId: text("recommendation_id").notNull(),
+  implementationNote: text("implementation_note"),
   completedAt: timestamp("completed_at").defaultNow().notNull(),
 }, (table) => ({
   userDomainRecommendationUnique: uniqueIndex("recommendation_progress_user_domain_rec_uq")

@@ -4,6 +4,7 @@ import { sql, and, isNotNull, eq, gte, lte } from "drizzle-orm";
 import { getUserPlan, getStoredPlan, trialEndFor } from "./planUtils";
 import { EmailService } from "./emailService";
 import { runDueMonitoredSites } from "./monitoring";
+import { runDueSeoRankSnapshots } from "./seoTrackingScheduler";
 import { logger } from "./logger";
 
 // Cron-driven sends have no inbound HTTP request to derive a base URL from,
@@ -456,6 +457,13 @@ export function startEmailScheduler() {
     );
   });
   logger.info("Monitored-sites scheduler started (daily sweep, per-site cadence)");
+
+  // Poll daily so queued provider tasks complete promptly. Each target remains
+  // on a weekly cadence, and manual refreshes are separately capped.
+  cron.schedule("0 6 * * *", () => {
+    runDueSeoRankSnapshots().catch((err) => logger.error({ err }, "SEO rank snapshot cron error"));
+  });
+  logger.info("SEO rank tracking scheduler started (daily queue poll, weekly target cadence)");
 
   if (!process.env.POSTMARK_API_TOKEN) {
     logger.warn("POSTMARK_API_TOKEN not set — email scheduler disabled");

@@ -413,6 +413,17 @@ export const ROUTES = [
     authorName: AUTHOR.name,
     jsonLd: [articleLd({ path: "/ai-citation-readiness-benchmark", title: "2026 AI Citation Readiness Benchmark", description: "An anonymized benchmark of website readiness for AI citations.", datePublished: "2026-07-22", dateModified: "2026-07-22" })],
   },
+  ...[
+    ["/content-effort-for-seo-and-ai-search", "Content Effort for SEO and AI Search", "A practical framework for creating original, well-documented content that helps people, search engines, and AI systems understand your expertise."],
+    ["/show-first-party-experience-seo", "How to Show First-Party Experience in SEO Content", "Ways to document real experience in SEO content without inventing proof."],
+    ["/seo-content-quality-vs-filler", "SEO Content Quality vs. Filler Content", "How to identify filler and put useful SEO content first."],
+    ["/create-content-ai-can-cite", "How to Create Content AI Systems Can Cite", "Practical steps for making website content clear, attributable, and easy for AI systems to interpret."],
+    ["/content-audit-original-research-checklist", "Content Audit Checklist for Original Research and Evidence", "A practical checklist for documenting original research, evidence, and methodology in content."],
+    ["/document-expertise-methodology", "How to Document Testing, Methodology, and Expertise on Your Website", "How to document your methodology and expertise so readers can evaluate your advice."],
+  ].map(([path, title, description]) => ({
+    path, title: `${title} | AEO Improvement`, description, ogType: "article", publishedTime: "2026-08-17", modifiedTime: "2026-08-17", authorName: AUTHOR.name,
+    jsonLd: [articleLd({ path, title, description, datePublished: "2026-08-17", dateModified: "2026-08-17" }), breadcrumbLd([{ name: "Home", path: "/" }, { name: "Resources", path: "/content-effort-for-seo-and-ai-search" }, { name: title, path }])],
+  })),
 ];
 
 export const SITE_ORIGIN = SITE;

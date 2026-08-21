@@ -108,6 +108,7 @@ router.get("/geo/recommendation-progress", requireAuth, readRateLimiter, async (
   const rows = await db.select({
     recommendationId: recommendationProgressTable.recommendationId,
     completedAt: recommendationProgressTable.completedAt,
+    implementationNote: recommendationProgressTable.implementationNote,
   }).from(recommendationProgressTable).where(and(
     eq(recommendationProgressTable.userId, req.userId!),
     eq(recommendationProgressTable.domain, domain),
@@ -119,6 +120,9 @@ router.post("/geo/recommendation-progress", requireAuth, readRateLimiter, async 
   const domain = normalizeDomain(String(req.body?.domain || ""));
   const recommendationId = String(req.body?.recommendationId || "").trim();
   const completed = req.body?.completed === true;
+  const implementationNote = typeof req.body?.implementationNote === "string"
+    ? req.body.implementationNote.trim().slice(0, 1000) || null
+    : null;
   if (!domain || !/^[a-z0-9_.:-]{1,120}$/i.test(recommendationId)) {
     res.status(400).json({ error: "Valid domain and recommendation ID required" });
     return;
@@ -126,7 +130,11 @@ router.post("/geo/recommendation-progress", requireAuth, readRateLimiter, async 
   if (completed) {
     await db.insert(recommendationProgressTable).values({
       userId: req.userId!, domain, recommendationId,
-    }).onConflictDoNothing();
+      implementationNote,
+    }).onConflictDoUpdate({
+      target: [recommendationProgressTable.userId, recommendationProgressTable.domain, recommendationProgressTable.recommendationId],
+      set: { completedAt: new Date(), implementationNote },
+    });
   } else {
     await db.delete(recommendationProgressTable).where(and(
       eq(recommendationProgressTable.userId, req.userId!),

@@ -10,6 +10,7 @@ import {
   isGoogleConfigured, getAuthUrl, exchangeCode, getValidAccessToken,
   listGa4Properties, fetchAiReferrals, hasSearchConsoleScope,
   listSearchConsoleSites, fetchSearchConsoleOpportunities,
+  fetchSearchConsolePagePerformance,
 } from "../lib/googleIntegration";
 
 const router: IRouter = Router();
@@ -242,6 +243,29 @@ router.get(`${PREFIX}/search-console/opportunities`, requireAuth, readRateLimite
   } catch (err) {
     req.log.error({ err, siteUrl, pageUrl: parsedPage.toString() }, "Search Console opportunity fetch failed");
     res.status(502).json({ error: "Couldn't load Search Console query data. Try reconnecting Google." });
+  }
+});
+
+router.get(`${PREFIX}/search-console/performance`, requireAuth, readRateLimiter, async (req, res): Promise<void> => {
+  if (!(await requirePro(req.userId!))) { res.status(403).json({ error: "Search Console performance is a Pro feature.", upgradeRequired: true }); return; }
+  const siteUrl = typeof req.query.siteUrl === "string" ? req.query.siteUrl.trim().slice(0, 500) : "";
+  const pageUrl = typeof req.query.pageUrl === "string" ? req.query.pageUrl.trim().slice(0, 2000) : "";
+  try { const parsed = new URL(pageUrl); if (!/^https?:$/.test(parsed.protocol) || !siteUrl) throw new Error("invalid"); } catch { res.status(400).json({ error: "Valid siteUrl and pageUrl required." }); return; }
+  const conn = await getConnection(req.userId!);
+  if (!conn) { res.status(404).json({ error: "Google account not connected" }); return; }
+  if (!hasSearchConsoleScope(conn.scope)) { res.status(409).json({ error: "Reconnect Google to grant read-only Search Console access.", needsReconnect: true }); return; }
+  try {
+    const token = await getValidAccessToken(conn);
+    const sites = await listSearchConsoleSites(token);
+    if (!sites.some((site) => site.siteUrl === siteUrl)) { res.status(403).json({ error: "That Search Console property is not available to this Google account." }); return; }
+    const [performance, queryReport] = await Promise.all([
+      fetchSearchConsolePagePerformance(token, siteUrl, pageUrl),
+      fetchSearchConsoleOpportunities(token, siteUrl, pageUrl, 90),
+    ]);
+    res.json({ ...performance, opportunities: queryReport.opportunities, rowsReturned: queryReport.rowsReturned });
+  } catch (err) {
+    req.log.error({ err }, "Search Console performance fetch failed");
+    res.status(502).json({ error: "Couldn't load Search Console performance. Try reconnecting Google." });
   }
 });
 

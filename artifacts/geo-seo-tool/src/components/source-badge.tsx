@@ -1,5 +1,5 @@
 import React from "react";
-import { BookOpen, BarChart3, Users, BadgeCheck, AlertCircle } from "lucide-react";
+import { BookOpen, BarChart3, Users, BadgeCheck, AlertCircle, Lightbulb } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { RecommendationSource } from "@workspace/api-client-react";
 
@@ -46,6 +46,11 @@ export function SourceBadge({ source }: { source: RecommendationSource }) {
     label = "Research · pending verification";
     Icon = BookOpen;
     className = "bg-transparent text-amber-700 border border-dashed border-amber-500";
+    weight = "muted";
+  } else if (type === "expert_guidance") {
+    label = "Expert guidance";
+    Icon = Lightbulb;
+    className = "bg-violet-100 text-violet-800 border border-violet-200";
     weight = "muted";
   } else {
     // practitioner_consensus (verified or not — practitioner consensus is
@@ -97,6 +102,11 @@ export function SourceBadge({ source }: { source: RecommendationSource }) {
         {type === "practitioner_consensus" && (
           <div className="text-[10px] text-muted-foreground">
             Widely-applied industry practice. Not a published research finding.
+          </div>
+        )}
+        {type === "expert_guidance" && (
+          <div className="text-[10px] text-muted-foreground">
+            Expert framework, credited to the named source. It is guidance, not a ranking or traffic promise.
           </div>
         )}
       </TooltipContent>
