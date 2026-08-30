@@ -474,21 +474,21 @@ export default function PricingPage() {
 
   const plans = [
     {
-      planId: "starter" as const,
-      name: "Starter",
-      ...starterDisplay,
-      priceLoading: false,
-      description: "For one site ready to improve SEO and GEO",
-      features: PLAN_FEATURES.starter,
-      isHighlighted: false,
-    },
-    {
       planId: "free" as const,
       name: "Free",
       price: "$0",
       period: "/mo",
       description: "First month: all core audit features unlocked. No card needed.",
       features: PLAN_FEATURES.free,
+      isHighlighted: false,
+    },
+    {
+      planId: "starter" as const,
+      name: "Starter",
+      ...starterDisplay,
+      priceLoading: false,
+      description: "For one site ready to improve SEO and GEO",
+      features: PLAN_FEATURES.starter,
       isHighlighted: false,
     },
     {
