@@ -467,10 +467,10 @@ export interface MonthlyReportData {
 
 export function monthlyReportEmail(data: MonthlyReportData, unsubscribeUrl?: string) {
   const { firstName, month, totalAudits, avgScore, bestScore, topUrl, quickWins } = data;
-  const subject = `Your AEO monthly report — ${month}`;
+  const subject = `Your Agency SEO + GEO report — ${month}`;
   const html = layout(
-    `${h1(`Monthly AEO Report — ${month}`)}
-    ${p(`Hi ${firstName || "there"}, here's a summary of your AEO performance for ${month}.`)}
+    `${h1(`Monthly SEO + GEO report — ${month}`)}
+    ${p(`Hi ${firstName || "there"}, here is a practical summary of your clients' audit activity and the next opportunities to work through for ${month}.`)}
 
     ${divider()}
 
@@ -483,7 +483,7 @@ export function monthlyReportEmail(data: MonthlyReportData, unsubscribeUrl?: str
         <td style="width:4%;"></td>
         <td style="width:33%;text-align:center;padding:16px;background:#f9fafb;border-radius:8px;">
           <div style="font-size:32px;font-weight:800;color:${BRAND_COLOR};">${Math.round(avgScore)}</div>
-          <div style="font-size:12px;color:#6b7280;margin-top:4px;">Avg AEO Score</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:4px;">Avg AI-readiness score</div>
         </td>
         <td style="width:4%;"></td>
         <td style="width:33%;text-align:center;padding:16px;background:#f9fafb;border-radius:8px;">
@@ -646,7 +646,7 @@ export function auditCompleteEmail(
       </td></tr>
     </table>
 
-    ${p("Open your full results to see the breakdown, top recommendations, and quick wins you can ship today.")}
+    ${p("Open your full results to see the technical SEO, content, brand-clarity, and AI-visibility evidence. Start with the most important blocker, then complete one concrete improvement before measuring again.")}
 
     <div style="text-align:center;margin:28px 0;">
       ${btn("View full results →", auditId ? `${BASE_URL}/results/${auditId}` : `${BASE_URL}/dashboard`)}
@@ -655,7 +655,7 @@ export function auditCompleteEmail(
     ${divider()}
     <div style="background:#f5f3ff;border-radius:10px;padding:18px 20px;margin:0;">
       <div style="font-size:13px;font-weight:700;color:#5b21b6;margin-bottom:6px;">Next step: run a prompt simulation</div>
-      <div style="font-size:13px;color:#374151;line-height:1.6;">Your score tells you whether you <em>can</em> be cited. A simulation tells you whether you <em>are</em> — enter the queries your buyers actually use and see which engines name you, which cite your domain, and which recommend a competitor instead.</div>
+      <div style="font-size:13px;color:#374151;line-height:1.6;">A simulation is the next reality check after an audit. Test a few buyer questions to see whether engines mention your brand, cite your domain, or surface another option. Treat each result as a snapshot, then compare the trend over time.</div>
       <div style="margin-top:12px;">
         <a href="${BASE_URL}/simulate/${auditId || ""}" style="font-size:13px;font-weight:600;color:#5b21b6;text-decoration:underline;">Run a simulation for this audit →</a>
       </div>
@@ -678,10 +678,10 @@ export function simulationReminderEmail(
   const safeHostname = esc(hostname);
   const safeFirstName = esc(firstName) || "there";
   const simulateUrl = `${BASE_URL}/simulate/${auditId}`;
-  const subject = `See what AI answers say about ${hostname}`;
+  const subject = `Test the buyer questions behind your ${hostname} audit`;
   const html = layout(
     `${h1("One useful next step for your audit")}
-    ${p(`Hi ${safeFirstName}, you have your AEO audit for <strong>${safeHostname}</strong>. A prompt simulation turns the audit into a real-world check: it shows whether AI engines mention your brand, cite your site, or favor other options for the questions buyers ask.`)}
+    ${p(`Hi ${safeFirstName}, you have your audit for <strong>${safeHostname}</strong>. A prompt simulation is the next practical check after the SEO + GEO findings: it shows how AI engines answer the buyer questions that matter to your brand today.`)}
 
     <div style="background:#f5f3ff;border-radius:10px;padding:18px 20px;margin:20px 0;">
       <div style="font-size:13px;font-weight:700;color:#5b21b6;margin-bottom:6px;">Start with three focused prompts</div>
