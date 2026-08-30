@@ -37,7 +37,7 @@ function spaFallback(): Plugin {
   return {
     name: "spa-fallback",
     configurePreviewServer(server) {
-      server.middlewares.use((req, _res, next) => {
+      const fallbackMiddleware = (req: Parameters<typeof server.middlewares.use>[0] extends (req: infer Req, ...args: never[]) => unknown ? Req : never, _res: Parameters<typeof server.middlewares.use>[0] extends (_req: never, res: infer Res, ...args: never[]) => unknown ? Res : never, next: () => void) => {
         const assetPath = (req.url ?? "").split("?")[0];
         if (/\/assets\/.*\.[a-f0-9]{8,}\.(?:js|css|woff2?|png|jpe?g|webp|svg)$/i.test(assetPath)) {
           _res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
@@ -67,7 +67,16 @@ function spaFallback(): Plugin {
         // SPA can render the route client-side.
         req.url = basePath.replace(/\/$/, "") + "/";
         next();
-      });
+      };
+
+      // Vite registers its static-file handler before plugins added with
+      // `use()`. Put this middleware at the front so a request such as
+      // /pricing reaches dist/public/pricing/index.html instead of falling
+      // through to the root SPA shell. This is essential for non-JS crawlers.
+      const stack = (server.middlewares as typeof server.middlewares & {
+        stack: Array<{ route: string; handle: typeof fallbackMiddleware }>;
+      }).stack;
+      stack.unshift({ route: "", handle: fallbackMiddleware });
     },
   };
 }
