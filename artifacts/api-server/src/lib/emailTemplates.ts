@@ -1260,21 +1260,22 @@ export function trialEndingSoonEmail(firstName: string, endsAt: Date, unsubscrib
       ${feature("📡", "Continuous monitoring", "Scheduled re-audits and score alerts stop running for your sites.")}
       ${feature("📊", "Competitor tracking & sentiment", "The citation gap table and brand sentiment analysis lock again.")}
     </table>
-    ${p("Keep everything with Pro, or step up to Agency for multi-client work:")}
+    ${p("Choose the level that matches what you need next:")}
     <table cellpadding="0" cellspacing="0" width="100%" style="margin:16px 0;background:#ecfdf5;border-radius:8px;border:1px solid #a7f3d0;">
-      <tr><td style="padding:18px 20px;font-size:14px;color:#065f46;text-align:center;">
-        <strong>Pro: $79/mo</strong> · or <strong>$750/yr</strong> (save about 20%)
+      <tr><td style="padding:18px 20px;font-size:14px;color:#065f46;line-height:1.65;">
+        <strong>Starter: $29/mo</strong> for one site, more SEO and GEO audits, guided improvements, and implementation-ready fixes.<br/>
+        <strong>Pro: $79/mo</strong> when you need Search Console, GA4, rank tracking, ongoing monitoring, and full multi-engine visibility.
       </td></tr>
     </table>
     <div style="text-align:center;margin:24px 0;">
-      ${btn("Keep my features →", `${BASE_URL}/upgrade?source=trial-ending`)}
+      ${btn("Choose my plan →", `${BASE_URL}/pricing?source=trial-ending`)}
     </div>
     ${divider()}
     ${p("Do nothing and you'll land on the free plan — 5 audits and 2 simulations a month, ChatGPT only. Your audit history and account stay safe either way.", "color:#6b7280;font-size:13px;")}`,
     `Your core audit features stay unlocked until ${endDate}. Here's how to keep them after that.`,
     unsubscribeUrl,
   );
-  const text = `Hi ${firstName || "there"},\n\nYour free core-feature month ends on ${endDate}. After that your account moves to the free plan and you'll lose:\n- All 4 AI engines (back to ChatGPT only)\n- Fix Generator\n- Continuous monitoring & alerts\n- Competitor tracking & sentiment analysis\n\nKeep everything with Pro ($79/mo or $750/yr): ${BASE_URL}/upgrade?source=trial-ending\n\nDo nothing and you'll land on the free plan. Your audit history and account stay safe either way.`;
+  const text = `Hi ${firstName || "there"},\n\nYour free core-feature month ends on ${endDate}. After that your account moves to the free plan and you'll lose:\n- All 4 AI engines (back to ChatGPT only)\n- Fix Generator\n- Continuous monitoring & alerts\n- Competitor tracking & sentiment analysis\n\nChoose the next step that fits:\n- Starter, $29/month: one site, more SEO and GEO audits, guided improvements, and implementation-ready fixes\n- Pro, $79/month: Search Console, GA4, rank tracking, monitoring, and all four AI engines\n\nChoose your plan: ${BASE_URL}/pricing?source=trial-ending\n\nDo nothing and you'll land on the free plan. Your audit history and account stay safe either way.`;
   return { subject, html, text };
 }
 
@@ -1295,21 +1296,22 @@ export function trialEndedEmail(firstName: string, unsubscribeUrl?: string) {
       <li>2 prompt simulations per month (ChatGPT, 3 prompts)</li>
       <li>Your complete audit history from your free month</li>
     </ul>
-    ${p("Everything you had last month — all 4 engines, the Fix Generator, monitoring, competitor tracking, sentiment — is one click away:")}
+    ${p("You can now choose the next level based on whether you want guided improvements or ongoing measurement:")}
     <table cellpadding="0" cellspacing="0" width="100%" style="margin:16px 0;background:#ecfdf5;border-radius:8px;border:1px solid #a7f3d0;">
-      <tr><td style="padding:18px 20px;font-size:14px;color:#065f46;text-align:center;">
-        <strong>Pro: $79/mo</strong> · or <strong>$750/yr</strong> (save about 20%) · cancel anytime
+      <tr><td style="padding:18px 20px;font-size:14px;color:#065f46;line-height:1.65;">
+        <strong>Starter: $29/mo</strong> gives one site more SEO and GEO audits, guided recommendations, and implementation-ready fixes.<br/>
+        <strong>Pro: $79/mo</strong> adds Search Console, GA4, rank tracking, monitoring, full multi-engine simulations, and competitor analysis.
       </td></tr>
     </table>
     <div style="text-align:center;margin:24px 0;">
-      ${btn("Get everything back →", `${BASE_URL}/upgrade?source=trial-ended`)}
+      ${btn("Compare Starter and Pro →", `${BASE_URL}/pricing?source=trial-ended`)}
     </div>
     ${divider()}
     ${p("No pressure — the free plan doesn't expire, and your data isn't going anywhere.", "color:#6b7280;font-size:13px;")}`,
     "Your account is now on the free plan — here's what you keep, and how to get everything back.",
     unsubscribeUrl,
   );
-  const text = `Hi ${firstName || "there"},\n\nYour free core-feature month has ended and your account is now on the free plan.\n\nYou keep, free forever:\n- 5 audits/month\n- 2 simulations/month (ChatGPT)\n- Your full audit history\n\nGet everything back with Pro ($79/mo or $750/yr): ${BASE_URL}/upgrade?source=trial-ended\n\nNo pressure. The free plan doesn't expire.`;
+  const text = `Hi ${firstName || "there"},\n\nYour free core-feature month has ended and your account is now on the free plan.\n\nYou keep, free forever:\n- 5 audits/month\n- 2 simulations/month (ChatGPT)\n- Your full audit history\n\nChoose the next step that fits:\n- Starter, $29/month: one site, guided SEO and GEO improvements, and implementation-ready fixes\n- Pro, $79/month: Google data, rank tracking, monitoring, all four AI engines, and competitor analysis\n\nCompare plans: ${BASE_URL}/pricing?source=trial-ended\n\nNo pressure. The free plan doesn't expire.`;
   return { subject, html, text };
 }
 
