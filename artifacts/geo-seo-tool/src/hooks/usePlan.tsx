@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
 import { customFetch } from "@workspace/api-client-react";
 
-export type Plan = "free" | "pro" | "agency";
+export type Plan = "free" | "starter" | "pro" | "agency";
 
 export interface UsageBucket {
   used: number;
@@ -36,6 +36,7 @@ export interface MeResponse {
 export interface PlanInfo {
   plan: Plan;
   isPro: boolean;
+  isStarter: boolean;
   isAgency: boolean;
   isFree: boolean;
   /** The paid plan (free/pro/agency) ignoring the free-first-month bump. */
@@ -56,6 +57,7 @@ export interface PlanInfo {
 // the source of truth — these only render before first fetch completes.
 const FALLBACK_LIMITS: Record<Plan, { simulationPrompts: number; simulationEngines: string[]; monthlyAudits: number; monthlySimulations: number }> = {
   free: { simulationPrompts: 3, simulationEngines: ["chatgpt"], monthlyAudits: 5, monthlySimulations: 2 },
+  starter: { simulationPrompts: 3, simulationEngines: ["chatgpt"], monthlyAudits: 15, monthlySimulations: 5 },
   pro: { simulationPrompts: 25, simulationEngines: ["chatgpt", "claude", "gemini", "perplexity"], monthlyAudits: 100, monthlySimulations: 30 },
   agency: { simulationPrompts: 25, simulationEngines: ["chatgpt", "claude", "gemini", "perplexity"], monthlyAudits: 500, monthlySimulations: 150 },
 };
@@ -83,6 +85,7 @@ export function usePlan(): PlanInfo & { isLoading: boolean } {
   return {
     plan,
     isPro: plan === "pro" || plan === "agency",
+    isStarter: plan === "starter",
     isAgency: plan === "agency",
     isFree: plan === "free",
     storedPlan: data?.storedPlan ?? plan,

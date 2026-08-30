@@ -81,6 +81,14 @@ async function createProducts() {
 
   const plans = [
     {
+      name: "Starter Plan",
+      description: "15 SEO and GEO audits/month, 5 ChatGPT prompt simulations/month with 3 prompts each, guided recommendations, Fix Generator, and 90-day history for one site. Search Console, GA4, rank tracking, and ongoing monitoring are available on Pro.",
+      plan_id: "starter",
+      // $29/mo, $290/yr (about 17% off, $24.17/mo).
+      monthly: 2900,
+      yearly: 29000,
+    },
+    {
       name: "Pro Plan",
       description: "100 audits/month, 30 simulations/month, all 4 AI engines (ChatGPT, Claude, Gemini, Perplexity), GA4 AI-referral reporting, Fix Generator, competitor tracking, and 1-year trend history.",
       plan_id: "pro",

@@ -17,6 +17,7 @@ interface UpgradePromptProps {
 
 const PLAN_COLORS: Record<Plan, string> = {
   free: "bg-slate-100 text-slate-700",
+  starter: "bg-sky-100 text-sky-800",
   pro: "bg-gradient-to-r from-emerald-500 to-teal-500 text-white",
   agency: "bg-gradient-to-r from-purple-500 to-indigo-500 text-white",
 };
@@ -26,6 +27,7 @@ const PLAN_COLORS: Record<Plan, string> = {
 // without redeploying.
 const FALLBACK_PRICES: Record<Plan, string> = {
   free: "Free",
+  starter: "$29/mo",
   pro: "$79/mo",
   agency: "$249/mo",
 };
@@ -58,7 +60,7 @@ export function UpgradePrompt({
         <Lock className="h-4 w-4 text-primary shrink-0" />
         <span className="text-muted-foreground flex-1">{description}</span>
         <Badge className={`text-xs shrink-0 ${PLAN_COLORS[requiredPlan]}`}>
-          {requiredPlan === "pro" ? "Pro" : "Agency"} · {priceLabel}
+          {requiredPlan === "starter" ? "Starter" : requiredPlan === "pro" ? "Pro" : "Agency"} · {priceLabel}
         </Badge>
       </div>
     );
@@ -74,7 +76,7 @@ export function UpgradePrompt({
           <div className="flex items-center justify-center gap-2">
             <h3 className="font-bold text-base">{feature}</h3>
             <Badge className={`text-xs ${PLAN_COLORS[requiredPlan]}`}>
-              {requiredPlan === "pro" ? "Pro" : "Agency"}
+              {requiredPlan === "starter" ? "Starter" : requiredPlan === "pro" ? "Pro" : "Agency"}
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground max-w-sm">{description}</p>
@@ -84,7 +86,7 @@ export function UpgradePrompt({
             className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 gap-2"
             onClick={() => setLocation("/pricing")}
           >
-            <Zap className="h-4 w-4" /> Upgrade to {requiredPlan === "pro" ? "Pro" : "Agency"} — {priceLabel}
+            <Zap className="h-4 w-4" /> Upgrade to {requiredPlan === "starter" ? "Starter" : requiredPlan === "pro" ? "Pro" : "Agency"} for {priceLabel}
             <ArrowRight className="h-4 w-4" />
           </Button>
         </div>
@@ -97,7 +99,7 @@ export function PlanBadge({ plan }: { plan: Plan }) {
   if (plan === "free") return null;
   return (
     <Badge className={`text-xs font-semibold ${PLAN_COLORS[plan]}`}>
-      {plan === "agency" ? "Agency" : "Pro"}
+      {plan === "agency" ? "Agency" : plan === "pro" ? "Pro" : "Starter"}
     </Badge>
   );
 }

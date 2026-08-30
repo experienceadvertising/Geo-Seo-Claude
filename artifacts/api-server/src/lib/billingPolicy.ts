@@ -1,8 +1,8 @@
 import type Stripe from "stripe";
 
-export type PaidPlan = "pro" | "agency";
+export type PaidPlan = "starter" | "pro" | "agency";
 
-const PAID_PLAN_RANK: Record<PaidPlan, number> = { pro: 1, agency: 2 };
+const PAID_PLAN_RANK: Record<PaidPlan, number> = { starter: 1, pro: 2, agency: 3 };
 
 export const ENTITLING_SUBSCRIPTION_STATUSES = new Set([
   "active",
@@ -23,14 +23,14 @@ export function paidPlanFromProduct(
   if (!product || typeof product === "string" || "deleted" in product)
     return null;
   const plan = product.metadata?.plan_id;
-  return plan === "pro" || plan === "agency" ? plan : null;
+  return plan === "starter" || plan === "pro" || plan === "agency" ? plan : null;
 }
 
 export function validateCheckoutPrice(
   price: Pick<Stripe.Price, "active" | "currency" | "recurring" | "product">,
   requestedPlan: unknown,
 ): { ok: true; plan: PaidPlan } | { ok: false; reason: string } {
-  if (requestedPlan !== "pro" && requestedPlan !== "agency") {
+  if (requestedPlan !== "starter" && requestedPlan !== "pro" && requestedPlan !== "agency") {
     return { ok: false, reason: "A valid paid plan is required." };
   }
   if (!price.active)
@@ -73,7 +73,7 @@ export function planChangeDirection(
   previousPlan: string,
   nextPlan: PaidPlan,
 ): "Upgrade" | "Downgrade" | "Plan change" {
-  if (previousPlan !== "pro" && previousPlan !== "agency") return "Upgrade";
+  if (previousPlan !== "starter" && previousPlan !== "pro" && previousPlan !== "agency") return "Upgrade";
   if (PAID_PLAN_RANK[nextPlan] > PAID_PLAN_RANK[previousPlan]) return "Upgrade";
   if (PAID_PLAN_RANK[nextPlan] < PAID_PLAN_RANK[previousPlan])
     return "Downgrade";

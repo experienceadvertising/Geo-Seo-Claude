@@ -14,24 +14,40 @@ import { useToast } from "@/hooks/use-toast";
 import { SEO, breadcrumbJsonLd } from "@/components/seo";
 import { trackEvent } from "@/lib/analytics";
 
-const PRICING_TITLE = "Pricing — AEO Improvement | Free, Pro, Agency plans for AI search optimization";
+const PRICING_TITLE = "Pricing | AEO Improvement SEO and GEO platform";
 const PRICING_DESC =
-  "Every core audit feature free for your first month, with no credit card. Then free AEO audits forever, or Pro from $79/mo for all four AI engines, the Fix Generator, continuous site monitoring, AI crawler tracking, and connected GA4 reporting. Agency plan for multi-client teams.";
+  "A guided SEO and GEO platform. Start free, then choose Starter from $29/month for more audits and implementation help, or Pro for Search Console, rank tracking, multi-engine simulations, and monitoring.";
 
 const pricingProductJsonLd = {
   "@context": "https://schema.org",
   "@type": "Product",
   name: "AEO Improvement",
   description:
-    "Answer Engine Optimization auditing platform that scores website visibility across ChatGPT, Claude, Perplexity, and Google AI Overviews.",
+    "Guided SEO and GEO platform that audits technical health, content quality, AI visibility, and practical improvements across Google and AI search.",
   brand: { "@type": "Organization", name: "AEO Improvement" },
   offers: {
     "@type": "AggregateOffer",
     priceCurrency: "USD",
     lowPrice: "0",
     highPrice: "2390",
-    offerCount: "5",
+    offerCount: "7",
     offers: [
+      {
+        "@type": "Offer",
+        name: "Starter (monthly)",
+        price: "29",
+        priceCurrency: "USD",
+        url: "https://aeoimprovement.com/pricing",
+        priceSpecification: { "@type": "UnitPriceSpecification", price: "29", priceCurrency: "USD", billingDuration: "P1M" },
+      },
+      {
+        "@type": "Offer",
+        name: "Starter (annual)",
+        price: "290",
+        priceCurrency: "USD",
+        url: "https://aeoimprovement.com/pricing",
+        priceSpecification: { "@type": "UnitPriceSpecification", price: "290", priceCurrency: "USD", billingDuration: "P1Y" },
+      },
       {
         "@type": "Offer",
         name: "Free",
@@ -110,10 +126,10 @@ const pricingFaqJsonLd = {
     },
     {
       "@type": "Question",
-      name: "What's the difference between Pro and Agency?",
+      name: "What is included in Starter?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Pro ($79/mo or $750/yr) includes 100 audits/month, 30 simulations/month, all four engines, fan-out mode, the Fix Generator, Projects monitoring, crawler pixel request tracking, Google Analytics AI-referral reporting, competitor Share of Voice, and 1-year history. Agency ($249/mo or $2,390/yr) is designed for a controlled portfolio of up to 10 active client sites, with 150 audits, 40 simulations, two daily-monitoring slots, and 2-year history. One GA4 property can be connected per Agency workspace while connection capacity is limited.",
+        text: "Starter is $29/month or $290/year for one site, 15 audits monthly, 5 ChatGPT simulations monthly, guided SEO and GEO recommendations, the Fix Generator, and 90-day history. Pro adds Search Console, AI-referral reporting, Google rank tracking, all four simulated AI engines, monitoring, competitor analysis, and higher limits.",
       },
     },
     {
@@ -121,7 +137,7 @@ const pricingFaqJsonLd = {
       name: "Can I cancel anytime?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Yes. Pro and Agency are month-to-month or annual; you can cancel at any time from the customer portal and your plan stays active until the end of the current billing period.",
+        text: "Yes. Starter, Pro, and Agency are month-to-month or annual; you can cancel at any time from the customer portal and your plan stays active until the end of the current billing period.",
       },
     },
     {
@@ -129,7 +145,7 @@ const pricingFaqJsonLd = {
       name: "Do annual plans have a discount?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Annual plans save roughly 20% compared with monthly billing: $750/year for Pro (vs $948 if billed monthly) and $2,390/year for Agency (vs $2,988 if billed monthly).",
+        text: "Annual plans save compared with monthly billing: $290/year for Starter, $750/year for Pro, and $2,390/year for Agency.",
       },
     },
   ],
@@ -150,6 +166,16 @@ const PLAN_FEATURES = {
     "Basic 6-dimension AEO score",
     "AI crawler access audit",
     "30-day audit history",
+  ],
+  starter: [
+    "One site with 15 audits / month",
+    "5 ChatGPT simulations / month",
+    "3 prompts per simulation",
+    "Guided SEO + GEO recommendations",
+    "Content Effort and technical SEO guidance",
+    "Fix Generator for schema and crawler rules",
+    "90-day audit history",
+    "Upgrade to Pro for Google data, rank tracking and monitoring",
   ],
   pro: [
     "100 audits / month",
@@ -184,7 +210,7 @@ function formatPrice(unitAmount: number): string {
 }
 
 interface PlanCardProps {
-  planId: "free" | "pro" | "agency";
+  planId: "free" | "starter" | "pro" | "agency";
   name: string;
   price: string;
   annualMonthlyEquiv?: string;
@@ -222,11 +248,13 @@ function PlanCard({
 }: PlanCardProps) {
   const gradients: Record<string, string> = {
     free: "from-slate-500 to-slate-600",
+    starter: "from-sky-500 to-cyan-500",
     pro: "from-emerald-500 to-teal-500",
     agency: "from-purple-500 to-indigo-500",
   };
   const icons: Record<string, React.ReactNode> = {
     free: <Star className="h-5 w-5 text-white" />,
+    starter: <Zap className="h-5 w-5 text-white" />,
     pro: <Zap className="h-5 w-5 text-white" />,
     agency: <Building2 className="h-5 w-5 text-white" />,
   };
@@ -385,7 +413,7 @@ export default function PricingPage() {
     return { priceId: price.id, unitAmount: price.unitAmount };
   }
 
-  function handleUpgrade(planId: "pro" | "agency") {
+  function handleUpgrade(planId: "starter" | "pro" | "agency") {
     if (currentPlan !== "free" || subData?.canManageBilling) {
       trackEvent("billing_portal_opened", { current_plan: currentPlan });
       portal.mutate();
@@ -404,6 +432,8 @@ export default function PricingPage() {
     checkout.mutate({ priceId: price.priceId, plan: planId });
   }
 
+  const starterMonthly = getPriceForPlan("starter", "month");
+  const starterAnnual = getPriceForPlan("starter", "year");
   const proMonthly = getPriceForPlan("pro", "month");
   const proAnnual = getPriceForPlan("pro", "year");
   const agencyMonthly = getPriceForPlan("agency", "month");
@@ -412,7 +442,7 @@ export default function PricingPage() {
 
   // Build display values for each plan based on current billing toggle
   function buildPlanDisplay(
-    planId: "pro" | "agency",
+    planId: "starter" | "pro" | "agency",
     monthlyData: { priceId: string; unitAmount: number } | null,
     annualData: { priceId: string; unitAmount: number } | null,
     fallbackMonthly: number,
@@ -438,10 +468,20 @@ export default function PricingPage() {
     };
   }
 
+  const starterDisplay = buildPlanDisplay("starter", starterMonthly, starterAnnual, 2900, 29000);
   const proDisplay = buildPlanDisplay("pro", proMonthly, proAnnual, 7900, 75000);
   const agencyDisplay = buildPlanDisplay("agency", agencyMonthly, agencyAnnual, 24900, 239000);
 
   const plans = [
+    {
+      planId: "starter" as const,
+      name: "Starter",
+      ...starterDisplay,
+      priceLoading: false,
+      description: "For one site ready to improve SEO and GEO",
+      features: PLAN_FEATURES.starter,
+      isHighlighted: false,
+    },
     {
       planId: "free" as const,
       name: "Free",
@@ -486,13 +526,11 @@ export default function PricingPage() {
           <Badge className="bg-emerald-100 text-emerald-700 border-0 px-3 py-1 text-xs font-medium">
             Plans &amp; Pricing
           </Badge>
-          <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">
-            Start getting cited in AI answers
-          </h1>
+          <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">Improve how your brand shows up in Google and AI search</h1>
           <p className="text-lg text-muted-foreground max-w-xl mx-auto">
             Your first month is completely free with all core audit features unlocked and no credit card.
-            After that, stay free for basic audits or upgrade to keep all four AI engines,
-            research-backed fix recommendations, continuous monitoring, and competitor citation tracking.
+            After that, stay free for basic audits, start at $29/month for guided SEO and GEO improvements,
+            or upgrade to Pro for ongoing measurement, Google data, and multi-engine visibility.
           </p>
 
           {/* Billing interval toggle */}
@@ -564,14 +602,14 @@ export default function PricingPage() {
           </Alert>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch pt-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 items-stretch pt-4">
           {plans.map((p) => (
             <PlanCard
               key={p.planId}
               {...p}
               isCurrentPlan={!!isSignedIn && currentPlan === p.planId}
               isSignedIn={!!isSignedIn}
-              onUpgrade={() => handleUpgrade(p.planId as "pro" | "agency")}
+              onUpgrade={() => handleUpgrade(p.planId as "starter" | "pro" | "agency")}
               upgradeLoading={checkout.isPending || portal.isPending}
               actionLabel={currentPlan !== "free" ? "Manage plan" : undefined}
               badgeLabel={!!isSignedIn && currentPlan === p.planId ? "Current" : undefined}
