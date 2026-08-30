@@ -242,21 +242,21 @@ function SignedOutLanding() {
                 <Sparkles className="h-3 w-3" /> Built on 2026 expert research
               </div>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.05]">
-                Get cited in AI answers with strategies your competitors have not found yet.
+                Improve SEO and GEO with a clear plan your team can actually ship.
               </h1>
               <p className="text-lg md:text-xl text-muted-foreground max-w-[560px]">
-                Most tools tell you what is wrong. AEO Improvement tells you exactly what to fix,
-                ranked by impact, backed by the latest expert research. Audit, simulate, fix, and
-                monitor your visibility across ChatGPT, Claude, Gemini, and Perplexity.
+                AEO Improvement combines technical SEO, content quality, brand clarity, and AI
+                visibility into one guided workflow. Audit the page, prioritize the next action,
+                test real buyer questions, and measure what changes without guessing.
               </p>
 
               <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm text-foreground/80 max-w-md">
                 {[
-                  "See if buyers find you when they ask AI",
-                  "Confirm AI bots actually crawl your pages",
-                  "Get alerted the moment your score drops",
-                  "Auto-generated JSON-LD and robots.txt fixes",
-                  "Connect GA4 to track AI-referred traffic",
+                  "Find the technical and content blockers first",
+                  "Confirm AI bots can access useful page content",
+                  "Turn audit evidence into a prioritized action queue",
+                  "Use Search Console and rank tracking on paid plans",
+                  "Test buyer questions across major AI engines",
                   "First month free, all core audit features, no card",
                 ].map(item => (
                   <li key={item} className="flex items-center gap-2">
