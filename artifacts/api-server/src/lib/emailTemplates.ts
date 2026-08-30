@@ -138,7 +138,7 @@ export function welcomeEmail(firstName: string, unsubscribeUrl?: string) {
     : `Your free core-feature month starts now`;
   const html = layout(
     `${h1(`Welcome, ${firstName || "there"} 👋`)}
-    ${p("You're now set up to track and improve your website's citability across ChatGPT, Claude, Gemini, and Perplexity.")}
+    ${p("You're set up to improve how your site performs in Google and AI search. Start with the issues holding back SEO, content quality, crawler access, and AI visibility.")}
     <table cellpadding="0" cellspacing="0" width="100%" style="margin:16px 0;background:#ecfdf5;border-radius:8px;border:1px solid #a7f3d0;">
       <tr><td style="padding:18px 20px;font-size:14px;color:#065f46;">
         <strong>Your first month is completely free with all core audit features unlocked.</strong><br/>
@@ -148,7 +148,7 @@ export function welcomeEmail(firstName: string, unsubscribeUrl?: string) {
     ${p("Here's how to make the most of it:")}
 
     <table cellpadding="0" cellspacing="0" width="100%" style="margin:8px 0 24px;">
-      ${feature("🔍", "Run your first audit", "Enter your website URL and get an instant AEO score with specific recommendations.")}
+      ${feature("🔍", "Run your first SEO + GEO audit", "Enter your website URL and get a prioritized view of technical, content, SEO, and AI-search improvements.")}
       ${feature("🔬", "Simulate across all 4 engines", "See whether ChatGPT, Claude, Gemini, and Perplexity actually cite you — all engines are unlocked for you.")}
       ${feature("🛠", "Generate your fixes", "The Fix Generator auto-drafts JSON-LD schema and citation-bot robots.txt patches, with llms.txt clearly labeled optional.")}
     </table>
@@ -159,10 +159,10 @@ export function welcomeEmail(firstName: string, unsubscribeUrl?: string) {
 
     ${divider()}
     ${p("Questions? Just reply to this email. We read every one.", "color:#6b7280;font-size:14px;")}`,
-    "All core audit features are unlocked free for your first month. Run your first AEO audit now →",
+    "All core audit features are unlocked free for your first month. Run your first SEO + GEO audit now.",
     unsubscribeUrl,
   );
-  const text = `Welcome to AEO Improvement!\n\nYour first month is completely free with all core audit features unlocked: all 4 AI engines, Fix Generator, competitor tracking, monitoring, and sentiment analysis. Connected GA4 reporting is available on paid plans. No credit card is needed for the free month.\n\nRun your first audit: ${BASE_URL}\n\nQuestions? Reply to this email.`;
+  const text = `Welcome to AEO Improvement!\n\nYour first month is completely free with all core audit features unlocked: all 4 AI engines, Fix Generator, competitor tracking, monitoring, and sentiment analysis. Use it to find and implement SEO and GEO improvements. Connected Google reporting is available on paid plans. No credit card is needed for the free month.\n\nRun your first audit: ${BASE_URL}\n\nQuestions? Reply to this email.`;
   return { subject, html, text };
 }
 
@@ -578,10 +578,10 @@ export function firstAuditEmail(
   const scoreVerdict = geoScore >= 75 ? "you're already ahead of most sites" : geoScore >= 50 ? "you've got a solid foundation with clear room to grow" : "there's significant upside available";
   // Subject is plain text (Postmark handles encoding) but URL/host segment
   // is bounded to hostname only above to avoid header-injection surface.
-  const subject = `Your first AEO audit is in — ${hostname} scored ${Math.round(geoScore)}/100`;
+  const subject = `Your SEO + GEO audit is ready: ${hostname} scored ${Math.round(geoScore)}/100`;
   const html = layout(
     `${h1(`Your first audit is done 🎉`)}
-    ${p(`Hi ${safeFirstName}, you just ran your first AEO audit on <strong>${safeHostname}</strong>. Here's the headline:`)}
+    ${p(`Hi ${safeFirstName}, you just ran a SEO + GEO audit on <strong>${safeHostname}</strong>. Here is the headline:`)}
 
     <table cellpadding="0" cellspacing="0" width="100%" style="margin:20px 0;background:#f9fafb;border-radius:12px;">
       <tr><td style="padding:24px;text-align:center;">
@@ -603,7 +603,7 @@ export function firstAuditEmail(
     <table cellpadding="0" cellspacing="0" width="100%" style="margin:8px 0 24px;">
       ${feature("🔬", "Run a prompt simulation", "Type the queries your buyers actually use and see whether ChatGPT, Claude, Gemini, and Perplexity name you, cite your site, or recommend a competitor instead.")}
       ${feature("📊", "Compare to competitors", "Run audits on 2–3 competitors to find your AEO gaps and see who the engines are citing in your place.")}
-      ${feature("🛠", "Generate fixes", "Pro users get auto-generated JSON-LD and citation-bot robots.txt entries based on specific gaps — copy and ship.")}
+      ${feature("🛠", "Generate fixes", "Starter includes implementation-ready fixes. Pro adds Search Console, rank tracking, and ongoing measurement for the pages you improve.")}
     </table>
 
     <div style="text-align:center;margin:24px 0;">
@@ -611,11 +611,11 @@ export function firstAuditEmail(
     </div>
 
     ${divider()}
-    ${p("Hit your quota? Pro unlocks 100 audits, 30 prompt simulations, and the Fix Generator. It is $79/mo or $750/yr.", "color:#6b7280;font-size:13px;")}`,
-    `Your first audit on ${hostname} scored ${Math.round(geoScore)}/100 — here's what to do next.`,
+    ${p("Need more room to act? Starter is $29/month for one site, 15 audits, 5 simulations, and the Fix Generator. Pro adds ongoing SEO and GEO measurement.", "color:#6b7280;font-size:13px;")}`,
+    `Your SEO + GEO audit on ${hostname} scored ${Math.round(geoScore)}/100. Here is what to do next.`,
     unsubscribeUrl,
   );
-  const text = `Hi ${firstName || "there"},\n\nYou just ran your first AEO audit on ${hostname}. Score: ${Math.round(geoScore)}/100 — ${scoreVerdict}.\n\n${topRecommendation ? `Top opportunity: ${topRecommendation}\n\n` : ""}Next steps:\n- Run a prompt simulation to see how AI engines answer about your brand\n- Audit 2-3 competitors to find your gaps\n- Pro users get auto-generated JSON-LD and citation-bot robots.txt entries\n\nOpen your audit: ${auditId ? `${BASE_URL}/results/${auditId}` : BASE_URL}`;
+  const text = `Hi ${firstName || "there"},\n\nYou just ran a SEO + GEO audit on ${hostname}. Score: ${Math.round(geoScore)}/100. ${scoreVerdict}.\n\n${topRecommendation ? `Top opportunity: ${topRecommendation}\n\n` : ""}Next steps:\n- Run a prompt simulation to see how AI engines answer about your brand\n- Review the SEO and content recommendations alongside AI visibility gaps\n- Starter includes implementation-ready fixes; Pro adds Search Console and rank tracking\n\nOpen your audit: ${auditId ? `${BASE_URL}/results/${auditId}` : BASE_URL}`;
   return { subject, html, text };
 }
 

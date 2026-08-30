@@ -242,21 +242,20 @@ function SignedOutLanding() {
                 <Sparkles className="h-3 w-3" /> Built on 2026 expert research
               </div>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.05]">
-                Get cited in AI answers with strategies your competitors have not found yet.
+                Improve how your brand appears in Google and AI search.
               </h1>
               <p className="text-lg md:text-xl text-muted-foreground max-w-[560px]">
-                Most tools tell you what is wrong. AEO Improvement tells you exactly what to fix,
-                ranked by impact, backed by the latest expert research. Audit, simulate, fix, and
-                monitor your visibility across ChatGPT, Claude, Gemini, and Perplexity.
+                One guided workflow for SEO and GEO. Find the technical, content, and visibility gaps
+                holding you back, then get the next practical improvement to make for Google and AI search.
               </p>
 
               <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm text-foreground/80 max-w-md">
                 {[
-                  "See if buyers find you when they ask AI",
+                  "Find SEO and AI-search visibility gaps",
                   "Confirm AI bots actually crawl your pages",
                   "Get alerted the moment your score drops",
                   "Auto-generated JSON-LD and robots.txt fixes",
-                  "Connect GA4 to track AI-referred traffic",
+                  "Connect Google data when you are ready to measure",
                   "First month free, all core audit features, no card",
                 ].map(item => (
                   <li key={item} className="flex items-center gap-2">
@@ -308,8 +307,8 @@ function SignedOutLanding() {
         <section className="space-y-8">
           <div className="text-center space-y-3">
             <p className="text-xs font-semibold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">What you get</p>
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Everything you need to get cited and stay cited</h2>
-            <p className="text-muted-foreground max-w-xl mx-auto">Audit your gaps, simulate real buyer queries, fix what is blocking you, and monitor your progress. One tool, the full loop.</p>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">One workflow for SEO improvements and GEO visibility</h2>
+            <p className="text-muted-foreground max-w-xl mx-auto">Audit the site, test the questions buyers ask, improve the pages that matter, and measure progress without juggling disconnected tools.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -318,15 +317,15 @@ function SignedOutLanding() {
                 icon: Bot,
                 gradient: "from-violet-500 to-purple-600",
                 badge: null,
-                title: "See if buyers find you when they ask AI",
+                title: "Test the AI questions your buyers ask",
                 body: "Run the exact questions your buyers type into ChatGPT, Claude, Gemini, and Perplexity. See whether you get cited, what your competitors share looks like, and what AI actually says about your brand. Fan-out mode tests 6 topic clusters at once.",
               },
               {
                 icon: BarChart3,
                 gradient: "from-emerald-500 to-teal-600",
                 badge: null,
-                title: "Know exactly what is blocking your citations",
-                body: "Six dimensions scored 0 to 100: Citability, AI Crawler Access, Brand Authority, Schema, Technical SEO, and Platform Optimization. Every score comes with ranked fixes tied to specific 2026 research, so you know the exact reason behind each recommendation.",
+                title: "See the SEO and GEO issues worth fixing first",
+                body: "Technical SEO, content effort, crawler access, citability, schema, brand facts, and platform signals are assessed together. Each gap becomes a specific, evidence-backed action, not a generic score.",
               },
               {
                 icon: Zap,
@@ -353,8 +352,8 @@ function SignedOutLanding() {
                 icon: LineChart,
                 gradient: "from-teal-500 to-emerald-500",
                 badge: "New",
-                title: "Close the loop between citations and real traffic",
-                body: "Track your citation share against competitors across every simulation run. Connect Google Analytics to see AI-referred traffic alongside your AEO score. Know whether your improvements are translating to measurable AI-referred visits, not just a better number.",
+                title: "Measure SEO and AI-search progress",
+                body: "On Pro, connect Search Console and GA4, track selected Google rankings, compare AI visibility with competitors, and keep a record of the improvements you completed. Movement is observed, never presented as proof of causation.",
               },
             ].map(({ icon: Icon, gradient, badge, title, body }) => (
               <div

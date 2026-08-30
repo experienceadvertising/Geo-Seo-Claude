@@ -12,7 +12,7 @@ function newUnsubToken(): string {
   return randomBytes(32).toString("hex");
 }
 
-async function updateDbPlan(userId: string, plan: "free" | "pro" | "agency") {
+async function updateDbPlan(userId: string, plan: "free" | "starter" | "pro" | "agency") {
   const updated = await db
     .update(usersTable)
     .set({ plan })
@@ -21,17 +21,18 @@ async function updateDbPlan(userId: string, plan: "free" | "pro" | "agency") {
   if (updated.length === 0) throw new Error(`Cannot update billing plan for missing user ${userId}`);
 }
 
-async function getPlanFromPriceId(priceId: string): Promise<"pro" | "agency" | null> {
+async function getPlanFromPriceId(priceId: string): Promise<"starter" | "pro" | "agency" | null> {
   const stripe = await getUncachableStripeClient();
   const price = await stripe.prices.retrieve(priceId, { expand: ["product"] });
   const product = price.product as any;
   const planId = product?.metadata?.plan_id;
   if (planId === "agency") return "agency";
   if (planId === "pro") return "pro";
+  if (planId === "starter") return "starter";
   return null;
 }
 
-async function getCurrentPaidPlanForCustomer(customerId: string): Promise<"pro" | "agency" | null> {
+async function getCurrentPaidPlanForCustomer(customerId: string): Promise<"starter" | "pro" | "agency" | null> {
   const stripe = await getUncachableStripeClient();
   const subscriptions = await stripe.subscriptions.list({ customer: customerId, status: "all", limit: 100 });
   const plans = await Promise.all(
@@ -77,6 +78,7 @@ async function getUserFromCustomer(
 function planLabel(plan: string): string {
   if (plan === "agency") return "Agency";
   if (plan === "pro") return "Pro";
+  if (plan === "starter") return "Starter";
   return "paid";
 }
 

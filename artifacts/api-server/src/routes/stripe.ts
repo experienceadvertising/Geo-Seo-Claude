@@ -36,7 +36,7 @@ router.get("/stripe/products", async (_req, res): Promise<void> => {
 
     const map = new Map<string, any>();
     for (const product of productsResp.data) {
-      if (product.metadata?.plan_id !== "pro" && product.metadata?.plan_id !== "agency") continue;
+      if (product.metadata?.plan_id !== "starter" && product.metadata?.plan_id !== "pro" && product.metadata?.plan_id !== "agency") continue;
       map.set(product.id, {
         id: product.id,
         name: product.name,

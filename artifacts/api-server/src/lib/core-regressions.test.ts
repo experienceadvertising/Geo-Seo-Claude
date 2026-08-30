@@ -93,9 +93,12 @@ test("ranks Search Console opportunities and merges duplicate URL variants", () 
 });
 
 test("checkout accepts only active recurring USD prices for the requested approved plan", () => {
+  const starterProduct = { metadata: { plan_id: "starter" } } as any;
   const proProduct = { metadata: { plan_id: "pro" } } as any;
+  const starterPrice = { active: true, currency: "usd", recurring: { interval: "month" }, product: starterProduct } as any;
   const validPrice = { active: true, currency: "usd", recurring: { interval: "month" }, product: proProduct } as any;
 
+  assert.deepEqual(validateCheckoutPrice(starterPrice, "starter"), { ok: true, plan: "starter" });
   assert.deepEqual(validateCheckoutPrice(validPrice, "pro"), { ok: true, plan: "pro" });
   assert.equal(validateCheckoutPrice({ ...validPrice, active: false }, "pro").ok, false);
   assert.equal(validateCheckoutPrice({ ...validPrice, recurring: null }, "pro").ok, false);
@@ -116,8 +119,11 @@ test("subscription policy blocks duplicate billing while preserving paid grace a
 
 test("billing reconciliation keeps the highest active entitlement and labels plan changes correctly", () => {
   assert.equal(highestPaidPlan([null, "pro", "agency"]), "agency");
+  assert.equal(highestPaidPlan(["starter", "pro"]), "pro");
   assert.equal(highestPaidPlan([null]), null);
   assert.equal(planChangeDirection("free", "pro"), "Upgrade");
+  assert.equal(planChangeDirection("starter", "pro"), "Upgrade");
+  assert.equal(planChangeDirection("pro", "starter"), "Downgrade");
   assert.equal(planChangeDirection("pro", "agency"), "Upgrade");
   assert.equal(planChangeDirection("agency", "pro"), "Downgrade");
 });

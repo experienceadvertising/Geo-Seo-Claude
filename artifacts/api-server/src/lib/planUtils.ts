@@ -1,9 +1,9 @@
 import { db, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 
-export type Plan = "free" | "pro" | "agency";
+export type Plan = "free" | "starter" | "pro" | "agency";
 
-const PLAN_RANK: Record<Plan, number> = { free: 0, pro: 1, agency: 2 };
+const PLAN_RANK: Record<Plan, number> = { free: 0, starter: 1, pro: 2, agency: 3 };
 
 export function planRank(plan: Plan): number {
   return PLAN_RANK[plan] ?? 0;
@@ -21,6 +21,7 @@ const TRIAL_PLAN: Plan = "agency";
 function normalizePlan(plan: string | null | undefined): Plan {
   if (plan === "agency") return "agency";
   if (plan === "pro") return "pro";
+  if (plan === "starter") return "starter";
   return "free";
 }
 
@@ -106,6 +107,25 @@ export const PLAN_LIMITS = {
     dailyMonitoredSites: 0,
     competitorTracking: false,
     fixGenerator: false,
+    sitemapScanner: false,
+    sentimentAnalysis: false,
+    seoKeywordTargets: 0,
+    manualRankRefreshes: 0,
+  },
+  // Starter is deliberately an activation tier, not a discounted Pro plan.
+  // It offers more room to implement the guided SEO + GEO workflow, while
+  // keeping provider-backed reporting and recurring collection in Pro where
+  // we can support it responsibly.
+  starter: {
+    simulationPrompts: 3,
+    simulationEngines: ["chatgpt"] as string[],
+    monthlyAudits: 15,
+    monthlySimulations: 5,
+    auditHistoryDays: 90,
+    monitoredSites: 0,
+    dailyMonitoredSites: 0,
+    competitorTracking: false,
+    fixGenerator: true,
     sitemapScanner: false,
     sentimentAnalysis: false,
     seoKeywordTargets: 0,

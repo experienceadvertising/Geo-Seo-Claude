@@ -24,7 +24,7 @@ export interface BillingSubscription {
   status: string;
   cancelAtPeriodEnd: boolean;
   currentPeriodEnd: number | null;
-  plan: "pro" | "agency" | null;
+  plan: "starter" | "pro" | "agency" | null;
 }
 
 export interface BillingStatus {
