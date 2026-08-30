@@ -256,7 +256,7 @@ function SignedOutLanding() {
                   "Get alerted the moment your score drops",
                   "Auto-generated JSON-LD and robots.txt fixes",
                   "Connect Google data when you are ready to measure",
-                  "First month free, all core audit features, no card",
+                  "30-day full-access trial, no card",
                 ].map(item => (
                   <li key={item} className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-shrink-0" />
@@ -289,7 +289,7 @@ function SignedOutLanding() {
               </div>
               <div className="flex flex-col items-center lg:items-start gap-1">
                 <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                  <Lock className="h-3 w-3" /> First month free with all core audit features. No credit card.
+                  <Lock className="h-3 w-3" /> 30-day full-access trial. No credit card or automatic charge.
                 </p>
                 <Link href="/pricing" className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline font-medium">
                   See all plans &amp; pricing →
@@ -449,7 +449,7 @@ function SignedOutLanding() {
           <div className="relative px-8 md:px-16 py-14 md:py-20 flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="text-center md:text-left space-y-4 max-w-xl">
               <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 px-3 py-1 text-xs font-semibold text-emerald-300">
-                <CheckCircle2 className="h-3 w-3" /> First month free, core audit features, no credit card
+                <CheckCircle2 className="h-3 w-3" /> 30-day full-access trial, no credit card
               </div>
               <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight leading-tight">
                 Find out whether AI engines cite you. Then fix what is stopping them.

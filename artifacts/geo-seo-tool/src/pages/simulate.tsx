@@ -409,7 +409,7 @@ export default function SimulatePage() {
   const params = useParams<{ id: string }>();
   const auditId = parseInt(params.id, 10);
   const { data: audit, isLoading: auditLoading } = useGetAudit(auditId);
-  const { plan, isPro, simulationPrompts: maxPrompts, simulationEngines: allowedEngines, isLoading: planLoading } = usePlan();
+  const { plan, storedPlan, trialActive, trialEndsAt, isPro, simulationPrompts: maxPrompts, simulationEngines: allowedEngines, isLoading: planLoading } = usePlan();
 
   const [brandName, setBrandName] = useState("");
   const [promptsText, setPromptsText] = useState("");
@@ -425,6 +425,10 @@ export default function SimulatePage() {
   });
 
   const domain = useMemo(() => audit?.url ? getDomain(audit.url) : "", [audit]);
+  const planLabel = plan === "starter" ? "Starter" : plan === "free" ? "Free" : "Pro";
+  const trialEndLabel = trialEndsAt
+    ? new Date(trialEndsAt).toLocaleDateString("en-US", { month: "long", day: "numeric" })
+    : null;
 
   // Hydrate brand name from audit
   React.useEffect(() => {
@@ -657,6 +661,11 @@ export default function SimulatePage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {trialActive && storedPlan === "free" && (
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-900">
+              <strong>Full-access trial enabled.</strong> You can test all four engines for 30 days{trialEndLabel ? `, through ${trialEndLabel}` : ""}. After that, Free and Starter use ChatGPT while Pro keeps all four engines. <Link href="/pricing" className="font-medium underline">Compare plans</Link>
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium mb-1.5 block">Brand name</label>
@@ -694,7 +703,7 @@ export default function SimulatePage() {
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-sm font-medium">
                 Prompts (one per line
-                {!isPro && <span className="ml-1 text-amber-600 font-semibold">· Free: max {maxPrompts}</span>})
+                {!isPro && <span className="ml-1 text-amber-600 font-semibold">· {planLabel}: max {maxPrompts}</span>})
               </label>
               <div className="flex items-center gap-1.5">
                 <div className="flex rounded-md border overflow-hidden text-xs">
@@ -731,7 +740,7 @@ export default function SimulatePage() {
                 <strong>Focused fan-out mode:</strong> generates 3 related queries across primary intent, decision research, and a supporting use case. {seedQuery ? <>Using Search Console seed: <strong>{seedQuery}</strong>.</> : <>Select a Search Console opportunity above for the strongest starting point.</>}
                 {!isPro && (
                   <span className="block mt-1 text-amber-700 dark:text-amber-400">
-                    Free plan runs up to {maxPrompts} prompts. <a href="/pricing" className="underline font-medium">Upgrade to Pro</a> to test up to 25 prompts and all four engines.
+                    {planLabel} runs up to {maxPrompts} prompts. <a href="/pricing" className="underline font-medium">Upgrade to Pro</a> to test up to 25 prompts and all four engines.
                   </span>
                 )}
               </p>
@@ -755,7 +764,7 @@ export default function SimulatePage() {
                 </p>
               )}
               {!isPro && prompts.length > maxPrompts && (
-                <p className="text-xs text-amber-600 font-medium">Only the first {maxPrompts} prompts will run. Upgrade to test up to 25 prompts across all four engines.</p>
+                <p className="text-xs text-amber-600 font-medium">Only the first {maxPrompts} prompts will run. Upgrade to Pro to test up to 25 prompts across all four engines.</p>
               )}
             </div>
 
@@ -813,7 +822,7 @@ export default function SimulatePage() {
               })}
             </div>
             {!isPro && (
-              <p className="text-xs text-muted-foreground mt-2">Free plan: ChatGPT only · <Link href="/upgrade" className="text-primary hover:underline">Upgrade to Pro</Link> for all 4 engines</p>
+              <p className="text-xs text-muted-foreground mt-2">{planLabel}: ChatGPT only · <Link href="/upgrade" className="text-primary hover:underline">Upgrade to Pro</Link> for all 4 engines</p>
             )}
           </div>
 
@@ -865,9 +874,12 @@ export default function SimulatePage() {
               {run.isPending ? (
                 <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Running ({prompts.length * selectedEngines.length} queries)…</>
               ) : (
-                <><Play className="h-4 w-4 mr-2" /> Run simulation</>
+                <><Play className="h-4 w-4 mr-2" /> Run {prompts.length || ""} prompt{prompts.length === 1 ? "" : "s"}{selectedEngines.length ? ` across ${selectedEngines.length} engine${selectedEngines.length === 1 ? "" : "s"}` : ""}</>
               )}
             </Button>
+            {!run.isPending && !runDisabledReason && (
+              <p className="text-sm text-muted-foreground">This will run {prompts.length * selectedEngines.length} live search{prompts.length * selectedEngines.length === 1 ? "" : "es"} and may take 1–3 minutes.</p>
+            )}
             {run.isPending && (
               <p className="text-sm text-muted-foreground">
                 This may take 1–3 minutes. Each engine performs a live web search.

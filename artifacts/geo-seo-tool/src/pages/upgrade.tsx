@@ -90,20 +90,20 @@ function buildHero(
       : null;
     if (source === "trial-ending" || (daysLeft !== null && daysLeft <= 5)) {
       return {
-        badge: endDate ? `Free month ends ${endDate}` : "Free month ending soon",
+        badge: endDate ? `Full-access trial ends ${endDate}` : "Full-access trial ending soon",
         badgeTone: "amber",
-        headline: "Keep everything you've been using",
+        headline: "Choose how you want to keep improving",
         subhead:
-          "All 4 AI engines, the Fix Generator, monitoring, competitor tracking — everything you've had this month stays on with Pro. Subscribe now and nothing turns off.",
+          "Starter keeps guided SEO and GEO improvements plus the Fix Generator. Pro keeps the full multi-engine, Google-data, and monitoring workflow.",
         showUsage: false,
       };
     }
     return {
-      badge: endDate ? `Free core-feature month · until ${endDate}` : "Free core-feature month",
+      badge: endDate ? `30-day full-access trial · until ${endDate}` : "30-day full-access trial",
       badgeTone: "emerald",
-      headline: "You already have everything — keep it that way",
+      headline: "Your full SEO and GEO workspace is ready",
       subhead:
-        "Core audit features are unlocked free during your first month. Subscribe any time to keep all 4 engines, the Fix Generator, and monitoring, plus add connected GA4 reporting.",
+        "Use all four AI engines, the Fix Generator, competitor analysis, and monitoring free for 30 days. When the trial ends, choose Free, Starter, Pro, or Agency. Nothing is charged automatically.",
       showUsage: false,
     };
   }
@@ -206,6 +206,7 @@ interface BenefitRow {
   icon: React.ReactNode;
   title: string;
   free: string;
+  starter: string;
   pro: string;
 }
 
@@ -214,48 +215,56 @@ const BENEFITS: BenefitRow[] = [
     icon: <Bot className="h-5 w-5 text-emerald-600" />,
     title: "AI engines tested",
     free: "ChatGPT only",
+    starter: "ChatGPT only",
     pro: "ChatGPT + Claude + Gemini + Perplexity",
   },
   {
     icon: <Target className="h-5 w-5 text-emerald-600" />,
     title: "Prompts per simulation",
     free: "3 prompts",
+    starter: "3 prompts",
     pro: "25 prompts",
   },
   {
     icon: <TrendingUp className="h-5 w-5 text-emerald-600" />,
     title: "Monthly audits",
     free: "5 / month",
+    starter: "15 / month",
     pro: "100 / month",
   },
   {
     icon: <BarChart3 className="h-5 w-5 text-emerald-600" />,
     title: "Monthly simulations",
     free: "2 / month",
+    starter: "5 / month",
     pro: "30 / month",
   },
   {
     icon: <FileCode2 className="h-5 w-5 text-emerald-600" />,
     title: "Fix Generator",
     free: "—",
+    starter: "Auto-drafts JSON-LD and crawler fixes",
     pro: "Auto-drafts JSON-LD and crawler fixes",
   },
   {
     icon: <Eye className="h-5 w-5 text-emerald-600" />,
     title: "Competitor citation tracking",
     free: "—",
+    starter: "—",
     pro: "Side-by-side citation gap table",
   },
   {
     icon: <Sparkles className="h-5 w-5 text-emerald-600" />,
     title: "Sentiment & tone analysis",
     free: "—",
+    starter: "—",
     pro: "Per-engine sentiment scoring",
   },
   {
     icon: <BarChart3 className="h-5 w-5 text-emerald-600" />,
     title: "Audit history retained",
     free: "30 days",
+    starter: "90 days",
     pro: "1 year",
   },
 ];
@@ -334,7 +343,7 @@ export default function UpgradePage() {
     return { priceId: monthlyPrice.id, unitAmount: monthlyPrice.unitAmount };
   }
 
-  function handleUpgrade(planId: "pro" | "agency") {
+  function handleUpgrade(planId: "starter" | "pro" | "agency") {
     if (!isSignedIn) {
       const next = `/upgrade${window.location.search}`;
       setLocation(`/sign-up?next=${encodeURIComponent(next)}`);
@@ -356,6 +365,7 @@ export default function UpgradePage() {
     checkout.mutate({ priceId: price.priceId, plan: planId });
   }
 
+  const starterPrice = getPriceForPlan("starter");
   const proPrice = getPriceForPlan("pro");
   const agencyPrice = getPriceForPlan("agency");
 
@@ -420,16 +430,64 @@ export default function UpgradePage() {
           </Card>
         )}
 
-        {/* Pro CTA card — primary conversion surface */}
+        {/* Starter CTA card — lowest-friction path after a free trial */}
+        <Card className="border-2 border-sky-400 shadow-lg shadow-sky-500/10 overflow-hidden">
+          <div className="bg-gradient-to-r from-sky-600 to-cyan-600 px-6 py-3 text-white text-sm font-semibold flex items-center gap-2">
+            <Sparkles className="h-4 w-4" /> Best for one site ready to improve
+          </div>
+          <CardContent className="pt-6 pb-6 space-y-5">
+            <div className="flex items-end justify-between flex-wrap gap-4">
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900">Starter</h2>
+                <p className="text-sm text-slate-600 mt-1">Guided SEO and GEO improvements, implementation-ready fixes, and room to build momentum.</p>
+              </div>
+              <div className="flex items-end gap-1">
+                {productsLoading ? (
+                  <Skeleton className="h-10 w-24" />
+                ) : (
+                  <>
+                    <span className="text-4xl font-extrabold tracking-tight text-slate-900">
+                      {starterPrice ? formatPrice(starterPrice.unitAmount) : "$29"}
+                    </span>
+                    <span className="text-slate-500 text-sm mb-1">/mo</span>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <ul className="grid gap-2 text-sm text-slate-700 sm:grid-cols-2">
+              <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 mt-0.5 text-sky-600 shrink-0" />15 audits and 5 ChatGPT simulations each month</li>
+              <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 mt-0.5 text-sky-600 shrink-0" />Fix Generator for schema and crawler rules</li>
+              <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 mt-0.5 text-sky-600 shrink-0" />Guided technical SEO and Content Effort actions</li>
+              <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 mt-0.5 text-sky-600 shrink-0" />90-day audit history</li>
+            </ul>
+
+            <Button
+              size="lg"
+              className="w-full bg-gradient-to-r from-sky-600 to-cyan-600 hover:opacity-90 text-white border-0 text-base font-semibold py-6"
+              onClick={() => handleUpgrade("starter")}
+              disabled={checkout.isPending || portal.isPending || subscriptionLoading}
+            >
+              {checkout.isPending || portal.isPending || subscriptionLoading ? (
+                <><Loader2 className="h-5 w-5 animate-spin mr-2" /> Opening billing…</>
+              ) : (
+                <>{storedPlan === "free" ? "Choose Starter" : "Manage plan"} <ArrowRight className="h-5 w-5 ml-2" /></>
+              )}
+            </Button>
+            <div className="text-center text-xs text-slate-500">Cancel anytime · No setup fees · Secure checkout via Stripe</div>
+          </CardContent>
+        </Card>
+
+        {/* Pro CTA card — for measurement and multi-engine visibility */}
         <Card className="border-2 border-emerald-500 shadow-xl shadow-emerald-500/10 overflow-hidden">
           <div className="bg-gradient-to-r from-emerald-500 to-teal-500 px-6 py-3 text-white text-sm font-semibold flex items-center gap-2">
-            <Zap className="h-4 w-4" /> Recommended for most users
+            <Zap className="h-4 w-4" /> Full measurement and multi-engine visibility
           </div>
           <CardContent className="pt-6 pb-6 space-y-5">
             <div className="flex items-end justify-between flex-wrap gap-4">
               <div>
                 <h2 className="text-2xl font-bold text-slate-900">Pro</h2>
-                <p className="text-sm text-slate-600 mt-1">For marketers and SEO professionals serious about AI search</p>
+                <p className="text-sm text-slate-600 mt-1">For marketers and SEO professionals who need Google data, rank tracking, monitoring, and all four AI engines.</p>
               </div>
               <div className="flex items-end gap-1">
                 {productsLoading ? (
@@ -464,28 +522,38 @@ export default function UpgradePage() {
           </CardContent>
         </Card>
 
-        {/* Benefits comparison — what you actually get vs what you're using */}
+        {/* Benefits comparison — clear plan boundaries after a full-access trial */}
         <Card className="border-slate-200 bg-white">
           <CardContent className="pt-6 pb-6">
             <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-5">
-              What changes when you upgrade
+              Choose the level that fits your workflow
+            </div>
+            <div className="hidden md:grid grid-cols-12 gap-3 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+              <div className="col-span-4">Feature</div>
+              <div className="col-span-2">Free</div>
+              <div className="col-span-3">Starter</div>
+              <div className="col-span-3">Pro</div>
             </div>
             <div className="divide-y divide-slate-100">
               {BENEFITS.map((b) => (
                 <div key={b.title} className="grid grid-cols-1 md:grid-cols-12 gap-3 py-3.5 items-center">
-                  <div className="md:col-span-5 flex items-center gap-3">
+                  <div className="md:col-span-4 flex items-center gap-3">
                     <div className="h-9 w-9 rounded-lg bg-emerald-50 flex items-center justify-center shrink-0">
                       {b.icon}
                     </div>
                     <div className="font-medium text-slate-900 text-sm">{b.title}</div>
                   </div>
-                  <div className="md:col-span-3 text-sm text-slate-500 md:pl-2">
+                  <div className="md:col-span-2 text-sm text-slate-500 md:pl-2">
                     <span className="md:hidden text-xs uppercase tracking-wider text-slate-400 mr-1.5">Free:</span>
                     {b.free}
                   </div>
-                  <div className="md:col-span-4 text-sm text-emerald-700 font-medium md:pl-2 flex items-center gap-1.5">
+                  <div className="md:col-span-3 text-sm text-sky-700 font-medium md:pl-2 flex items-center gap-1.5">
+                    <CheckCircle2 className="h-4 w-4 text-sky-500 shrink-0" />
+                    <span><span className="md:hidden text-xs uppercase tracking-wider text-slate-400 mr-1.5">Starter:</span>{b.starter}</span>
+                  </div>
+                  <div className="md:col-span-3 text-sm text-emerald-700 font-medium md:pl-2 flex items-center gap-1.5">
                     <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                    <span>{b.pro}</span>
+                    <span><span className="md:hidden text-xs uppercase tracking-wider text-slate-400 mr-1.5">Pro:</span>{b.pro}</span>
                   </div>
                 </div>
               ))}
@@ -543,7 +611,7 @@ export default function UpgradePage() {
           </p>
           <p className="text-xs text-slate-400 pt-2">
             Plan: <span className="capitalize font-medium text-slate-600">{storedPlan}</span>
-            {trialActive && <span className="text-emerald-600"> · free core-feature month active</span>}
+            {trialActive && <span className="text-emerald-600"> · 30-day full-access trial active</span>}
           </p>
         </div>
       </div>

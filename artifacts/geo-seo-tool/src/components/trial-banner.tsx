@@ -3,7 +3,7 @@ import { Sparkles } from "lucide-react";
 import { usePlan } from "@/hooks/usePlan";
 
 /**
- * Header pill shown while the user's free core-feature month is running.
+ * Header pill shown while the user's 30-day full-access trial is running.
  * The usage meter renders only for effective-free users, while this pill
  * renders only for trial users.
  *
@@ -28,16 +28,16 @@ export function TrialBanner() {
     <Link
       href="/upgrade?source=trial-banner"
       className={`hidden md:inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors hover:opacity-90 ${tone}`}
-      title="Core audit features are unlocked during your free first month. Click to see plans."
+      title="All product features are unlocked during your 30-day trial. Click to compare what continues afterward."
     >
       <Sparkles className="h-3 w-3" />
-      <span className="font-semibold">Free core-feature month</span>
+      <span className="font-semibold">30-day full-access trial</span>
       <span className="text-[11px]">
         {daysLeft !== null
           ? endingSoon
-            ? `· ${daysLeft} day${daysLeft === 1 ? "" : "s"} left, keep your core features`
-            : `· core audit features · ${daysLeft} days left`
-          : "· core audit features unlocked"}
+            ? `· ${daysLeft} day${daysLeft === 1 ? "" : "s"} left`
+            : `· all features unlocked · ${daysLeft} days left`
+          : "· all features unlocked"}
       </span>
     </Link>
   );

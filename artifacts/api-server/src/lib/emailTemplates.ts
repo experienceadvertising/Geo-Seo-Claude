@@ -134,14 +134,14 @@ export function welcomeEmail(firstName: string, unsubscribeUrl?: string) {
   // greeting — Gmail truncates after ~50 chars on mobile, so the action
   // verb has to land in the first words.
   const subject = firstName
-    ? `${firstName}, your free core-feature month starts now`
-    : `Your free core-feature month starts now`;
+    ? `${firstName}, your 30-day full-access trial starts now`
+    : `Your 30-day full-access trial starts now`;
   const html = layout(
     `${h1(`Welcome, ${firstName || "there"} 👋`)}
     ${p("You're set up to improve how your site performs in Google and AI search. Start with the issues holding back SEO, content quality, crawler access, and AI visibility.")}
     <table cellpadding="0" cellspacing="0" width="100%" style="margin:16px 0;background:#ecfdf5;border-radius:8px;border:1px solid #a7f3d0;">
       <tr><td style="padding:18px 20px;font-size:14px;color:#065f46;">
-        <strong>Your first month is completely free with all core audit features unlocked.</strong><br/>
+        <strong>Your 30-day full-access trial is completely free.</strong><br/>
         All 4 AI engines, the Fix Generator, competitor tracking, continuous monitoring, sentiment analysis. No credit card, nothing to activate. It is already on.
       </td></tr>
     </table>
@@ -159,10 +159,10 @@ export function welcomeEmail(firstName: string, unsubscribeUrl?: string) {
 
     ${divider()}
     ${p("Questions? Just reply to this email. We read every one.", "color:#6b7280;font-size:14px;")}`,
-    "All core audit features are unlocked free for your first month. Run your first SEO + GEO audit now.",
+    "Your 30-day full-access trial is ready. Run your first SEO + GEO audit now.",
     unsubscribeUrl,
   );
-  const text = `Welcome to AEO Improvement!\n\nYour first month is completely free with all core audit features unlocked: all 4 AI engines, Fix Generator, competitor tracking, monitoring, and sentiment analysis. Use it to find and implement SEO and GEO improvements. Connected Google reporting is available on paid plans. No credit card is needed for the free month.\n\nRun your first audit: ${BASE_URL}\n\nQuestions? Reply to this email.`;
+  const text = `Welcome to AEO Improvement!\n\nYour 30-day full-access trial includes all 4 AI engines, Fix Generator, competitor tracking, monitoring, and sentiment analysis. Use it to find and implement SEO and GEO improvements. Connected Google reporting is available on paid plans. No credit card is needed and nothing is charged automatically.\n\nRun your first audit: ${BASE_URL}\n\nQuestions? Reply to this email.`;
   return { subject, html, text };
 }
 
@@ -196,13 +196,13 @@ export function welcomeD3Email(firstName: string, hasAudit: boolean, unsubscribe
 }
 
 // ── Email 3: Day-7 Check-in ──────────────────────────────────────────────────
-// Recipients are one week into their free core-feature first month (paid users
+// Recipients are one week into their full-access trial (paid users
 // are excluded by the scheduler), so this is NOT an upgrade pitch — it's a
 // "use the good stuff while it's free" nudge that seeds the upgrade decision.
 export function welcomeD7Email(firstName: string, unsubscribeUrl?: string) {
-  const subject = "One week in — the features worth trying before your free month ends";
+  const subject = "One week in: use these features before your trial ends";
   const html = layout(
-    `${h1("You're one week into your free core-feature month")}
+    `${h1("You're one week into your 30-day full-access trial")}
     ${p(`Hi ${firstName || "there"}, everything below is already unlocked on your account — no upgrade needed. These are the features users tell us move the needle most:`)}
 
     <table cellpadding="0" cellspacing="0" width="100%" style="margin:8px 0 24px;background:#f0fdf4;border-radius:8px;padding:16px;">
@@ -1249,7 +1249,7 @@ export function freeMonthPromoEmail(firstName: string, endsAt: Date, unsubscribe
 export function trialEndingSoonEmail(firstName: string, endsAt: Date, unsubscribeUrl?: string) {
   const safeFirstName = esc(firstName) || "there";
   const endDate = endsAt.toLocaleDateString("en-US", { month: "long", day: "numeric" });
-  const subject = `Your free core-feature month ends ${endDate}`;
+  const subject = `Your 30-day full-access trial ends ${endDate}`;
   const html = layout(
     `${h1("Your free month is almost up")}
     ${p(`Hi ${safeFirstName}, your free month of AEO Improvement with all core audit features unlocked ends on <strong>${endDate}</strong>.`)}
@@ -1286,7 +1286,7 @@ export function trialEndingSoonEmail(firstName: string, endsAt: Date, unsubscrib
 // firing for long-lapsed legacy accounts.
 export function trialEndedEmail(firstName: string, unsubscribeUrl?: string) {
   const safeFirstName = esc(firstName) || "there";
-  const subject = "Your free core-feature month has ended";
+  const subject = "Your 30-day full-access trial has ended";
   const html = layout(
     `${h1("Your free month has ended")}
     ${p(`Hi ${safeFirstName}, your free month with all core audit features unlocked is over, and your account is now on the <strong>free plan</strong>.`)}
