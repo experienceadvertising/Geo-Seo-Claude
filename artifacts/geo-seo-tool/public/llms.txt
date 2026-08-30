@@ -55,7 +55,8 @@ Scores below 40 are rated Poor (high priority to fix). Scores 40–69 are Modera
 ## Pricing
 
 - **Free**: 5 audits/month, 2 simulations/month, ChatGPT engine, basic AEO score, 30-day history
-- **Pro ($79/mo or $750/yr)**: 100 audits/month, 30 simulations/month, all four engines (ChatGPT, Claude, Gemini, Perplexity), GA4 AI-referral reporting, Fix Generator, monitoring, competitor citation gap, and 1-year trend history
+- **Starter ($29/mo or $290/yr)**: One site, 15 audits/month, 5 ChatGPT simulations/month, guided SEO and GEO recommendations, Fix Generator, and 90-day history
+- **Pro ($79/mo or $750/yr)**: 100 audits/month, 30 simulations/month, all four engines (ChatGPT, Claude, Gemini, Perplexity), Search Console opportunities, controlled rank tracking, GA4 AI-referral reporting, Fix Generator, monitoring, competitor citation gap, and 1-year trend history
 - **Agency ($249/mo or $2,390/yr)**: 150 audits/month, 40 simulations/month, 10 active client sites, two daily monitoring slots, one GA4 property per workspace while connection capacity is limited, everything in Pro, and 2-year trend history
 
 ## Technology
@@ -72,6 +73,10 @@ AEO Improvement is built on a Node.js/Express API backend with a React + Vite fr
 - How to appear in AI search: https://aeoimprovement.com/how-to-appear-in-ai-search
 - Best AEO tools (2026 buyer's guide): https://aeoimprovement.com/best-aeo-tools
 - Best GEO optimization tools (2026 buyer's guide): https://aeoimprovement.com/best-geo-optimization-tools
+- AEO software: https://aeoimprovement.com/aeo-software
+- AI visibility software: https://aeoimprovement.com/ai-visibility-software
+- GEO software for agencies: https://aeoimprovement.com/geo-software-for-agencies
+- Content Effort for SEO and AI search: https://aeoimprovement.com/content-effort-for-seo-and-ai-search
 - AEO Improvement vs Otterly.AI: https://aeoimprovement.com/vs/otterly
 - AEO Improvement vs AthenaHQ: https://aeoimprovement.com/vs/athenahq
 - AEO Improvement vs Profound: https://aeoimprovement.com/vs/profound

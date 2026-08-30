@@ -14,6 +14,7 @@ import { AuthoritySignalsCard } from "@/components/authority-signals-card";
 import { ReferralCard } from "@/components/referral-card";
 import { CHANGELOG } from "@/data/changelog";
 import { trackEvent, trackGoogleAdsConversion } from "@/lib/analytics";
+import { SEO } from "@/components/seo";
 
 function MarketStats() {
   const items = [
@@ -1189,9 +1190,14 @@ function SignedInDashboard() {
 }
 
 export default function Home() {
-  const { isSignedIn, isLoaded } = useAuth();
+  const { isSignedIn } = useAuth();
 
-  if (!isLoaded) return <div className="min-h-[50vh] flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" aria-label="Loading account" /></div>;
-  if (!isSignedIn) return <SignedOutLanding />;
-  return <SignedInDashboard />;
+  return <>
+    <SEO
+      title="AEO Improvement | Guided SEO and AI Search Optimization"
+      description="Audit your website for SEO, GEO, and AI search visibility. Find the next technical and content improvement, test buyer prompts, and track progress from one guided workspace."
+      path="/"
+    />
+    {isSignedIn ? <SignedInDashboard /> : <SignedOutLanding />}
+  </>;
 }

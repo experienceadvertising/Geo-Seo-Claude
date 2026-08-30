@@ -210,6 +210,8 @@ function SiteFooter() {
                 { label: "Appear in AI Search", href: "/how-to-appear-in-ai-search" },
                 { label: "Best AEO Tools", href: "/best-aeo-tools" },
                 { label: "Best GEO Tools", href: "/best-geo-optimization-tools" },
+                { label: "AEO Software", href: "/aeo-software" },
+                { label: "AI Visibility Software", href: "/ai-visibility-software" },
                 { label: "Changelog", href: "/changelog" },
               ].map(({ label, href }) => (
                 <li key={href}>

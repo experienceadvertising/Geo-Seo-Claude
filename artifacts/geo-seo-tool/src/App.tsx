@@ -41,6 +41,7 @@ const PrivacyPage = lazy(() => import("@/pages/privacy"));
 const TermsPage = lazy(() => import("@/pages/terms"));
 const GoogleDataUsePage = lazy(() => import("@/pages/google-data-use"));
 const ContentEffortGuide = lazy(() => import("@/pages/content-effort-guide"));
+const SeoSolutionPage = lazy(() => import("@/pages/seo-solution-page"));
 
 const queryClient = new QueryClient();
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -110,6 +111,9 @@ function AppRoutes() {
         <Route path="/free-aeo-audit-tool">{() => <ProductLanding variant="audit" />}</Route>
         <Route path="/ai-visibility-checker">{() => <ProductLanding variant="visibility" />}</Route>
         <Route path="/chatgpt-citation-tracker">{() => <ProductLanding variant="citations" />}</Route>
+        <Route path="/aeo-software">{() => <SeoSolutionPage variant="aeo" />}</Route>
+        <Route path="/ai-visibility-software">{() => <SeoSolutionPage variant="visibility" />}</Route>
+        <Route path="/geo-software-for-agencies">{() => <SeoSolutionPage variant="agency" />}</Route>
         <Route path="/ai-citation-readiness-benchmark" component={Benchmark} />
         <Route path="/changelog" component={Changelog} />
         <Route path="/content-effort-for-seo-and-ai-search" component={ContentEffortGuide} />
@@ -124,18 +128,40 @@ function AppRoutes() {
   );
 }
 
+/**
+ * Keep the first paint neutral until the session check completes. Previously
+ * Layout rendered its footer while Home rendered a short loading state, so
+ * visitors could briefly see unrelated footer copy before their dashboard or
+ * the public homepage appeared.
+ */
+function AppShell() {
+  const { isLoaded } = useAuth();
+
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center" aria-busy="true" aria-label="Loading AEO Improvement">
+        <Loader2 className="h-5 w-5 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <TooltipProvider>
+      <RouteTracker />
+      <ErrorBoundary><Suspense fallback={<PageLoading />}><Layout><AppRoutes /></Layout></Suspense></ErrorBoundary>
+      <CookieConsent />
+      <Toaster />
+    </TooltipProvider>
+  );
+}
+
 function App() {
   return (
     <HelmetProvider>
       <WouterRouter base={basePath}>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
-            <TooltipProvider>
-              <RouteTracker />
-              <ErrorBoundary><Suspense fallback={<PageLoading />}><AppRoutes /></Suspense></ErrorBoundary>
-              <CookieConsent />
-              <Toaster />
-            </TooltipProvider>
+            <AppShell />
           </AuthProvider>
         </QueryClientProvider>
       </WouterRouter>

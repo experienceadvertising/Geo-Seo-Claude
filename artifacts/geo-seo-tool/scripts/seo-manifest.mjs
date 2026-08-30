@@ -54,16 +54,27 @@ function breadcrumbLd(crumbs) {
   };
 }
 
+function faqLd(items) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: items.map(({ question, answer }) => ({
+      "@type": "Question",
+      name: question,
+      acceptedAnswer: { "@type": "Answer", text: answer },
+    })),
+  };
+}
+
 export const ROUTES = [
   // Home — uses the defaults from index.html. Listed here so the prerender
   // step can also normalize the homepage shell (e.g. og:type stays "website").
   {
     path: "/",
-    title:
-      "Free AEO Audit Tool for ChatGPT and AI Search | AEO Improvement",
-    h1: "See why AI engines cite your competitors",
+    title: "AEO Improvement | Guided SEO and AI Search Optimization",
+    h1: "Improve how your brand appears in Google and AI search",
     description:
-      "Free Answer Engine Optimization (AEO) audit. Score your website's citability across ChatGPT, Claude, Perplexity, and Google AI Overviews. Get personalized recommendations with transparent sources to win AI-driven discovery.",
+      "Audit your website for SEO, GEO, and AI search visibility. Find the next technical and content improvement, test buyer prompts, and track progress from one guided workspace.",
     ogType: "website",
     // Home keeps its rich JSON-LD graph in index.html itself; nothing to add.
     jsonLd: [],
@@ -74,7 +85,7 @@ export const ROUTES = [
     title:
       "Pricing — AEO Improvement | Free, Pro, Agency plans for AI search optimization",
     description:
-      "Every new account gets one month free with all features. Then use 5 audits and 2 ChatGPT simulations monthly for free, or Pro from $79/month.",
+      "Start with a 30-day full-access trial. Then use Free, Starter from $29/month, Pro for measurement and multi-engine visibility, or Agency for client work.",
     ogType: "website",
     jsonLd: [
       breadcrumbLd([
@@ -403,6 +414,53 @@ export const ROUTES = [
     modifiedTime: "2026-07-22",
     jsonLd: [breadcrumbLd([{ name: "Home", path: "/" }, { name: "ChatGPT citation tracker", path: "/chatgpt-citation-tracker" }])],
   },
+  ...[
+    ["/aeo-software", "AEO Software for SEO Teams | AEO Improvement", "AEO software for teams that need to audit AI search visibility, identify SEO and GEO gaps, simulate buyer prompts, and turn findings into practical fixes.", "AEO software that tells you what to fix next"],
+    ["/ai-visibility-software", "AI Visibility Software for SEO and GEO | AEO Improvement", "Use AI visibility software to audit crawler access, test buyer prompts across major AI engines, identify citation gaps, and guide SEO and GEO improvements.", "Measure AI visibility, then improve the pages behind it"],
+    ["/geo-software-for-agencies", "GEO Software for Agencies | SEO and AI Visibility Client Workflow", "GEO software for agencies managing SEO and AI search visibility: audit client sites, simulate buyer prompts, prioritize improvements, and monitor client progress.", "Give every client a practical SEO and GEO improvement plan"],
+  ].map(([path, title, description, h1]) => ({
+    path, title, description, h1, ogType: "website", modifiedTime: "2026-08-29",
+    staticSections: path === "/geo-software-for-agencies"
+      ? [
+        { heading: "A repeatable client workflow", body: "Audit each client site, use buyer-style prompts to identify meaningful visibility gaps, document completed work, and monitor later movement. Agency accounts support up to 10 active client sites, 150 audits, and 40 simulations each month." },
+        { heading: "SEO and GEO in the same client conversation", body: "Keep organic Search Console evidence and controlled rank tracking separate from AI visibility checks, then prioritize the work together. The result is a more useful client work queue, not a blended vanity score." },
+      ]
+      : [
+        { heading: "SEO, GEO, and AI visibility in one workflow", body: "Start with the technical and content signals a team can control, then test a meaningful set of buyer questions. AEO Improvement is designed to turn the findings into a practical improvement queue instead of a visibility dashboard with no next step." },
+        { heading: "Observed movement, not promises", body: "AI answers and search rankings change for many reasons. The product records what was completed and displays subsequent movement without claiming that any one recommendation caused a lift." },
+      ],
+    faqs: path === "/geo-software-for-agencies"
+      ? [
+        { question: "How many client sites can an agency manage?", answer: "The Agency plan supports up to 10 active client sites in Projects, plus 150 audits and 40 simulations per month." },
+        { question: "Does the tool prove a recommendation caused a ranking lift?", answer: "No. It records completed improvement actions and shows later rank or Search Console movement as observed outcomes." },
+      ]
+      : [
+        { question: "Can I start without a credit card?", answer: "Yes. New accounts receive a 30-day full-access trial with no card and no automatic charge." },
+        { question: "Does AEO Improvement replace SEO software?", answer: "No. It connects SEO and AI-search work, with Search Console and controlled rank-tracking features available on paid plans." },
+      ],
+    jsonLd: [
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        name: "AEO Improvement",
+        applicationCategory: "BusinessApplication",
+        operatingSystem: "Web",
+        url: `${SITE}${path}`,
+        description,
+        offers: { "@type": "Offer", price: "0", priceCurrency: "USD", url: `${SITE}/sign-up` },
+      },
+      faqLd(path === "/geo-software-for-agencies"
+        ? [
+          { question: "How many client sites can an agency manage?", answer: "The Agency plan supports up to 10 active client sites in Projects, plus 150 audits and 40 simulations per month." },
+          { question: "Does the tool prove a recommendation caused a ranking lift?", answer: "No. It records completed improvement actions and shows later rank or Search Console movement as observed outcomes." },
+        ]
+        : [
+          { question: "Can I start without a credit card?", answer: "Yes. New accounts receive a 30-day full-access trial with no card and no automatic charge." },
+          { question: "Does AEO Improvement replace SEO software?", answer: "No. It connects SEO and AI-search work, with Search Console and controlled rank-tracking features available on paid plans." },
+        ]),
+      breadcrumbLd([{ name: "Home", path: "/" }, { name: h1, path }]),
+    ],
+  })),
   {
     path: "/ai-citation-readiness-benchmark",
     title: "2026 AI Citation Readiness Benchmark | AEO Improvement",

@@ -127,12 +127,20 @@ function buildStaticContent(route) {
   const title = escapeHtmlText(route.title);
   const heading = escapeHtmlText(route.h1 || route.title);
   const description = escapeHtmlText(route.description);
+  const sections = (route.staticSections || []).map(({ heading: sectionHeading, body }) => (
+    `<section style="margin-top:32px"><h2>${escapeHtmlText(sectionHeading)}</h2><p>${escapeHtmlText(body)}</p></section>`
+  )).join("\n    ");
+  const faqs = (route.faqs || []).map(({ question, answer }) => (
+    `<section style="margin-top:20px"><h3>${escapeHtmlText(question)}</h3><p>${escapeHtmlText(answer)}</p></section>`
+  )).join("\n    ");
   return `<main data-static-route="${escapeHtmlAttr(route.path)}" style="max-width:960px;margin:0 auto;padding:48px 24px;font-family:system-ui,sans-serif;line-height:1.65;color:#0f172a">
     <p style="font-size:14px;font-weight:700;color:#047857">AEO Improvement</p>
     <h1 style="font-size:clamp(32px,6vw,56px);line-height:1.08;margin:12px 0 20px">${heading}</h1>
     <p style="font-size:20px;max-width:760px;color:#475569">${description}</p>
     <section style="margin-top:40px"><h2>Audit, simulate, improve, and monitor</h2><p>AEO Improvement checks citability, brand authority, AI crawler access, technical SEO, schema markup, and per-platform readiness. Recommendations include their evidence source and remain in a domain-level checklist until the user marks them complete.</p></section>
     <section style="margin-top:32px"><h2>Current methodology</h2><p>Citation-path bots are scored separately from training bots. OAI-SearchBot controls ChatGPT search discovery while GPTBot is used for model training. llms.txt is treated as optional because it is not a demonstrated citation gate. Fresh, server-visible content and explicit last-updated dates receive higher priority.</p></section>
+    ${sections}
+    ${faqs ? `<section style="margin-top:32px"><h2>Frequently asked questions</h2>${faqs}</section>` : ""}
     <nav aria-label="Related pages" style="margin-top:32px"><a href="/free-aeo-audit-tool">Run a free AEO audit</a> · <a href="/methodology">Read the methodology</a> · <a href="/ai-citation-readiness-benchmark">View the benchmark</a> · <a href="/pricing">Pricing</a></nav>
     <section style="margin-top:32px"><h2>Primary references</h2><ul><li><a href="https://platform.openai.com/docs/bots">OpenAI crawler documentation</a></li><li><a href="https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data">Google structured data documentation</a></li><li><a href="https://schema.org/Organization">Schema.org Organization</a></li></ul></section>
   </main>`;
