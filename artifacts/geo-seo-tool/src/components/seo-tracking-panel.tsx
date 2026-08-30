@@ -4,6 +4,7 @@ import { ApiError, customFetch } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RefreshCw } from "lucide-react";
+import { latestRankDisplay } from "@/lib/rankTrackingDisplay";
 
 type Target = { id: number; keyword: string; locationName: string; device: string; active: boolean; latest?: { position: number | null; result_present: boolean; collected_at: string } | null };
 type KeywordResponse = { targets: Target[]; limits: { activeKeywords: number }; providerConfigured: boolean };
@@ -31,7 +32,7 @@ export function SeoTrackingPanel({ domain }: { domain: string }) {
     {data && !data.providerConfigured && <p className="mt-3 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">Rank tracking is not connected yet. AEO audits and Search Console features continue to work normally.</p>}
     <form className="mt-3 flex gap-2" onSubmit={(event) => { event.preventDefault(); if (keyword.trim()) add.mutate(); }}><Input value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="Add a target keyword" maxLength={250} /><Button type="submit" size="sm" disabled={add.isPending}>{add.isPending ? "Adding" : "Track keyword"}</Button></form>
     {add.error && <p className="mt-2 text-xs text-destructive">{apiMessage(add.error, "Could not add keyword.")}</p>}
-    {data?.targets?.length ? <ul className="mt-4 divide-y text-sm">{data.targets.slice(0, 10).map((target) => <li key={target.id} className="flex items-center justify-between gap-3 py-2"><div><span className="font-medium">{target.keyword}</span><span className="ml-2 text-xs text-muted-foreground">{target.locationName} · {target.device} · {target.latest?.position ? `Position ${target.latest.position}` : "No matching result yet"}</span></div><Button variant="outline" size="sm" disabled={refresh.isPending || !target.active || !data.providerConfigured} onClick={() => refresh.mutate(target.id)}><RefreshCw className="mr-1 h-3 w-3" />Refresh</Button></li>)}</ul> : <p className="mt-3 text-xs text-muted-foreground">Add a high-value keyword now, or import a query from the Search Console opportunity view.</p>}
+    {data?.targets?.length ? <ul className="mt-4 divide-y text-sm">{data.targets.slice(0, 10).map((target) => <li key={target.id} className="flex items-center justify-between gap-3 py-2"><div><span className="font-medium">{target.keyword}</span><span className="ml-2 text-xs text-muted-foreground">{target.locationName} · {target.device} · {latestRankDisplay(target.latest)}</span></div><Button variant="outline" size="sm" disabled={refresh.isPending || !target.active || !data.providerConfigured} onClick={() => refresh.mutate(target.id)}><RefreshCw className="mr-1 h-3 w-3" />Refresh</Button></li>)}</ul> : <p className="mt-3 text-xs text-muted-foreground">Add a high-value keyword now, or import a query from the Search Console opportunity view.</p>}
     {refresh.error && <p className="mt-2 text-xs text-destructive">{apiMessage(refresh.error, "Could not refresh this rank.")}</p>}
   </div>;
 }
