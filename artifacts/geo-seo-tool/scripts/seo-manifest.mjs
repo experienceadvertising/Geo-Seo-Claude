@@ -414,6 +414,10 @@ export const ROUTES = [
     jsonLd: [articleLd({ path: "/ai-citation-readiness-benchmark", title: "2026 AI Citation Readiness Benchmark", description: "An anonymized benchmark of website readiness for AI citations.", datePublished: "2026-07-22", dateModified: "2026-07-22" })],
   },
   ...[
+    ["/seo-and-geo", "SEO and GEO: One Practical Growth Workflow", "A practical guide to improving organic search performance and AI visibility without treating them as the same metric."],
+    ["/seo-geo-tool", "SEO and GEO Tool for Organic Search and AI Visibility", "Audit technical SEO, content effort, AI eligibility, citation readiness, and next actions in one evidence-led workflow."],
+    ["/geo-audit-tool", "GEO Audit Tool for AI Search Visibility", "Audit whether a page is eligible for AI search, understandable to answer engines, and supported by evidence worth citing."],
+    ["/ai-seo-tool", "AI SEO Tool for Content, Citations, and Brand Clarity", "Use SEO fundamentals and AI-specific readiness checks to improve content quality, citation readiness, and brand clarity."],
     ["/content-effort-for-seo-and-ai-search", "Content Effort for SEO and AI Search", "A practical framework for creating original, well-documented content that helps people, search engines, and AI systems understand your expertise."],
     ["/show-first-party-experience-seo", "How to Show First-Party Experience in SEO Content", "Ways to document real experience in SEO content without inventing proof."],
     ["/seo-content-quality-vs-filler", "SEO Content Quality vs. Filler Content", "How to identify filler and put useful SEO content first."],
@@ -421,8 +425,8 @@ export const ROUTES = [
     ["/content-audit-original-research-checklist", "Content Audit Checklist for Original Research and Evidence", "A practical checklist for documenting original research, evidence, and methodology in content."],
     ["/document-expertise-methodology", "How to Document Testing, Methodology, and Expertise on Your Website", "How to document your methodology and expertise so readers can evaluate your advice."],
   ].map(([path, title, description]) => ({
-    path, title: `${title} | AEO Improvement`, description, ogType: "article", publishedTime: "2026-08-17", modifiedTime: "2026-08-17", authorName: AUTHOR.name,
-    jsonLd: [articleLd({ path, title, description, datePublished: "2026-08-17", dateModified: "2026-08-17" }), breadcrumbLd([{ name: "Home", path: "/" }, { name: "Resources", path: "/content-effort-for-seo-and-ai-search" }, { name: title, path }])],
+    path, title: `${title} | AEO Improvement`, description, ogType: "article", publishedTime: "2026-08-30", modifiedTime: "2026-08-30", authorName: AUTHOR.name,
+    jsonLd: [articleLd({ path, title, description, datePublished: "2026-08-30", dateModified: "2026-08-30" }), breadcrumbLd([{ name: "Home", path: "/" }, { name: "Resources", path: "/seo-and-geo" }, { name: title, path }])],
   })),
 ];
 

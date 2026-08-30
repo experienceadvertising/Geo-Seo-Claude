@@ -48,7 +48,7 @@ function layout(content: string, preheader: string, unsubscribeUrl?: string): st
                 </td>
               </tr>
             </table>
-            <div style="font-size:12px;color:rgba(255,255,255,0.55);letter-spacing:0.04em;text-transform:uppercase;">Answer Engine Optimization</div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.55);letter-spacing:0.04em;text-transform:uppercase;">SEO + GEO improvement workflow</div>
           </td>
         </tr>
 
@@ -138,7 +138,7 @@ export function welcomeEmail(firstName: string, unsubscribeUrl?: string) {
     : `Your free core-feature month starts now`;
   const html = layout(
     `${h1(`Welcome, ${firstName || "there"} 👋`)}
-    ${p("You're now set up to track and improve your website's citability across ChatGPT, Claude, Gemini, and Perplexity.")}
+    ${p("You're now set up to improve organic-search readiness and how clearly AI systems can understand, cite, and recommend your website.")}
     <table cellpadding="0" cellspacing="0" width="100%" style="margin:16px 0;background:#ecfdf5;border-radius:8px;border:1px solid #a7f3d0;">
       <tr><td style="padding:18px 20px;font-size:14px;color:#065f46;">
         <strong>Your first month is completely free with all core audit features unlocked.</strong><br/>
@@ -148,9 +148,9 @@ export function welcomeEmail(firstName: string, unsubscribeUrl?: string) {
     ${p("Here's how to make the most of it:")}
 
     <table cellpadding="0" cellspacing="0" width="100%" style="margin:8px 0 24px;">
-      ${feature("🔍", "Run your first audit", "Enter your website URL and get an instant AEO score with specific recommendations.")}
-      ${feature("🔬", "Simulate across all 4 engines", "See whether ChatGPT, Claude, Gemini, and Perplexity actually cite you — all engines are unlocked for you.")}
-      ${feature("🛠", "Generate your fixes", "The Fix Generator auto-drafts JSON-LD schema and citation-bot robots.txt patches, with llms.txt clearly labeled optional.")}
+      ${feature("🔍", "Audit the page", "Find technical SEO, content, crawler, brand-clarity, and citation-readiness gaps in one prioritized view.")}
+      ${feature("🔬", "Test buyer questions", "After the audit, see whether ChatGPT, Claude, Gemini, and Perplexity mention or cite you for the questions that matter.")}
+      ${feature("🛠", "Implement and measure", "Use the Fix Generator where it helps, document completed work, then compare later search and visibility signals.")}
     </table>
 
     <div style="text-align:center;margin:32px 0;">
@@ -170,16 +170,16 @@ export function welcomeEmail(firstName: string, unsubscribeUrl?: string) {
 export function welcomeD3Email(firstName: string, hasAudit: boolean, unsubscribeUrl?: string) {
   // Concrete > clever: name the actions, not the category.
   const subject = hasAudit
-    ? "Your next 3 AEO tasks: fresh dates, FAQ schema, robots.txt"
+    ? "Your next 3 SEO + GEO actions: access, evidence, buyer questions"
     : "Your free month is running — start with this 60-second audit";
   const html = layout(
     `${h1(hasAudit ? "3 quick wins for better AI citations" : "Start your optimization journey")}
-    ${p(hasAudit ? `Hi ${firstName || "there"}, your first audit is in. Here are three high-impact improvements to check against its task list:` : `Hi ${firstName || "there"}, you still have all core audit features unlocked. Run your first audit now so we can build a prioritized, trackable optimization journey for your domain.`)}
+    ${p(hasAudit ? `Hi ${firstName || "there"}, your first audit is in. Work through the evidence in this order so the page is accessible, useful, and measurable:` : `Hi ${firstName || "there"}, you still have all core audit features unlocked. Run your first audit now so we can build a prioritized SEO + GEO improvement plan for your domain.`)}
 
     <table cellpadding="0" cellspacing="0" width="100%" style="margin:8px 0 24px;">
-      ${feature("1️⃣", "Show a visible 'Last updated' date", "AI engines strongly prefer fresh content — the overwhelming majority of ChatGPT citations go to recently updated pages. Add a visible updated date (and dateModified schema) to your key pages, and actually refresh them.")}
-      ${feature("2️⃣", "Add FAQ schema markup", "AI engines love structured Q&A. Add <code style='font-size:12px;background:#f3f4f6;padding:1px 4px;border-radius:3px;'>FAQPage</code> JSON-LD to your top pages. Our Fix Generator writes it for you.")}
-      ${feature("3️⃣", "Open your robots.txt to AI search bots", "Many sites accidentally block OAI-SearchBot (ChatGPT Search), Claude-SearchBot, or PerplexityBot — the crawlers that decide whether you CAN be cited. Check your audit's Crawler Access section.")}
+      ${feature("1️⃣", "Make the useful page content accessible", "Check crawler access, server-visible content, robots, snippet directives, and CDN policy before working on the prose.")}
+      ${feature("2️⃣", "Add evidence that helps a reader decide", "Bring forward real examples, methodology, first-party facts, constraints, or informed judgment when they are true. Do not pad the page with filler.")}
+      ${feature("3️⃣", "Match the buyer's question", "Improve the existing page with a direct answer and useful supporting questions before creating thin pages for every keyword variation.")}
     </table>
 
     <div style="text-align:center;margin:32px 0;">
@@ -243,7 +243,7 @@ export function weeklyDigestEmail(data: WeeklyDigestData, unsubscribeUrl?: strin
   // Pack the headline numbers into the subject — preheader was already
   // doing this work; subject is what actually drives opens.
   const subject = latestAudit
-    ? `Your AEO digest: ${auditCount} audit${auditCount !== 1 ? "s" : ""}, latest score ${Math.round(latestAudit.geoScore)}/100`
+    ? `Your SEO + GEO digest: ${auditCount} audit${auditCount !== 1 ? "s" : ""}, latest AI-readiness score ${Math.round(latestAudit.geoScore)}/100`
     : auditCount > 0
       ? `Your AEO digest: ${auditCount} audit${auditCount !== 1 ? "s" : ""} this week`
       : `Your AEO digest — no audits this week, here's how to start`;
@@ -273,8 +273,8 @@ export function weeklyDigestEmail(data: WeeklyDigestData, unsubscribeUrl?: strin
       </div>`;
 
   const html = layout(
-    `${h1(`Your weekly AEO update`)}
-    ${p(`Hi ${firstName || "there"}, here's your AEO Improvement digest for the week.`)}
+    `${h1(`Your weekly SEO + GEO update`)}
+    ${p(`Hi ${firstName || "there"}, here is the clearest next action from your search and AI-visibility work this week.`)}
     <table cellpadding="0" cellspacing="0" width="100%" style="background:#f0fdf4;border-radius:8px;margin:16px 0;">
       <tr>
         <td style="padding:20px;text-align:center;">
@@ -762,6 +762,18 @@ type InsightTopic = {
 };
 
 const AEO_INSIGHTS: InsightTopic[] = [
+  {
+    subject: "Content Effort: show the useful work behind your page",
+    preheader: "A practical Content Effort check for SEO and AI search, with credit to Zyppy Signal.",
+    title: "Content Effort is the evidence a reader can actually see",
+    intro: "A long page is not automatically a useful page. The stronger question is whether the page visibly shows careful curation, original information, evidence of work, and a useful point of view.",
+    body: `${p("Before you publish or refresh a key page, ask five simple questions:")}
+    <ul style="margin:0 0 16px 0;padding:0 0 0 20px;font-size:14px;line-height:1.8;color:#374151;"><li>Is the page edited and organized around the reader's goal?</li><li>Does it include first-party facts, observations, or experience that are actually true?</li><li>Can you show a method, screenshot, interview, example, or constraint?</li><li>Does the useful answer arrive before generic background copy?</li><li>Does the page make a reasoned judgment instead of only repeating common facts?</li></ul>
+    ${p("Use only the evidence you genuinely have. This is not a ranking guarantee and it is not a reason to manufacture proof.")}
+    ${p("Expert guidance credit: <a href='https://signal.zyppy.com/p/content-effort' style='color:${BRAND_COLOR};'>Cyrus Shepard and Zyppy Signal</a>. AEO Improvement's interpretation is independent and based on the public framework.")}`,
+    pitch: "Open your audit to see which visible content and evidence gaps are detected, then choose one truthful improvement to implement.",
+    textBody: "Content Effort is not word count. Look for visible curation, first-party facts, evidence of work, helpful information before filler, and informed judgment. Use only evidence that is true. Expert guidance credit: Cyrus Shepard and Zyppy Signal: https://signal.zyppy.com/p/content-effort",
+  },
   {
     subject: "The robots.txt mistake quietly blocking AI from your site",
     preheader: "OAI-SearchBot, Claude-SearchBot, PerplexityBot — the bots that decide if you CAN be cited.",

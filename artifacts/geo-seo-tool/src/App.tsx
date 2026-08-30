@@ -41,6 +41,7 @@ const PrivacyPage = lazy(() => import("@/pages/privacy"));
 const TermsPage = lazy(() => import("@/pages/terms"));
 const GoogleDataUsePage = lazy(() => import("@/pages/google-data-use"));
 const ContentEffortGuide = lazy(() => import("@/pages/content-effort-guide"));
+const SeoGeoGuide = lazy(() => import("@/pages/seo-geo-guide"));
 
 const queryClient = new QueryClient();
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -118,6 +119,10 @@ function AppRoutes() {
         <Route path="/create-content-ai-can-cite" component={ContentEffortGuide} />
         <Route path="/content-audit-original-research-checklist" component={ContentEffortGuide} />
         <Route path="/document-expertise-methodology" component={ContentEffortGuide} />
+        <Route path="/seo-and-geo" component={SeoGeoGuide} />
+        <Route path="/seo-geo-tool" component={SeoGeoGuide} />
+        <Route path="/geo-audit-tool" component={SeoGeoGuide} />
+        <Route path="/ai-seo-tool" component={SeoGeoGuide} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

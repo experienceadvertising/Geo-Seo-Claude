@@ -118,15 +118,15 @@ export const GeoRecommendationCategory = {
   entity: "entity",
 } as const;
 
-export type RecommendationSourceType =
-  (typeof RecommendationSourceType)[keyof typeof RecommendationSourceType];
-
 export const RecommendationSourceType = {
   research: "research",
   internal_benchmark: "internal_benchmark",
   practitioner_consensus: "practitioner_consensus",
   expert_guidance: "expert_guidance",
 } as const;
+
+export type RecommendationSourceType =
+  (typeof RecommendationSourceType)[keyof typeof RecommendationSourceType];
 
 /**
  * Source-attribution metadata for a single recommendation, sourced from
