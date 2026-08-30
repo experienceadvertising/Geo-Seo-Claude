@@ -6,6 +6,7 @@ import { readRateLimiter } from "../middlewares/rateLimiters";
 import { currentYearMonth } from "../lib/usageLimits";
 import { getUserPlan, PLAN_LIMITS, planAtLeast } from "../lib/planUtils";
 import { collectGoogleRank, DataForSeoError, isDataForSeoConfigured } from "../lib/dataforseoRankTracker";
+import { buildLatestRankSnapshotsQuery } from "../lib/seoTrackingQueries";
 
 const router: IRouter = Router();
 
@@ -44,10 +45,8 @@ router.get("/seo/keywords", requireAuth, readRateLimiter, async (req, res): Prom
   const domain = domainFrom(req.query.domain); if (!domain) { res.status(400).json({ error: "Valid domain required." }); return; }
   const targets = await db.select().from(seoKeywordTargetsTable).where(and(eq(seoKeywordTargetsTable.userId, req.userId!), eq(seoKeywordTargetsTable.domain, domain))).orderBy(desc(seoKeywordTargetsTable.updatedAt));
   const targetIds = targets.map((t) => t.id);
-  const snapshots = targetIds.length ? await db.execute(sql`
-    SELECT DISTINCT ON (target_id) target_id, position, result_present, result_url, provider_status, collected_at
-    FROM seo_rank_snapshots WHERE target_id = ANY(${targetIds}) ORDER BY target_id, collected_at DESC
-  `) : { rows: [] as any[] };
+  const latestSnapshotsQuery = buildLatestRankSnapshotsQuery(targetIds);
+  const snapshots = latestSnapshotsQuery ? await db.execute(latestSnapshotsQuery) : { rows: [] as any[] };
   const latest = new Map((snapshots.rows as any[]).map((row) => [Number(row.target_id), row]));
   res.json({
     targets: targets.map((target) => ({ ...target, latest: latest.get(target.id) ?? null })),

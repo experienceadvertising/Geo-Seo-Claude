@@ -1,10 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import * as cheerio from "cheerio";
+import { PgDialect } from "drizzle-orm/pg-core";
 import { isWikiArticleConfident } from "./entityConfidence.ts";
 import { buildPageUrlVariants, rankSearchOpportunities } from "./gscOpportunities.ts";
 import { isAllowedByRobots, parseRobotsTxt } from "./robotsPolicy.ts";
 import { extractDataNoSnippetSignals } from "./snippetControls.ts";
+import { buildLatestRankSnapshotsQuery } from "./seoTrackingQueries.ts";
 import {
   highestPaidPlan,
   isBlockingSubscriptionStatus,
@@ -126,4 +128,27 @@ test("billing reconciliation keeps the highest active entitlement and labels pla
   assert.equal(planChangeDirection("pro", "starter"), "Downgrade");
   assert.equal(planChangeDirection("pro", "agency"), "Upgrade");
   assert.equal(planChangeDirection("agency", "pro"), "Downgrade");
+});
+
+test("rank tracking skips the snapshot lookup when there are no keyword targets", () => {
+  assert.equal(buildLatestRankSnapshotsQuery([]), null);
+});
+
+test("rank tracking loads latest snapshots after one keyword target is added", () => {
+  const query = buildLatestRankSnapshotsQuery([26]);
+  assert.ok(query);
+
+  const compiled = new PgDialect().sqlToQuery(query);
+  assert.match(compiled.sql, /target_id IN \(\$1\)/);
+  assert.doesNotMatch(compiled.sql, /ANY\s*\(/);
+  assert.deepEqual(compiled.params, [26]);
+});
+
+test("rank tracking binds each of multiple keyword targets safely", () => {
+  const query = buildLatestRankSnapshotsQuery([26, 27]);
+  assert.ok(query);
+
+  const compiled = new PgDialect().sqlToQuery(query);
+  assert.match(compiled.sql, /target_id IN \(\$1, \$2\)/);
+  assert.deepEqual(compiled.params, [26, 27]);
 });
