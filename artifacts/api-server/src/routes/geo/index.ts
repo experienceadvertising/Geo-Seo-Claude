@@ -16,7 +16,7 @@ import crawlerRouter from "./crawler";
 import { requireAuth } from "../../middlewares/auth";
 import { analyzeRateLimiter, readRateLimiter } from "../../middlewares/rateLimiters";
 import { assertPublicUrl, SsrfError } from "../../lib/safeFetch";
-import { getUserPlan, planAtLeast } from "../../lib/planUtils";
+import { getUserPlan, PLAN_LIMITS } from "../../lib/planUtils";
 import { consumeQuota, refundQuota, currentYearMonth, markApproachingNotified } from "../../lib/usageLimits";
 import { db as appDb, usersTable } from "@workspace/db";
 import { sql } from "drizzle-orm";
@@ -755,8 +755,11 @@ router.get("/geo/audits/:id/fixes", requireAuth, readRateLimiter, async (req, re
   if (!params.success) { res.status(400).json({ error: "Invalid ID" }); return; }
 
   const plan = await getUserPlan(req.userId!);
-  if (!planAtLeast(plan, "pro")) {
-    res.status(403).json({ error: "Fix Generator is a Pro feature. Upgrade to download custom fixes.", upgradeRequired: true });
+  // Gate on the plan-limits flag (Starter and up), not a hard-coded tier —
+  // the pricing page and Stripe product description sell the Fix Generator
+  // starting at Starter, so the gate must match what customers pay for.
+  if (!PLAN_LIMITS[plan].fixGenerator) {
+    res.status(403).json({ error: "Fix Generator is available on Starter and up. Upgrade to download custom fixes.", upgradeRequired: true });
     return;
   }
 

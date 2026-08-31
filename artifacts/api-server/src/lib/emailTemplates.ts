@@ -1223,7 +1223,7 @@ export function freeMonthPromoEmail(firstName: string, endsAt: Date, unsubscribe
       ${feature("🔧", "Fix Generator", "Auto-drafts JSON-LD schema and citation-bot robots.txt patches. Copy and ship.")}
       ${feature("📡", "Continuous monitoring", "Add your sites once and get re-audited on a schedule, with alerts when your score moves.")}
       ${feature("📊", "Competitor tracking & sentiment", "The citation gap table and brand sentiment analysis, fully unlocked.")}
-      ${feature("📈", "Top-tier limits", "150 audits and 40 simulations this month, with 10 prompts per run.")}
+      ${feature("📈", "Top-tier limits", "150 audits and 40 simulations this month, with 25 prompts per run.")}
     </table>
     <table cellpadding="0" cellspacing="0" width="100%" style="margin:16px 0;background:#ecfdf5;border-radius:8px;border:1px solid #a7f3d0;">
       <tr><td style="padding:18px 20px;font-size:14px;color:#065f46;text-align:center;">

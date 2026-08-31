@@ -43,7 +43,7 @@ export default function Results() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const reRun = useAnalyzeUrl();
-  const { isPro } = usePlan();
+  const { isPro, canUseFixGenerator } = usePlan();
   const [showFixes, setShowFixes] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [approvedSameAs, setApprovedSameAs] = useState<string[]>([]);
@@ -121,7 +121,7 @@ export default function Results() {
   const { data: fixesData, isLoading: fixesLoading, isError: fixesError } = useQuery({
     queryKey: ["audit-fixes", id],
     queryFn: () => customFetch<any>(`/api/geo/audits/${id}/fixes`),
-    enabled: isPro && showFixes && !!id,
+    enabled: canUseFixGenerator && showFixes && !!id,
     staleTime: Infinity,
     retry: false,
   });
@@ -136,10 +136,10 @@ export default function Results() {
   // immediately see the result instead of clicking a button with no apparent
   // effect (the panel renders ~600px below the click target).
   useEffect(() => {
-    if (showFixes && isPro && fixesRef.current) {
+    if (showFixes && canUseFixGenerator && fixesRef.current) {
       fixesRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     }
-  }, [showFixes, isPro]);
+  }, [showFixes, canUseFixGenerator]);
 
   const copyToClipboard = async (text: string, key: string) => {
     try {
@@ -261,8 +261,8 @@ export default function Results() {
               onClick={() => setShowFixes(v => !v)}
               data-testid="button-fix-generator"
             >
-              {isPro && fixesLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : isPro ? <Wrench className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
-              Fix Generator {isPro ? (showFixes ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />) : <Badge className="text-[10px] ml-1 px-1 py-0 bg-gradient-to-r from-emerald-500 to-teal-500 text-white">Pro</Badge>}
+              {canUseFixGenerator && fixesLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : canUseFixGenerator ? <Wrench className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
+              Fix Generator {canUseFixGenerator ? (showFixes ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />) : <Badge className="text-[10px] ml-1 px-1 py-0 bg-sky-100 text-sky-800">Starter+</Badge>}
             </Button>
             <Button
               variant="outline"
@@ -881,7 +881,7 @@ export default function Results() {
 
       {/* Fix Generator Panel */}
       {showFixes && (
-        isPro ? (
+        canUseFixGenerator ? (
           <Card ref={fixesRef} className="border-emerald-200 dark:border-emerald-900 shadow-sm">
             <CardHeader className="border-b bg-emerald-500/5 pb-4">
               <CardTitle className="flex items-center gap-2 text-sm font-mono uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
@@ -949,7 +949,7 @@ export default function Results() {
           <UpgradePrompt
             feature="Fix Generator"
             description="Review implementation drafts for JSON-LD, citation-bot robots.txt additions, and an optional llms.txt content map."
-            requiredPlan="pro"
+            requiredPlan="starter"
           />
         )
       )}

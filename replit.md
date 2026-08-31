@@ -28,7 +28,9 @@ Custom email+password auth (Clerk was removed — email delivery was unreliable 
 - **Password reset**: 1h token links sent via Postmark
 - **Cookie**: `aeo.sid`, httpOnly, sameSite=lax, 30-day maxAge
 - **Session data**: `{ userId: string, email: string }`
-- **Frontend**: `AuthContext` at `artifacts/geo-seo-tool/src/context/AuthContext.tsx`
+- **Frontend**: `AuthContext` at `artifacts/geo-seo-tool/src/context/AuthContext.tsx`. First-paint policy:
+  localStorage hint `aeo.hasSession` — returning users get a neutral spinner until `/api/auth/me` confirms;
+  visitors/crawlers with no hint render public pages immediately (no auth round-trip before first paint)
 - **Auth routes**: `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/logout`,
   `GET /api/auth/verify-email?token=`, `POST /api/auth/resend-verification`,
   `POST /api/auth/forgot-password`, `POST /api/auth/reset-password`, `GET /api/auth/me`
@@ -48,11 +50,11 @@ Custom email+password auth (Clerk was removed — email delivery was unreliable 
 - Users enter any URL and get a full AI search optimization audit
 - Features: AEO score (0-100), AI crawler access, citability scoring, schema detection, quick wins
 - AI-powered insights via Claude; prompt simulation via GPT-4o-mini + ChatGPT/Claude/Gemini/Perplexity
-- Tiered SaaS: Free / Pro ($79/mo, $750/yr) / Agency ($249/mo, $2,390/yr) via `users.plan` DB column;
+- Tiered SaaS: Free / Starter ($29/mo, $290/yr) / Pro ($79/mo, $750/yr) / Agency ($249/mo, $2,390/yr) via `users.plan` DB column;
   first month free with all core product features unlocked (no card); connected GA4 reporting requires a paid plan
 - Sentiment analysis: keyword-heuristic detection of Positive/Neutral/Negative brand tone per engine result
 - Visibility Trend: line chart of historical AEO scores for a domain (`/api/geo/audits/history`)
-- Fix Generator (Pro only): generates ready-to-copy llms.txt, JSON-LD schema, robots.txt snippets
+- Fix Generator (Starter and up — gated by `PLAN_LIMITS[plan].fixGenerator`, frontend `usePlan().canUseFixGenerator`): generates ready-to-copy llms.txt, JSON-LD schema, robots.txt snippets
 - Plan hook: `src/hooks/usePlan.tsx` reads plan from `/api/me`, gates engine/prompt UI
 - Upgrade CTA component: `src/components/upgrade-prompt.tsx`
 - Auth pages: `/sign-in`, `/sign-up`, `/verify-email`, `/forgot-password`, `/reset-password`
@@ -60,13 +62,16 @@ Custom email+password auth (Clerk was removed — email delivery was unreliable 
 ### API Server (`artifacts/api-server`)
 - Express 5 server at `/api`
 - Routes: `POST /api/geo/analyze`, `GET /api/geo/audits`, `GET /api/geo/audits/:id`,
-  `GET /api/geo/audits/history?domain=X`, `GET /api/geo/audits/:id/fixes` (Pro),
+  `GET /api/geo/audits/history?domain=X`, `GET /api/geo/audits/:id/fixes` (Starter+),
   `POST /api/geo/prompts/suggest`, `POST /api/geo/simulate`, `GET /api/geo/simulations/:id`,
   `GET /api/me` (returns user plan from DB)
 - Stripe payment routes: `GET /api/stripe/products`, `GET /api/stripe/subscription`,
   `POST /api/stripe/checkout`, `POST /api/stripe/portal`, `POST /api/stripe/webhook`
-- Plan system: `src/lib/planUtils.ts` — getPlanInfo() (stored vs effective + trial), getUserPlan()
-  (effective, trial-aware), getStoredPlan() (billing), planAtLeast(), PLAN_LIMITS, TRIAL_LENGTH_DAYS
+- Plan system: `src/lib/planLimits.ts` (pure: Plan, planRank/planAtLeast, PLAN_LIMITS, TRIAL_LENGTH_DAYS —
+  importable from unit tests, no DB) + `src/lib/planUtils.ts` (DB-backed: getPlanInfo() stored vs effective +
+  trial, getUserPlan() effective, getStoredPlan() billing; re-exports planLimits). PLAN_LIMITS is monotonic —
+  a higher tier never gets a lower cap — enforced by a regression test in core-regressions.test.ts.
+  Agency simulationPrompts = 25 (matches Pro; its Stripe description promises "everything in Pro").
 - Trial lifecycle emails: daily cron 10:00 UTC in `src/lib/emailScheduler.ts` (+ one run 60s after
   boot) — reminder at ≤3 days left (`trial_reminder_sent_at`), ended notice within 7 days after
   lapse (`trial_ended_sent_at`), one-time promo announcement (`trial_promo_email_sent_at`)
@@ -105,7 +110,7 @@ Public, indexable comparison pages live at:
 - `/vs/:slug` — parameterized (otterly, athenahq, profound, brandlight). Page reads from `artifacts/geo-seo-tool/src/data/competitors.ts`. To add a competitor: append a new entry to `COMPETITORS` array + add corresponding entries to each row in `SHARED_ROWS` + add to sitemap.xml.
 - `/best-aeo-tools` and `/best-geo-optimization-tools` — twin listicle pages (same component, `variant` prop swaps copy). Twin SEO pages with distinct canonicals.
 
-Per-page meta tags via `react-helmet-async` (`HelmetProvider` wraps app in `App.tsx`); `<SEO>` wrapper component in `components/seo.tsx` handles title/description/canonical/OG/Twitter/JSON-LD.
+Prerendered static bodies: `scripts/seo-manifest.mjs` has a `STATIC_CONTENT` map giving every route unique crawler-visible sections/FAQs (no shared boilerplate — keep new routes unique). Per-page meta tags via `react-helmet-async` (`HelmetProvider` wraps app in `App.tsx`); `<SEO>` wrapper component in `components/seo.tsx` handles title/description/canonical/OG/Twitter/JSON-LD.
 
 JSON-LD blocks emitted: FAQPage + BreadcrumbList on /vs/* pages; ItemList + Article on listicles. Schema.org compliant.
 

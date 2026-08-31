@@ -1,4 +1,4 @@
-import { defineConfig, type Plugin } from "vite";
+import { defineConfig, type Connect, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
@@ -37,7 +37,7 @@ function spaFallback(): Plugin {
   return {
     name: "spa-fallback",
     configurePreviewServer(server) {
-      const fallbackMiddleware = (req: Parameters<typeof server.middlewares.use>[0] extends (req: infer Req, ...args: never[]) => unknown ? Req : never, _res: Parameters<typeof server.middlewares.use>[0] extends (_req: never, res: infer Res, ...args: never[]) => unknown ? Res : never, next: () => void) => {
+      const fallbackMiddleware: Connect.NextHandleFunction = (req, _res, next) => {
         const assetPath = (req.url ?? "").split("?")[0];
         if (/\/assets\/.*\.[a-f0-9]{8,}\.(?:js|css|woff2?|png|jpe?g|webp|svg)$/i.test(assetPath)) {
           _res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
@@ -74,7 +74,7 @@ function spaFallback(): Plugin {
       // /pricing reaches dist/public/pricing/index.html instead of falling
       // through to the root SPA shell. This is essential for non-JS crawlers.
       const stack = (server.middlewares as typeof server.middlewares & {
-        stack: Array<{ route: string; handle: typeof fallbackMiddleware }>;
+        stack: Array<{ route: string; handle: Connect.NextHandleFunction }>;
       }).stack;
       stack.unshift({ route: "", handle: fallbackMiddleware });
     },

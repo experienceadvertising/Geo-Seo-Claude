@@ -129,15 +129,20 @@ function AppRoutes() {
 }
 
 /**
- * Keep the first paint neutral until the session check completes. Previously
- * Layout rendered its footer while Home rendered a short loading state, so
- * visitors could briefly see unrelated footer copy before their dashboard or
- * the public homepage appeared.
+ * First-paint policy:
+ * - Returning users (this browser has held a session before — localStorage
+ *   hint) get a neutral spinner until the session check completes, so they
+ *   never see the public landing flash before their dashboard.
+ * - Everyone else — new visitors and crawlers, the overwhelming majority of
+ *   page loads on the public SEO routes — renders immediately. Blocking them
+ *   on the /api/auth/me round-trip would wipe the prerendered content and
+ *   hold every page hostage to network latency for no benefit: with no
+ *   session hint the check resolves to signed-out anyway.
  */
 function AppShell() {
-  const { isLoaded } = useAuth();
+  const { isLoaded, hasSessionHint } = useAuth();
 
-  if (!isLoaded) {
+  if (!isLoaded && hasSessionHint) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center" aria-busy="true" aria-label="Loading AEO Improvement">
         <Loader2 className="h-5 w-5 animate-spin text-primary" />

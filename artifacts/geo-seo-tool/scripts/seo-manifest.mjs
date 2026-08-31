@@ -83,7 +83,7 @@ export const ROUTES = [
   {
     path: "/pricing",
     title:
-      "Pricing — AEO Improvement | Free, Pro, Agency plans for AI search optimization",
+      "Pricing — AEO Improvement | Free, Starter, Pro, Agency plans for AI search optimization",
     description:
       "Start with a 30-day full-access trial. Then use Free, Starter from $29/month, Pro for measurement and multi-engine visibility, or Agency for client work.",
     ogType: "website",
@@ -483,5 +483,202 @@ export const ROUTES = [
     jsonLd: [articleLd({ path, title, description, datePublished: "2026-08-17", dateModified: "2026-08-17" }), breadcrumbLd([{ name: "Home", path: "/" }, { name: "Resources", path: "/content-effort-for-seo-and-ai-search" }, { name: title, path }])],
   })),
 ];
+
+
+// ── Route-specific crawler-visible body content ──────────────────────────────
+//
+// prerender.mjs writes each route's staticSections + faqs into the static
+// HTML body. Before this map existed, 25 of 28 routes shared ~75% identical
+// boilerplate body text — the exact duplicate-content pattern the product
+// tells its own users to avoid. Every route now carries a unique summary of
+// what its hydrated page actually says. Keep these short, factual, and in
+// sync with the React pages; never add quantitative competitor claims that
+// are not sourced from the competitor's public site (see competitors.ts).
+const STATIC_CONTENT = {
+  "/": {
+    sections: [
+      { heading: "Audit, simulate, improve, and monitor", body: "AEO Improvement checks citability, brand authority, AI crawler access, technical SEO, schema markup, and per-platform readiness. Recommendations include their evidence source and remain in a domain-level checklist until you mark them complete." },
+      { heading: "Who it is for", body: "Marketing and SEO teams that want a guided improvement queue for Google and AI search, and agencies that need a repeatable client workflow. Every new account starts with a 30-day full-access trial, no card required." },
+    ],
+    faqs: [
+      { question: "What does AEO Improvement do?", answer: "It audits any URL for SEO, GEO, and AI search readiness, simulates real buyer prompts against ChatGPT, Claude, Gemini, and Perplexity, and turns the findings into a prioritized, evidence-backed improvement checklist." },
+    ],
+  },
+  "/pricing": {
+    sections: [
+      { heading: "Plans", body: "Free includes 5 audits and 2 ChatGPT simulations per month. Starter is $29/month ($290/year) with 15 audits, 5 simulations, guided recommendations, and the Fix Generator. Pro is $79/month ($750/year) and adds all four AI engines, 25-prompt simulations, Search Console opportunities, rank tracking, monitoring, and competitor analysis. Agency is $249/month ($2,390/year) with everything in Pro for up to 10 active client sites." },
+      { heading: "The first month is free on every account", body: "Every new account gets 30 days with all core product features unlocked and no credit card required. Nothing is charged automatically — when the month ends you choose Free, Starter, Pro, or Agency." },
+    ],
+    faqs: [
+      { question: "Can I cancel anytime?", answer: "Yes. Starter, Pro, and Agency are month-to-month or annual; you can cancel at any time from the customer portal and your plan stays active until the end of the current billing period." },
+      { question: "Do annual plans have a discount?", answer: "Yes: $290/year for Starter, $750/year for Pro, and $2,390/year for Agency, each below twelve months of the monthly price." },
+    ],
+  },
+  "/about": {
+    sections: [
+      { heading: "What we do", body: "AEO Improvement is an Answer Engine Optimization auditing platform founded by Evan Weber. It measures how clearly a website can be found, understood, and cited by AI search engines, then guides the technical and content work that improves those signals." },
+      { heading: "How we write about ourselves", body: "We apply the same standards we audit for: named authorship, documented methodology, and no invented statistics. Competitor facts on our comparison pages come from those companies' own public marketing sites, with an explicit hedge whenever something is not advertised." },
+    ],
+  },
+  "/methodology": {
+    sections: [
+      { heading: "Six scored pillars", body: "Each audit scores AI crawler access, content citability, structured data, brand authority, technical foundation, and platform signals. Citation-path bots such as OAI-SearchBot are scored separately from training bots such as GPTBot, because they control different outcomes." },
+      { heading: "Where recommendations come from", body: "Recommendations cite their evidence source: the Princeton/IIT Delhi GEO research (KDD 2024), later academic work, our internal audit benchmarks, and documented practitioner consensus. Freshness, answer-shaped content, FAQ schema, and named authorship rank high; llms.txt is treated as optional because it is not a demonstrated citation gate." },
+      { heading: "Claims we will not make", body: "We do not claim any single change causes a citation or ranking lift, and we do not present AI answer movement as proof of causation. The product records completed work and shows observed movement alongside it." },
+    ],
+  },
+  "/what-is-answer-engine-optimization": {
+    sections: [
+      { heading: "AEO vs SEO", body: "Answer Engine Optimization is the practice of making a website more likely to be cited in AI-generated answers from ChatGPT, Claude, Gemini, and Perplexity. It builds on SEO fundamentals — crawlability, clear structure, real expertise — and adds citation-specific work: answer-shaped content, entity clarity, and access for AI citation bots." },
+      { heading: "The six dimensions of AEO", body: "AI crawler access, content citability, structured data, brand authority, technical foundation, and platform signals. Auditing all six shows which gap is actually holding a site back instead of guessing at rewrites." },
+      { heading: "How to get started", body: "Run an audit of your most important page, fix crawler access first, then improve the clarity and self-containedness of your key answers. Test buyer-style prompts before and after so changes are grounded in observed AI responses." },
+    ],
+    faqs: [
+      { question: "Is AEO the same as GEO?", answer: "They describe the same discipline. GEO (Generative Engine Optimization) comes from the Princeton/IIT Delhi research community; AEO is the practitioner term for optimizing content to be cited by answer engines." },
+    ],
+  },
+  "/how-to-rank-in-chatgpt": {
+    sections: [
+      { heading: "How ChatGPT search works", body: "ChatGPT search discovers pages through OAI-SearchBot and fetches user-clicked pages with ChatGPT-User. GPTBot, by contrast, collects training data. Blocking GPTBot does not remove you from ChatGPT search results, but blocking OAI-SearchBot does — so robots.txt strategy should treat them separately." },
+      { heading: "What determines whether ChatGPT cites you", body: "Server-visible content, clear entity signals, answer-shaped sections that stand alone, structured data that matches visible content, and third-party corroboration of your brand. Thin or JavaScript-only content is the most common blocker we see in audits." },
+      { heading: "Fix order that works", body: "Verify crawler access first, then fix the highest-priority content gaps on the pages buyers actually ask about, then add schema, then build third-party citations. Measure your citation rate with repeated buyer-style prompts rather than one-off spot checks." },
+    ],
+  },
+  "/how-to-appear-in-ai-search": {
+    sections: [
+      { heading: "The four engines that matter for most brands", body: "ChatGPT, Claude, Gemini, and Perplexity each crawl, retrieve, and cite differently. AI search answers favor sources that are crawlable by their citation bots, easy to interpret, and corroborated elsewhere — which is why the same site can be visible in one engine and absent from another." },
+      { heading: "On-site and off-site work", body: "On-site: server-visible content, self-contained answers, accurate structured data, named authors, and explicit last-updated dates. Off-site: entity recognition built through consistent brand facts and third-party coverage that AI systems can cross-reference." },
+      { heading: "How to measure AI search visibility", body: "Run a consistent set of buyer questions across engines, record mentions and citations, and re-test after each change. Present movement as observed outcomes — AI answers vary run to run, so trends matter more than single results." },
+    ],
+  },
+  "/best-aeo-tools": {
+    sections: [
+      { heading: "What to look for in an AEO tool", body: "Coverage of the engines your buyers use, an audit that explains why a gap matters, prompt testing with real buyer questions, and output your team can implement. Dashboards that only report visibility leave the actual work undefined." },
+      { heading: "The 2026 shortlist", body: "AEO Improvement fits self-serve marketers and SMBs with a guided audit-to-fix workflow across ChatGPT, Claude, Gemini, and Perplexity. AthenaHQ advertises broad engine coverage at self-serve pricing. Profound targets enterprise attribution buyers. Brandlight focuses on enterprise brand and narrative shaping. Otterly.AI centers on mention-rate and sentiment monitoring. Facts are drawn from each vendor's public site, with a \u201cnot advertised\u201d hedge where details are unpublished." },
+    ],
+    faqs: [
+      { question: "Do I need a paid tool to start with AEO?", answer: "No. Start by auditing crawler access and your key pages' clarity. Tools accelerate the loop of auditing, testing prompts, and tracking work — AEO Improvement includes a free plan and a 30-day full-access trial." },
+    ],
+  },
+  "/best-geo-optimization-tools": {
+    sections: [
+      { heading: "Where the term GEO comes from", body: "Generative Engine Optimization was coined in academic research from Princeton and IIT Delhi (KDD 2024), which measured how content changes affect inclusion in generative engine answers. Practitioners now use GEO and AEO interchangeably for the same discipline." },
+      { heading: "How the 2026 GEO tools differ", body: "Self-serve platforms like AEO Improvement and AthenaHQ give marketers audits and prompt testing they can act on directly; enterprise platforms like Profound and Brandlight sell attribution and narrative programs through sales teams; Otterly.AI focuses on monitoring mentions and sentiment. Match the tool to who will do the implementation work." },
+    ],
+    faqs: [
+      { question: "What should a GEO tool actually change?", answer: "Your website and your evidence trail: crawler access for citation bots, answer-shaped content, accurate structured data, and third-party corroboration. A GEO tool earns its keep when it turns visibility gaps into completed improvements." },
+    ],
+  },
+  "/vs/otterly": {
+    sections: [
+      { heading: "Different centers of gravity", body: "Otterly.AI centers on monitoring — mention rate and sentiment for brand prompts across AI search. AEO Improvement centers on the improvement loop: a six-pillar audit, buyer-prompt simulations across ChatGPT, Claude, Gemini, and Perplexity, and fix output your team can ship. Otterly's pricing is not published on its public site." },
+      { heading: "Choosing between them", body: "Teams that mainly need ongoing brand monitoring may prefer a monitoring-first product. Teams that want to know what to change on their site, and to track that work to completion, get more from an audit-first workflow." },
+    ],
+  },
+  "/vs/athenahq": {
+    sections: [
+      { heading: "Coverage breadth vs guided depth", body: "AthenaHQ advertises self-serve pricing from $95/month and monitoring across seven engines. AEO Improvement covers the four engines most buyers use — ChatGPT, Claude, Gemini, Perplexity — and pairs visibility checks with a scored audit, evidence-backed recommendations, and a Fix Generator, from $29/month on Starter." },
+      { heading: "Choosing between them", body: "If your priority is watching the widest set of engines, broad coverage matters. If your priority is improving the site behind the numbers, a guided audit-to-fix workflow is the differentiator." },
+    ],
+  },
+  "/vs/profound": {
+    sections: [
+      { heading: "Enterprise attribution vs self-serve improvement", body: "Profound sells enterprise AI-search attribution through a contact-sales motion. AEO Improvement is self-serve: sign up, audit a URL, simulate buyer prompts across four engines, and work a prioritized fix queue — with plans from free to $249/month for agencies." },
+      { heading: "Choosing between them", body: "Enterprise teams that need attribution reporting and procurement-grade contracts fit Profound's model. Marketers and agencies that want to start improving pages this week fit a self-serve audit platform." },
+    ],
+  },
+  "/vs/brandlight": {
+    sections: [
+      { heading: "Narrative programs vs site improvement", body: "Brandlight focuses on enterprise brand narrative and bias shaping in AI answers, sold via contact sales. AEO Improvement focuses on the site itself: crawler access, citability, schema, technical SEO, and prompt-level visibility across ChatGPT, Claude, Gemini, and Perplexity." },
+      { heading: "Choosing between them", body: "If you need an enterprise narrative program, evaluate Brandlight directly. If you want a measurable improvement workflow your own team runs, an audit-first self-serve tool is the better fit." },
+    ],
+  },
+  "/changelog": {
+    sections: [
+      { heading: "What we log", body: "Every meaningful product change lands here newest first: new features, methodology corrections when the evidence changes, scoring adjustments, and performance work. Corrections are logged as corrections — we do not silently rewrite scores." },
+      { heading: "Recent themes", body: "Recent releases added the Starter plan, guided SEO and GEO recommendations, optional Google rank tracking, Search Console opportunities, per-route static pages for AI crawlers, and refinements to prompt simulation depth and citation matching." },
+    ],
+  },
+  "/contact": {
+    sections: [
+      { heading: "What to contact us about", body: "Audit questions, prompt simulations, billing and plan changes, partnership ideas, or corrections to anything we have published. Messages go straight to the team inbox and replies come from a person." },
+    ],
+  },
+  "/free-aeo-audit-tool": {
+    sections: [
+      { heading: "What the free audit checks", body: "Enter a URL and get a 0–100 AEO score across six dimensions: AI crawler access, content citability, structured data, brand authority, technical foundation, and platform signals — with prioritized quick wins and the evidence behind each recommendation." },
+      { heading: "What happens after the audit", body: "Recommendations move into a domain-level checklist you work through and mark complete. Re-audits show score movement over time, so improvement is tracked rather than guessed." },
+    ],
+    faqs: [
+      { question: "Is the audit really free?", answer: "Yes. Every new account starts with a 30-day full-access trial with no credit card, and the Free plan continues with 5 audits per month afterward." },
+    ],
+  },
+  "/ai-visibility-checker": {
+    sections: [
+      { heading: "Check whether AI engines can find, trust, and cite you", body: "The visibility check inspects crawler access for citation bots, how clearly your pages state their core facts, and whether AI engines mention or cite your brand when asked real buyer questions across ChatGPT, Claude, Gemini, and Perplexity." },
+      { heading: "From visibility to action", body: "Every gap links to the underlying signal — a blocked bot, a missing schema type, an unclear entity — so the output is a work queue, not a score to stare at." },
+    ],
+  },
+  "/chatgpt-citation-tracker": {
+    sections: [
+      { heading: "Track ChatGPT mentions and citations", body: "Run buyer-style prompts against ChatGPT, record whether your brand is mentioned or your site is cited, and compare competitor Share of Voice on the same prompts. Paid plans add scheduled monitoring so citation-readiness changes are caught early." },
+      { heading: "Why citations move", body: "ChatGPT search citation behavior depends on OAI-SearchBot access, server-visible content, and corroborated brand facts. The tracker pairs each result with the audit signals behind it so you can work on causes, not just watch outcomes." },
+    ],
+  },
+  "/ai-citation-readiness-benchmark": {
+    sections: [
+      { heading: "What the benchmark measures", body: "An anonymized aggregate of audits run through AEO Improvement: average readiness by dimension, the distribution of overall scores, and the technical and content gaps that most often keep sites out of AI answers." },
+      { heading: "How to read it", body: "Use the benchmark to see which gaps are common — crawler blocks, thin answers, missing schema — and where your own audit stands relative to the distribution. Aggregates are anonymized and no individual site data is published." },
+    ],
+  },
+  "/content-effort-for-seo-and-ai-search": {
+    sections: [
+      { heading: "What Content Effort means", body: "Content Effort is the visible evidence that real work went into a page: original observations, documented method, concrete examples, named authorship, and honest scope. Both search engines and AI systems reward pages that carry that evidence." },
+      { heading: "The five visible signals", body: "First-party experience, original data or artifacts, methodological transparency, specific rather than generic claims, and maintenance over time. The guide walks through each signal with examples you can apply to existing pages." },
+    ],
+  },
+  "/show-first-party-experience-seo": {
+    sections: [
+      { heading: "Use concrete artifacts", body: "Screenshots, measurements, before-and-after states, and process notes show experience without asserting it. One documented example outweighs paragraphs of unverifiable claims." },
+      { heading: "State the scope honestly", body: "Say what you tested, for how long, and what you did not test. Honest scope makes the rest of the page more credible to readers and easier for AI systems to represent accurately." },
+    ],
+  },
+  "/seo-content-quality-vs-filler": {
+    sections: [
+      { heading: "Lead with the answer", body: "Put the substantive answer in the first sentences of the section that promises it. Generic scene-setting before the answer is the most common filler pattern — and answer engines extract the section that answers, not the one that warms up." },
+      { heading: "Cut filler, preserve context", body: "Filler is text that could introduce any article on the topic. Context is what a reader needs to apply your answer correctly. The guide shows how to tell them apart before deleting." },
+    ],
+  },
+  "/create-content-ai-can-cite": {
+    sections: [
+      { heading: "Make the core fact explicit", body: "State the key claim in plain, self-contained language near the top of its section — who, what, and the qualifier that makes it true. AI systems cite passages that stand alone; implications spread across paragraphs get paraphrased or dropped." },
+      { heading: "Show sources and limits", body: "Attribute data, link primary sources, and state where a claim stops applying. Attribution makes content safer to cite and harder to misrepresent." },
+    ],
+  },
+  "/content-audit-original-research-checklist": {
+    sections: [
+      { heading: "The checklist", body: "For each substantive page: is there original data or observation, is the method described, are sources linked, is authorship named, is the date current, and does any claim exceed the evidence? Six checks that surface the pages worth strengthening first." },
+      { heading: "Avoid overclaiming", body: "The fastest way to fail the audit is a claim your evidence does not support. Scale claims down to what was actually measured — precision reads as expertise; inflation reads as filler." },
+    ],
+  },
+  "/document-expertise-methodology": {
+    sections: [
+      { heading: "Describe the method, not just the result", body: "Explain how you tested, what you compared, and over what period. Method descriptions are what let readers — and AI systems summarizing you — distinguish measured findings from opinion." },
+      { heading: "Make authorship visible", body: "Named authors with real credentials and a linkable profile are a required signal in 2026: they give search and answer engines an entity to attribute expertise to, and give readers someone accountable for the advice." },
+    ],
+  },
+};
+
+for (const route of ROUTES) {
+  const extra = STATIC_CONTENT[route.path];
+  if (!extra) continue;
+  route.staticSections = [...(route.staticSections ?? []), ...(extra.sections ?? [])];
+  if (extra.faqs?.length) {
+    route.faqs = [...(route.faqs ?? []), ...extra.faqs];
+    // Surface the same Q&A as FAQPage JSON-LD unless the route already ships one.
+    const hasFaqLd = (route.jsonLd ?? []).some((ld) => ld["@type"] === "FAQPage");
+    if (!hasFaqLd) route.jsonLd = [...(route.jsonLd ?? []), faqLd(extra.faqs)];
+  }
+}
 
 export const SITE_ORIGIN = SITE;

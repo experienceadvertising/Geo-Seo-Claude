@@ -161,7 +161,7 @@ const PLAN_FEATURES = {
     "First month: all core audit features unlocked",
     "Then 5 audits / month",
     "2 simulations / month",
-    "3 prompts per audit",
+    "3 prompts per simulation",
     "ChatGPT engine only",
     "Basic 6-dimension AEO score",
     "AI crawler access audit",
@@ -180,7 +180,7 @@ const PLAN_FEATURES = {
   pro: [
     "100 audits / month",
     "30 simulations / month",
-    "25 prompts per audit",
+    "25 prompts per simulation",
     "ChatGPT, Claude, Gemini & Perplexity",
     "Fan-out mode + Topical Breadth score",
     "Google Search Console query opportunities",
@@ -196,7 +196,7 @@ const PLAN_FEATURES = {
   agency: [
     "150 audits / month",
     "40 simulations / month",
-    "10 prompts per simulation",
+    "25 prompts per simulation",
     "Up to 10 active client sites in Projects",
     "2 daily monitoring slots, weekly monitoring for the rest",
     "One connected GA4 property per workspace for now",

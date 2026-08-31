@@ -703,7 +703,7 @@ export default function SimulatePage() {
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-sm font-medium">
                 Prompts (one per line
-                {!isPro && <span className="ml-1 text-amber-600 font-semibold">· {planLabel}: max {maxPrompts}</span>})
+                <span className={`ml-1 font-semibold ${isPro ? "text-muted-foreground" : "text-amber-600"}`}>· {planLabel}: max {maxPrompts}</span>)
               </label>
               <div className="flex items-center gap-1.5">
                 <div className="flex rounded-md border overflow-hidden text-xs">
@@ -763,8 +763,11 @@ export default function SimulatePage() {
                   {invalidPromptCount} line{invalidPromptCount === 1 ? "" : "s"} ignored (&lt;5 chars)
                 </p>
               )}
-              {!isPro && prompts.length > maxPrompts && (
-                <p className="text-xs text-amber-600 font-medium">Only the first {maxPrompts} prompts will run. Upgrade to Pro to test up to 25 prompts across all four engines.</p>
+              {prompts.length > maxPrompts && (
+                <p className="text-xs text-amber-600 font-medium">
+                  Only the first {maxPrompts} prompts will run.
+                  {!isPro && <> Upgrade to Pro to test up to 25 prompts across all four engines.</>}
+                </p>
               )}
             </div>
 

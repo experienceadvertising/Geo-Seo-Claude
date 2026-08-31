@@ -7,6 +7,7 @@ import { buildPageUrlVariants, rankSearchOpportunities } from "./gscOpportunitie
 import { isAllowedByRobots, parseRobotsTxt } from "./robotsPolicy.ts";
 import { extractDataNoSnippetSignals } from "./snippetControls.ts";
 import { buildLatestRankSnapshotsQuery } from "./seoTrackingQueries.ts";
+import { PLAN_LIMITS, planRank, type Plan } from "./planLimits.ts";
 import {
   highestPaidPlan,
   isBlockingSubscriptionStatus,
@@ -151,4 +152,37 @@ test("rank tracking binds each of multiple keyword targets safely", () => {
   const compiled = new PgDialect().sqlToQuery(query);
   assert.match(compiled.sql, /target_id IN \(\$1, \$2\)/);
   assert.deepEqual(compiled.params, [26, 27]);
+});
+
+test("every numeric plan limit is monotonic — a higher tier never gets less", () => {
+  const ordered: Plan[] = ["free", "starter", "pro", "agency"];
+  // Sanity: rank order matches the tier order above.
+  for (let i = 1; i < ordered.length; i++) {
+    assert.ok(planRank(ordered[i]) > planRank(ordered[i - 1]));
+  }
+  for (let i = 1; i < ordered.length; i++) {
+    const lower = PLAN_LIMITS[ordered[i - 1]];
+    const higher = PLAN_LIMITS[ordered[i]];
+    for (const key of Object.keys(lower) as Array<keyof typeof lower>) {
+      const lo = lower[key];
+      const hi = higher[key];
+      if (typeof lo === "number" && typeof hi === "number") {
+        assert.ok(hi >= lo, `${ordered[i]}.${key} (${hi}) < ${ordered[i - 1]}.${key} (${lo})`);
+      } else if (typeof lo === "boolean" && typeof hi === "boolean") {
+        assert.ok(hi || !lo, `${ordered[i]}.${key} lost an entitlement ${ordered[i - 1]} has`);
+      } else if (Array.isArray(lo) && Array.isArray(hi)) {
+        for (const engine of lo) assert.ok(hi.includes(engine), `${ordered[i]}.${key} dropped ${engine}`);
+      }
+    }
+  }
+});
+
+test("plans that sell the Fix Generator have the flag the fixes route gates on", () => {
+  // The pricing page and Stripe product descriptions promise the Fix
+  // Generator from Starter up. GET /api/geo/audits/:id/fixes checks
+  // PLAN_LIMITS[plan].fixGenerator — keep the two in agreement.
+  assert.equal(PLAN_LIMITS.free.fixGenerator, false);
+  assert.equal(PLAN_LIMITS.starter.fixGenerator, true);
+  assert.equal(PLAN_LIMITS.pro.fixGenerator, true);
+  assert.equal(PLAN_LIMITS.agency.fixGenerator, true);
 });
