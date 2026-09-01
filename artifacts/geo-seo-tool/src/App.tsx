@@ -148,7 +148,7 @@ function AppShell() {
   return (
     <TooltipProvider>
       <RouteTracker />
-      <ErrorBoundary><Suspense fallback={<PageLoading />}><Layout><AppRoutes /></Layout></Suspense></ErrorBoundary>
+      <ErrorBoundary><Suspense fallback={<PageLoading />}><AppRoutes /></Suspense></ErrorBoundary>
       <CookieConsent />
       <Toaster />
     </TooltipProvider>
