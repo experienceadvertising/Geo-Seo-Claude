@@ -5,6 +5,7 @@ import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { customFetch } from "@workspace/api-client-react";
+import { apiErrorMessage } from "@/lib/api-error";
 
 type Status = "loading" | "subscribed" | "unsubscribed" | "invalid" | "submitting";
 
@@ -48,8 +49,8 @@ export default function UnsubscribePage() {
         body: JSON.stringify({ token }),
       });
       setStatus("unsubscribed");
-    } catch (err: any) {
-      setError(err?.body?.error || err?.message || "Something went wrong. Please try again.");
+    } catch (err: unknown) {
+      setError(apiErrorMessage(err, "Something went wrong. Please try again."));
       setStatus("subscribed");
     }
   }
@@ -63,8 +64,8 @@ export default function UnsubscribePage() {
         body: JSON.stringify({ token }),
       });
       setStatus("subscribed");
-    } catch (err: any) {
-      setError(err?.body?.error || err?.message || "Something went wrong. Please try again.");
+    } catch (err: unknown) {
+      setError(apiErrorMessage(err, "Something went wrong. Please try again."));
       setStatus("unsubscribed");
     }
   }

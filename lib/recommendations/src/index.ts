@@ -1,8 +1,8 @@
 import rawCatalog from "../data/recommendations.json" with { type: "json" };
-import type { Recommendation, SourceType, Severity, Category } from "./types.js";
+import type { Recommendation, SourceType, Severity, Category } from "./types.ts";
 
-export * from "./types.js";
-export { METHODOLOGY_VERSION } from "./types.js";
+export * from "./types.ts";
+export { METHODOLOGY_VERSION } from "./types.ts";
 
 // ---------------------------------------------------------------------------
 // Load + validate the JSON catalog at module-load time. Validation failures

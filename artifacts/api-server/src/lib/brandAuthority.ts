@@ -1,6 +1,10 @@
 import { logger } from "./logger";
 import { isWikiArticleConfident } from "./entityConfidence";
+
 export { isWikiArticleConfident } from "./entityConfidence";
+
+const MAX_ALT_NAMES = 2;
+const LOOKUP_BUDGET_MS = 25_000;
 
 export type SignalState = "found" | "not_found" | "unavailable";
 
@@ -592,13 +596,30 @@ export async function analyzeBrandAuthority(
     }
   }
 
-  const opts: CheckOpts = { brand: brandName, domain, altNames };
-  log.info({ url, brandName, domain, altNames }, "analyzeBrandAuthority.start");
+  // Each alt-name adds up to three sequential Wikipedia lookups (8s timeout
+  // apiece). Titles like "Home | Product | Company | Tagline" were turning
+  // one audit into minutes, so keep only the two most credible candidates.
+  const cappedAltNames = altNames.slice(0, MAX_ALT_NAMES);
+  const opts: CheckOpts = { brand: brandName, domain, altNames: cappedAltNames };
+  log.info({ url, brandName, domain, altNames: cappedAltNames }, "analyzeBrandAuthority.start");
 
+  // Hard wall-clock budget for the whole third-party lookup phase. A slow
+  // upstream degrades to "unavailable" (which the score treats neutrally)
+  // instead of stalling the audit.
+  const budgeted = <T extends BrandSignal>(p: Promise<T>, source: string): Promise<T | BrandSignal> =>
+    Promise.race([
+      p,
+      new Promise<BrandSignal>((resolve) =>
+        setTimeout(
+          () => resolve({ source, found: false, state: "unavailable", detail: `${source} lookup exceeded time budget` }),
+          LOOKUP_BUDGET_MS,
+        ).unref(),
+      ),
+    ]);
   const [wiki, ddg, gh] = await Promise.all([
-    checkWikipedia(opts),
-    checkDuckDuckGo(opts),
-    checkGitHub(opts),
+    budgeted(checkWikipedia(opts), "Wikipedia"),
+    budgeted(checkDuckDuckGo(opts), "DuckDuckGo"),
+    budgeted(checkGitHub(opts), "GitHub"),
   ]);
 
   log.info(

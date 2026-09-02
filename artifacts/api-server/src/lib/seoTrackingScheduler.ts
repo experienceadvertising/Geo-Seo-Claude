@@ -17,7 +17,7 @@ export async function runDueSeoRankSnapshots(maxPerSweep = 100): Promise<void> {
   const client = await pool.connect();
   try {
     const locked = await client.query<{ locked: boolean }>("SELECT pg_try_advisory_lock($1) AS locked", [1_947_026_072]);
-    if (!locked.rows[0]?.locked) return;
+    if (!locked.rows[0]?.locked) { log.info("seo.weekly-snapshot.skipped-lock-held"); return; }
     try {
       const cutoff = new Date(Date.now() - WEEK);
       const queued = await db.select({ task: seoRankTasksTable, target: seoKeywordTargetsTable }).from(seoRankTasksTable)
@@ -63,6 +63,6 @@ export async function runDueSeoRankSnapshots(maxPerSweep = 100): Promise<void> {
         }
       }
       log.info({ collected, failed, due: targets.length, queued: queued.length }, "seo.weekly-snapshot.complete");
-    } finally { await client.query("SELECT pg_advisory_unlock($1)").catch(() => undefined); }
+    } finally { await client.query("SELECT pg_advisory_unlock($1)", [1_947_026_072]).catch(() => undefined); }
   } finally { client.release(); }
 }

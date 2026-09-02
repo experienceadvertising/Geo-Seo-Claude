@@ -39,8 +39,11 @@ const LAST_TOUCH_KEY = "aeo.lastTouch";
 // GA4 measurement IDs are public identifiers. Keep the production property as a
 // fallback so a Replit build cannot silently remove analytics when Vite does not
 // receive the environment variable during its build step.
+// Dev/preview builds never fall back, so local sessions can't pollute the
+// live property once a tester accepts cookies.
 const GA4_MEASUREMENT_ID =
-  (import.meta.env.VITE_GA4_MEASUREMENT_ID as string | undefined) || "G-H3L37CSDKR";
+  (import.meta.env.VITE_GA4_MEASUREMENT_ID as string | undefined) ||
+  (import.meta.env.PROD ? "G-H3L37CSDKR" : undefined);
 const GOOGLE_ADS_ID = import.meta.env.VITE_GOOGLE_ADS_ID as string | undefined;
 const GOOGLE_ADS_SIGNUP_LABEL = import.meta.env.VITE_GOOGLE_ADS_SIGNUP_LABEL as string | undefined;
 const GOOGLE_ADS_ACTIVATION_LABEL = import.meta.env.VITE_GOOGLE_ADS_ACTIVATION_LABEL as string | undefined;

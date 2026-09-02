@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { customFetch } from "@workspace/api-client-react";
+import { apiErrorMessage } from "@/lib/api-error";
 import {
   Loader2, Plus, Play, Pause, Trash2, ExternalLink, Bell, Sparkles, Clock, Bot, Copy, Check, LineChart as LineChartIcon, Link2,
 } from "lucide-react";
@@ -257,7 +258,7 @@ export default function ProjectsPage() {
   const { storedPlan } = usePlan();
   const hasPaidPlan = storedPlan === "pro" || storedPlan === "agency";
 
-  const { data, isLoading } = useQuery<ListResponse>({
+  const { data, isLoading, isError, refetch } = useQuery<ListResponse>({
     queryKey: QUERY_KEY,
     queryFn: () => customFetch<ListResponse>("/api/geo/monitored-sites"),
   });
@@ -287,15 +288,15 @@ export default function ProjectsPage() {
       invalidate();
       toast({ title: "Site added", description: "We'll re-audit it on schedule and alert you when its score moves." });
     },
-    onError: (err: any) => {
-      toast({ title: "Couldn't add site", description: err?.body?.error || err?.message || "Please try again.", variant: "destructive" });
+    onError: (err: unknown) => {
+      toast({ title: "Couldn't add site", description: apiErrorMessage(err, "Please try again."), variant: "destructive" });
     },
   });
 
   const runNow = useMutation({
     mutationFn: (id: number) => customFetch(`/api/geo/monitored-sites/${id}/run`, { method: "POST" }),
     onSuccess: () => { invalidate(); toast({ title: "Re-audit complete", description: "The latest score is in." }); },
-    onError: (err: any) => toast({ title: "Run failed", description: err?.body?.error || err?.message || "Please try again.", variant: "destructive" }),
+    onError: (err: unknown) => toast({ title: "Run failed", description: apiErrorMessage(err, "Please try again."), variant: "destructive" }),
   });
 
   const toggleActive = useMutation({
@@ -313,7 +314,7 @@ export default function ProjectsPage() {
   const removeSite = useMutation({
     mutationFn: (id: number) => customFetch(`/api/geo/monitored-sites/${id}`, { method: "DELETE" }),
     onSuccess: () => { invalidate(); toast({ title: "Removed from monitoring" }); },
-    onError: (err: any) => toast({ title: "Couldn't remove", description: err?.body?.error || err?.message || "Please try again.", variant: "destructive" }),
+    onError: (err: unknown) => toast({ title: "Couldn't remove", description: apiErrorMessage(err, "Please try again."), variant: "destructive" }),
   });
 
   const sites = data?.sites ?? [];
@@ -322,7 +323,10 @@ export default function ProjectsPage() {
   const dailyLimit = data?.dailyLimit ?? 0;
   const dailyUsed = sites.filter((site) => site.frequency === "daily").length;
   const atLimit = limit > 0 && sites.length >= limit;
-  const monitoringLocked = limit === 0;
+  // Only a successful response can tell us the plan has no monitoring
+  // slots. While loading (or if the request failed) a paid user must not be
+  // shown the "Pro feature" upgrade wall in place of their sites.
+  const monitoringLocked = !!data && limit === 0;
 
   function handleAdd(e: React.FormEvent) {
     e.preventDefault();
@@ -344,7 +348,21 @@ export default function ProjectsPage() {
         </p>
       </div>
 
-      {monitoringLocked ? (
+      {isError ? (
+        <Card className="border-destructive/40">
+          <CardContent className="py-8 text-center space-y-3">
+            <p className="font-semibold">We couldn't load your monitored sites</p>
+            <p className="text-sm text-muted-foreground">Your sites are still being monitored. Please try again.</p>
+            <Button variant="outline" onClick={() => refetch()}>Retry</Button>
+          </CardContent>
+        </Card>
+      ) : isLoading && !data ? (
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-16 rounded-xl bg-muted/50 animate-pulse" />
+          ))}
+        </div>
+      ) : monitoringLocked ? (
         <Card className="border-emerald-500/30 bg-emerald-500/5">
           <CardContent className="py-8 text-center space-y-4">
             <Sparkles className="h-8 w-8 text-emerald-600 mx-auto" />

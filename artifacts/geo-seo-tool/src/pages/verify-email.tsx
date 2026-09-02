@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { customFetch } from "@workspace/api-client-react";
+import { apiErrorCode, apiErrorMessage } from "@/lib/api-error";
 
 type Status = "loading" | "success" | "error";
 
@@ -41,13 +42,10 @@ export default function VerifyEmailPage() {
         setStatus("success");
         setMessage("Your email is verified. Please sign in to continue.");
       })
-      .catch((err: any) => {
+      .catch((err: unknown) => {
         setStatus("error");
-        setErrorCode(err?.body?.code || null);
-        setMessage(
-          err?.body?.error ||
-            "We couldn't verify this link. Request a new one and try again.",
-        );
+        setErrorCode(apiErrorCode(err));
+        setMessage(apiErrorMessage(err, "We couldn't verify this link. Request a new one and try again."));
       });
   }, []);
 

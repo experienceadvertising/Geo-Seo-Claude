@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { customFetch } from "@workspace/api-client-react";
+import { apiErrorMessage } from "@/lib/api-error";
+import { getNextPath, nextQuerySuffix } from "@/lib/next-path";
 import { trackEvent, trackGoogleAdsConversion } from "@/lib/analytics";
 
 export default function SignUpPage() {
@@ -29,7 +31,7 @@ export default function SignUpPage() {
   // If the user is already signed in, send them to the dashboard rather than
   // showing the sign-up form.
   useEffect(() => {
-    if (isLoaded && isSignedIn) setLocation("/");
+    if (isLoaded && isSignedIn) setLocation(getNextPath());
   }, [isLoaded, isSignedIn, setLocation]);
 
   async function handleResend() {
@@ -58,8 +60,8 @@ export default function SignUpPage() {
       trackEvent("sign_up_complete");
       trackGoogleAdsConversion("signup");
       setDone(true);
-    } catch (err: any) {
-      setError(err?.body?.error || err?.message || "Sign up failed. Please try again.");
+    } catch (err: unknown) {
+      setError(apiErrorMessage(err, "Sign up failed. Please try again."));
     } finally {
       setLoading(false);
     }
@@ -93,7 +95,7 @@ export default function SignUpPage() {
             )}
             <p className="text-xs text-muted-foreground pt-2">
               Already verified?{" "}
-              <Link href="/sign-in" className="text-emerald-600 font-medium hover:underline">
+              <Link href={`/sign-in${nextQuerySuffix()}`} className="text-emerald-600 font-medium hover:underline">
                 Sign in
               </Link>
             </p>
@@ -178,7 +180,7 @@ export default function SignUpPage() {
             </p>
             <p className="text-center text-sm text-muted-foreground">
               Already have an account?{" "}
-              <Link href="/sign-in" className="text-emerald-600 font-medium hover:underline">
+              <Link href={`/sign-in${nextQuerySuffix()}`} className="text-emerald-600 font-medium hover:underline">
                 Sign in
               </Link>
             </p>

@@ -5,9 +5,10 @@ import { getStripeSync } from "./lib/stripeClient";
 import { startEmailScheduler } from "./lib/emailScheduler";
 import { runFreeMonthPromoGrant } from "./lib/promoGrant";
 import { runProductMigrations } from "./lib/productMigrations";
+import { isProduction as isProd } from "./lib/env";
 
 async function initStripe() {
-  const isProduction = process.env.REPLIT_DEPLOYMENT === "1" || process.env.NODE_ENV === "production";
+  const isProduction = isProd();
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) {
     logger.warn("DATABASE_URL not set — skipping Stripe initialization");

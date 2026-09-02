@@ -20,9 +20,12 @@ export default function ContactPage() {
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
+  // Prefill once from the signed-in user. Depending on `email` here would
+  // re-fill the field the instant the user cleared it.
+  const userEmail = user?.email;
   useEffect(() => {
-    if (user?.email && !email) setEmail(user.email);
-  }, [user, email]);
+    if (userEmail) setEmail((current) => current || userEmail);
+  }, [userEmail]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();

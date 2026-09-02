@@ -5,6 +5,7 @@ import ipaddr from "ipaddr.js";
 
 const MAX_REDIRECTS = 4;
 const DEFAULT_MAX_BYTES = 10 * 1024 * 1024;
+const DNS_TIMEOUT_MS = 5000;
 
 export class SsrfError extends Error {
   status: number;
@@ -37,9 +38,14 @@ async function assertPublicHost(hostname: string): Promise<void> {
   }
   let records: { address: string; family: number }[];
   try {
-    records = await dns.promises.lookup(hostname, { all: true, verbatim: true });
-  } catch {
-    throw new SsrfError(`DNS lookup failed for ${hostname}`);
+    records = await Promise.race([
+      dns.promises.lookup(hostname, { all: true, verbatim: true }),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new SsrfError(`DNS lookup timed out for ${hostname}`, 504)), DNS_TIMEOUT_MS).unref(),
+      ),
+    ]);
+  } catch (err) {
+    throw err instanceof SsrfError ? err : new SsrfError(`DNS lookup failed for ${hostname}`);
   }
   for (const r of records) {
     if (isPrivateIp(r.address)) {
@@ -182,12 +188,19 @@ function requestOnce(
       },
     );
 
+    // `setTimeout` on the request is an IDLE timeout — a server trickling a
+    // byte every few seconds would keep a "15s" request alive until maxBytes.
+    // Pair it with a hard wall-clock deadline for the whole exchange.
     req.setTimeout(timeoutMs, () => {
       req.destroy(new SsrfError("Request timed out", 504));
     });
+    const deadline = setTimeout(() => {
+      req.destroy(new SsrfError("Request exceeded time budget", 504));
+    }, timeoutMs);
     req.on("error", (err) => {
       reject(err instanceof SsrfError ? err : new SsrfError(`Fetch failed: ${err.message}`, 502));
     });
+    req.on("close", () => clearTimeout(deadline));
     req.end();
   });
 }

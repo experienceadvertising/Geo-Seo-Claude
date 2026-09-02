@@ -1,5 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
-import { SsrfError } from "../lib/safeFetch";
+// Explicit extension so the file is loadable by node --experimental-strip-types
+// (the regression tests import it directly); esbuild and tsc accept it too.
+import { SsrfError } from "../lib/safeFetch.ts";
 
 /** JSON 404 for any unmatched `/api/*` path so clients never receive the
  * default Express HTML page. */

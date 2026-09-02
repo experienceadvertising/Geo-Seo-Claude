@@ -104,7 +104,9 @@ router.get("/stripe/subscription", requireAuth, async (req, res): Promise<void> 
 router.post("/stripe/checkout", requireAuth, async (req, res): Promise<void> => {
   try {
     const userId = req.userId!;
-    const { priceId, plan } = req.body as { priceId: string; plan?: string };
+    const body = (req.body ?? {}) as { priceId?: unknown; plan?: unknown };
+    const priceId = typeof body.priceId === "string" ? body.priceId : "";
+    const plan = typeof body.plan === "string" ? body.plan : undefined;
 
     if (!priceId) {
       res.status(400).json({ error: "priceId required" });
@@ -186,7 +188,11 @@ router.post("/stripe/checkout", requireAuth, async (req, res): Promise<void> => 
       // different tier.
       success_url: `${baseUrl}/?checkout=success`,
       cancel_url: `${baseUrl}/pricing?checkout=cancel`,
-    }, { idempotencyKey: `aeo-checkout-${userId}-${priceId}` });
+    });
+    // No idempotency key on purpose: a fixed `${userId}-${priceId}` key made
+    // Stripe replay the ORIGINAL response for 24h, handing users a session
+    // we had since expired (switched plans) or already completed (cancelled
+    // and re-subscribed). The open-session reuse above is the real dedupe.
 
     res.json({ url: session.url });
   } catch (err: any) {

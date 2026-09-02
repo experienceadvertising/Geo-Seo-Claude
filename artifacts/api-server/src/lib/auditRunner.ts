@@ -37,6 +37,7 @@ export async function runAndStoreAudit(userId: string, url: string): Promise<Sto
     hasLlmsTxt: analysis.hasLlmsTxt,
     hasHttps: analysis.hasHttps,
     hasCanonical: analysis.hasCanonical,
+    hasNoSnippet: analysis.hasNoSnippet,
     wordCount: analysis.wordCount,
     rawHtmlWordCount: analysis.rawHtmlWordCount,
     renderedWordCount: analysis.renderedWordCount,
