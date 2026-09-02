@@ -78,14 +78,41 @@ async function start() {
     logger.error({ err }, "Free-month promo grant failed — will retry next boot"),
   );
   startEmailScheduler();
-  app.listen(port, (err) => {
+  const server = app.listen(port, (err) => {
     if (err) {
       logger.error({ err }, "Error listening on port");
       process.exit(1);
     }
     logger.info({ port }, "Server listening");
   });
+
+  // Graceful shutdown: stop accepting new connections, let in-flight requests
+  // finish, then exit. Autoscale deploys send SIGTERM before recycling a
+  // container; without this, in-flight audits are cut off mid-response.
+  let shuttingDown = false;
+  const shutdown = (signal: NodeJS.Signals) => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    logger.info({ signal }, "Shutting down");
+    const forceExit = setTimeout(() => {
+      logger.warn("Forced exit after shutdown timeout");
+      process.exit(1);
+    }, 10_000);
+    forceExit.unref();
+    server.close(() => {
+      logger.info("HTTP server closed");
+      process.exit(0);
+    });
+  };
+  process.on("SIGTERM", shutdown);
+  process.on("SIGINT", shutdown);
 }
+
+// Log (rather than silently drop) rejections that escape every handler, so
+// they show up in monitoring instead of only as a process crash.
+process.on("unhandledRejection", (reason) => {
+  logger.error({ err: reason }, "Unhandled promise rejection");
+});
 
 start().catch((err) => {
   logger.error({ err }, "Failed to start server");

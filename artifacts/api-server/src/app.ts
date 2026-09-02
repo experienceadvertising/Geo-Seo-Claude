@@ -6,6 +6,7 @@ import router from "./routes";
 import { logger } from "./lib/logger";
 import { WebhookHandlers } from "./lib/webhookHandlers";
 import { createSessionMiddleware } from "./middlewares/session";
+import { errorHandler, notFoundHandler } from "./middlewares/errorHandler";
 
 const app: Express = express();
 
@@ -100,5 +101,7 @@ app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 app.use(createSessionMiddleware());
 
 app.use("/api", router);
+app.use("/api", notFoundHandler);
+app.use(errorHandler);
 
 export default app;
