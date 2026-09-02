@@ -8,16 +8,14 @@
 // and is the single largest LLM-discoverability bug a Vite SPA ships with.
 //
 // This script reads the built index.html shell and, for each entry in
-// scripts/seo-manifest.mjs, writes dist/public/<route>/index.html with the
+// scripts/seo-manifest.mjs, writes dist/public/<route> with the
 // route-specific <title>, meta description, canonical, OpenGraph, Twitter
 // Card, and JSON-LD blocks substituted in. The body still loads the React
 // SPA bundle, so users get full client-side interactivity once JS executes.
 //
-// Replit static hosting (and most static hosts) serve directory paths as
-// <dir>/index.html, so /pricing → dist/public/pricing/index.html with no
-// rewrite needed. Local Vite preview already has a SPA fallback that
-// rewrites unknown paths to /index.html — once these files exist on disk
-// they're served directly instead of falling back.
+// Replit static hosting matches an extensionless file before its SPA fallback,
+// so /pricing → dist/public/pricing. Local Vite preview has a matching
+// middleware rule so the same public HTML is served in both environments.
 
 import { readFile, writeFile, mkdir, readdir, stat } from "node:fs/promises";
 import { existsSync } from "node:fs";
@@ -205,11 +203,15 @@ async function main() {
       continue;
     }
 
-    const outDir = join(DIST, ...route.path.split("/").filter(Boolean));
-    await mkdir(outDir, { recursive: true });
-    const outFile = join(outDir, "index.html");
-    await writeFile(outFile, html, "utf8");
-    console.log(`prerender: wrote ${route.path} → ${outFile}`);
+    // Replit's static deployment serves the root SPA shell for a directory
+    // route such as /pricing, even when pricing/index.html exists. It does
+    // honor an exact extensionless file match, so write that equivalent too.
+    // This keeps the human-friendly URL while ensuring non-JavaScript crawlers
+    // receive each page's own title, metadata, schema, and static content.
+    const exactRouteFile = join(DIST, ...route.path.split("/").filter(Boolean));
+    await mkdir(dirname(exactRouteFile), { recursive: true });
+    await writeFile(exactRouteFile, html, "utf8");
+    console.log(`prerender: wrote ${route.path} → ${exactRouteFile}`);
   }
 
   if (!homeWritten) {
