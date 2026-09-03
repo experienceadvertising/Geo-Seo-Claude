@@ -13,6 +13,7 @@ import { useStripeProducts, useStripeSubscription, useCheckout, useCustomerPorta
 import { useToast } from "@/hooks/use-toast";
 import { SEO, breadcrumbJsonLd } from "@/components/seo";
 import { trackEvent } from "@/lib/analytics";
+import { paidPlanActionLabel } from "@/lib/billingDisplay";
 
 const PRICING_TITLE = "Pricing | AEO Improvement SEO and GEO platform";
 const PRICING_DESC =
@@ -414,9 +415,16 @@ export default function PricingPage() {
   }
 
   function handleUpgrade(planId: "starter" | "pro" | "agency") {
-    if (currentPlan !== "free" || subData?.canManageBilling) {
+    if (subData?.canManageBilling) {
       trackEvent("billing_portal_opened", { current_plan: currentPlan });
       portal.mutate();
+      return;
+    }
+    if (currentPlan !== "free") {
+      toast({
+        title: "Contact support to change plans",
+        description: "This paid access is not connected to a self-service billing subscription.",
+      });
       return;
     }
     const price = getPriceForPlan(planId, billing);
@@ -611,7 +619,7 @@ export default function PricingPage() {
               isSignedIn={!!isSignedIn}
               onUpgrade={() => handleUpgrade(p.planId as "starter" | "pro" | "agency")}
               upgradeLoading={checkout.isPending || portal.isPending}
-              actionLabel={currentPlan !== "free" ? "Manage plan" : undefined}
+              actionLabel={currentPlan !== "free" && p.planId !== "free" ? paidPlanActionLabel(currentPlan, p.planId, canManageBilling) : undefined}
               badgeLabel={!!isSignedIn && currentPlan === p.planId ? "Current" : undefined}
             />
           ))}

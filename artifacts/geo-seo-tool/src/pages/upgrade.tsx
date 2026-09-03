@@ -26,6 +26,7 @@ import { usePlan } from "@/hooks/usePlan";
 import { useStripeProducts, useStripeSubscription, useCheckout, useCustomerPortal } from "@/hooks/useStripe";
 import { useToast } from "@/hooks/use-toast";
 import { Helmet } from "react-helmet-async";
+import { paidPlanActionDisabled, paidPlanActionLabel } from "@/lib/billingDisplay";
 
 /**
  * Conversion-focused upgrade landing page. The destination for every
@@ -349,8 +350,15 @@ export default function UpgradePage() {
       setLocation(`/sign-up?next=${encodeURIComponent(next)}`);
       return;
     }
-    if (storedPlan !== "free" || subData?.canManageBilling) {
+    if (subData?.canManageBilling) {
       portal.mutate();
+      return;
+    }
+    if (storedPlan !== "free") {
+      toast({
+        title: "Contact support to change plans",
+        description: "This paid access is not connected to a self-service billing subscription.",
+      });
       return;
     }
     const price = getPriceForPlan(planId);
@@ -368,6 +376,7 @@ export default function UpgradePage() {
   const starterPrice = getPriceForPlan("starter");
   const proPrice = getPriceForPlan("pro");
   const agencyPrice = getPriceForPlan("agency");
+  const canManageBilling = !!subData?.canManageBilling;
 
   // Loading shell — show skeleton instead of hero flash so source-aware
   // copy doesn't briefly render with the wrong plan context.
@@ -466,12 +475,12 @@ export default function UpgradePage() {
               size="lg"
               className="w-full bg-gradient-to-r from-sky-600 to-cyan-600 hover:opacity-90 text-white border-0 text-base font-semibold py-6"
               onClick={() => handleUpgrade("starter")}
-              disabled={checkout.isPending || portal.isPending || subscriptionLoading}
+              disabled={checkout.isPending || portal.isPending || subscriptionLoading || paidPlanActionDisabled(storedPlan, "starter", canManageBilling)}
             >
               {checkout.isPending || portal.isPending || subscriptionLoading ? (
                 <><Loader2 className="h-5 w-5 animate-spin mr-2" /> Opening billing…</>
               ) : (
-                <>{storedPlan === "free" ? "Choose Starter" : "Manage plan"} <ArrowRight className="h-5 w-5 ml-2" /></>
+                <>{paidPlanActionLabel(storedPlan, "starter", canManageBilling)} <ArrowRight className="h-5 w-5 ml-2" /></>
               )}
             </Button>
             <div className="text-center text-xs text-slate-500">Cancel anytime · No setup fees · Secure checkout via Stripe</div>
@@ -507,12 +516,12 @@ export default function UpgradePage() {
               size="lg"
               className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:opacity-90 text-white border-0 text-base font-semibold py-6"
               onClick={() => handleUpgrade("pro")}
-              disabled={checkout.isPending || portal.isPending || subscriptionLoading}
+              disabled={checkout.isPending || portal.isPending || subscriptionLoading || paidPlanActionDisabled(storedPlan, "pro", canManageBilling)}
             >
               {checkout.isPending || portal.isPending || subscriptionLoading ? (
                 <><Loader2 className="h-5 w-5 animate-spin mr-2" /> Opening billing…</>
               ) : (
-                <>{storedPlan === "free" ? "Upgrade to Pro" : "Manage plan"} <ArrowRight className="h-5 w-5 ml-2" /></>
+                <>{paidPlanActionLabel(storedPlan, "pro", canManageBilling)} <ArrowRight className="h-5 w-5 ml-2" /></>
               )}
             </Button>
 
@@ -583,12 +592,12 @@ export default function UpgradePage() {
                 variant="outline"
                 className="border-purple-300 text-purple-700 hover:bg-purple-50"
                 onClick={() => handleUpgrade("agency")}
-                disabled={checkout.isPending || portal.isPending || subscriptionLoading}
+                disabled={checkout.isPending || portal.isPending || subscriptionLoading || paidPlanActionDisabled(storedPlan, "agency", canManageBilling)}
               >
                 {checkout.isPending || portal.isPending || subscriptionLoading ? (
                   <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Opening billing…</>
                 ) : (
-                  <>{storedPlan === "free" ? "Upgrade to Agency" : "Manage plan"} <ExternalLink className="h-3.5 w-3.5 ml-1.5" /></>
+                  <>{paidPlanActionLabel(storedPlan, "agency", canManageBilling)} <ExternalLink className="h-3.5 w-3.5 ml-1.5" /></>
                 )}
               </Button>
             </div>
