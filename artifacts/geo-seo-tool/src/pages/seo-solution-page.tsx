@@ -27,7 +27,7 @@ const PAGES: Record<Variant, {
     questions: [
       { question: "What does AEO software do?", answer: "AEO software helps teams assess how clearly a website can be found, understood, and cited in AI-generated answers. A useful workflow checks technical access, factual content, structured data, brand signals, and real buyer questions." },
       { question: "Does AEO Improvement replace SEO software?", answer: "No. It is designed to connect SEO and AI-search work. Pro users can use Search Console opportunities and controlled keyword tracking alongside AI visibility checks, while Search Console remains the source of truth for organic performance." },
-      { question: "Can I start without a credit card?", answer: "Yes. New accounts receive a 30-day full-access trial with no card and no automatic charge. After the trial, you can stay on Free or choose a paid plan." },
+      { question: "Can I start without a credit card?", answer: "Yes. New accounts receive a 30-day guided trial with no card and no automatic charge. Pro activates connected Google data, rank tracking, and scheduled monitoring." },
     ],
   },
   visibility: {
@@ -40,7 +40,7 @@ const PAGES: Record<Variant, {
     audience: "Teams that need a grounded way to connect AI-search questions with the website work they can actually control.",
     questions: [
       { question: "How do you measure AI visibility?", answer: "Use a consistent set of buyer questions, record whether a brand is mentioned or cited, and keep the supporting technical and content signals alongside the result. AI answers can vary, so changes should be presented as observed movement, not proof of causation." },
-      { question: "Which AI engines can I test?", answer: "Paid plans can run simulations across ChatGPT, Claude, Gemini, and Perplexity. The free plan includes ChatGPT simulations after the full-access trial." },
+      { question: "Which AI engines can I test?", answer: "The guided trial includes ChatGPT, Claude, Gemini, and Perplexity. After the trial, Free and Starter include ChatGPT while Pro keeps all four engines and activates connected SEO tracking." },
       { question: "What can I fix after an AI visibility audit?", answer: "The workflow can surface crawler-access problems, unclear brand facts, missing or weak structured data, content-quality gaps, and technical SEO issues. Fix Generator output can draft schema and crawler-rule changes for review." },
     ],
   },
@@ -99,7 +99,7 @@ export default function SeoSolutionPage({ variant }: { variant: Variant }) {
           <h1 className="mt-3 max-w-3xl text-4xl font-bold leading-tight md:text-6xl">{page.heading}</h1>
           <p className="mt-6 max-w-3xl text-lg leading-relaxed text-slate-300">{page.intro}</p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
-            <Button size="lg" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setLocation("/sign-up")}>Start the 30-day full-access trial <ArrowRight className="ml-2 h-4 w-4" /></Button>
+            <Button size="lg" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setLocation("/sign-up")}>Start the 30-day guided trial <ArrowRight className="ml-2 h-4 w-4" /></Button>
             <Link href="/pricing" className="text-sm font-medium text-white underline underline-offset-4 hover:text-emerald-200">See plans and limits</Link>
           </div>
           <p className="mt-3 text-xs text-slate-400">No card required. Nothing is charged automatically.</p>

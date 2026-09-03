@@ -7,7 +7,8 @@ import { apiErrorMessage } from "@/lib/api-error";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAnalyzeUrl, useListAudits } from "@workspace/api-client-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { customFetch } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { ScoreBadge } from "@/components/score-badge";
 import { usePlan } from "@/hooks/usePlan";
@@ -258,7 +259,7 @@ function SignedOutLanding() {
                   "Get alerted the moment your score drops",
                   "Auto-generated JSON-LD and robots.txt fixes",
                   "Connect Google data when you are ready to measure",
-                  "30-day full-access trial, no card",
+                  "30-day guided trial, no card",
                 ].map(item => (
                   <li key={item} className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-shrink-0" />
@@ -291,7 +292,7 @@ function SignedOutLanding() {
               </div>
               <div className="flex flex-col items-center lg:items-start gap-1">
                 <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                  <Lock className="h-3 w-3" /> 30-day full-access trial. No credit card or automatic charge.
+                  <Lock className="h-3 w-3" /> 30-day guided trial. No credit card or automatic charge.
                 </p>
                 <Link href="/pricing" className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline font-medium">
                   See all plans &amp; pricing →
@@ -451,7 +452,7 @@ function SignedOutLanding() {
           <div className="relative px-8 md:px-16 py-14 md:py-20 flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="text-center md:text-left space-y-4 max-w-xl">
               <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 px-3 py-1 text-xs font-semibold text-emerald-300">
-                <CheckCircle2 className="h-3 w-3" /> 30-day full-access trial, no credit card
+                <CheckCircle2 className="h-3 w-3" /> 30-day guided trial, no credit card
               </div>
               <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight leading-tight">
                 Find out whether AI engines cite you. Then fix what is stopping them.
@@ -1002,6 +1003,43 @@ function SignedInDashboard() {
   const { data: audits, isLoading: auditsLoading, isError: auditsError, refetch: refetchAudits } = useListAudits();
   const analyzeUrl = useAnalyzeUrl();
   const queryClient = useQueryClient();
+  const { storedPlan } = usePlan();
+  const hasPaidPlan = storedPlan === "pro" || storedPlan === "agency";
+  const latestAudit = audits?.[0];
+  const latestDomain = (() => {
+    if (!latestAudit?.url) return null;
+    try {
+      return new URL(/^https?:\/\//i.test(latestAudit.url) ? latestAudit.url : `https://${latestAudit.url}`).hostname.replace(/^www\./, "");
+    } catch {
+      return null;
+    }
+  })();
+
+  const googleStatus = useQuery<{
+    configured: boolean;
+    connected: boolean;
+    searchConsoleGranted: boolean;
+    propertyId: string | null;
+  }>({
+    queryKey: ["google", "status"],
+    queryFn: () => customFetch("/api/integrations/google/status"),
+    enabled: hasPaidPlan,
+    retry: false,
+  });
+
+  const monitoredSites = useQuery<{ sites: Array<{ id: number; active: boolean }> }>({
+    queryKey: ["geo", "monitored-sites"],
+    queryFn: () => customFetch("/api/geo/monitored-sites"),
+    enabled: hasPaidPlan,
+    retry: false,
+  });
+
+  const seoKeywords = useQuery<{ targets: Array<{ id: number; active: boolean }>; providerConfigured: boolean }>({
+    queryKey: ["seo-keywords", latestDomain],
+    queryFn: () => customFetch(`/api/seo/keywords?domain=${encodeURIComponent(latestDomain!)}`),
+    enabled: hasPaidPlan && Boolean(latestDomain),
+    retry: false,
+  });
 
 
   // Post-checkout success handling. Stripe redirects successful upgrades to
@@ -1079,39 +1117,154 @@ function SignedInDashboard() {
   }
 
   const greeting = firstName ? `Welcome back, ${firstName}` : "Welcome back";
+  const hasAudit = Boolean(latestAudit);
+  const googleConnected = Boolean(
+    googleStatus.data?.connected && googleStatus.data?.searchConsoleGranted && googleStatus.data?.propertyId,
+  );
+  const monitoringActive = Boolean(monitoredSites.data?.sites?.some((site) => site.active));
+  const rankTrackingActive = Boolean(seoKeywords.data?.targets?.some((target) => target.active));
+  const confirmedSteps = [hasAudit, googleConnected, rankTrackingActive, monitoringActive];
+  const confirmedCount = confirmedSteps.filter(Boolean).length;
+
+  const StepIcon = ({ complete, number }: { complete: boolean; number: number }) => complete ? (
+    <CheckCircle2 className="h-6 w-6 shrink-0 text-emerald-600" aria-hidden="true" />
+  ) : (
+    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-slate-300 bg-white text-xs font-semibold text-slate-600">
+      {number}
+    </span>
+  );
 
   return (
     <div className="flex-1 w-full max-w-4xl mx-auto px-4 md:px-8 py-10 md:py-14 space-y-10">
-      <div className="space-y-1">
-        <h1 className="text-3xl font-bold tracking-tight">{greeting}</h1>
-        <p className="text-muted-foreground">Audit your site, then run a simulation to see if AI engines name you when real buyers search.</p>
-      </div>
+      <Card className="overflow-hidden border-emerald-500/30 shadow-lg shadow-emerald-500/5">
+        <div className="h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500" />
+        <CardHeader className="space-y-4 pb-4">
+          <div className="space-y-1">
+            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700">Program setup</p>
+            <CardTitle className="text-2xl md:text-3xl">{hasAudit ? "Keep your SEO + GEO program moving" : `${greeting}. Activate your SEO + GEO program.`}</CardTitle>
+            <CardDescription className="max-w-2xl text-sm leading-relaxed">
+              {hasAudit
+                ? "Your baseline is ready. Complete the next steps so we can measure performance, watch for changes, and keep your action plan current."
+                : "Start with your website. We will build the baseline, identify the most valuable improvements, and guide you through measurement and ongoing monitoring."}
+            </CardDescription>
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>{confirmedCount} of 4 setup steps complete</span>
+              <span>{Math.round((confirmedCount / 4) * 100)}%</span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+              <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all" style={{ width: `${(confirmedCount / 4) * 100}%` }} />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className={`rounded-xl border p-4 ${hasAudit ? "border-emerald-200 bg-emerald-50/60" : "border-emerald-500/40 bg-emerald-50"}`}>
+            <div className="flex items-start gap-3">
+              <StepIcon complete={hasAudit} number={1} />
+              <div className="min-w-0 flex-1 space-y-3">
+                <div>
+                  <p className="font-semibold">Create your SEO + GEO baseline</p>
+                  <p className="text-sm text-muted-foreground">Audit the site you want to improve. This unlocks your prioritized action plan and AI visibility tests.</p>
+                </div>
+                {!hasAudit ? (
+                  <form onSubmit={handleSubmit} className="flex flex-col gap-2 sm:flex-row">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        aria-label="Website URL to audit"
+                        className="h-11 pl-10 text-base"
+                        placeholder="https://yourwebsite.com"
+                        value={url}
+                        onChange={(e) => setUrl(e.target.value)}
+                        disabled={analyzeUrl.isPending}
+                      />
+                    </div>
+                    <Button type="submit" size="lg" disabled={analyzeUrl.isPending || !url.trim()} className="h-11 bg-emerald-600 px-6 hover:bg-emerald-700">
+                      {analyzeUrl.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Run my baseline <ArrowRight className="ml-1 h-4 w-4" /></>}
+                    </Button>
+                  </form>
+                ) : (
+                  <Link href={`/results/${latestAudit!.id}`}>
+                    <Button size="sm" variant="outline">Open my action plan <ArrowRight className="ml-1 h-4 w-4" /></Button>
+                  </Link>
+                )}
+              </div>
+            </div>
+          </div>
 
-      <form onSubmit={handleSubmit} className="flex gap-2 max-w-2xl">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            aria-label="Website URL to audit"
-            className="pl-10 h-11 text-base"
-            placeholder="https://yourwebsite.com"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            disabled={analyzeUrl.isPending}
-          />
-        </div>
-        <Button
-          type="submit"
-          size="lg"
-          disabled={analyzeUrl.isPending || !url.trim()}
-          className="h-11 px-6 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-md shadow-emerald-500/25"
-        >
-          {analyzeUrl.isPending ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <>Audit <ArrowRight className="ml-1 h-4 w-4" /></>
+          <div className={`rounded-xl border p-4 ${googleConnected ? "border-emerald-200 bg-emerald-50/60" : "border-slate-200"}`}>
+            <div className="flex items-start gap-3">
+              <StepIcon complete={googleConnected} number={2} />
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold">Connect Google measurement</p>
+                <p className="text-sm text-muted-foreground">Add Search Console and GA4 so recommendations use real queries, clicks, rankings, and AI referral traffic.</p>
+                <div className="mt-3">
+                  {googleConnected ? (
+                    <p className="text-xs font-semibold text-emerald-700">Search Console and GA4 are connected</p>
+                  ) : hasPaidPlan ? (
+                    <Link href="/projects"><Button size="sm" variant="outline">Connect Google</Button></Link>
+                  ) : (
+                    <Link href="/upgrade?source=program-setup"><Button size="sm" variant="outline"><Lock className="mr-1.5 h-3.5 w-3.5" />Activate with a paid plan</Button></Link>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className={`rounded-xl border p-4 ${rankTrackingActive ? "border-emerald-200 bg-emerald-50/60" : "border-slate-200"}`}>
+            <div className="flex items-start gap-3">
+              <StepIcon complete={rankTrackingActive} number={3} />
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold">Track the searches that matter</p>
+                <p className="text-sm text-muted-foreground">Choose your priority keywords, location, device, and landing page. Weekly DataForSEO snapshots show movement from your baseline.</p>
+                <div className="mt-3">
+                  {rankTrackingActive ? (
+                    <p className="text-xs font-semibold text-emerald-700">Keyword rank tracking is active</p>
+                  ) : hasPaidPlan && hasAudit ? (
+                    <Link href={`/results/${latestAudit!.id}`}><Button size="sm" variant="outline">Choose tracked keywords</Button></Link>
+                  ) : hasPaidPlan ? (
+                    <p className="text-xs font-medium text-slate-500">Run your baseline audit first</p>
+                  ) : (
+                    <Link href="/upgrade?source=rank-tracking-setup"><Button size="sm" variant="outline"><Lock className="mr-1.5 h-3.5 w-3.5" />Upgrade for SEO rank tracking</Button></Link>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className={`rounded-xl border p-4 ${monitoringActive ? "border-emerald-200 bg-emerald-50/60" : "border-slate-200"}`}>
+            <div className="flex items-start gap-3">
+              <StepIcon complete={monitoringActive} number={4} />
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold">Turn on ongoing monitoring</p>
+                <p className="text-sm text-muted-foreground">Choose the site and weekly cadence. We will preserve the baseline and surface meaningful SEO or GEO changes.</p>
+                <div className="mt-3">
+                  {monitoringActive ? (
+                    <p className="text-xs font-semibold text-emerald-700">Weekly monitoring is active</p>
+                  ) : hasPaidPlan ? (
+                    <Link href="/projects"><Button size="sm" variant="outline">Set up monitoring</Button></Link>
+                  ) : (
+                    <p className="text-xs font-medium text-slate-500">Available after upgrade</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {!hasPaidPlan && (
+            <div className="rounded-xl bg-slate-950 p-4 text-white sm:flex sm:items-center sm:justify-between sm:gap-4">
+              <div>
+                <p className="font-semibold">Unlock the complete SEO growth system</p>
+                <p className="mt-1 text-sm text-slate-300">Pro adds Search Console insights, GA4 reporting, DataForSEO rank tracking, and scheduled monitoring.</p>
+              </div>
+              <Link href="/upgrade?source=program-setup-summary">
+                <Button size="sm" className="mt-3 shrink-0 bg-emerald-500 text-slate-950 hover:bg-emerald-400 sm:mt-0">Compare paid plans</Button>
+              </Link>
+            </div>
           )}
-        </Button>
-      </form>
+        </CardContent>
+      </Card>
 
       {analyzeUrl.isPending && <AnalysisProgress />}
 
@@ -1119,15 +1272,7 @@ function SignedInDashboard() {
         <AeoJourneyCard audits={audits} />
       )}
 
-      {!analyzeUrl.isPending && (
-        <ReferralCard />
-      )}
-
-      {!analyzeUrl.isPending && <WhatsNewCard />}
-
-      {!analyzeUrl.isPending && (!audits || audits.length === 0) && <DashboardLearningHub />}
-
-      {!analyzeUrl.isPending && (
+      {!analyzeUrl.isPending && (auditsLoading || auditsError || (audits && audits.length > 0)) && (
         <div className="space-y-4">
           <h2 className="text-lg font-semibold">Recent audits</h2>
           {auditsLoading ? (
@@ -1143,38 +1288,9 @@ function SignedInDashboard() {
                 <Button variant="outline" size="sm" onClick={() => refetchAudits()}>Retry</Button>
               </CardContent>
             </Card>
-          ) : !audits || audits.length === 0 ? (
-            <Card className="border-dashed">
-              <CardContent className="py-12 text-center space-y-4">
-                <Sparkles className="h-8 w-8 text-muted-foreground/40 mx-auto" />
-                <p className="text-muted-foreground">No audits yet. Enter a URL above to get your first AEO score.</p>
-                <div className="space-y-2">
-                  <p className="text-xs uppercase tracking-wider text-muted-foreground/70">Or try one of these</p>
-                  <div className="flex flex-wrap items-center justify-center gap-2">
-                    {(() => {
-                      const samples = ["stripe.com", "notion.so", "anthropic.com"];
-                      const userDomain = user?.email?.split("@")[1];
-                      const chips = userDomain && !["gmail.com","yahoo.com","outlook.com","hotmail.com","icloud.com"].includes(userDomain)
-                        ? [userDomain, ...samples.slice(0, 2)]
-                        : samples;
-                      return chips.map((d) => (
-                        <button
-                          key={d}
-                          type="button"
-                          onClick={() => setUrl(d)}
-                          className="rounded-full border border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-400 transition-colors"
-                        >
-                          {d}
-                        </button>
-                      ));
-                    })()}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           ) : (
             <div className="space-y-2">
-              {audits.map((audit: any) => (
+              {(audits ?? []).map((audit: any) => (
                 <Link key={audit.id} href={`/results/${audit.id}`}>
                   <Card className="cursor-pointer hover:border-emerald-500/30 hover:shadow-md transition-all">
                     <CardContent className="py-4 flex items-center justify-between gap-4">

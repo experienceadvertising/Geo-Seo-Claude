@@ -336,15 +336,15 @@ export default function ProjectsPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-10 space-y-8">
-      <SEO title="Projects — Monitored sites | AEO Improvement" description="Track your sites' AEO scores continuously with scheduled re-audits and score-change alerts." path="/projects" index={false} />
+      <SEO title="Sites and tracking | AEO Improvement" description="Track SEO and GEO performance with scheduled audits, Google data, keyword rankings, crawler activity, and score-change alerts." path="/projects" index={false} />
 
       <div className="space-y-2">
         <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-          <Bell className="h-6 w-6 text-emerald-600" /> Projects
+          <Bell className="h-6 w-6 text-emerald-600" /> Sites and tracking
         </h1>
         <p className="text-muted-foreground text-sm max-w-2xl">
-          Add the sites you want to watch. We re-audit each one on schedule and email you when its AEO score moves by
-          5 points or more — so you find out before your competitors do.
+          Monitor the sites and search performance that matter. Scheduled audits, crawler activity, Google data, and
+          ranking changes stay together here.
         </p>
       </div>
 

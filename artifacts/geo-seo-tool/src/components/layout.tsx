@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Sparkles, LogOut, Shield, Menu } from "lucide-react";
+import { Sparkles, LogOut, Shield, Menu, LayoutDashboard, FolderKanban, CreditCard, BookOpen, CircleHelp } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { customFetch } from "@workspace/api-client-react";
@@ -61,6 +61,20 @@ export function Layout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [pathname]);
+
+  const isAppRoute = isSignedIn && (
+    pathname === "/" ||
+    pathname === "/dashboard" ||
+    pathname.startsWith("/results/") ||
+    pathname.startsWith("/simulate/") ||
+    pathname === "/projects" ||
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/upgrade")
+  );
+
+  if (isLoaded && isAppRoute) {
+    return <AppShell pathname={pathname}>{children}</AppShell>;
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col font-sans">
@@ -131,6 +145,106 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {children}
       </main>
       <SiteFooter />
+    </div>
+  );
+}
+
+const APP_NAV = [
+  { label: "Dashboard", href: "/", icon: LayoutDashboard },
+  { label: "Tracking", href: "/projects", icon: FolderKanban },
+  { label: "Plans", href: "/upgrade", icon: CreditCard },
+];
+
+const APP_SUPPORT_NAV = [
+  { label: "Methodology", href: "/methodology", icon: BookOpen },
+  { label: "Help", href: "/contact", icon: CircleHelp },
+];
+
+function AppNavLink({ label, href, icon: Icon, pathname, compact = false }: {
+  label: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  pathname: string;
+  compact?: boolean;
+}) {
+  const active = href === "/"
+    ? pathname === "/" || pathname.startsWith("/results/") || pathname.startsWith("/simulate/")
+    : pathname === href || pathname.startsWith(`${href}/`);
+
+  return (
+    <Link
+      href={href}
+      aria-current={active ? "page" : undefined}
+      className={compact
+        ? `flex min-h-14 flex-1 flex-col items-center justify-center gap-1 px-2 text-[11px] font-medium ${active ? "text-emerald-700" : "text-slate-500"}`
+        : `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${active ? "bg-emerald-50 text-emerald-800" : "text-slate-600 hover:bg-slate-100 hover:text-slate-950"}`}
+    >
+      <Icon className={compact ? "h-5 w-5" : "h-4 w-4"} />
+      <span>{label}</span>
+    </Link>
+  );
+}
+
+function AppShell({ children, pathname }: { children: React.ReactNode; pathname: string }) {
+  return (
+    <div className="min-h-screen bg-slate-50 font-sans md:flex">
+      <aside className="hidden min-h-screen w-64 shrink-0 border-r border-slate-200 bg-white md:flex md:flex-col">
+        <div className="border-b border-slate-100 px-5 py-5">
+          <Link href="/" className="flex items-center gap-2.5 font-bold tracking-tight text-slate-950">
+            <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-teal-600 to-emerald-700 text-white shadow-sm">
+              <Sparkles className="h-4 w-4" />
+            </span>
+            <span>AEO Improvement</span>
+          </Link>
+          <p className="mt-2 pl-10 text-[11px] font-medium uppercase tracking-wider text-emerald-700">SEO + GEO workspace</p>
+        </div>
+
+        <nav className="flex-1 space-y-1 px-3 py-5" aria-label="Application navigation">
+          {APP_NAV.map((item) => <AppNavLink key={item.href} {...item} pathname={pathname} />)}
+          <div className="my-4 border-t border-slate-100" />
+          {APP_SUPPORT_NAV.map((item) => <AppNavLink key={item.href} {...item} pathname={pathname} />)}
+          <AdminLink />
+        </nav>
+
+        <div className="space-y-3 border-t border-slate-100 p-4">
+          <TrialBanner />
+          <UsageMeter />
+          <UserBadge />
+        </div>
+      </aside>
+
+      <div className="min-w-0 flex-1">
+        <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-slate-200 bg-white/95 px-4 backdrop-blur md:hidden">
+          <Link href="/" className="flex items-center gap-2 font-bold tracking-tight text-slate-950">
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-teal-600 to-emerald-700 text-white">
+              <Sparkles className="h-4 w-4" />
+            </span>
+            <span>AEO Improvement</span>
+          </Link>
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-11 w-11" aria-label="Open account navigation"><Menu className="h-5 w-5" /></Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[min(85vw,320px)]">
+              <SheetTitle>Account and support</SheetTitle>
+              <nav className="mt-8 flex flex-col gap-1">
+                {APP_SUPPORT_NAV.map(({ label, href, icon: Icon }) => (
+                  <SheetClose asChild key={href}>
+                    <Link href={href} className="flex items-center gap-3 rounded-md px-3 py-3 text-sm font-medium hover:bg-muted"><Icon className="h-4 w-4" />{label}</Link>
+                  </SheetClose>
+                ))}
+              </nav>
+              <div className="mt-6 border-t pt-4"><UserBadge /></div>
+            </SheetContent>
+          </Sheet>
+        </header>
+
+        <main className="min-h-screen pb-20 md:pb-0">{children}</main>
+
+        <nav className="fixed inset-x-0 bottom-0 z-40 flex border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden" aria-label="Primary application navigation">
+          {APP_NAV.map((item) => <AppNavLink key={item.href} {...item} pathname={pathname} compact />)}
+        </nav>
+      </div>
     </div>
   );
 }

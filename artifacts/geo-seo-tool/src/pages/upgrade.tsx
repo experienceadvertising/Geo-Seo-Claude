@@ -90,7 +90,7 @@ function buildHero(
       : null;
     if (source === "trial-ending" || (daysLeft !== null && daysLeft <= 5)) {
       return {
-        badge: endDate ? `Full-access trial ends ${endDate}` : "Full-access trial ending soon",
+        badge: endDate ? `Guided trial ends ${endDate}` : "Guided trial ending soon",
         badgeTone: "amber",
         headline: "Choose how you want to keep improving",
         subhead:
@@ -99,11 +99,11 @@ function buildHero(
       };
     }
     return {
-      badge: endDate ? `30-day full-access trial · until ${endDate}` : "30-day full-access trial",
+      badge: endDate ? `30-day guided trial · until ${endDate}` : "30-day guided trial",
       badgeTone: "emerald",
-      headline: "Your full SEO and GEO workspace is ready",
+      headline: "Build your baseline, then activate connected SEO tracking",
       subhead:
-        "Use all four AI engines, the Fix Generator, competitor analysis, and monitoring free for 30 days. When the trial ends, choose Free, Starter, Pro, or Agency. Nothing is charged automatically.",
+        "Use the audit, all four AI engines, the Fix Generator, and competitor analysis during your trial. Pro activates Search Console, GA4, DataForSEO rankings, and scheduled monitoring. Nothing is charged automatically.",
       showUsage: false,
     };
   }
@@ -611,7 +611,7 @@ export default function UpgradePage() {
           </p>
           <p className="text-xs text-slate-400 pt-2">
             Plan: <span className="capitalize font-medium text-slate-600">{storedPlan}</span>
-            {trialActive && <span className="text-emerald-600"> · 30-day full-access trial active</span>}
+            {trialActive && <span className="text-emerald-600"> · 30-day guided trial active</span>}
           </p>
         </div>
       </div>

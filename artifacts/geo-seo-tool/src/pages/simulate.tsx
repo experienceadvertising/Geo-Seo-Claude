@@ -663,7 +663,7 @@ export default function SimulatePage() {
         <CardContent className="space-y-4">
           {trialActive && storedPlan === "free" && (
             <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-900">
-              <strong>Full-access trial enabled.</strong> You can test all four engines for 30 days{trialEndLabel ? `, through ${trialEndLabel}` : ""}. After that, Free and Starter use ChatGPT while Pro keeps all four engines. <Link href="/pricing" className="font-medium underline">Compare plans</Link>
+              <strong>Guided trial enabled.</strong> You can test all four engines for 30 days{trialEndLabel ? `, through ${trialEndLabel}` : ""}. After that, Free and Starter use ChatGPT while Pro keeps all four engines and activates connected SEO tracking. <Link href="/pricing" className="font-medium underline">Compare plans</Link>
             </div>
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
