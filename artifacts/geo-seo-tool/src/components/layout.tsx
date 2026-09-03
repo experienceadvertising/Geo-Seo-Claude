@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { UsageMeter } from "@/components/usage-meter";
 import { TrialBanner } from "@/components/trial-banner";
 import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { shouldUseAppShell } from "@/lib/appRoute";
 
 function AdminLink() {
   const { isSignedIn } = useAuth();
@@ -62,15 +63,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [pathname]);
 
-  const isAppRoute = isSignedIn && (
-    pathname === "/" ||
-    pathname === "/dashboard" ||
-    pathname.startsWith("/results/") ||
-    pathname.startsWith("/simulate/") ||
-    pathname === "/projects" ||
-    pathname.startsWith("/admin") ||
-    pathname.startsWith("/upgrade")
-  );
+  const isAppRoute = shouldUseAppShell(pathname, isSignedIn);
 
   if (isLoaded && isAppRoute) {
     return <AppShell pathname={pathname}>{children}</AppShell>;

@@ -1,9 +1,13 @@
 import OpenAI from "openai";
 import Anthropic from "@anthropic-ai/sdk";
 import { safeFetch } from "./safeFetch";
+import { extractCompetitorBrandsFromText } from "./competitorNames";
+import { normalizeGeneratedPrompts } from "./promptQuality";
 
 const ENGINE_TIMEOUT_MS = 90_000;
 const PER_ATTEMPT_TIMEOUT_MS = 28_000;
+const CLAUDE_ATTEMPT_TIMEOUT_MS = 45_000;
+const CLAUDE_ENGINE_TIMEOUT_MS = 105_000;
 
 function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
   return new Promise<T>((resolve, reject) => {
@@ -22,6 +26,7 @@ function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
 async function withRetry<T>(
   fn: () => Promise<T>,
   label: string,
+  attemptTimeoutMs = PER_ATTEMPT_TIMEOUT_MS,
 ): Promise<T> {
   const RATE_LIMIT_DELAYS_MS = [6_000, 12_000];
   const isRateLimit = (err: unknown) =>
@@ -38,7 +43,7 @@ async function withRetry<T>(
 
   for (;;) {
     try {
-      return await withTimeout(fn(), PER_ATTEMPT_TIMEOUT_MS, `${label} (attempt ${retries + 1})`);
+      return await withTimeout(fn(), attemptTimeoutMs, `${label} (attempt ${retries + 1})`);
     } catch (err) {
       retryLimit = isRateLimit(err) ? 2 : isTransient(err) ? 1 : 0;
       if (retries >= retryLimit) throw err;
@@ -278,55 +283,6 @@ function detectSentiment(text: string, brandName: string): SentimentLabel | null
   return "Neutral";
 }
 
-// Generic/category words that, on their own, do not identify a competing brand.
-// Used by looksLikeBrand() to reject bold segments that are really category labels
-// ("Top Paid Media Platforms", "Best Ecommerce Metrics") rather than brand names.
-const BRAND_STOPWORDS = new Set([
-  "top", "best", "tier", "agency", "agencies", "platform", "platforms", "metrics",
-  "channels", "channel", "pricing", "marketing", "digital", "media", "paid",
-  "ecommerce", "brand", "brands", "google", "meta", "facebook", "instagram",
-  "tiktok", "youtube", "linkedin", "twitter", "seo", "sem", "ppc", "ads", "ad",
-  "the", "and", "for", "with", "your", "company", "services", "solutions",
-]);
-
-// Heuristic: does a bold text segment look like a real brand/company name rather
-// than a generic category phrase or a sentence fragment? Used to mine competitor
-// names out of the AI engine's own prose (which usually bolds the brands it names).
-function looksLikeBrand(name: string): boolean {
-  const cleaned = name.replace(/[*_#]/g, "").replace(/^\s*\d+[.)]\s*/, "").trim();
-  if (cleaned.length < 2 || cleaned.length > 40) return false;
-  if (cleaned.includes("&")) return false;
-  if (/[:?]$/.test(cleaned)) return false;
-  if (!/^[A-Z0-9]/.test(cleaned)) return false;
-  const words = cleaned.split(/\s+/);
-  if (words.length > 5) return false;
-  const generic = words.filter((w) => BRAND_STOPWORDS.has(w.toLowerCase())).length;
-  if (generic >= Math.ceil(words.length / 2)) return false;
-  return true;
-}
-
-// Mine candidate competitor names from the engine's bolded prose. AI engines
-// almost always **bold** the brands they recommend, so this surfaces real named
-// competitors even when no external URL is cited.
-function extractBrandsFromText(text: string, brandName: string): string[] {
-  const ownBrand = brandName.trim().toLowerCase();
-  const seen = new Set<string>();
-  const out: string[] = [];
-  const re = /\*\*([^*\n]{2,60})\*\*/g;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(text)) !== null) {
-    const candidate = m[1].replace(/[.,;:!?)\]]+$/, "").trim();
-    if (!looksLikeBrand(candidate)) continue;
-    const norm = candidate.toLowerCase();
-    if (norm === ownBrand) continue;
-    if (seen.has(norm)) continue;
-    seen.add(norm);
-    out.push(candidate);
-    if (out.length >= 10) break;
-  }
-  return out;
-}
-
 function detectCompetitors(citedUrls: string[], brandName: string, targetDomain: string): string[] {
   // Use cited domains as the signal for competitors: every AI engine that returns
   // a non-target citation is effectively recommending another brand for that prompt.
@@ -375,7 +331,7 @@ async function queryClaude(prompt: string): Promise<{ text: string; urls: string
     max_tokens: 1500,
     messages: [{ role: "user", content: prompt }],
     tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 3 } as any],
-  });
+  }, { signal: AbortSignal.timeout(CLAUDE_ATTEMPT_TIMEOUT_MS) });
   let text = "";
   const urls = new Set<string>();
   for (const block of resp.content as any[]) {
@@ -499,14 +455,16 @@ async function runEngineForPrompt(
 ): Promise<EngineResult> {
   const start = Date.now();
   try {
+    const attemptTimeoutMs = engineId === "claude" ? CLAUDE_ATTEMPT_TIMEOUT_MS : PER_ATTEMPT_TIMEOUT_MS;
+    const engineTimeoutMs = engineId === "claude" ? CLAUDE_ENGINE_TIMEOUT_MS : ENGINE_TIMEOUT_MS;
     const { text, urls } = await withTimeout(
-      withRetry(() => fn(prompt), engineLabel),
-      ENGINE_TIMEOUT_MS,
+      withRetry(() => fn(prompt), engineLabel, attemptTimeoutMs),
+      engineTimeoutMs,
       engineLabel,
     );
     const { mentioned, firstPosition } = detectBrandMention(text, brandName);
     const domainCited = detectDomainCitation(urls, domain);
-    const namedBrands = extractBrandsFromText(text, brandName);
+    const namedBrands = extractCompetitorBrandsFromText(text, brandName);
     const competitorMentions = namedBrands.length > 0
       ? namedBrands
       : detectCompetitors(urls, brandName, domain);
@@ -684,11 +642,14 @@ IMPORTANT: Read the site context carefully below to understand what ${brandName}
 
 Rules:
 - Generate exactly 3 prompts
-- Cover one high-intent category query, one comparison or alternative query, and one job-to-be-done or implementation query
-- Each prompt must be 8 to 15 words, short and natural, the way real users actually type queries
+- Cover one high-intent category question, one comparison question, and one provider-selection or problem-solving question
+- Write each prompt as a complete grammatical question ending in a question mark
+- Start each prompt with a natural question word such as Which, What, Who, How, or Should
+- Each prompt must be 8 to 18 words, short and natural, the way a buyer would ask another person
 - Match the prompts to the actual product, service, or community type inferred from the context
 - Do not include the brand name "${brandName}" in any prompt. They must be neutral category prompts the brand could be cited for
 - Write in natural human language, not marketing language or B2B jargon
+- Do not return keyword-list fragments, headings, commands, or phrases ending in "pros and cons"
 - Target the actual audience inferred from the context
 - Return ONLY the 3 prompts, one per line, no numbering, no bullets, no quotes, no explanation`;
 
@@ -699,10 +660,10 @@ Rules:
 IMPORTANT: Read the site context carefully below to understand ${brandName}'s category, audience, and use cases.
 
 Rules:
-- Generate exactly 3 prompts
+- Generate exactly 3 complete questions
 - Cover one primary-intent query, one decision or comparison query, and one supporting use case or problem query
 - Include only categories that naturally fit the site context
-- Each prompt must be 6 to 14 words in natural query-style phrasing
+- Each prompt must be 6 to 16 words and end in a question mark
 - Do not include "${brandName}" in any prompt. These must be neutral category queries the site could be cited for
 - Keep every query tightly connected to the likely primary topic. Remove broad, generic, awkward, or repetitive variations
 - Return ONLY the 3 prompts, one per line, no numbering, no bullets, no quotes, no explanation`;
@@ -721,9 +682,5 @@ Rules:
     max_completion_tokens: 1000,
   });
   const text = resp.choices[0]?.message?.content || "";
-  return text
-    .split("\n")
-    .map((l) => l.replace(/^[\d.\-\)\s"'*]+|["'\s]+$/g, "").trim())
-    .filter((l) => l.length > 10 && l.length < 200)
-    .slice(0, maxPrompts);
+  return normalizeGeneratedPrompts(text, maxPrompts);
 }

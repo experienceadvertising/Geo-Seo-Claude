@@ -4,6 +4,7 @@ import { Search, Loader2, ArrowRight, BarChart3, TrendingUp, TrendingDown, Minus
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { apiErrorMessage } from "@/lib/api-error";
+import { hasMonitoringAccess } from "@/lib/planDisplay";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAnalyzeUrl, useListAudits } from "@workspace/api-client-react";
@@ -1003,8 +1004,9 @@ function SignedInDashboard() {
   const { data: audits, isLoading: auditsLoading, isError: auditsError, refetch: refetchAudits } = useListAudits();
   const analyzeUrl = useAnalyzeUrl();
   const queryClient = useQueryClient();
-  const { storedPlan } = usePlan();
+  const { storedPlan, trialActive } = usePlan();
   const hasPaidPlan = storedPlan === "pro" || storedPlan === "agency";
+  const canUseMonitoring = hasMonitoringAccess(storedPlan, trialActive);
   const latestAudit = audits?.[0];
   const latestDomain = (() => {
     if (!latestAudit?.url) return null;
@@ -1030,7 +1032,7 @@ function SignedInDashboard() {
   const monitoredSites = useQuery<{ sites: Array<{ id: number; active: boolean }> }>({
     queryKey: ["geo", "monitored-sites"],
     queryFn: () => customFetch("/api/geo/monitored-sites"),
-    enabled: hasPaidPlan,
+    enabled: canUseMonitoring,
     retry: false,
   });
 
@@ -1242,7 +1244,7 @@ function SignedInDashboard() {
                 <div className="mt-3">
                   {monitoringActive ? (
                     <p className="text-xs font-semibold text-emerald-700">Weekly monitoring is active</p>
-                  ) : hasPaidPlan ? (
+                  ) : canUseMonitoring ? (
                     <Link href="/projects"><Button size="sm" variant="outline">Set up monitoring</Button></Link>
                   ) : (
                     <p className="text-xs font-medium text-slate-500">Available after upgrade</p>
@@ -1255,8 +1257,12 @@ function SignedInDashboard() {
           {!hasPaidPlan && (
             <div className="rounded-xl bg-slate-950 p-4 text-white sm:flex sm:items-center sm:justify-between sm:gap-4">
               <div>
-                <p className="font-semibold">Unlock the complete SEO growth system</p>
-                <p className="mt-1 text-sm text-slate-300">Pro adds Search Console insights, GA4 reporting, DataForSEO rank tracking, and scheduled monitoring.</p>
+                <p className="font-semibold">{trialActive ? "Keep your monitoring and activate connected SEO tracking" : "Unlock the complete SEO growth system"}</p>
+                <p className="mt-1 text-sm text-slate-300">
+                  {trialActive
+                    ? "Your trial includes monitoring now. Pro keeps it active and adds Search Console, GA4, and DataForSEO rank tracking."
+                    : "Pro adds Search Console insights, GA4 reporting, DataForSEO rank tracking, and scheduled monitoring."}
+                </p>
               </div>
               <Link href="/upgrade?source=program-setup-summary">
                 <Button size="sm" className="mt-3 shrink-0 bg-emerald-500 text-slate-950 hover:bg-emerald-400 sm:mt-0">Compare paid plans</Button>
