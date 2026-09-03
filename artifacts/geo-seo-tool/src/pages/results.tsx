@@ -36,6 +36,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { usePlan } from "@/hooks/usePlan";
 import { UpgradePrompt } from "@/components/upgrade-prompt";
 import { SeoTrackingPanel } from "@/components/seo-tracking-panel";
+import { getAuditDeepLinkState } from "@/lib/audit-deep-link";
 
 export default function Results() {
   const params = useParams<{ id: string }>();
@@ -150,14 +151,44 @@ export default function Results() {
   }, [showFixes, fixGenerator]);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("details") === "1") setShowTechnicalDetails(true);
-  }, []);
+    if (!audit) return;
+
+    let frame = 0;
+    const syncDeepLink = () => {
+      const { showTechnicalDetails: shouldShowDetails, targetId } = getAuditDeepLinkState(
+        window.location.search,
+        window.location.hash,
+      );
+      if (shouldShowDetails) setShowTechnicalDetails(true);
+
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        if (targetId) {
+          document.getElementById(targetId)?.scrollIntoView({ block: "start" });
+        } else {
+          window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+        }
+      });
+    };
+
+    syncDeepLink();
+    for (const eventName of ["pushState", "replaceState", "popstate", "hashchange"]) {
+      window.addEventListener(eventName, syncDeepLink);
+    }
+    return () => {
+      cancelAnimationFrame(frame);
+      for (const eventName of ["pushState", "replaceState", "popstate", "hashchange"]) {
+        window.removeEventListener(eventName, syncDeepLink);
+      }
+    };
+  }, [audit]);
 
   useEffect(() => {
-    if (!audit || !window.location.hash) return;
-    const target = document.getElementById(window.location.hash.slice(1));
-    if (target) requestAnimationFrame(() => target.scrollIntoView({ block: "start" }));
+    if (!audit || !showTechnicalDetails || window.location.hash !== "#technical-breakdown") return;
+    const frame = requestAnimationFrame(() => {
+      document.getElementById("technical-breakdown")?.scrollIntoView({ block: "start" });
+    });
+    return () => cancelAnimationFrame(frame);
   }, [audit, showTechnicalDetails]);
 
   const copyToClipboard = async (text: string, key: string) => {
