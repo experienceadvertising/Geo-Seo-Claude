@@ -57,3 +57,28 @@ decision, a data migration, or a larger refactor. Ordered by value.
   `getActiveSubscriptionForCustomer`; `cookie-parser`, `http-proxy-middleware`
   and `svix` are in `package.json` but imported nowhere. `/auth/me` and `/me`
   overlap — `/me` is a superset.
+
+## SEO content (from the post-publish check, September 2026)
+
+Verified against the built prerender output. None of these are code bugs;
+they are copy decisions, so they were left as-is.
+
+- **Titles over 60 characters** on 14 routes (up to 85 on
+  `/document-expertise-methodology`), so Google truncates them in results.
+  The `/pricing` manifest title (78 chars) also differs from the runtime
+  title, so JS and non-JS crawlers see different titles for the same page.
+- **Meta descriptions over 160 characters** on 10 routes (up to 220 on
+  `/about`); the tail gets cut in snippets.
+- **Prerendered static body is identical boilerplate on every route**
+  (148 words: the same "Audit, simulate, improve, and monitor" and
+  "Current methodology" sections). Non-JS crawlers see only the title, H1
+  and description as route-specific text. Populating `staticSections` /
+  `faqs` per route in `scripts/seo-manifest.mjs` would give each page real
+  crawlable content.
+- **Sitemap `lastmod` falls back to a constant** (`2026-07-22`) for every
+  route without a `modifiedTime`; a fixed date is treated as noise by
+  crawlers. Derive it from git history or drop the fallback.
+- **Signed-out page loads log a 401 console error** from `/api/auth/me` on
+  every page. Harmless, but returning `200 { user: null }` for the
+  signed-out case would keep the console clean for anyone inspecting the
+  site.

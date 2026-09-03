@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HelmetProvider } from "react-helmet-async";
@@ -136,6 +136,14 @@ function AppRoutes() {
  */
 function AppShell() {
   const { isLoaded } = useAuth();
+
+  // index.html and every prerendered route ship static <title>/meta/canonical
+  // tags marked `data-shell` for non-JS crawlers. Once React is running,
+  // Helmet owns those tags, so drop the static copies here — for every page,
+  // including ones that render a raw <Helmet> instead of <SEO>.
+  useEffect(() => {
+    document.querySelectorAll("head [data-shell]").forEach((el) => el.remove());
+  }, []);
 
   if (!isLoaded) {
     return (

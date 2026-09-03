@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, Link, useLocation } from "wouter";
 import { useGetAudit, getGetAuditQueryKey, useAnalyzeUrl, customFetch } from "@workspace/api-client-react";
-import { apiErrorMessage } from "@/lib/api-error";
+import { apiErrorMessage, apiErrorStatus } from "@/lib/api-error";
 import { ArrowLeft, CheckCircle2, XCircle, AlertTriangle, Bot, TerminalSquare, FileText, Code2, ShieldAlert, Sparkles, Loader2, Download, Building2, RefreshCw, TrendingUp, Wrench, Lock, ChevronDown, ChevronUp, Copy, Check, BookOpen, Users, LineChart as LineChartIcon } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -55,7 +55,11 @@ export default function Results() {
   const { data: audit, isLoading, isError } = useGetAudit(id, {
     query: {
       enabled: !!id,
-      queryKey: getGetAuditQueryKey(id)
+      queryKey: getGetAuditQueryKey(id),
+      // A 404 is final. Without this, React Query retried three times with
+      // backoff and the page sat on "Analyzing GEO signals…" for ~7s before
+      // admitting the audit doesn't exist.
+      retry: (count, err) => apiErrorStatus(err) !== 404 && count < 2,
     }
   });
 

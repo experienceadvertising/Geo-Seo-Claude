@@ -76,38 +76,38 @@ function buildHeadInjection(route) {
   const ogType = route.ogType ?? "website";
 
   const lines = [
-    `<title>${escapeHtmlText(route.title)}</title>`,
-    `<meta name="description" content="${escapeHtmlAttr(route.description)}" />`,
-    `<link rel="canonical" href="${escapeHtmlAttr(canonical)}" />`,
-    `<meta property="og:type" content="${ogType}" />`,
-    `<meta property="og:url" content="${escapeHtmlAttr(canonical)}" />`,
-    `<meta property="og:title" content="${escapeHtmlAttr(route.title)}" />`,
-    `<meta property="og:description" content="${escapeHtmlAttr(route.description)}" />`,
-    `<meta property="og:image" content="${ogImage}" />`,
-    `<meta property="og:image:width" content="1280" />`,
-    `<meta property="og:image:height" content="720" />`,
-    `<meta property="og:site_name" content="AEO Improvement" />`,
-    `<meta property="og:locale" content="en_US" />`,
-    `<meta name="twitter:card" content="summary_large_image" />`,
-    `<meta name="twitter:title" content="${escapeHtmlAttr(route.title)}" />`,
-    `<meta name="twitter:description" content="${escapeHtmlAttr(route.description)}" />`,
-    `<meta name="twitter:image" content="${ogImage}" />`,
+    `<title data-shell>${escapeHtmlText(route.title)}</title>`,
+    `<meta data-shell name="description" content="${escapeHtmlAttr(route.description)}" />`,
+    `<link data-shell rel="canonical" href="${escapeHtmlAttr(canonical)}" />`,
+    `<meta data-shell property="og:type" content="${ogType}" />`,
+    `<meta data-shell property="og:url" content="${escapeHtmlAttr(canonical)}" />`,
+    `<meta data-shell property="og:title" content="${escapeHtmlAttr(route.title)}" />`,
+    `<meta data-shell property="og:description" content="${escapeHtmlAttr(route.description)}" />`,
+    `<meta data-shell property="og:image" content="${ogImage}" />`,
+    `<meta data-shell property="og:image:width" content="1280" />`,
+    `<meta data-shell property="og:image:height" content="720" />`,
+    `<meta data-shell property="og:site_name" content="AEO Improvement" />`,
+    `<meta data-shell property="og:locale" content="en_US" />`,
+    `<meta data-shell name="twitter:card" content="summary_large_image" />`,
+    `<meta data-shell name="twitter:title" content="${escapeHtmlAttr(route.title)}" />`,
+    `<meta data-shell name="twitter:description" content="${escapeHtmlAttr(route.description)}" />`,
+    `<meta data-shell name="twitter:image" content="${ogImage}" />`,
   ];
 
   if (ogType === "article") {
     if (route.publishedTime) {
       lines.push(
-        `<meta property="article:published_time" content="${escapeHtmlAttr(route.publishedTime)}" />`,
+        `<meta data-shell property="article:published_time" content="${escapeHtmlAttr(route.publishedTime)}" />`,
       );
     }
     if (route.modifiedTime) {
       lines.push(
-        `<meta property="article:modified_time" content="${escapeHtmlAttr(route.modifiedTime)}" />`,
+        `<meta data-shell property="article:modified_time" content="${escapeHtmlAttr(route.modifiedTime)}" />`,
       );
     }
     if (route.authorName) {
       lines.push(
-        `<meta property="article:author" content="${escapeHtmlAttr(route.authorName)}" />`,
+        `<meta data-shell property="article:author" content="${escapeHtmlAttr(route.authorName)}" />`,
       );
     }
   }
@@ -144,17 +144,23 @@ function buildStaticContent(route) {
   </main>`;
 }
 
+// Every route-specific tag we inject is marked `data-shell`, matching the
+// static tags in index.html. The <SEO> component removes `[data-shell]` tags
+// on mount so a JS-rendering crawler sees exactly one canonical/description
+// (React 19 hoists Helmet's tags into <head> without any marker of its own,
+// so an "anything unmarked" cleanup would delete React's tags too).
+//
 // We replace the homepage's hard-coded <title>, meta description, canonical,
 // og:* / twitter:* tags by substituting between two markers. Rather than do
 // a fragile per-tag regex on the shipped HTML, we delete the existing
 // route-specific tags by anchoring on stable patterns the build always emits.
 const TAG_REGEXES = [
-  /<title>[\s\S]*?<\/title>\s*/i,
-  /<meta\s+name=["']description["'][^>]*>\s*/gi,
-  /<link\s+rel=["']canonical["'][^>]*>\s*/gi,
-  /<meta\s+property=["']og:[^"']+["'][^>]*>\s*/gi,
-  /<meta\s+property=["']article:[^"']+["'][^>]*>\s*/gi,
-  /<meta\s+name=["']twitter:[^"']+["'][^>]*>\s*/gi,
+  /<title[^>]*>[\s\S]*?<\/title>\s*/i,
+  /<meta\s+(?:data-shell\s+)?name=["']description["'][^>]*>\s*/gi,
+  /<link\s+(?:data-shell\s+)?rel=["']canonical["'][^>]*>\s*/gi,
+  /<meta\s+(?:data-shell\s+)?property=["']og:[^"']+["'][^>]*>\s*/gi,
+  /<meta\s+(?:data-shell\s+)?property=["']article:[^"']+["'][^>]*>\s*/gi,
+  /<meta\s+(?:data-shell\s+)?name=["']twitter:[^"']+["'][^>]*>\s*/gi,
 ];
 
 function stripExistingHeadTags(html) {

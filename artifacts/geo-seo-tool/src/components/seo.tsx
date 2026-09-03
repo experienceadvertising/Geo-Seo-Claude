@@ -1,27 +1,6 @@
 import { useEffect } from "react";
 import { Helmet } from "react-helmet-async";
 
-// index.html ships a hard-coded homepage canonical / og:* / twitter:* /
-// description set. react-helmet-async only manages tags it created
-// (marked `data-rh`), so on any route that isn't prerendered — /privacy,
-// /terms, the signed-in app — a JS-rendering crawler would otherwise see
-// TWO canonicals (the shell's "/" and this page's). Strip the shell's copies
-// once on first mount; prerendered routes have already had them replaced at
-// build time, so this is a no-op there.
-const SHELL_TAG_SELECTOR = [
-  'link[rel="canonical"]:not([data-rh])',
-  'meta[name="description"]:not([data-rh])',
-  'meta[property^="og:"]:not([data-rh])',
-  'meta[property^="article:"]:not([data-rh])',
-  'meta[name^="twitter:"]:not([data-rh])',
-].join(",");
-let shellTagsStripped = false;
-function stripShellHeadTags(): void {
-  if (shellTagsStripped || typeof document === "undefined") return;
-  shellTagsStripped = true;
-  document.head.querySelectorAll(SHELL_TAG_SELECTOR).forEach((el) => el.remove());
-}
-
 interface SEOProps {
   title: string;
   description: string;
@@ -45,6 +24,21 @@ interface SEOProps {
   // If false, page won't be indexed (use for thin or duplicate content
   // landing pages). Defaults to true — comparison pages NEED indexing.
   index?: boolean;
+}
+
+// index.html (and every prerendered route file) ships a static
+// title/description/canonical/og/twitter set for non-JS crawlers, each tag
+// marked `data-shell`. Once React mounts, this component owns those tags;
+// React 19 hoists the <Helmet> children into <head> as plain elements, so the
+// static copies must go or a JS-rendering crawler sees two canonicals.
+//
+// Only `[data-shell]` is removed — never "anything unmarked" — because React's
+// hoisted tags carry no marker and would otherwise be deleted as well
+// (which briefly left the live home/pricing pages with no canonical at all).
+const SHELL_TAG_SELECTOR = "head [data-shell]";
+function stripShellHeadTags(): void {
+  if (typeof document === "undefined") return;
+  document.querySelectorAll(SHELL_TAG_SELECTOR).forEach((el) => el.remove());
 }
 
 const SITE = "https://aeoimprovement.com";
@@ -84,7 +78,12 @@ export function SEO({
       <title>{title}</title>
       <meta name="description" content={description} />
       <link rel="canonical" href={canonical} />
-      {!index && <meta name="robots" content="noindex, follow" />}
+      {/* Always emitted: the shell's robots tag is stripped with the rest, and
+          a page must never end up with two conflicting directives. */}
+      <meta
+        name="robots"
+        content={index ? "index, follow, max-image-preview:large, max-snippet:-1" : "noindex, follow"}
+      />
 
       {/* OpenGraph */}
       <meta property="og:type" content={ogType} />
