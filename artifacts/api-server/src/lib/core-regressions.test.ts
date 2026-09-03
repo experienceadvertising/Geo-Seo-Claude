@@ -11,6 +11,8 @@ import { SsrfError } from "./safeFetch.ts";
 import { extractDataNoSnippetSignals } from "./snippetControls.ts";
 import { buildLatestRankSnapshotsQuery } from "./seoTrackingQueries.ts";
 import { isPaidSeoPlan } from "./seoAccess.ts";
+import { extractCompetitorBrandsFromText, looksLikeCompetitorBrand } from "./competitorNames.ts";
+import { normalizeGeneratedPromptLine, normalizeGeneratedPrompts } from "./promptQuality.ts";
 import {
   highestPaidPlan,
   isBlockingSubscriptionStatus,
@@ -24,6 +26,48 @@ test("limits provider-backed SEO tracking to paid Pro and Agency plans", () => {
   assert.equal(isPaidSeoPlan("starter"), false);
   assert.equal(isPaidSeoPlan("pro"), true);
   assert.equal(isPaidSeoPlan("agency"), true);
+});
+
+test("normalizes generated suggestions into complete buyer questions", () => {
+  assert.equal(
+    normalizeGeneratedPromptLine("How to hire a performance marketing agency for Google and Meta ads"),
+    "How can I hire a performance marketing agency for Google and Meta ads?",
+  );
+  assert.equal(
+    normalizeGeneratedPromptLine("In-house paid media team vs hiring performance marketing agency pros and cons"),
+    "Should I choose in-house paid media team or hire a performance marketing agency?",
+  );
+  assert.equal(
+    normalizeGeneratedPromptLine("Set up Google, Meta, TikTok ads and affiliate program for scaling ecommerce"),
+    "Who can help me set up Google, Meta, TikTok ads and affiliate program for scaling ecommerce?",
+  );
+  assert.deepEqual(normalizeGeneratedPrompts("Best AEO tools for agencies\nBest AEO tools for agencies"), [
+    "What are the best AEO tools for agencies?",
+  ]);
+});
+
+test("filters answer headings and keeps plausible company names", () => {
+  for (const heading of [
+    "Goal",
+    "Primary KPI",
+    "Constraints",
+    "Performance Max (PMax",
+    "Your offer + funnel",
+    "Testing / sprint",
+    "Ongoing management",
+    "Cross-channel",
+  ]) {
+    assert.equal(looksLikeCompetitorBrand(heading), false, `${heading} is structural text, not a brand`);
+  }
+  assert.equal(looksLikeCompetitorBrand("WebFX"), true);
+  assert.equal(looksLikeCompetitorBrand("Disruptive Advertising"), true);
+  assert.deepEqual(
+    extractCompetitorBrandsFromText(
+      "**Goal** **Primary KPI** **WebFX** **Performance Max (PMax)** **Disruptive Advertising**",
+      "Experience Advertising",
+    ),
+    ["WebFX", "Disruptive Advertising"],
+  );
 });
 
 test("rejects an ambiguous publication as a brand entity", () => {

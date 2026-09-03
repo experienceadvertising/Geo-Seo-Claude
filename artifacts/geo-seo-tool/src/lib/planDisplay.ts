@@ -1,5 +1,9 @@
 type DisplayPlan = "free" | "starter" | "pro" | "agency";
 
+export function hasMonitoringAccess(storedPlan: DisplayPlan, trialActive: boolean): boolean {
+  return trialActive || storedPlan === "pro" || storedPlan === "agency";
+}
+
 export function monitoringAccessLabel(options: {
   sitesUsed: number;
   limit: number;

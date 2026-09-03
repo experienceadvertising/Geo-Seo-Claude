@@ -103,7 +103,7 @@ function buildHero(
       badgeTone: "emerald",
       headline: "Build your baseline, then activate connected SEO tracking",
       subhead:
-        "Use the audit, all four AI engines, the Fix Generator, and competitor analysis during your trial. Pro activates Search Console, GA4, DataForSEO rankings, and scheduled monitoring. Nothing is charged automatically.",
+        "Use the audit, all four AI engines, the Fix Generator, monitoring, and competitor analysis during your trial. Pro keeps monitoring active and adds Search Console, GA4, and DataForSEO rankings. Nothing is charged automatically.",
       showUsage: false,
     };
   }
