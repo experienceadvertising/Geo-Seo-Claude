@@ -72,6 +72,10 @@ export interface AnalysisResult {
   renderedWordCount: number;
   requiresJavaScript: boolean;
   renderedSuccessfully: boolean;
+  /** Outcome of the raw HTML fetch. When this failed AND the browser render
+   * was unavailable, there was no page content at all and any score would be
+   * meaningless — the route turns that into a clear error instead. */
+  pageFetch: { ok: boolean; status: number | null; error: string | null };
   /**
    * 0-100 score measuring how early the first substantive content block appears
    * relative to total page length. Higher = better (answer is near the top).
@@ -230,6 +234,8 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
   let renderedWordCount = 0;
   let renderedSuccessfully = false;
   let rawFetchSucceeded = false;
+  let rawFetchStatus: number | null = null;
+  let rawFetchError: string | null = null;
   let botManagementProvider: string | null = null;
   let structuredDataTypes: SchemaItem[] = [];
   let orgSchemaName: string | null = null;
@@ -284,6 +290,8 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
   // 1) Fetch raw HTML (this is what AI crawlers without JS see)
   try {
     const response = await rawFetchPromise;
+    rawFetchStatus = response.status;
+    if (!response.ok) rawFetchError = `HTTP ${response.status}`;
     if (response.ok) {
       const serverHeader = response.headers.get("server") || "";
       const headerNames: string[] = [];
@@ -314,7 +322,9 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
         hasNoIndex = true;
       }
     }
-  } catch {}
+  } catch (err) {
+    rawFetchError = err instanceof Error ? err.message : String(err);
+  }
 
   // 2) Rendered content (already in flight, kicked off above)
   try {
@@ -776,6 +786,7 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
     renderedWordCount,
     requiresJavaScript,
     renderedSuccessfully,
+    pageFetch: { ok: rawFetchSucceeded, status: rawFetchStatus, error: rawFetchSucceeded ? null : rawFetchError },
     contentPlacementScore,
     contentEffortReadiness,
     brandName: brandAuthority.brandName,

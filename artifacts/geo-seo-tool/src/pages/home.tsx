@@ -3,6 +3,7 @@ import { Link, useLocation } from "wouter";
 import { Search, Loader2, ArrowRight, BarChart3, TrendingUp, TrendingDown, Minus, Zap, Shield, Lock, Sparkles, CheckCircle2, BookOpen, Lightbulb, ExternalLink, Globe, FileCode, Building2, Bot, Activity, LineChart, Radar, Bell, Megaphone } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
+import { apiErrorMessage } from "@/lib/api-error";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAnalyzeUrl, useListAudits } from "@workspace/api-client-react";
@@ -1055,10 +1056,10 @@ function SignedInDashboard() {
         }
         setLocation(`/results/${data.id}`);
       },
-      onError: (err: any) => {
+      onError: (err: unknown) => {
         toast({
           title: "Audit failed",
-          description: err?.message || "Could not analyze this URL. Check it's accessible and try again.",
+          description: apiErrorMessage(err, "Could not analyze this URL. Check it's accessible and try again."),
           variant: "destructive",
         });
       },

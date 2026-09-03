@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Loader2, Mail, CheckCircle2 } from "lucide-react";
-import { Helmet } from "react-helmet-async";
+import { SEO } from "@/components/seo";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,10 +47,11 @@ export default function ContactPage() {
 
   return (
     <div className="container max-w-2xl px-4 sm:px-6 lg:px-8 py-12">
-      <Helmet>
-        <title>Contact — AEO Improvement</title>
-        <meta name="description" content="Get in touch with the AEO Improvement team about audits, simulations, billing, or partnerships." />
-      </Helmet>
+      <SEO
+        title="Contact — AEO Improvement"
+        description="Get in touch with the AEO Improvement team about audits, simulations, billing, or partnerships."
+        path="/contact"
+      />
 
       <div className="mb-8 text-center">
         <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-teal-600 to-emerald-700 text-white mb-4">

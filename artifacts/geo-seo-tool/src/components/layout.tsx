@@ -114,7 +114,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   <Link href="/methodology" className="hover:text-foreground transition-colors">Methodology</Link>
                   <Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
                 </nav>
-                <Link href="/sign-in">
+                {/* Below `sm` the menu sheet carries "Sign in"; showing it
+                    here too overflowed the header on phones. */}
+                <Link href="/sign-in" className="hidden sm:inline-flex">
                   <Button variant="ghost" size="sm">Sign in</Button>
                 </Link>
                 <Link href="/sign-up">

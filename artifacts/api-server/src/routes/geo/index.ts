@@ -246,6 +246,26 @@ router.post("/geo/analyze", requireAuth, analyzeRateLimiter, async (req, res): P
     const analysis = await analyzeUrl(url);
     const analyzeMs = Date.now() - analyzeStart;
 
+    // No page content at all (raw fetch failed and the browser render was
+    // unavailable). Scoring an empty document produced a plausible-looking
+    // "39/100 · 0 words" audit for unreachable or bot-blocked URLs, which
+    // reads as a verdict on the site. Tell the user what happened instead.
+    if (!analysis.pageFetch.ok && !analysis.renderedSuccessfully) {
+      refundQuota(req.userId!, "audits", ym).catch((refundErr) =>
+        req.log.error({ err: refundErr, userId: req.userId, ym }, "Failed to refund audit quota"),
+      );
+      const host = (() => { try { return new URL(url).hostname; } catch { return url; } })();
+      const status = analysis.pageFetch.status;
+      const why = status === 403 || status === 401
+        ? `${host} refused our request (HTTP ${status}). Its bot protection is blocking crawlers — the same thing AI search engines will hit.`
+        : status && status >= 400
+          ? `${host} returned HTTP ${status} for this page.`
+          : `We couldn't reach ${host}${analysis.pageFetch.error ? ` (${analysis.pageFetch.error})` : ""}.`;
+      req.log.warn({ url, userId: req.userId, status, error: analysis.pageFetch.error }, "Page unreachable — audit not stored");
+      res.status(422).json({ error: `${why} Check that the URL is public and try again.`, code: "page_unreachable", status });
+      return;
+    }
+
     const insightsStart = Date.now();
     let aiInsights: string | null = null;
     try {
