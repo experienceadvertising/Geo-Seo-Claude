@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { customFetch } from "@workspace/api-client-react";
 import { apiErrorMessage } from "@/lib/api-error";
+import { monitoringAccessLabel } from "@/lib/planDisplay";
 import {
   Loader2, Plus, Play, Pause, Trash2, ExternalLink, Bell, Sparkles, Clock, Bot, Copy, Check, LineChart as LineChartIcon, Link2,
 } from "lucide-react";
@@ -255,8 +256,9 @@ export default function ProjectsPage() {
   const [frequency, setFrequency] = useState<Frequency>("weekly");
 
   const [copied, setCopied] = useState(false);
-  const { storedPlan } = usePlan();
+  const { storedPlan, trialActive } = usePlan();
   const hasPaidPlan = storedPlan === "pro" || storedPlan === "agency";
+  const isPaidAgency = storedPlan === "agency";
 
   const { data, isLoading, isError, refetch } = useQuery<ListResponse>({
     queryKey: QUERY_KEY,
@@ -319,7 +321,6 @@ export default function ProjectsPage() {
 
   const sites = data?.sites ?? [];
   const limit = data?.limit ?? 0;
-  const plan = data?.plan ?? "free";
   const dailyLimit = data?.dailyLimit ?? 0;
   const dailyUsed = sites.filter((site) => site.frequency === "daily").length;
   const atLimit = limit > 0 && sites.length >= limit;
@@ -382,7 +383,7 @@ export default function ProjectsPage() {
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Add a site to monitor</CardTitle>
             <CardDescription>
-              {sites.length}/{limit} sites used on your {plan} plan.
+              {monitoringAccessLabel({ sitesUsed: sites.length, limit, storedPlan, trialActive })}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -395,7 +396,7 @@ export default function ProjectsPage() {
                 disabled={atLimit}
               />
               <Input
-                placeholder={plan === "agency" ? "Client name" : "Label (optional)"}
+                placeholder={isPaidAgency ? "Client name" : "Label (optional)"}
                 value={label}
                 onChange={(e) => setLabel(e.target.value)}
                 className="sm:w-40"
@@ -416,7 +417,7 @@ export default function ProjectsPage() {
             </form>
             {atLimit && (
               <p className="text-xs text-amber-600 mt-2">
-                You've reached your plan's monitoring limit. Remove a site or{" "}
+                You've reached your current monitoring limit. Remove a site or{" "}
                 <Link href="/pricing" className="underline">upgrade</Link> to add more.
               </p>
             )}
@@ -424,7 +425,7 @@ export default function ProjectsPage() {
         </Card>
       )}
 
-      {plan === "agency" && (
+      {isPaidAgency && (
         <Card className="border-purple-200 bg-purple-50/60">
           <CardContent className="py-4 text-sm text-purple-950 dark:text-purple-100">
             <p className="font-semibold">Agency workspace limits</p>
@@ -507,10 +508,9 @@ export default function ProjectsPage() {
       {!monitoringLocked && (
         <div className="space-y-3">
           <div>
-            <h2 className="text-lg font-semibold flex items-center gap-2"><Bot className="h-5 w-5 text-emerald-600" /> AI crawler activity</h2>
+            <h2 className="text-lg font-semibold flex items-center gap-2"><Bot className="h-5 w-5 text-emerald-600" /> AI crawler activity <span className="text-xs font-normal text-muted-foreground">Optional</span></h2>
             <p className="text-sm text-muted-foreground">
-              Robots.txt shows which AI bots you allow. This pixel records known AI user-agents only when they request the embedded image.
-              It does not observe the original HTML request, and no recorded pixel request is not proof that a crawler skipped the page.
+              You do not need this for audits, Search Console, GA4, rank tracking, or scheduled monitoring. Install the beacon only if you want positive evidence that a known AI user-agent requested an image from a specific page.
             </p>
           </div>
 
@@ -520,8 +520,8 @@ export default function ProjectsPage() {
             <>
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Tracking snippet</CardTitle>
-                  <CardDescription>Paste this once into your site's global <code>&lt;head&gt;</code> or footer template.</CardDescription>
+                  <CardTitle className="text-base">Optional crawler beacon</CardTitle>
+                  <CardDescription>Paste this once into your site's global <code>&lt;head&gt;</code> or footer only if crawler-request evidence is useful to you.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-2">
                   <div className="flex items-start gap-2">

@@ -1,9 +1,9 @@
 import React, { useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Sparkles, LogOut, Shield, Menu, LayoutDashboard, FolderKanban, CreditCard, BookOpen, CircleHelp } from "lucide-react";
+import { Sparkles, LogOut, Shield, Menu, LayoutDashboard, FolderKanban, CreditCard, BookOpen, CircleHelp, CheckCircle2, Search, SlidersHorizontal, MessageSquareText } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useQuery } from "@tanstack/react-query";
-import { customFetch } from "@workspace/api-client-react";
+import { customFetch, getGetAuditQueryKey, getListAuditsQueryKey, useGetAudit, useListAudits } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { UsageMeter } from "@/components/usage-meter";
 import { TrialBanner } from "@/components/trial-banner";
@@ -185,6 +185,70 @@ function AppNavLink({ label, href, icon: Icon, pathname, compact = false }: {
   );
 }
 
+function AuditResultsNav({ mobile = false }: { mobile?: boolean }) {
+  const [pathname] = useLocation();
+  const routeMatch = pathname.match(/^\/(?:results|simulate)\/(\d+)/);
+  const currentAuditId = routeMatch ? Number(routeMatch[1]) : 0;
+  const { data: audits } = useListAudits({ limit: 1 }, {
+    query: { queryKey: getListAuditsQueryKey({ limit: 1 }), staleTime: 60_000, retry: false },
+  });
+  const selectedAuditId = currentAuditId || audits?.[0]?.id || 0;
+  const { data: auditDetails } = useGetAudit(selectedAuditId, {
+    query: { queryKey: getGetAuditQueryKey(selectedAuditId), enabled: selectedAuditId > 0, staleTime: 60_000, retry: false },
+  });
+  const audit = auditDetails ?? audits?.[0];
+
+  let domain = audit?.url ?? "";
+  try { domain = new URL(domain).hostname.replace(/^www\./, ""); } catch { /* keep stored URL */ }
+  const { data: progress } = useQuery<{ completed: Array<{ recommendationId: string }> }>({
+    queryKey: ["recommendation-progress", domain],
+    queryFn: () => customFetch(`/api/geo/recommendation-progress?domain=${encodeURIComponent(domain)}`),
+    enabled: !!domain && !!auditDetails?.recommendations?.length,
+    staleTime: 30_000,
+    retry: false,
+  });
+  if (!audit) return null;
+
+  const completedIds = new Set((progress?.completed ?? []).map((item) => item.recommendationId));
+  const nextRecommendation = auditDetails?.recommendations?.find((item) => !completedIds.has(item.id));
+
+  const links = [
+    { label: "Overview", href: `/results/${audit.id}`, icon: LayoutDashboard },
+    { label: "Top actions", href: `/results/${audit.id}#recommendations`, icon: CheckCircle2 },
+    { label: "SEO opportunities", href: `/results/${audit.id}#seo-opportunities`, icon: Search },
+    { label: "Prompt test", href: `/simulate/${audit.id}`, icon: MessageSquareText },
+    { label: "Technical details", href: `/results/${audit.id}?details=1#technical-breakdown`, icon: SlidersHorizontal },
+  ];
+
+  return (
+    <section className={mobile ? "mt-5 border-t pt-5" : "mt-4 border-t border-slate-100 pt-4"} aria-label="Latest audit results">
+      <div className="mb-2 flex items-start justify-between gap-2 px-3">
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Latest audit</p>
+          <p className="truncate text-xs font-medium text-slate-700" title={domain}>{domain}</p>
+        </div>
+        <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-800">{Math.round(audit.geoScore)}</span>
+      </div>
+      {nextRecommendation && (
+        <Link href={`/results/${audit.id}#recommendations`} className="mx-2 mb-2 block rounded-lg border border-emerald-100 bg-emerald-50/70 p-3 hover:border-emerald-200 hover:bg-emerald-50">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700">Next improvement</p>
+          <p className="mt-1 line-clamp-2 text-xs font-semibold leading-5 text-slate-800">{nextRecommendation.title}</p>
+          <p className="mt-1 text-[11px] font-medium text-emerald-800">Open action plan</p>
+        </Link>
+      )}
+      <div className="space-y-0.5">
+        {links.map(({ label, href, icon: Icon }) => {
+          const link = <Link href={href} className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-950">
+            <Icon className="h-3.5 w-3.5" />
+            <span>{label}</span>
+          </Link>;
+          return mobile ? <SheetClose asChild key={label}>{link}</SheetClose> : <React.Fragment key={label}>{link}</React.Fragment>;
+        })}
+      </div>
+    </section>
+  );
+}
+
 function AppShell({ children, pathname }: { children: React.ReactNode; pathname: string }) {
   return (
     <div className="min-h-screen bg-slate-50 font-sans md:flex">
@@ -201,6 +265,7 @@ function AppShell({ children, pathname }: { children: React.ReactNode; pathname:
 
         <nav className="flex-1 space-y-1 px-3 py-5" aria-label="Application navigation">
           {APP_NAV.map((item) => <AppNavLink key={item.href} {...item} pathname={pathname} />)}
+          <AuditResultsNav />
           <div className="my-4 border-t border-slate-100" />
           {APP_SUPPORT_NAV.map((item) => <AppNavLink key={item.href} {...item} pathname={pathname} />)}
           <AdminLink />
@@ -228,6 +293,12 @@ function AppShell({ children, pathname }: { children: React.ReactNode; pathname:
             <SheetContent side="right" className="w-[min(85vw,320px)]">
               <SheetTitle>Account and support</SheetTitle>
               <nav className="mt-8 flex flex-col gap-1">
+                {APP_NAV.map(({ label, href, icon: Icon }) => (
+                  <SheetClose asChild key={href}>
+                    <Link href={href} className="flex items-center gap-3 rounded-md px-3 py-3 text-sm font-medium hover:bg-muted"><Icon className="h-4 w-4" />{label}</Link>
+                  </SheetClose>
+                ))}
+                <AuditResultsNav mobile />
                 {APP_SUPPORT_NAV.map(({ label, href, icon: Icon }) => (
                   <SheetClose asChild key={href}>
                     <Link href={href} className="flex items-center gap-3 rounded-md px-3 py-3 text-sm font-medium hover:bg-muted"><Icon className="h-4 w-4" />{label}</Link>

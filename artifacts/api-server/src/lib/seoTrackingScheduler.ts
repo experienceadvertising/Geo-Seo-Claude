@@ -1,7 +1,7 @@
 import { and, asc, eq, lte, or, isNull, notExists } from "drizzle-orm";
 import { db, pool, seoKeywordTargetsTable, seoRankSnapshotsTable, seoRankTasksTable } from "@workspace/db";
 import { collectQueuedWeeklyRank, isDataForSeoConfigured, submitWeeklyRankTask } from "./dataforseoRankTracker";
-import { getUserPlan, PLAN_LIMITS } from "./planUtils";
+import { getStoredPlan, PLAN_LIMITS } from "./planUtils";
 import { logger } from "./logger";
 
 const log = logger.child({ module: "seoTracking" });
@@ -46,7 +46,7 @@ export async function runDueSeoRankSnapshots(maxPerSweep = 100): Promise<void> {
         ))
         .orderBy(asc(seoKeywordTargetsTable.updatedAt)).limit(maxPerSweep);
       for (const target of targets) {
-        const plan = await getUserPlan(target.userId);
+        const plan = await getStoredPlan(target.userId);
         if (PLAN_LIMITS[plan].seoKeywordTargets === 0) {
           await db.update(seoKeywordTargetsTable).set({ active: false, updatedAt: new Date() }).where(eq(seoKeywordTargetsTable.id, target.id));
           continue;

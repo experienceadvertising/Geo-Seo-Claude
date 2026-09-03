@@ -4,9 +4,10 @@ import { db, seoKeywordTargetsTable, seoRankSnapshotsTable, seoRefreshUsageTable
 import { requireAuth } from "../middlewares/auth";
 import { readRateLimiter } from "../middlewares/rateLimiters";
 import { currentYearMonth } from "../lib/usageLimits";
-import { getUserPlan, PLAN_LIMITS, planAtLeast } from "../lib/planUtils";
+import { getStoredPlan, PLAN_LIMITS } from "../lib/planUtils";
 import { collectGoogleRank, DataForSeoError, isDataForSeoConfigured } from "../lib/dataforseoRankTracker";
 import { buildLatestRankSnapshotsQuery } from "../lib/seoTrackingQueries";
+import { isPaidSeoPlan } from "../lib/seoAccess";
 
 const router: IRouter = Router();
 
@@ -23,8 +24,8 @@ function keywordFrom(raw: unknown): string | null {
   return value.length >= 2 && value.length <= 250 ? value : null;
 }
 async function paidPlan(userId: string, res: any) {
-  const plan = await getUserPlan(userId);
-  if (!planAtLeast(plan, "pro")) {
+  const plan = await getStoredPlan(userId);
+  if (!isPaidSeoPlan(plan)) {
     res.status(403).json({ error: "SEO performance and rank tracking are paid features.", upgradeRequired: true });
     return null;
   }
