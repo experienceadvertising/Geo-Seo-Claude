@@ -1268,11 +1268,11 @@ function SignedInDashboard() {
 
       {analyzeUrl.isPending && <AnalysisProgress />}
 
-      {!analyzeUrl.isPending && (auditsLoading || auditsError || (audits && audits.length > 0)) && (
+      {!analyzeUrl.isPending && audits && audits.length > 0 && (
         <AeoJourneyCard audits={audits} />
       )}
 
-      {!analyzeUrl.isPending && audits && audits.length > 0 && (
+      {!analyzeUrl.isPending && (auditsLoading || auditsError || (audits && audits.length > 0)) && (
         <div className="space-y-4">
           <h2 className="text-lg font-semibold">Recent audits</h2>
           {auditsLoading ? (
@@ -1290,7 +1290,7 @@ function SignedInDashboard() {
             </Card>
           ) : (
             <div className="space-y-2">
-              {audits.map((audit: any) => (
+              {(audits ?? []).map((audit: any) => (
                 <Link key={audit.id} href={`/results/${audit.id}`}>
                   <Card className="cursor-pointer hover:border-emerald-500/30 hover:shadow-md transition-all">
                     <CardContent className="py-4 flex items-center justify-between gap-4">
