@@ -10,6 +10,7 @@ import { errorHandler } from "../middlewares/errorHandler.ts";
 import { SsrfError } from "./safeFetch.ts";
 import { extractDataNoSnippetSignals } from "./snippetControls.ts";
 import { buildLatestRankSnapshotsQuery } from "./seoTrackingQueries.ts";
+import { isPaidSeoPlan } from "./seoAccess.ts";
 import {
   highestPaidPlan,
   isBlockingSubscriptionStatus,
@@ -17,6 +18,13 @@ import {
   planChangeDirection,
   validateCheckoutPrice,
 } from "./billingPolicy.ts";
+
+test("limits provider-backed SEO tracking to paid Pro and Agency plans", () => {
+  assert.equal(isPaidSeoPlan("free"), false);
+  assert.equal(isPaidSeoPlan("starter"), false);
+  assert.equal(isPaidSeoPlan("pro"), true);
+  assert.equal(isPaidSeoPlan("agency"), true);
+});
 
 test("rejects an ambiguous publication as a brand entity", () => {
   assert.equal(isWikiArticleConfident({

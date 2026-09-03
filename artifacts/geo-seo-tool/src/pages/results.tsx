@@ -44,13 +44,16 @@ export default function Results() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const reRun = useAnalyzeUrl();
-  const { isPro, fixGenerator } = usePlan();
+  const { storedPlan, fixGenerator } = usePlan();
+  const hasPaidSeo = storedPlan === "pro" || storedPlan === "agency";
   const [showFixes, setShowFixes] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [approvedSameAs, setApprovedSameAs] = useState<string[]>([]);
   const [pdfLoading, setPdfLoading] = useState(false);
   const fixesRef = useRef<HTMLDivElement | null>(null);
   const [recommendationFilter, setRecommendationFilter] = useState<"open" | "all" | "done">("open");
+  const [showAllRecommendations, setShowAllRecommendations] = useState(false);
+  const [showTechnicalDetails, setShowTechnicalDetails] = useState(false);
 
   const { data: audit, isLoading, isError } = useGetAudit(id, {
     query: {
@@ -145,6 +148,17 @@ export default function Results() {
       fixesRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }, [showFixes, fixGenerator]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("details") === "1") setShowTechnicalDetails(true);
+  }, []);
+
+  useEffect(() => {
+    if (!audit || !window.location.hash) return;
+    const target = document.getElementById(window.location.hash.slice(1));
+    if (target) requestAnimationFrame(() => target.scrollIntoView({ block: "start" }));
+  }, [audit, showTechnicalDetails]);
 
   const copyToClipboard = async (text: string, key: string) => {
     try {
@@ -344,15 +358,41 @@ export default function Results() {
         </CardContent>
       </Card>
 
+      <Card className="border-emerald-200 shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">Your plan from here</CardTitle>
+          <CardDescription>Do these in order. You do not need to work through the entire report today.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3 md:grid-cols-3">
+          <div className="rounded-lg border bg-emerald-50/50 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">1. Test</p>
+            <p className="mt-1 font-semibold">Check current AI visibility</p>
+            <p className="mt-1 text-sm text-muted-foreground">Run the three suggested buyer prompts before changing the page.</p>
+            <Link href={`/simulate/${audit.id}`} className="mt-3 inline-flex text-sm font-semibold text-primary hover:underline">Run prompt simulation</Link>
+          </div>
+          <div className="rounded-lg border p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">2. Improve</p>
+            <p className="mt-1 font-semibold">Make one high-priority fix</p>
+            <p className="mt-1 text-sm text-muted-foreground">Start with the first incomplete action below, then mark it done.</p>
+            <a href="#recommendations" className="mt-3 inline-flex text-sm font-semibold text-primary hover:underline">See my top actions</a>
+          </div>
+          <div className="rounded-lg border p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">3. Measure</p>
+            <p className="mt-1 font-semibold">Confirm what changed</p>
+            <p className="mt-1 text-sm text-muted-foreground">Re-scan after publishing. Paid plans add Search Console and DataForSEO trends.</p>
+            <Button variant="link" className="mt-1 h-auto p-0 text-sm" onClick={reScanAudit} disabled={reRun.isPending}>Re-scan this page</Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* AI Insights Summary */}
       {audit.aiInsights && (
-        <Card className="bg-primary/5 border-primary/20 shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-primary font-mono text-base uppercase tracking-wider">
-              <Sparkles className="h-4 w-4" /> AI Executive Summary
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+        <details className="rounded-xl border border-primary/20 bg-primary/5 shadow-sm">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-5 font-semibold text-primary">
+            <span className="flex items-center gap-2"><Sparkles className="h-4 w-4" /> Read the full AI analysis</span>
+            <ChevronDown className="h-4 w-4" />
+          </summary>
+          <div className="border-t border-primary/20 p-5">
             <ReactMarkdown
               components={{
                 h1: ({ children }) => (
@@ -394,12 +434,19 @@ export default function Results() {
             >
               {audit.aiInsights}
             </ReactMarkdown>
-          </CardContent>
-        </Card>
+          </div>
+        </details>
       )}
 
+      <div className="flex justify-end" id="technical-breakdown">
+        <Button variant="outline" size="sm" onClick={() => setShowTechnicalDetails((current) => !current)}>
+          {showTechnicalDetails ? <ChevronUp className="mr-1.5 h-4 w-4" /> : <ChevronDown className="mr-1.5 h-4 w-4" />}
+          {showTechnicalDetails ? "Hide technical breakdown" : "View full score and technical breakdown"}
+        </Button>
+      </div>
+
       {/* Primary Metrics Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {showTechnicalDetails && <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Radar Chart */}
         <Card className="bg-card border-border shadow-sm flex flex-col col-span-1">
           <CardHeader className="pb-0">
@@ -525,7 +572,7 @@ export default function Results() {
             })()}
           </div>
         </TooltipProvider>
-      </div>
+      </div>}
 
       <Card className="shadow-sm border-border mb-6" id="seo-opportunities">
         <CardHeader className="bg-muted/30 pb-4 border-b">
@@ -543,21 +590,21 @@ export default function Results() {
         </CardContent>
         <CardContent className="pt-0 text-sm text-muted-foreground">
           <Link href="/projects" className="text-primary hover:underline">Open Projects to connect Search Console and manage paid keyword tracking</Link>. Rank movement is displayed as an observed outcome, not proof that a change caused it.
-          {isPro && domain && <SeoTrackingPanel domain={domain} />}
+          {hasPaidSeo && domain && <SeoTrackingPanel domain={domain} />}
         </CardContent>
       </Card>
 
       {/* Prioritized GEO Recommendations */}
       {audit.recommendations && audit.recommendations.length > 0 && (
-        <Card className="shadow-sm border-border mb-6">
+        <Card className="shadow-sm border-border mb-6" id="recommendations">
           <CardHeader className="bg-muted/30 pb-4 border-b">
             <CardTitle className="flex items-center gap-2 text-sm font-mono uppercase tracking-wider">
-              <CheckCircle2 className="h-4 w-4 text-primary" /> Prioritized GEO Recommendations
+              <CheckCircle2 className="h-4 w-4 text-primary" /> Your prioritized action list
             </CardTitle>
             <p className="text-xs text-muted-foreground mt-1">
               {needsRefresh
                 ? "This is a historical recommendation set. Re-scan before marking changes complete or applying a recommendation. "
-                : "Each recommendation is labeled with its source: peer-reviewed research, internal benchmark, or practitioner consensus. Apply top items first. "}
+                : "Start with the three actions shown here. Open the full list only when you are ready for more. "}
               <Link href="/methodology" className="text-primary hover:underline">
                 Read our methodology
               </Link>.
@@ -575,6 +622,9 @@ export default function Results() {
                   </button>
                 ))}
               </div>
+              <Button variant="outline" size="sm" onClick={() => setShowAllRecommendations((current) => !current)}>
+                {showAllRecommendations ? "Show top 3" : `Show all ${Math.min(14, audit.recommendations.length)}`}
+              </Button>
             </div>
           </CardHeader>
           <CardContent className="pt-6">
@@ -588,10 +638,11 @@ export default function Results() {
             )}
             {(() => {
               const schemaV1 = audit.recommendationsSchemaVersion === "v1";
-              const allRecs = audit.recommendations.slice(0, 14).filter((r) => {
+              const matchingRecs = audit.recommendations.slice(0, 14).filter((r) => {
                 const done = completedRecommendationIds.has(r.id);
                 return recommendationFilter === "all" || (recommendationFilter === "done" ? done : !done);
               });
+              const allRecs = matchingRecs.slice(0, showAllRecommendations ? 14 : 3);
               const researchRecs = allRecs.filter(r => r.source?.type === "research" || r.source?.type === "internal_benchmark");
               // Everything that isn't research-backed (practitioner consensus,
               // expert guidance, or untagged) — a positive-list here silently
@@ -687,7 +738,7 @@ export default function Results() {
         </CardContent>
       </Card>
 
-      <div className={`grid grid-cols-1 gap-6 ${audit.recommendations?.length ? "" : "lg:grid-cols-2"}`}>
+      {showTechnicalDetails && <div className={`grid grid-cols-1 gap-6 ${audit.recommendations?.length ? "" : "lg:grid-cols-2"}`}>
         {/* Quick wins only appear when the audit did not already provide a
             prioritized recommendation set, avoiding the same advice twice. */}
         {!audit.recommendations?.length && <Card className="flex flex-col shadow-sm border-border">
@@ -740,10 +791,10 @@ export default function Results() {
             )}
           </CardContent>
         </Card>
-      </div>
+      </div>}
 
       {/* Crawlers & Platforms */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {showTechnicalDetails && <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="shadow-sm border-border">
           <CardHeader className="pb-4">
             <CardTitle className="text-sm font-mono uppercase tracking-wider flex items-center gap-2">
@@ -848,10 +899,10 @@ export default function Results() {
             </CardContent>
           </Card>
         </div>
-      </div>
+      </div>}
 
       {/* Brand Authority Signals */}
-      {audit.brandSignals && audit.brandSignals.length > 0 && (
+      {showTechnicalDetails && audit.brandSignals && audit.brandSignals.length > 0 && (
         <Card className="shadow-sm border-border" data-testid="card-brand-authority">
           <CardHeader className="pb-4">
             <CardTitle className="text-sm font-mono uppercase tracking-wider flex items-center gap-2">
@@ -997,7 +1048,7 @@ export default function Results() {
       )}
 
       {/* Citability Blocks Preview */}
-      <div className="space-y-4">
+      {showTechnicalDetails && <div className="space-y-4">
         <h3 className="text-sm font-mono uppercase tracking-wider flex items-center gap-2 font-bold px-2">
           <FileText className="h-4 w-4" /> Citability Blocks (Avg: {audit.avgCitabilityScore})
         </h3>
@@ -1031,7 +1082,7 @@ export default function Results() {
             </div>
           )}
         </div>
-      </div>
+      </div>}
     </div>
   );
 }
