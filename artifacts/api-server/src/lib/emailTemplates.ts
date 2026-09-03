@@ -228,66 +228,109 @@ export function welcomeD7Email(firstName: string, unsubscribeUrl?: string) {
 // ── Email 4: Weekly Digest (Pro+) ────────────────────────────────────────────
 export interface WeeklyDigestData {
   firstName: string;
+  planName?: "Starter" | "Pro" | "Agency";
+  paidSeoEnabled?: boolean;
   latestAudit?: {
+    id: number;
     url: string;
     geoScore: number;
+    previousGeoScore?: number;
     quickWins: string[];
     nextAction?: { title: string; detail: string };
+    completedActions?: number;
     createdAt: Date;
   };
   auditCount: number;
+  tracking?: {
+    activeKeywords: number;
+    rankedKeywords: number;
+    pendingKeywords: number;
+  };
+  monitoring?: {
+    activeSites: number;
+    waitingForFirstRun: number;
+  };
+  googleMeasurementConnected?: boolean;
 }
 
 export function weeklyDigestEmail(data: WeeklyDigestData, unsubscribeUrl?: string) {
-  const { firstName, latestAudit, auditCount } = data;
-  // Pack the headline numbers into the subject — preheader was already
-  // doing this work; subject is what actually drives opens.
-  const subject = latestAudit
-    ? `Your AEO digest: ${auditCount} audit${auditCount !== 1 ? "s" : ""}, latest score ${Math.round(latestAudit.geoScore)}/100`
-    : auditCount > 0
-      ? `Your AEO digest: ${auditCount} audit${auditCount !== 1 ? "s" : ""} this week`
-      : `Your AEO digest — no audits this week, here's how to start`;
+  const { firstName, latestAudit, auditCount, tracking, monitoring, googleMeasurementConnected, paidSeoEnabled = true } = data;
+  const domain = latestAudit ? (() => {
+    try { return new URL(latestAudit.url).hostname.replace(/^www\./, ""); }
+    catch { return latestAudit.url; }
+  })() : "your site";
+  const actionUrl = latestAudit ? `${BASE_URL}/results/${latestAudit.id}#recommendations` : BASE_URL;
+  const subject = latestAudit?.nextAction
+    ? `Your SEO + GEO task for ${domain}`
+    : `Your weekly SEO + GEO update`;
+  const scoreDelta = latestAudit?.previousGeoScore == null
+    ? ""
+    : Math.round(latestAudit.geoScore) - Math.round(latestAudit.previousGeoScore);
+  const nextTask = latestAudit?.nextAction
+    ? `<div style="margin:22px 0;padding:20px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:10px;">
+        <div style="font-size:12px;font-weight:700;color:${BRAND_COLOR};text-transform:uppercase;letter-spacing:0.05em;margin-bottom:7px;">Your recommended task this week</div>
+        <div style="font-size:17px;font-weight:700;color:#111827;margin-bottom:7px;">${esc(latestAudit.nextAction.title)}</div>
+        <div style="font-size:14px;color:#4b5563;line-height:1.6;">${esc(latestAudit.nextAction.detail)}</div>
+        <div style="margin-top:14px;">${btn("Open this task", actionUrl)}</div>
+      </div>`
+    : latestAudit
+      ? `<div style="margin:22px 0;padding:20px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:10px;">
+          <div style="font-size:12px;font-weight:700;color:${BRAND_COLOR};text-transform:uppercase;letter-spacing:0.05em;margin-bottom:7px;">Your recommended task this week</div>
+          <div style="font-size:17px;font-weight:700;color:#111827;margin-bottom:7px;">Run a fresh audit after your latest site changes</div>
+          <div style="font-size:14px;color:#4b5563;line-height:1.6;">Your current action list is complete. Re-scan the page to confirm what changed and build the next plan.</div>
+          <div style="margin-top:14px;">${btn("Review and re-scan", `${BASE_URL}/results/${latestAudit.id}`)}</div>
+        </div>`
+      : `<div style="margin:22px 0;padding:20px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:10px;">
+          <div style="font-size:12px;font-weight:700;color:${BRAND_COLOR};text-transform:uppercase;letter-spacing:0.05em;margin-bottom:7px;">Your recommended task this week</div>
+          <div style="font-size:17px;font-weight:700;color:#111827;margin-bottom:7px;">Create your SEO and GEO baseline</div>
+          <div style="font-size:14px;color:#4b5563;line-height:1.6;">Run the first audit so your weekly emails can point to specific improvements, ranking targets, and measurement gaps.</div>
+          <div style="margin-top:14px;">${btn("Run my first audit", BASE_URL)}</div>
+        </div>`;
   const scoreSection = latestAudit
     ? `${divider()}
-      <div style="margin-bottom:16px;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6b7280;">Latest Audit Score</div>
+      <div style="margin-bottom:16px;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6b7280;">Latest score for ${esc(domain)}</div>
       <table cellpadding="0" cellspacing="0" width="100%">
         ${scoreBar("AEO Score", latestAudit.geoScore)}
       </table>
-      ${latestAudit.quickWins.length > 0 ? `
-        <div style="margin:20px 0 8px;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6b7280;">Top Quick Wins</div>
-        <ul style="margin:0;padding:0 0 0 20px;font-size:14px;line-height:1.8;color:#374151;">
-          ${latestAudit.quickWins.slice(0, 3).map(w => `<li>${esc(w)}</li>`).join("")}
-        </ul>` : ""}
-      ${latestAudit.nextAction ? `
-        <div style="margin:20px 0;padding:16px 18px;background:#ecfdf5;border-left:4px solid ${BRAND_COLOR};border-radius:6px;">
-          <div style="font-size:12px;font-weight:700;color:${BRAND_COLOR};text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px;">Your next unfinished action</div>
-          <div style="font-size:14px;font-weight:700;color:#1f2937;margin-bottom:4px;">${esc(latestAudit.nextAction.title)}</div>
-          <div style="font-size:13px;color:#4b5563;line-height:1.55;">${esc(latestAudit.nextAction.detail)}</div>
-        </div>` : ""}
-      <div style="margin-top:24px;text-align:center;">
-        ${btn("View full audit →", `${BASE_URL}`)}
-      </div>`
-    : `${p("You haven't run an audit yet this week. Run one now to track your progress.")}
-      <div style="text-align:center;margin-top:24px;">
-        ${btn("Run an audit →", BASE_URL)}
-      </div>`;
+      ${scoreDelta === "" ? "" : `<p style="margin:10px 0 0;font-size:13px;color:#6b7280;">${scoreDelta === 0 ? "No score change" : scoreDelta > 0 ? `Up ${scoreDelta} points` : `Down ${Math.abs(scoreDelta)} points`} from the previous audit of this site.</p>`}`
+    : "";
+
+  const statusRows = [
+    `<tr><td style="padding:9px 0;color:#6b7280;font-size:13px;">Audits run in the last 7 days</td><td style="padding:9px 0;text-align:right;font-weight:700;color:#111827;font-size:13px;">${auditCount}</td></tr>`,
+    `<tr><td style="padding:9px 0;color:#6b7280;font-size:13px;">Completed recommendations</td><td style="padding:9px 0;text-align:right;font-weight:700;color:#111827;font-size:13px;">${latestAudit?.completedActions ?? 0}</td></tr>`,
+    ...(paidSeoEnabled ? [
+      `<tr><td style="padding:9px 0;color:#6b7280;font-size:13px;">Active keyword targets</td><td style="padding:9px 0;text-align:right;font-weight:700;color:#111827;font-size:13px;">${tracking?.activeKeywords ?? 0}</td></tr>`,
+      `<tr><td style="padding:9px 0;color:#6b7280;font-size:13px;">Keywords with a rank baseline</td><td style="padding:9px 0;text-align:right;font-weight:700;color:#111827;font-size:13px;">${tracking?.rankedKeywords ?? 0}</td></tr>`,
+      `<tr><td style="padding:9px 0;color:#6b7280;font-size:13px;">Sites under monitoring</td><td style="padding:9px 0;text-align:right;font-weight:700;color:#111827;font-size:13px;">${monitoring?.activeSites ?? 0}</td></tr>`,
+    ] : []),
+  ].join("");
+
+  const setupReminder = !paidSeoEnabled
+    ? ""
+    : !googleMeasurementConnected
+    ? p(`One setup item is still open: <a href="${BASE_URL}/projects" style="color:${BRAND_COLOR};font-weight:600;">connect Search Console and GA4</a> so your recommendations include real search and referral data.`, "padding:12px 14px;background:#fffbeb;border-radius:8px;color:#92400e;font-size:13px;")
+    : tracking?.activeKeywords === 0
+      ? p(`Add at least one priority keyword to start weekly DataForSEO snapshots. <a href="${latestAudit ? `${BASE_URL}/results/${latestAudit.id}#seo-opportunities` : `${BASE_URL}/projects`}" style="color:${BRAND_COLOR};font-weight:600;">Choose a keyword</a>.`, "padding:12px 14px;background:#fffbeb;border-radius:8px;color:#92400e;font-size:13px;")
+      : monitoring?.activeSites === 0
+        ? p(`Add your site to weekly monitoring so new audits and score changes appear automatically. <a href="${BASE_URL}/projects" style="color:${BRAND_COLOR};font-weight:600;">Turn on monitoring</a>.`, "padding:12px 14px;background:#fffbeb;border-radius:8px;color:#92400e;font-size:13px;")
+        : tracking && tracking.pendingKeywords > 0
+          ? p(`${tracking.pendingKeywords} keyword target${tracking.pendingKeywords === 1 ? " is" : "s are"} waiting for the first weekly rank snapshot. You do not need to refresh manually.`, "padding:12px 14px;background:#f8fafc;border-radius:8px;color:#475569;font-size:13px;")
+          : "";
 
   const html = layout(
-    `${h1(`Your weekly AEO update`)}
-    ${p(`Hi ${firstName || "there"}, here's your AEO Improvement digest for the week.`)}
-    <table cellpadding="0" cellspacing="0" width="100%" style="background:#f0fdf4;border-radius:8px;margin:16px 0;">
-      <tr>
-        <td style="padding:20px;text-align:center;">
-          <div style="font-size:36px;font-weight:800;color:${BRAND_COLOR};">${auditCount}</div>
-          <div style="font-size:13px;color:#6b7280;margin-top:4px;">audit${auditCount !== 1 ? "s" : ""} this week</div>
-        </td>
-      </tr>
-    </table>
-    ${scoreSection}`,
-    `Your weekly AEO Improvement digest — ${auditCount} audit${auditCount !== 1 ? "s" : ""} this week`,
+    `${h1(`Your weekly SEO + GEO plan`)}
+    ${p(`Hi ${esc(firstName) || "there"}, here is the next practical step for ${esc(domain)}, plus the measurement updates behind it.`)}
+    ${nextTask}
+    ${scoreSection}
+    ${divider()}
+    <div style="margin-bottom:8px;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6b7280;">Your program status</div>
+    <table cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">${statusRows}</table>
+    ${setupReminder}
+    <div style="text-align:center;margin-top:26px;">${btn("Open my SEO + GEO workspace", BASE_URL)}</div>`,
+    latestAudit?.nextAction ? `Your next task: ${esc(latestAudit.nextAction.title)}` : `Your weekly SEO and GEO program update`,
     unsubscribeUrl,
   );
-  const text = `Hi ${firstName || "there"}, your AEO weekly digest:\n\nAudits this week: ${auditCount}\n${latestAudit ? `Latest AEO score: ${Math.round(latestAudit.geoScore)}\n${latestAudit.nextAction ? `Next unfinished action: ${latestAudit.nextAction.title} — ${latestAudit.nextAction.detail}\n` : `Top quick win: ${latestAudit.quickWins[0] || "none"}\n`}` : ""}\nView your dashboard: ${BASE_URL}`;
+  const text = `Hi ${firstName || "there"},\n\nYour weekly SEO + GEO plan for ${domain}:\n\n${latestAudit?.nextAction ? `Recommended task: ${latestAudit.nextAction.title}\n${latestAudit.nextAction.detail}\nOpen it: ${actionUrl}` : latestAudit ? `Your current action list is complete. Review and re-scan: ${BASE_URL}/results/${latestAudit.id}` : `Run your first audit: ${BASE_URL}`}\n\nProgram status:\n- Audits in the last 7 days: ${auditCount}\n- Completed recommendations: ${latestAudit?.completedActions ?? 0}${paidSeoEnabled ? `\n- Active keyword targets: ${tracking?.activeKeywords ?? 0}\n- Keywords with a rank baseline: ${tracking?.rankedKeywords ?? 0}\n- Sites under monitoring: ${monitoring?.activeSites ?? 0}` : ""}\n\nOpen your workspace: ${BASE_URL}`;
   return { subject, html, text };
 }
 

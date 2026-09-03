@@ -20,6 +20,67 @@ import {
   planChangeDirection,
   validateCheckoutPrice,
 } from "./billingPolicy.ts";
+import { weeklyDigestEmail } from "./emailTemplates.ts";
+
+test("paid weekly digest points to the user's next task and program status", () => {
+  const email = weeklyDigestEmail({
+    firstName: "Jamie",
+    planName: "Pro",
+    auditCount: 2,
+    latestAudit: {
+      id: 42,
+      url: "https://example.com/",
+      geoScore: 61,
+      previousGeoScore: 55,
+      quickWins: [],
+      nextAction: { title: "Add first-party evidence", detail: "Document one example you can support." },
+      completedActions: 3,
+      createdAt: new Date("2026-09-01T12:00:00Z"),
+    },
+    tracking: { activeKeywords: 5, rankedKeywords: 4, pendingKeywords: 1 },
+    monitoring: { activeSites: 1, waitingForFirstRun: 0 },
+    googleMeasurementConnected: true,
+  });
+
+  assert.equal(email.subject, "Your SEO + GEO task for example.com");
+  assert.match(email.html, /\/results\/42#recommendations/);
+  assert.match(email.html, /Add first-party evidence/);
+  assert.match(email.html, /Keywords with a rank baseline/);
+  assert.match(email.text, /Active keyword targets: 5/);
+});
+
+test("paid weekly digest escapes recommendation content before rendering HTML", () => {
+  const email = weeklyDigestEmail({
+    firstName: "<Jamie>",
+    auditCount: 0,
+    latestAudit: {
+      id: 7,
+      url: "https://example.com/",
+      geoScore: 50,
+      quickWins: [],
+      nextAction: { title: "Add <evidence>", detail: "Use <script>alert(1)</script> nowhere." },
+      createdAt: new Date("2026-09-01T12:00:00Z"),
+    },
+  });
+
+  assert.doesNotMatch(email.html, /<script>/);
+  assert.match(email.html, /Add &lt;evidence&gt;/);
+  assert.match(email.html, /Hi &lt;Jamie&gt;/);
+});
+
+test("Starter weekly digest guides audit work without promising connected SEO tracking", () => {
+  const email = weeklyDigestEmail({
+    firstName: "Jamie",
+    planName: "Starter",
+    paidSeoEnabled: false,
+    auditCount: 1,
+  });
+
+  assert.match(email.html, /Create your SEO and GEO baseline/);
+  assert.doesNotMatch(email.html, /Active keyword targets/);
+  assert.doesNotMatch(email.html, /connect Search Console and GA4/);
+  assert.doesNotMatch(email.text, /Keywords with a rank baseline/);
+});
 
 test("limits provider-backed SEO tracking to paid Pro and Agency plans", () => {
   assert.equal(isPaidSeoPlan("free"), false);

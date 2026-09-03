@@ -61,7 +61,7 @@ export default function Results() {
       enabled: !!id,
       queryKey: getGetAuditQueryKey(id),
       // A 404 is final. Without this, React Query retried three times with
-      // backoff and the page sat on "Analyzing GEO signals…" for ~7s before
+      // backoff and the page sat on the saved-audit loading state for ~7s before
       // admitting the audit doesn't exist.
       retry: (count, err) => apiErrorStatus(err) !== 404 && count < 2,
     }
@@ -222,7 +222,7 @@ export default function Results() {
     return (
       <div className="flex-1 w-full max-w-6xl mx-auto p-4 md:p-8 space-y-8 animate-in fade-in duration-500 flex flex-col items-center justify-center min-h-[50vh]">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        <p className="text-muted-foreground animate-pulse font-mono">Analyzing GEO signals...</p>
+        <p className="text-muted-foreground animate-pulse">Loading your saved SEO and GEO audit...</p>
       </div>
     );
   }
