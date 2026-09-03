@@ -151,7 +151,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 const APP_NAV = [
   { label: "Dashboard", href: "/", icon: LayoutDashboard },
-  { label: "Projects", href: "/projects", icon: FolderKanban },
+  { label: "Tracking", href: "/projects", icon: FolderKanban },
   { label: "Plans", href: "/upgrade", icon: CreditCard },
 ];
 
