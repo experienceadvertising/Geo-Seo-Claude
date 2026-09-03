@@ -18,8 +18,8 @@ const basePath = process.env.BASE_PATH ?? "/";
 // PerplexityBot, OAI-SearchBot, Bytespider, CCBot, Twitter/X, LinkedIn,
 // Slack, iMessage). The actual writing happens in scripts/prerender.mjs,
 // invoked from the package "build" script after vite build completes.
-// That script reads scripts/seo-manifest.mjs and writes dist/public/<route>/
-// index.html for every public route with route-specific title, meta,
+// That script reads scripts/seo-manifest.mjs and writes dist/public/<route>
+// for every public route with route-specific title, meta,
 // canonical, og:* / article:*, twitter:*, and JSON-LD baked in.
 //
 // SPA fallback: serve index.html for any path that looks like a page route.
@@ -28,7 +28,7 @@ const basePath = process.env.BASE_PATH ?? "/";
 // to serve index.html while keeping the browser URL intact so the React router
 // can pick up the path + query string (e.g. ?token=...).
 //
-// When a prerendered file exists at dist/public/<path>/index.html we let the
+// When a prerendered file exists at dist/public/<path> we let the
 // static handler serve that file instead of rewriting to the root index.html.
 // Otherwise non-JS crawlers would never see the route-specific title/meta/
 // JSON-LD that the prerender step inlines.
@@ -55,9 +55,8 @@ function spaFallback(): Plugin {
 
         const trimmed = pathname.replace(/^\/+|\/+$/g, "");
         if (trimmed) {
-          const prerendered = path.join(distPublic, trimmed, "index.html");
+          const prerendered = path.join(distPublic, trimmed);
           if (existsSync(prerendered)) {
-            req.url = "/" + trimmed + "/";
             next();
             return;
           }
@@ -71,7 +70,7 @@ function spaFallback(): Plugin {
 
       // Vite registers its static-file handler before plugins added with
       // `use()`. Put this middleware at the front so a request such as
-      // /pricing reaches dist/public/pricing/index.html instead of falling
+      // /pricing reaches dist/public/pricing instead of falling
       // through to the root SPA shell. This is essential for non-JS crawlers.
       const stack = (server.middlewares as typeof server.middlewares & {
         stack: Array<{ route: string; handle: typeof fallbackMiddleware }>;
