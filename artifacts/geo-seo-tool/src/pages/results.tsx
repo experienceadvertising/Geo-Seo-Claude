@@ -620,7 +620,7 @@ export default function Results() {
           <div className="rounded-lg border p-4"><p className="text-xs text-muted-foreground">Next SEO actions</p><p className="mt-1 text-2xl font-semibold">{seoRecommendations.length}</p><p className="mt-1 text-xs text-muted-foreground">Prioritized technical and content improvements below.</p></div>
         </CardContent>
         <CardContent className="pt-0 text-sm text-muted-foreground">
-          <Link href="/projects" className="text-primary hover:underline">Open Projects to connect Search Console and manage paid keyword tracking</Link>. Rank movement is displayed as an observed outcome, not proof that a change caused it.
+          <Link href="/projects" className="text-primary hover:underline">Open Sites and tracking to connect Search Console</Link>. Manage rank-tracking keywords directly below. Rank movement is displayed as an observed outcome, not proof that a change caused it.
           {hasPaidSeo && domain && <SeoTrackingPanel domain={domain} />}
         </CardContent>
       </Card>

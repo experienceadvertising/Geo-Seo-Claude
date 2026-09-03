@@ -344,8 +344,8 @@ export default function ProjectsPage() {
           <Bell className="h-6 w-6 text-emerald-600" /> Sites and tracking
         </h1>
         <p className="text-muted-foreground text-sm max-w-2xl">
-          Monitor the sites and search performance that matter. Scheduled audits, crawler activity, Google data, and
-          ranking changes stay together here.
+          Monitor the sites and search performance that matter. Scheduled audits, crawler activity, and Google data
+          stay together here. Open an audit result to add keywords and review DataForSEO ranking history.
         </p>
       </div>
 
