@@ -36,16 +36,19 @@ export function safeBaseUrl(req: Request): string {
   // Explicit env override always wins (single source of truth in prod).
   if (process.env.FRONTEND_URL) return process.env.FRONTEND_URL.replace(/\/$/, "");
 
-  // Prefer the Replit-injected deployment domain when present.
-  const replitDomain = process.env.REPLIT_DOMAINS?.split(",")[0]?.trim();
-  if (replitDomain) return `https://${replitDomain}`;
-
-  // Otherwise consider the request host — but ONLY if it's allow-listed.
+  // Prefer the public host the customer actually used. Replit injects its
+  // deployment domain even for requests arriving through a custom domain, so
+  // choosing REPLIT_DOMAINS first sends Stripe customers back to replit.app.
+  // The host remains safe because it must be in the explicit allow-list.
   const xfHost = (req.get("x-forwarded-host") || req.get("host") || "").split(",")[0].trim();
   if (xfHost && ALLOWED_HOSTS.has(xfHost)) {
     const proto = (req.get("x-forwarded-proto") || req.protocol || "https").split(",")[0].trim();
     return `${proto}://${xfHost}`;
   }
+
+  // Fall back to the Replit deployment domain for direct preview requests.
+  const replitDomain = process.env.REPLIT_DOMAINS?.split(",")[0]?.trim();
+  if (replitDomain) return `https://${replitDomain}`;
 
   return PRODUCTION_BASE_URL;
 }
