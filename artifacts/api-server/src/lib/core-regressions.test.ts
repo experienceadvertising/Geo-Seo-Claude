@@ -27,7 +27,9 @@ import { safeBaseUrl } from "./publicUrl.ts";
 
 test("Stripe return URLs preserve the verified public custom domain", () => {
   const previousReplitDomains = process.env.REPLIT_DOMAINS;
+  const previousNodeEnv = process.env.NODE_ENV;
   process.env.REPLIT_DOMAINS = "geo-seo-claude-example.replit.app";
+  process.env.NODE_ENV = "production";
 
   try {
     const req = {
@@ -40,9 +42,22 @@ test("Stripe return URLs preserve the verified public custom domain", () => {
     };
 
     assert.equal(safeBaseUrl(req as any), "https://aeoimprovement.com");
+
+    const proxiedReq = {
+      protocol: "https",
+      get(name: string) {
+        if (name === "x-forwarded-host") return "geo-seo-claude-example.replit.app";
+        if (name === "x-forwarded-proto") return "https";
+        return undefined;
+      },
+    };
+
+    assert.equal(safeBaseUrl(proxiedReq as any), "https://aeoimprovement.com");
   } finally {
     if (previousReplitDomains === undefined) delete process.env.REPLIT_DOMAINS;
     else process.env.REPLIT_DOMAINS = previousReplitDomains;
+    if (previousNodeEnv === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = previousNodeEnv;
   }
 });
 
