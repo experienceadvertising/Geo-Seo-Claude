@@ -304,6 +304,43 @@ function SignedOutLanding() {
         </div>
       </section>
 
+      <section aria-labelledby="product-overview-heading" className="w-full max-w-6xl mx-auto px-4 md:px-8 py-10 md:py-16">
+        <div className="grid lg:grid-cols-[0.8fr_1.2fr] gap-8 lg:gap-12 items-center rounded-3xl border border-emerald-500/20 bg-card p-5 md:p-8 shadow-xl shadow-emerald-950/5">
+          <div className="space-y-4 text-center lg:text-left">
+            <p className="text-xs font-semibold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
+              See the workflow
+            </p>
+            <h2 id="product-overview-heading" className="text-3xl md:text-4xl font-bold tracking-tight">
+              Understand AEO Improvement in one minute
+            </h2>
+            <p id="product-overview-description" className="text-muted-foreground leading-relaxed">
+              See how one guided workflow brings together SEO, GEO, AI crawler access, citation readiness,
+              schema, buyer-question testing, and ongoing measurement.
+            </p>
+            <Link href="/sign-up">
+              <Button size="lg" className="font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700">
+                Start my free audit <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </Link>
+          </div>
+
+          <div className="overflow-hidden rounded-2xl border border-border bg-black shadow-2xl shadow-black/15">
+            <video
+              className="aspect-video w-full"
+              controls
+              playsInline
+              preload="metadata"
+              poster="/videos/aeo-improvement-overview-poster.jpg"
+              aria-label="A one-minute overview of AEO Improvement"
+              aria-describedby="product-overview-description"
+            >
+              <source src="/videos/aeo-improvement-overview.mp4" type="video/mp4" />
+              Your browser does not support embedded video. You can still learn about the workflow in the feature overview below.
+            </video>
+          </div>
+        </div>
+      </section>
+
       <div className="w-full max-w-5xl mx-auto px-4 md:px-8 py-12 md:py-20 space-y-16">
         <MarketStats />
 
