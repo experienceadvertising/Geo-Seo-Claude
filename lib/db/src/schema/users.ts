@@ -70,6 +70,11 @@ export const usersTable = pgTable("users", {
   // celebratory email and prevents resending it.
   firstAuditAt: timestamp("first_audit_at"),
 
+  // URL entered on a public landing page before account creation. Keeping it
+  // on the account makes the first audit survive email verification in a new
+  // tab, browser, or device. It is cleared only after the audit succeeds.
+  pendingAuditUrl: text("pending_audit_url"),
+
   // "What you didn't see" upsell email throttle. Fires after free-user
   // audits to show what their report would look like with all 4 engines
   // + the Fix Generator output for their actual #1 issue. Throttled to

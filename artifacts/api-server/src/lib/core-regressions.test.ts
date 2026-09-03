@@ -11,6 +11,7 @@ import { SsrfError } from "./safeFetch.ts";
 import { extractDataNoSnippetSignals } from "./snippetControls.ts";
 import { buildLatestRankSnapshotsQuery } from "./seoTrackingQueries.ts";
 import { isPaidSeoPlan } from "./seoAccess.ts";
+import { normalizePendingAuditUrl } from "./pendingAudit.ts";
 import {
   highestPaidPlan,
   isBlockingSubscriptionStatus,
@@ -24,6 +25,18 @@ test("limits provider-backed SEO tracking to paid Pro and Agency plans", () => {
   assert.equal(isPaidSeoPlan("starter"), false);
   assert.equal(isPaidSeoPlan("pro"), true);
   assert.equal(isPaidSeoPlan("agency"), true);
+});
+
+test("normalizes a pre-signup audit URL for server-side recovery", () => {
+  assert.equal(normalizePendingAuditUrl(" example.com/services "), "https://example.com/services");
+  assert.equal(normalizePendingAuditUrl("https://Example.com/Path?q=1"), "https://example.com/Path?q=1");
+});
+
+test("rejects unsafe or malformed pre-signup audit URLs", () => {
+  assert.equal(normalizePendingAuditUrl("javascript:alert(1)"), null);
+  assert.equal(normalizePendingAuditUrl("https://user:secret@example.com"), null);
+  assert.equal(normalizePendingAuditUrl("localhost"), null);
+  assert.equal(normalizePendingAuditUrl(""), null);
 });
 
 test("rejects an ambiguous publication as a brand entity", () => {
