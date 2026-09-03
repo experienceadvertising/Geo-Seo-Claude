@@ -36,6 +36,11 @@ export function safeBaseUrl(req: Request): string {
   // Explicit env override always wins (single source of truth in prod).
   if (process.env.FRONTEND_URL) return process.env.FRONTEND_URL.replace(/\/$/, "");
 
+  // Replit terminates custom-domain traffic before forwarding it to the app,
+  // so production requests can arrive with only the replit.app host. Billing
+  // links must always return customers to the verified canonical domain.
+  if (process.env.NODE_ENV === "production") return PRODUCTION_BASE_URL;
+
   // Prefer the public host the customer actually used. Replit injects its
   // deployment domain even for requests arriving through a custom domain, so
   // choosing REPLIT_DOMAINS first sends Stripe customers back to replit.app.
