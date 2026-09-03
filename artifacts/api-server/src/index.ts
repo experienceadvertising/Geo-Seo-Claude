@@ -6,6 +6,7 @@ import { startEmailScheduler } from "./lib/emailScheduler";
 import { runFreeMonthPromoGrant } from "./lib/promoGrant";
 import { runProductMigrations } from "./lib/productMigrations";
 import { isProduction as isProd } from "./lib/env";
+import { billingWebhookEvents } from "./lib/stripeWebhookPolicy";
 
 async function initStripe() {
   const isProduction = isProd();
@@ -35,7 +36,13 @@ async function initStripe() {
       : frontendUrl ? new URL(frontendUrl).origin : null;
     if (webhookBaseUrl) {
       const webhookUrl = `${webhookBaseUrl}/api/stripe/webhook`;
-      await stripeSync.findOrCreateManagedWebhook(webhookUrl);
+      const enabledEvents = billingWebhookEvents(stripeSync.getSupportedEventTypes());
+      const webhook = await stripeSync.findOrCreateManagedWebhook(webhookUrl, {
+        enabled_events: enabledEvents,
+      });
+      if (webhook.enabled_events.includes("invoice.upcoming")) {
+        await stripeSync.updateManagedWebhook(webhook.id, { enabled_events: enabledEvents });
+      }
       logger.info({ webhookUrl }, "Stripe webhook configured");
     } else if (isProduction) {
       throw new Error("A production hostname is required to configure the Stripe webhook");
