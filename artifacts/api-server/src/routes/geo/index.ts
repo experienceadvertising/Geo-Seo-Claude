@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, desc, and, like, asc } from "drizzle-orm";
+import { eq, desc, and, like, gte } from "drizzle-orm";
 import { db, auditsTable, recommendationProgressTable } from "@workspace/db";
 import {
   AnalyzeUrlBody,
@@ -16,7 +16,7 @@ import crawlerRouter from "./crawler";
 import { requireAuth } from "../../middlewares/auth";
 import { analyzeRateLimiter, readRateLimiter } from "../../middlewares/rateLimiters";
 import { assertPublicUrl, SsrfError } from "../../lib/safeFetch";
-import { getUserPlan, planAtLeast } from "../../lib/planUtils";
+import { getUserPlan, PLAN_LIMITS } from "../../lib/planUtils";
 import { consumeQuota, refundQuota, currentYearMonth, markApproachingNotified } from "../../lib/usageLimits";
 import { db as appDb, usersTable } from "@workspace/db";
 import { sql } from "drizzle-orm";
@@ -612,6 +612,68 @@ router.get("/geo/audits", requireAuth, readRateLimiter, async (req, res): Promis
   })));
 });
 
+// NOTE: must be registered BEFORE `/geo/audits/:id` — Express matches in
+// registration order and `:id` would otherwise capture the literal segment
+// "history" (coerced to NaN → 400) and the chart could never load.
+router.get("/geo/audits/history", requireAuth, readRateLimiter, async (req, res): Promise<void> => {
+  const domain = typeof req.query.domain === "string" ? req.query.domain.trim().toLowerCase() : "";
+  if (!domain) {
+    res.status(400).json({ error: "domain query param required" });
+    return;
+  }
+  const plan = await getUserPlan(req.userId!);
+  // Free: last 30 days; Pro: last year; Agency: 2 years
+  const daysCap = plan === "agency" ? 730 : plan === "pro" ? 365 : 30;
+  const since = new Date(Date.now() - daysCap * 24 * 60 * 60 * 1000);
+
+  // Pre-filter with LIKE (uses the index) but be deliberately a touch loose
+  // so we don't miss audits where the URL has a subdomain or a trailing
+  // path. The exact hostname check below is what guarantees correctness.
+  const audits = await db
+    .select({
+      id: auditsTable.id,
+      url: auditsTable.url,
+      geoScore: auditsTable.geoScore,
+      createdAt: auditsTable.createdAt,
+    })
+    .from(auditsTable)
+    .where(
+      and(
+        eq(auditsTable.userId, req.userId!),
+        gte(auditsTable.createdAt, since),
+        like(auditsTable.url, `%${escapeLike(domain)}%`),
+      )
+    )
+    // Newest 200 within the window, then flipped to chronological order for
+    // the chart. Ordering ascending first would return the OLDEST 200 and
+    // silently drop recent audits for heavily-monitored domains.
+    .orderBy(desc(auditsTable.createdAt))
+    .limit(200);
+  audits.reverse();
+
+  // Exact-host filter — `LIKE %stripe.com%` would otherwise match
+  // `not-stripe.com` and `stripe.com.evil.tld`. Compare against the parsed
+  // hostname (lowercased) and accept either an exact hit or a subdomain
+  // suffix match (audits.stripe.com → stripe.com).
+  const filtered = audits.filter((a) => {
+    let host: string;
+    try { host = new URL(a.url).hostname.toLowerCase(); } catch { return false; }
+    return host === domain || host.endsWith(`.${domain}`);
+  });
+  res.json({
+    domain,
+    plan,
+    daysCap,
+    history: filtered.map((a) => ({
+      id: a.id,
+      url: a.url,
+      geoScore: a.geoScore,
+      createdAt: a.createdAt.toISOString(),
+    })),
+  });
+});
+
+// ─── Fix Generator ────────────────────────────────────────────────────────────
 router.get("/geo/audits/:id", requireAuth, readRateLimiter, async (req, res): Promise<void> => {
   const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const params = GetAuditParams.safeParse({ id: rawId });
@@ -694,69 +756,16 @@ router.get("/geo/audits/:id/pdf", requireAuth, readRateLimiter, async (req, res)
 });
 
 // ─── Visibility History ──────────────────────────────────────────────────────
-router.get("/geo/audits/history", requireAuth, readRateLimiter, async (req, res): Promise<void> => {
-  const domain = typeof req.query.domain === "string" ? req.query.domain.trim().toLowerCase() : "";
-  if (!domain) {
-    res.status(400).json({ error: "domain query param required" });
-    return;
-  }
-  const plan = await getUserPlan(req.userId!);
-  // Free: last 30 days; Pro: last year; Agency: 2 years
-  const daysCap = plan === "agency" ? 730 : plan === "pro" ? 365 : 30;
-  const since = new Date(Date.now() - daysCap * 24 * 60 * 60 * 1000);
-
-  // Pre-filter with LIKE (uses the index) but be deliberately a touch loose
-  // so we don't miss audits where the URL has a subdomain or a trailing
-  // path. The exact hostname check below is what guarantees correctness.
-  const audits = await db
-    .select({
-      id: auditsTable.id,
-      url: auditsTable.url,
-      geoScore: auditsTable.geoScore,
-      createdAt: auditsTable.createdAt,
-    })
-    .from(auditsTable)
-    .where(
-      and(
-        eq(auditsTable.userId, req.userId!),
-        like(auditsTable.url, `%${escapeLike(domain)}%`),
-      )
-    )
-    .orderBy(asc(auditsTable.createdAt))
-    .limit(200);
-
-  // Exact-host filter — `LIKE %stripe.com%` would otherwise match
-  // `not-stripe.com` and `stripe.com.evil.tld`. Compare against the parsed
-  // hostname (lowercased) and accept either an exact hit or a subdomain
-  // suffix match (audits.stripe.com → stripe.com).
-  const filtered = audits.filter((a) => {
-    if (a.createdAt < since) return false;
-    let host: string;
-    try { host = new URL(a.url).hostname.toLowerCase(); } catch { return false; }
-    return host === domain || host.endsWith(`.${domain}`);
-  });
-  res.json({
-    domain,
-    plan,
-    daysCap,
-    history: filtered.map((a) => ({
-      id: a.id,
-      url: a.url,
-      geoScore: a.geoScore,
-      createdAt: a.createdAt.toISOString(),
-    })),
-  });
-});
-
-// ─── Fix Generator ────────────────────────────────────────────────────────────
 router.get("/geo/audits/:id/fixes", requireAuth, readRateLimiter, async (req, res): Promise<void> => {
   const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const params = GetAuditParams.safeParse({ id: rawId });
   if (!params.success) { res.status(400).json({ error: "Invalid ID" }); return; }
 
   const plan = await getUserPlan(req.userId!);
-  if (!planAtLeast(plan, "pro")) {
-    res.status(403).json({ error: "Fix Generator is a Pro feature. Upgrade to download custom fixes.", upgradeRequired: true });
+  // Gate on the feature flag, not a tier comparison: Starter is sold with
+  // the Fix Generator (PLAN_LIMITS.starter.fixGenerator) and was being 403'd.
+  if (!PLAN_LIMITS[plan].fixGenerator) {
+    res.status(403).json({ error: "The Fix Generator is available on Starter and above. Upgrade to download custom fixes.", upgradeRequired: true });
     return;
   }
 
@@ -847,16 +856,7 @@ Citation access is controlled in robots.txt. This file is a human-readable conte
   // Robots.txt snippet for missing crawlers
   const robotsSnippet = crawlersBlocked.length > 0
     ? `# Add these rules to your robots.txt to allow AI crawlers:\n${crawlersBlocked.map((name: string) => {
-        const agentMap: Record<string, string> = {
-          GPTBot: "GPTBot",
-          ClaudeBot: "ClaudeBot",
-          PerplexityBot: "PerplexityBot",
-          "Google-Extended": "Google-Extended",
-          Applebot: "Applebot",
-          "meta-externalagent": "meta-externalagent",
-        };
-        const agent = agentMap[name] || name;
-        return `\nUser-agent: ${agent}\nAllow: /`;
+        return `\nUser-agent: ${name}\nAllow: /`;
       }).join("\n")}`
     : "# All major AI crawlers are already allowed in your robots.txt.";
 

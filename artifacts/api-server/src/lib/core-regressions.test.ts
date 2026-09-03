@@ -5,6 +5,9 @@ import { PgDialect } from "drizzle-orm/pg-core";
 import { isWikiArticleConfident } from "./entityConfidence.ts";
 import { buildPageUrlVariants, rankSearchOpportunities } from "./gscOpportunities.ts";
 import { isAllowedByRobots, parseRobotsTxt } from "./robotsPolicy.ts";
+import { extractContentSignals } from "./geoRecommendations.ts";
+import { errorHandler } from "../middlewares/errorHandler.ts";
+import { SsrfError } from "./safeFetch.ts";
 import { extractDataNoSnippetSignals } from "./snippetControls.ts";
 import { buildLatestRankSnapshotsQuery } from "./seoTrackingQueries.ts";
 import {
@@ -151,4 +154,58 @@ test("rank tracking binds each of multiple keyword targets safely", () => {
   const compiled = new PgDialect().sqlToQuery(query);
   assert.match(compiled.sql, /target_id IN \(\$1, \$2\)/);
   assert.deepEqual(compiled.params, [26, 27]);
+});
+
+test("an explicit user-agent group with an empty Disallow overrides a restrictive wildcard group", () => {
+  const rules = parseRobotsTxt(`
+User-agent: *
+Disallow: /
+
+User-agent: GPTBot
+Disallow:
+`);
+  // The canonical "allow this bot everything" idiom: a named group with no
+  // rules must NOT fall through to the "*" block.
+  assert.equal(isAllowedByRobots(rules, "gptbot", "/pricing"), true);
+  assert.equal(isAllowedByRobots(rules, "claudebot", "/pricing"), false);
+});
+
+test("brand-facts detection recognises an audience/problem statement in the opening copy", () => {
+  const $ = cheerio.load(`
+    <html><body><main>
+      <h1>Acme</h1>
+      <p>Acme is a payments platform for small businesses that helps them get paid faster.</p>
+    </main></body></html>
+  `);
+  const signals = extractContentSignals($, "https://acme.com/", "Acme");
+  // A regex literal written as /\\b.../ matched a literal backslash-b and
+  // made this false for every page, firing the "brand-facts" rec everywhere.
+  assert.equal(signals.hasBrandFactsStatement, true);
+});
+
+test("JSON error handler preserves client-caused statuses and hides internals", () => {
+  type Sent = { status: number; body: unknown };
+  const run = (err: unknown): Sent => {
+    const sent: Sent = { status: 0, body: null };
+    const res = {
+      headersSent: false,
+      status(code: number) { sent.status = code; return this; },
+      json(body: unknown) { sent.body = body; return this; },
+    };
+    const req = { log: { error: () => undefined }, userId: "u1", path: "/api/x" };
+    errorHandler(err, req as never, res as never, () => undefined);
+    return sent;
+  };
+  assert.deepEqual(run(new SsrfError("Private/internal IP addresses are not allowed")), {
+    status: 400,
+    body: { error: "Private/internal IP addresses are not allowed" },
+  });
+  assert.deepEqual(run(Object.assign(new Error("too big"), { status: 413, type: "entity.too.large" })), {
+    status: 413,
+    body: { error: "Request body too large" },
+  });
+  assert.deepEqual(run(new Error("db connection string leaked here")), {
+    status: 500,
+    body: { error: "Internal server error" },
+  });
 });

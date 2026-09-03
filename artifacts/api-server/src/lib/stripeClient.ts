@@ -1,4 +1,5 @@
 import Stripe from "stripe";
+import { isProduction } from "./env";
 import { StripeSync } from "stripe-replit-sync";
 
 type ReplitStripeConnectionResponse = {
@@ -32,8 +33,7 @@ async function getCredentials(): Promise<{ publishableKey: string; secretKey: st
       : null;
 
   if (hostname && xReplitToken) {
-    const isProduction = process.env.REPLIT_DEPLOYMENT === "1";
-    const targetEnvironment = isProduction ? "production" : "development";
+    const targetEnvironment = isProduction() ? "production" : "development";
 
     const url = new URL(`https://${hostname}/api/v2/connection`);
     url.searchParams.set("include_secrets", "true");

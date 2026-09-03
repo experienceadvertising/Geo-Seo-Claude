@@ -5,6 +5,7 @@ import { requireAuth } from "../../middlewares/auth";
 import { readRateLimiter, analyzeRateLimiter } from "../../middlewares/rateLimiters";
 import { getUserPlan, PLAN_LIMITS } from "../../lib/planUtils";
 import { nextRunFrom, runMonitoredSite } from "../../lib/monitoring";
+import { consumeQuota, refundQuota, currentYearMonth } from "../../lib/usageLimits";
 
 const router: IRouter = Router();
 
@@ -179,14 +180,32 @@ router.post("/geo/monitored-sites/:id/run", requireAuth, analyzeRateLimiter, asy
     res.status(404).json({ error: "Monitored site not found" });
     return;
   }
+  // Manual runs are user-initiated full audits — they count against the
+  // monthly audit quota exactly like /geo/analyze. (Scheduled runs are
+  // deliberately exempt; only this on-demand path was unmetered.)
+  const plan = await getUserPlan(req.userId!);
+  const ym = currentYearMonth();
+  const quota = await consumeQuota(req.userId!, plan, "audits", ym);
+  if (!quota.allowed) {
+    res.status(429).json({
+      error: `You've used all ${quota.cap} audits for this month. Upgrade for more.`,
+      upgradeRequired: true,
+      usage: { used: quota.used, cap: quota.cap },
+    });
+    return;
+  }
   try {
     const result = await runMonitoredSite(site);
     if (!result) {
+      await refundQuota(req.userId!, "audits", ym).catch(() => undefined);
       res.status(403).json({ error: "Continuous monitoring is not available on your current plan.", upgradeRequired: true });
       return;
     }
     res.json(result);
   } catch (err) {
+    refundQuota(req.userId!, "audits", ym).catch((refundErr) =>
+      req.log.error({ err: refundErr, userId: req.userId }, "Quota refund failed"),
+    );
     req.log.error({ err, siteId: id }, "Manual monitored-site run failed");
     res.status(500).json({ error: "Audit failed. Please try again." });
   }

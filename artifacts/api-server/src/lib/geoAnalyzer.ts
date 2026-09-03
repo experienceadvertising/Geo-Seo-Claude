@@ -332,6 +332,12 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
   if (analysisHtml) {
     try {
       const $ = cheerio.load(analysisHtml);
+      // Drop script/style/etc. from the WHOLE document up front. The
+      // content-scope cleanup below only touches <main>/<article>, so when a
+      // page had one, inline JS (dataLayer, __NEXT_DATA__) and CSS outside it
+      // leaked into body-text word counts, filler/keyword-stuffing checks,
+      // and the "visible content" excerpt handed to the LLM.
+      $("script, style, noscript, template").remove();
       $page = $;
 
       title = $("title").first().text().trim() || null;

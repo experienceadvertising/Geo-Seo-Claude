@@ -22,12 +22,12 @@ const contactRateLimiter = rateLimit({
 });
 
 router.post("/contact", contactRateLimiter, async (req, res): Promise<void> => {
-  const { name, email, message, website } = req.body as {
-    name?: string;
-    email?: string;
-    message?: string;
-    website?: string;
-  };
+  const body = (req.body ?? {}) as Record<string, unknown>;
+  const asStr = (v: unknown) => (typeof v === "string" ? v : "");
+  const name = asStr(body.name);
+  const email = asStr(body.email);
+  const message = asStr(body.message);
+  const website = asStr(body.website);
 
   // Honeypot — real users never fill the hidden `website` field. Bots scrape
   // and fill every input. Silently 200 so the bot doesn't retry.
@@ -59,7 +59,9 @@ router.post("/contact", contactRateLimiter, async (req, res): Promise<void> => {
 
   // If the sender is signed in, attach their user id + plan so the admin
   // sees who's writing in. Failure here is non-fatal.
-  let userId: string | null = req.userId ?? null;
+  // This route is unauthenticated (no requireAuth), so req.userId is never
+  // set — read the session directly.
+  let userId: string | null = req.session?.userId ?? null;
   let userPlan: string | null = null;
   if (userId) {
     try {

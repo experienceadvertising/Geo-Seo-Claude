@@ -34,6 +34,10 @@ Custom email+password auth (Clerk was removed — email delivery was unreliable 
   `POST /api/auth/forgot-password`, `POST /api/auth/reset-password`, `GET /api/auth/me`
 - **Session middleware**: `artifacts/api-server/src/middlewares/session.ts`
 - **Admin check**: `req.session.email` compared to `ADMIN_EMAILS` env var (comma-separated)
+- **Session revocation**: password reset deletes every session for the user; change-password
+  deletes every session except the current one (`src/lib/sessionRevocation.ts`)
+- **Production detection**: `src/lib/env.ts` `isProduction()` (REPLIT_DEPLOYMENT=1 or
+  NODE_ENV=production) is the single source for cookie `secure`, CORS, and Stripe env
 - **Plan**: stored in `users.plan` column (updated by Stripe webhooks). Every account's FIRST MONTH
   is free with all features: `users.trial_ends_at` (signup + 30d; NULL ⇒ derived `created_at` + 30d)
   bumps the EFFECTIVE plan to agency-level entitlements via `planUtils.getPlanInfo()` while
@@ -52,7 +56,9 @@ Custom email+password auth (Clerk was removed — email delivery was unreliable 
   first month free with all core product features unlocked (no card); connected GA4 reporting requires a paid plan
 - Sentiment analysis: keyword-heuristic detection of Positive/Neutral/Negative brand tone per engine result
 - Visibility Trend: line chart of historical AEO scores for a domain (`/api/geo/audits/history`)
-- Fix Generator (Pro only): generates ready-to-copy llms.txt, JSON-LD schema, robots.txt snippets
+- Fix Generator (Starter and above — gated by `PLAN_LIMITS[plan].fixGenerator`, client reads
+  `limits.fixGenerator` from `/api/me`): generates ready-to-copy llms.txt, JSON-LD schema,
+  robots.txt snippets
 - Plan hook: `src/hooks/usePlan.tsx` reads plan from `/api/me`, gates engine/prompt UI
 - Upgrade CTA component: `src/components/upgrade-prompt.tsx`
 - Auth pages: `/sign-in`, `/sign-up`, `/verify-email`, `/forgot-password`, `/reset-password`
@@ -75,6 +81,13 @@ Custom email+password auth (Clerk was removed — email delivery was unreliable 
   all-access window (`trial_promo_granted_at`); stored-free users get the announcement email
 - Stripe integration: `src/lib/stripeClient.ts` (Replit managed credentials), `src/lib/webhookHandlers.ts`
 - Webhook must be registered BEFORE `express.json()` in `app.ts` (needs raw Buffer body)
+- `app.ts` ends with a JSON 404 for `/api/*` and a global JSON error handler
+  (`src/middlewares/errorHandler.ts`); `index.ts` closes the server gracefully on SIGTERM
+- Route order matters: `/geo/audits/history` must stay registered before `/geo/audits/:id`
+- Manual "Run now" on a monitored site consumes monthly audit quota (scheduled runs do not)
+- Client-side API errors: read `ApiError.data.error` / `.code` via `src/lib/api-error.ts`
+  (the error object has no `.body`)
+- Open review backlog: `docs/code-review-backlog.md`
 - On checkout.session.completed webhook: updates `users.plan` in DB to "pro"/"agency"
 - On subscription.deleted webhook: resets plan to "free"
 - Products seeded via `pnpm --filter @workspace/scripts run seed-products`

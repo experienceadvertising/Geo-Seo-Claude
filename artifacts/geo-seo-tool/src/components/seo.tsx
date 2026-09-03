@@ -1,4 +1,26 @@
+import { useEffect } from "react";
 import { Helmet } from "react-helmet-async";
+
+// index.html ships a hard-coded homepage canonical / og:* / twitter:* /
+// description set. react-helmet-async only manages tags it created
+// (marked `data-rh`), so on any route that isn't prerendered — /privacy,
+// /terms, the signed-in app — a JS-rendering crawler would otherwise see
+// TWO canonicals (the shell's "/" and this page's). Strip the shell's copies
+// once on first mount; prerendered routes have already had them replaced at
+// build time, so this is a no-op there.
+const SHELL_TAG_SELECTOR = [
+  'link[rel="canonical"]:not([data-rh])',
+  'meta[name="description"]:not([data-rh])',
+  'meta[property^="og:"]:not([data-rh])',
+  'meta[property^="article:"]:not([data-rh])',
+  'meta[name^="twitter:"]:not([data-rh])',
+].join(",");
+let shellTagsStripped = false;
+function stripShellHeadTags(): void {
+  if (shellTagsStripped || typeof document === "undefined") return;
+  shellTagsStripped = true;
+  document.head.querySelectorAll(SHELL_TAG_SELECTOR).forEach((el) => el.remove());
+}
 
 interface SEOProps {
   title: string;
@@ -50,6 +72,8 @@ export function SEO({
   authorName,
   index = true,
 }: SEOProps) {
+  useEffect(stripShellHeadTags, []);
+
   const canonical = `${SITE}${path}`;
   const image = ogImage ?? `${SITE}/opengraph.jpg`;
   const ldArray = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];

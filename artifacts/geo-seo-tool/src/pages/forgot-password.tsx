@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { customFetch } from "@workspace/api-client-react";
+import { apiErrorMessage } from "@/lib/api-error";
 
 const NoIndex = () => (
   <Helmet>
@@ -31,8 +32,8 @@ export default function ForgotPasswordPage() {
         body: JSON.stringify({ email }),
       });
       setDone(true);
-    } catch (err: any) {
-      setError(err?.body?.error || "Something went wrong. Please try again.");
+    } catch (err: unknown) {
+      setError(apiErrorMessage(err, "Something went wrong. Please try again."));
     } finally {
       setLoading(false);
     }

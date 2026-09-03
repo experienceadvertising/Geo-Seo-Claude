@@ -45,6 +45,8 @@ export const telemetryRateLimiter = rateLimit({
   message: { error: "Too many telemetry reports" },
 });
 
+const TRANSPARENT_GIF = Buffer.from("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", "base64");
+
 // Crawler tracking-pixel ingest. Public + unauthenticated and hit by bots, so
 // keyed by IP and set generously (real crawlers fetch infrequently per IP);
 // the cap exists only to bound abuse of the public endpoint.
@@ -54,10 +56,17 @@ export const crawlerPixelRateLimiter = rateLimit({
   standardHeaders: false,
   legacyHeaders: false,
   keyGenerator: ipKey,
-  // Never 429 a bot with JSON — just stop logging; the handler still returns
-  // the gif. We achieve that by not throwing: skip counting successful gifs is
-  // unnecessary, but we keep the response an image via the handler regardless.
-  message: "",
+  // Never 429 a bot: express-rate-limit short-circuits before the route, so
+  // over the cap we answer with the same 1x1 gif ourselves and simply don't
+  // log the hit. A crawler must never see an error from a beacon.
+  handler: (_req, res) => {
+    res.set({
+      "Content-Type": "image/gif",
+      "Cache-Control": "no-store, no-cache, must-revalidate, private",
+      "Content-Length": String(TRANSPARENT_GIF.length),
+    });
+    res.status(200).end(TRANSPARENT_GIF);
+  },
 });
 
 // Login: prevent credential-stuffing / brute-force.

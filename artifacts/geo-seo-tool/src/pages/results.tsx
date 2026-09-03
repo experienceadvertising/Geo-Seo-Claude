@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, Link, useLocation } from "wouter";
 import { useGetAudit, getGetAuditQueryKey, useAnalyzeUrl, customFetch } from "@workspace/api-client-react";
+import { apiErrorMessage } from "@/lib/api-error";
 import { ArrowLeft, CheckCircle2, XCircle, AlertTriangle, Bot, TerminalSquare, FileText, Code2, ShieldAlert, Sparkles, Loader2, Download, Building2, RefreshCw, TrendingUp, Wrench, Lock, ChevronDown, ChevronUp, Copy, Check, BookOpen, Users, LineChart as LineChartIcon } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -43,7 +44,7 @@ export default function Results() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const reRun = useAnalyzeUrl();
-  const { isPro } = usePlan();
+  const { isPro, fixGenerator } = usePlan();
   const [showFixes, setShowFixes] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [approvedSameAs, setApprovedSameAs] = useState<string[]>([]);
@@ -121,7 +122,7 @@ export default function Results() {
   const { data: fixesData, isLoading: fixesLoading, isError: fixesError } = useQuery({
     queryKey: ["audit-fixes", id],
     queryFn: () => customFetch<any>(`/api/geo/audits/${id}/fixes`),
-    enabled: isPro && showFixes && !!id,
+    enabled: fixGenerator && showFixes && !!id,
     staleTime: Infinity,
     retry: false,
   });
@@ -136,10 +137,10 @@ export default function Results() {
   // immediately see the result instead of clicking a button with no apparent
   // effect (the panel renders ~600px below the click target).
   useEffect(() => {
-    if (showFixes && isPro && fixesRef.current) {
+    if (showFixes && fixGenerator && fixesRef.current) {
       fixesRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     }
-  }, [showFixes, isPro]);
+  }, [showFixes, fixGenerator]);
 
   const copyToClipboard = async (text: string, key: string) => {
     try {
@@ -207,9 +208,9 @@ export default function Results() {
       { data: { url: audit.url } },
       {
         onSuccess: (result) => setLocation(`/results/${result.id}`),
-        onError: (err: any) => toast({
+        onError: (err: unknown) => toast({
           title: "Re-scan failed",
-          description: err?.error || "Could not re-analyze this URL.",
+          description: apiErrorMessage(err, "Could not re-analyze this URL."),
           variant: "destructive",
         }),
       },
@@ -261,8 +262,8 @@ export default function Results() {
               onClick={() => setShowFixes(v => !v)}
               data-testid="button-fix-generator"
             >
-              {isPro && fixesLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : isPro ? <Wrench className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
-              Fix Generator {isPro ? (showFixes ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />) : <Badge className="text-[10px] ml-1 px-1 py-0 bg-gradient-to-r from-emerald-500 to-teal-500 text-white">Pro</Badge>}
+              {fixGenerator && fixesLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : fixGenerator ? <Wrench className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
+              Fix Generator {fixGenerator ? (showFixes ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />) : <Badge className="text-[10px] ml-1 px-1 py-0 bg-gradient-to-r from-emerald-500 to-teal-500 text-white">Pro</Badge>}
             </Button>
             <Button
               variant="outline"
@@ -588,7 +589,10 @@ export default function Results() {
                 return recommendationFilter === "all" || (recommendationFilter === "done" ? done : !done);
               });
               const researchRecs = allRecs.filter(r => r.source?.type === "research" || r.source?.type === "internal_benchmark");
-              const consensusRecs = allRecs.filter(r => !r.source || r.source?.type === "practitioner_consensus");
+              // Everything that isn't research-backed (practitioner consensus,
+              // expert guidance, or untagged) — a positive-list here silently
+              // dropped `expert_guidance` recs from the page.
+              const consensusRecs = allRecs.filter(r => !researchRecs.includes(r));
 
               const renderRec = (r: typeof allRecs[0], i: number) => {
                 const pStyle =
@@ -881,7 +885,7 @@ export default function Results() {
 
       {/* Fix Generator Panel */}
       {showFixes && (
-        isPro ? (
+        fixGenerator ? (
           <Card ref={fixesRef} className="border-emerald-200 dark:border-emerald-900 shadow-sm">
             <CardHeader className="border-b bg-emerald-500/5 pb-4">
               <CardTitle className="flex items-center gap-2 text-sm font-mono uppercase tracking-wider text-emerald-700 dark:text-emerald-400">

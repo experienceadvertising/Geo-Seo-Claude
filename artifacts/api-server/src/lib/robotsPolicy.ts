@@ -13,7 +13,12 @@ export function parseRobotsTxt(robotsTxt: string): Map<string, RobotsRule[]> {
     const value = line.slice(colon + 1).trim();
     if (field === "user-agent") {
       if (!collectingAgents) currentAgents = [];
-      currentAgents.push(value.toLowerCase());
+      const agent = value.toLowerCase();
+      currentAgents.push(agent);
+      // Register the group even if it ends up with no rules: "User-agent:
+      // GPTBot\nDisallow:" is the standard allow-everything idiom and must
+      // override a restrictive "*" group rather than fall through to it.
+      if (!rules.has(agent)) rules.set(agent, []);
       collectingAgents = true;
       continue;
     }
@@ -37,8 +42,8 @@ function matches(pattern: string, pathname: string): boolean {
 }
 
 export function isAllowedByRobots(rules: Map<string, RobotsRule[]>, agent: string, pathname: string): boolean {
-  const specific = rules.get(agent) ?? [];
-  const candidates = specific.length > 0 ? specific : (rules.get("*") ?? []);
+  const specific = rules.get(agent);
+  const candidates = specific ?? (rules.get("*") ?? []);
   const matching = candidates.filter((rule) => matches(rule.pattern, pathname));
   if (matching.length === 0) return true;
   const specificity = (rule: RobotsRule) => rule.pattern.replace(/\*|\$$/g, "").length;

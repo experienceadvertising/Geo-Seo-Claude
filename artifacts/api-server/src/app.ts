@@ -6,6 +6,8 @@ import router from "./routes";
 import { logger } from "./lib/logger";
 import { WebhookHandlers } from "./lib/webhookHandlers";
 import { createSessionMiddleware } from "./middlewares/session";
+import { errorHandler, notFoundHandler } from "./middlewares/errorHandler";
+import { isProduction } from "./lib/env";
 
 const app: Express = express();
 
@@ -77,7 +79,7 @@ function buildAllowedOrigins(): Set<string> {
   }
   if (process.env.REPLIT_DEV_DOMAIN) origins.add(`https://${process.env.REPLIT_DEV_DOMAIN}`);
   // Local dev — Vite default ports.
-  if (process.env.NODE_ENV !== "production") {
+  if (!isProduction()) {
     origins.add("http://localhost:5173");
     origins.add("http://127.0.0.1:5173");
   }
@@ -100,5 +102,7 @@ app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 app.use(createSessionMiddleware());
 
 app.use("/api", router);
+app.use("/api", notFoundHandler);
+app.use(errorHandler);
 
 export default app;

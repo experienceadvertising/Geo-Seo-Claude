@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import Anthropic from "@anthropic-ai/sdk";
+import { safeFetch } from "./safeFetch";
 
 const ENGINE_TIMEOUT_MS = 90_000;
 const PER_ATTEMPT_TIMEOUT_MS = 28_000;
@@ -192,7 +193,7 @@ function extractFanoutTopics(results: PromptResultRow[]): Array<{ topic: string;
             const words = seg
               .toLowerCase()
               .replace(/\.[a-z]{2,4}$/, "")
-              .split(/[-_+%20]+/)
+              .split(/[-_+]+|%20/)
               .filter(w => w.length > 2 && !STOP_WORDS.has(w) && /^[a-z]/.test(w));
             if (words.length >= 2 && words.length <= 8) {
               const topic = words.slice(0, 5).join(" ");
@@ -201,8 +202,6 @@ function extractFanoutTopics(results: PromptResultRow[]): Array<{ topic: string;
               }
             }
           }
-          // Also use the subdomain+domain as a signal (e.g. docs.stripe.com → "stripe docs")
-          void hostname; // hostname already decoded above, no extra processing needed
         } catch { /* skip malformed URLs */ }
       }
     }
@@ -404,11 +403,11 @@ async function queryClaude(prompt: string): Promise<{ text: string; urls: string
 // "vertexaisearch.cloud.google.com" and matches nothing).
 async function resolveRedirect(url: string, timeoutMs = 5000): Promise<string> {
   try {
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), timeoutMs);
-    const res = await fetch(url, { method: "HEAD", redirect: "follow", signal: ctrl.signal });
-    clearTimeout(t);
-    return res.url || url;
+    // Grounding URIs come from the model, not the user, but they're still an
+    // uncontrolled outbound target — route them through the SSRF-guarded
+    // fetcher (which re-validates every redirect hop) instead of raw fetch.
+    const res = await safeFetch(url, { method: "HEAD", timeoutMs, maxBytes: 64 * 1024 });
+    return res.finalUrl || url;
   } catch {
     return url;
   }
@@ -428,6 +427,9 @@ async function queryGemini(prompt: string): Promise<{ text: string; urls: string
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       tools: [{ google_search: {} }],
     }),
+    // withTimeout only rejects the promise; without a signal the request
+    // keeps running (and paying) while withRetry fires the next attempt.
+    signal: AbortSignal.timeout(PER_ATTEMPT_TIMEOUT_MS),
   });
   if (!res.ok) {
     throw new Error(`Gemini ${res.status}: ${(await res.text()).slice(0, 300)}`);
@@ -465,6 +467,7 @@ async function queryPerplexity(prompt: string): Promise<{ text: string; urls: st
       model: "perplexity/sonar",
       messages: [{ role: "user", content: prompt }],
     }),
+    signal: AbortSignal.timeout(PER_ATTEMPT_TIMEOUT_MS),
   });
   if (!res.ok) {
     throw new Error(`Perplexity ${res.status}: ${await res.text()}`);

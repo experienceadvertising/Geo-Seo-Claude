@@ -8,20 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { customFetch } from "@workspace/api-client-react";
+import { apiErrorCode, apiErrorMessage } from "@/lib/api-error";
+import { getNextPath } from "@/lib/next-path";
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-
-function getNextPath(): string {
-  // Read ?next=... from the URL. Restrict to same-origin paths to avoid open
-  // redirect vulnerabilities — only allow values that start with "/", reject
-  // protocol-relative ("//evil.com") and backslash variants the URL parser
-  // may treat as path separators on some clients.
-  const raw = new URLSearchParams(window.location.search).get("next");
-  if (!raw || !raw.startsWith("/") || raw.startsWith("//") || raw.includes("\\") || /[\r\n]/.test(raw)) return "/";
-  // Strip BASE prefix if present so wouter receives a router-relative path.
-  if (BASE && raw.startsWith(BASE + "/")) return raw.slice(BASE.length) || "/";
-  return raw;
-}
 
 export default function SignInPage() {
   const [email, setEmail] = useState("");
@@ -52,11 +41,11 @@ export default function SignInPage() {
       });
       await refresh();
       setLocation(getNextPath());
-    } catch (err: any) {
-      if (err?.body?.code === "email_not_verified") {
+    } catch (err: unknown) {
+      if (apiErrorCode(err) === "email_not_verified") {
         setUnverified(true);
       } else {
-        setError(err?.body?.error || err?.message || "Sign in failed. Please try again.");
+        setError(apiErrorMessage(err, "Sign in failed. Please try again."));
       }
     } finally {
       setLoading(false);

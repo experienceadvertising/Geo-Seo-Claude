@@ -33,13 +33,19 @@ import {
 
 const FROM_EMAIL = process.env.POSTMARK_FROM_EMAIL || "AEO Improvement <info@aeoimprovement.com>";
 
+let cachedClient: postmark.ServerClient | null = null;
+let cachedToken: string | undefined;
 function getClient(): postmark.ServerClient | null {
   const token = process.env.POSTMARK_API_TOKEN;
   if (!token) {
     logger.warn("POSTMARK_API_TOKEN not set — email sending disabled");
     return null;
   }
-  return new postmark.ServerClient(token);
+  if (!cachedClient || cachedToken !== token) {
+    cachedClient = new postmark.ServerClient(token);
+    cachedToken = token;
+  }
+  return cachedClient;
 }
 
 async function send(

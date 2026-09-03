@@ -72,10 +72,11 @@ router.get("/referral", requireAuth, readRateLimiter, async (req, res): Promise<
   }
 });
 
-router.post("/referral/apply", requireAuth, async (req, res): Promise<void> => {
+router.post("/referral/apply", requireAuth, readRateLimiter, async (req, res): Promise<void> => {
   try {
     const userId = req.userId!;
-    const { code } = req.body as { code?: string };
+    const rawCode = (req.body as { code?: unknown } | undefined)?.code;
+    const code = typeof rawCode === "string" ? rawCode.trim() : "";
 
     if (!code) {
       res.status(400).json({ error: "Referral code required" });

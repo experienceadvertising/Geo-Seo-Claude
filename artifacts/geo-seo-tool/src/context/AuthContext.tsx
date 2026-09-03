@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
-import { customFetch } from "@workspace/api-client-react";
+import { ApiError, customFetch } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 export interface AuthUser {
@@ -65,9 +65,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await customFetch<AuthUser>("/api/auth/me");
       setUser(data);
       writeCachedUser(data);
-    } catch {
-      setUser(null);
-      writeCachedUser(null);
+    } catch (err) {
+      // Only a definitive "no session" answer signs the user out. A 5xx or
+      // a network blip must not bounce an authenticated user to /sign-in
+      // and wipe their cached identity — keep whatever we had.
+      if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+        setUser(null);
+        writeCachedUser(null);
+      }
     } finally {
       setIsLoaded(true);
     }

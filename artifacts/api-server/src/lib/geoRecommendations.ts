@@ -282,7 +282,7 @@ export function extractContentSignals($: cheerio.CheerioAPI, url: string, brandN
   const statesCategory = escapedBrand
     ? new RegExp(`\\b${escapedBrand}\\b[^.]{0,180}\\b(?:is|are|provides|offers|builds|makes|helps)\\b`, "i").test(openingFacts)
     : false;
-  const statesAudienceOrProblem = /\\b(?:for|serving|built for|helps?|enables?|solve|solving|reduce|improve|avoid|specializ(?:e|es|ing)|because|using|through)\\b/i.test(openingFacts);
+  const statesAudienceOrProblem = /\b(?:for|serving|built for|helps?|enables?|solve|solving|reduce|improve|avoid|specializ(?:e|es|ing)|because|using|through)\b/i.test(openingFacts);
   const hasBrandFactsStatement = statesCategory && statesAudienceOrProblem;
 
   // Filler phrases

@@ -35,7 +35,14 @@ async function dataForSeoRequest(path: string, body?: unknown): Promise<any> {
     response = await fetch(`${API_ROOT}${path}`, { method: body ? "POST" : "GET", headers: { ...(body ? { "Content-Type": "application/json" } : {}), Authorization: `Basic ${Buffer.from(`${auth.login}:${auth.password}`).toString("base64")}` }, body: body ? JSON.stringify(body) : undefined, signal: AbortSignal.timeout(30_000) });
   } catch { throw new DataForSeoError("Rank provider is temporarily unavailable. Your previous snapshots are preserved.", 503); }
   let payload: any; try { payload = await response.json(); } catch { payload = null; }
-  if (!response.ok || payload?.tasks?.[0]?.status_code >= 40000) {
+  // Per-task status codes: 20000 ok, 20100 created, 40601 handed to the
+  // engine, 40602 still in queue. The last three are NOT failures — a weekly
+  // task_get simply hasn't finished yet — so only generic 4xxxx codes throw
+  // here; callers interpret the "not ready" codes themselves.
+  const taskStatus = Number(payload?.tasks?.[0]?.status_code);
+  const PENDING_TASK_STATUSES = new Set([20100, 40601, 40602]);
+  const taskFailed = taskStatus >= 40000 && !PENDING_TASK_STATUSES.has(taskStatus);
+  if (!response.ok || taskFailed) {
     throw new DataForSeoError(response.status === 401 || response.status === 403 ? "Rank tracking credentials need attention. Your previous snapshots are preserved." : "Rank provider could not collect this result. Your previous snapshots are preserved.", response.status === 401 || response.status === 403 ? 503 : 502);
   }
   return payload;
@@ -84,7 +91,7 @@ export async function submitWeeklyRankTask(target: SeoKeywordTarget): Promise<st
 export async function collectQueuedWeeklyRank(target: SeoKeywordTarget, providerTaskId: string): Promise<RankCollection | null> {
   const payload = await dataForSeoRequest(`/serp/google/organic/task_get/advanced/${encodeURIComponent(providerTaskId)}`);
   const task = payload?.tasks?.[0];
-  if (task?.status_code === 40602 || task?.status_code === 20100) return null;
+  if (task?.status_code === 40602 || task?.status_code === 40601 || task?.status_code === 20100) return null;
   if (task?.status_code !== 20000) throw new DataForSeoError("Rank provider could not finish this weekly snapshot.");
   const items = task?.result?.[0]?.items;
   if (!Array.isArray(items)) return { position: null, resultPresent: false, resultUrl: null };

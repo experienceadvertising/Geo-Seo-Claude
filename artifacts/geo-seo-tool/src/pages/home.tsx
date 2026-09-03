@@ -998,7 +998,7 @@ function SignedInDashboard() {
   const { user } = useAuth();
   const firstName = user?.firstName;
 
-  const { data: audits, isLoading: auditsLoading } = useListAudits();
+  const { data: audits, isLoading: auditsLoading, isError: auditsError, refetch: refetchAudits } = useListAudits();
   const analyzeUrl = useAnalyzeUrl();
   const queryClient = useQueryClient();
 
@@ -1135,6 +1135,13 @@ function SignedInDashboard() {
                 <div key={i} className="h-16 rounded-xl bg-muted/50 animate-pulse" />
               ))}
             </div>
+          ) : auditsError ? (
+            <Card className="border-destructive/40">
+              <CardContent className="py-8 text-center space-y-3">
+                <p className="text-muted-foreground">We couldn't load your recent audits. They're still saved.</p>
+                <Button variant="outline" size="sm" onClick={() => refetchAudits()}>Retry</Button>
+              </CardContent>
+            </Card>
           ) : !audits || audits.length === 0 ? (
             <Card className="border-dashed">
               <CardContent className="py-12 text-center space-y-4">

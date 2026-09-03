@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { customFetch } from "@workspace/api-client-react";
+import { apiErrorMessage } from "@/lib/api-error";
 
 const NoIndex = () => (
   <Helmet>
@@ -61,8 +62,8 @@ export default function ResetPasswordPage() {
         body: JSON.stringify({ token, password }),
       });
       setDone(true);
-    } catch (err: any) {
-      setError(err?.body?.error || "Reset failed. The link may have expired.");
+    } catch (err: unknown) {
+      setError(apiErrorMessage(err, "Reset failed. The link may have expired."));
     } finally {
       setLoading(false);
     }

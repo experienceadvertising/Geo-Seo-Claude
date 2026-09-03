@@ -57,6 +57,8 @@ router.get("/admin/users", requireAuth, requireAdmin, readRateLimiter, async (re
     };
   });
 
+  const [userCountRow] = await db.select({ total: sql<number>`count(*)::int` }).from(usersTable);
+
   const [totalsRow] = await db
     .select({
       totalAudits: sql<number>`count(*)::int`,
@@ -66,7 +68,7 @@ router.get("/admin/users", requireAuth, requireAdmin, readRateLimiter, async (re
     .from(auditsTable);
 
   res.json({
-    totalUsers: dbUsers.length,
+    totalUsers: userCountRow?.total ?? dbUsers.length,
     totalAudits: totalsRow?.totalAudits ?? 0,
     audits24h: totalsRow?.audits24h ?? 0,
     audits7d: totalsRow?.audits7d ?? 0,

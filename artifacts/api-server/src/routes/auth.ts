@@ -8,12 +8,20 @@ import { EmailService } from "../lib/emailService";
 import { logger } from "../lib/logger";
 import { requireAuth } from "../middlewares/auth";
 import { TRIAL_LENGTH_DAYS } from "../lib/planUtils";
+import { revokeUserSessions } from "../lib/sessionRevocation";
 import {
   loginRateLimiter,
   registerRateLimiter,
   passwordEmailRateLimiter,
   unsubscribeRateLimiter,
 } from "../middlewares/rateLimiters";
+
+/** Narrow an untyped body/query value to a non-empty string. Express's query
+ * parser yields arrays for repeated keys (`?token=a&token=b`) and JSON bodies
+ * can carry any type; passing those into bcrypt/createHash throws. */
+function str(v: unknown): string | undefined {
+  return typeof v === "string" && v.length > 0 ? v : undefined;
+}
 
 const router = Router();
 const SALT_ROUNDS = 12;
@@ -110,12 +118,11 @@ function baseUrlFromReq(req: Request): string {
 
 // ── Register ──────────────────────────────────────────────────────────────────
 router.post("/auth/register", registerRateLimiter, async (req, res): Promise<void> => {
-  const { email, password, firstName, referralCode: refCode } = req.body as {
-    email?: string;
-    password?: string;
-    firstName?: string;
-    referralCode?: string;
-  };
+  const body = (req.body ?? {}) as Record<string, unknown>;
+  const email = str(body.email);
+  const password = str(body.password);
+  const firstName = str(body.firstName)?.slice(0, 80);
+  const refCode = str(body.referralCode);
 
   if (!email || !password) {
     res.status(400).json({ error: "Email and password are required." });
@@ -206,7 +213,9 @@ router.post("/auth/register", registerRateLimiter, async (req, res): Promise<voi
 
 // ── Login ─────────────────────────────────────────────────────────────────────
 router.post("/auth/login", loginRateLimiter, async (req, res): Promise<void> => {
-  const { email, password } = req.body as { email?: string; password?: string };
+  const body = (req.body ?? {}) as Record<string, unknown>;
+  const email = str(body.email);
+  const password = str(body.password);
 
   if (!email || !password) {
     res.status(400).json({ error: "Email and password are required." });
@@ -275,7 +284,7 @@ router.post("/auth/logout", (req, res): void => {
 
 // ── Verify Email ──────────────────────────────────────────────────────────────
 router.get("/auth/verify-email", async (req, res): Promise<void> => {
-  const { token: verToken } = req.query as { token?: string };
+  const verToken = str(req.query.token);
   if (!verToken) {
     res.status(400).json({ error: "Missing token.", code: "missing_token" });
     return;
@@ -415,7 +424,12 @@ router.post("/auth/resend-verification", passwordEmailRateLimiter, async (req, r
 
   const baseUrl = baseUrlFromReq(req);
   const verifyUrl = `${baseUrl}/verify-email?token=${verToken}`;
-  await EmailService.sendVerificationEmail(normalizedEmail, user.firstName || "", verifyUrl);
+  // Fire-and-forget: awaiting the Postmark round-trip made a registered
+  // address respond hundreds of ms slower than an unknown one, which leaks
+  // account existence despite the identical response body.
+  EmailService.sendVerificationEmail(normalizedEmail, user.firstName || "", verifyUrl).catch((err) =>
+    logger.error({ err, userId: user.id }, "Resend-verification email failed"),
+  );
 
   res.json({ message: "If that email is registered and unverified, a new link has been sent." });
 });
@@ -445,7 +459,10 @@ router.post("/auth/forgot-password", passwordEmailRateLimiter, async (req, res):
 
     const baseUrl = baseUrlFromReq(req);
     const resetUrl = `${baseUrl}/reset-password?token=${resetTok}`;
-    await EmailService.sendPasswordReset(normalizedEmail, user.firstName || "", resetUrl);
+    // Fire-and-forget for the same timing reason as resend-verification.
+    EmailService.sendPasswordReset(normalizedEmail, user.firstName || "", resetUrl).catch((err) =>
+      logger.error({ err, userId: user.id }, "Password-reset email failed"),
+    );
   }
 
   // Always return the same message to prevent email enumeration
@@ -489,6 +506,10 @@ router.post("/auth/reset-password", passwordEmailRateLimiter, async (req, res): 
     .update(usersTable)
     .set({ passwordHash, resetToken: null, resetExpires: null, emailVerified: true })
     .where(eq(usersTable.id, user.id));
+
+  // A reset is the "I've been compromised" path — log out every existing
+  // session so an attacker's cookie stops working immediately.
+  await revokeUserSessions(user.id);
 
   // Reset == password change. Notify so the account owner sees an alert if
   // someone else successfully reset their password (e.g., compromised inbox).
@@ -576,6 +597,9 @@ router.post("/auth/change-password", requireAuth, async (req, res): Promise<void
     .set({ passwordHash })
     .where(eq(usersTable.id, user.id));
 
+  // Keep this session, drop every other one.
+  await revokeUserSessions(user.id, req.sessionID);
+
   // Send a security-notification email so the user knows their password was
   // changed. Fire-and-forget — we don't want a Postmark hiccup to block the
   // password change response.
@@ -598,7 +622,7 @@ router.post("/auth/change-password", requireAuth, async (req, res): Promise<void
 // GET → redirect to friendly frontend confirmation page.
 // POST → flip email_opt_out=true atomically. Idempotent.
 router.get("/auth/unsubscribe", unsubscribeRateLimiter, (req, res): void => {
-  const tok = (req.query.token as string | undefined) ?? "";
+  const tok = str(req.query.token) ?? "";
   if (!tok) {
     res.status(400).send("Missing token.");
     return;
@@ -611,7 +635,7 @@ router.post("/auth/unsubscribe", unsubscribeRateLimiter, async (req, res): Promi
   // Token may arrive in body (frontend POST) or query (Gmail one-click POST).
   const tok =
     (req.body && typeof req.body === "object" && (req.body as any).token) ||
-    (req.query.token as string | undefined) ||
+    str(req.query.token) ||
     "";
   if (!tok || typeof tok !== "string") {
     res.status(400).json({ error: "Missing token." });
@@ -641,7 +665,7 @@ router.post("/auth/unsubscribe", unsubscribeRateLimiter, async (req, res): Promi
 //
 // Rate-limited so the 256-bit token space can't be probed.
 router.get("/auth/unsubscribe-info", unsubscribeRateLimiter, async (req, res): Promise<void> => {
-  const tok = (req.query.token as string | undefined) ?? "";
+  const tok = str(req.query.token) ?? "";
   if (!tok) {
     res.status(400).json({ error: "Missing token." });
     return;
@@ -671,7 +695,7 @@ router.get("/auth/unsubscribe-info", unsubscribeRateLimiter, async (req, res): P
 router.post("/auth/resubscribe", unsubscribeRateLimiter, async (req, res): Promise<void> => {
   const tok =
     (req.body && typeof req.body === "object" && (req.body as any).token) ||
-    (req.query.token as string | undefined) ||
+    str(req.query.token) ||
     "";
   if (!tok || typeof tok !== "string") {
     res.status(400).json({ error: "Missing token." });

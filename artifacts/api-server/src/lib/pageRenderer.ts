@@ -3,6 +3,9 @@ import { execSync } from "node:child_process";
 import { assertPublicUrl } from "./safeFetch";
 
 let cachedBrowser: Browser | null = null;
+// In-flight launch shared by concurrent callers so two overlapping audits
+// don't each spawn a Chromium process (the loser would leak, unreferenced).
+let launching: Promise<Browser | null> | null = null;
 let cachedExecPath: string | null | undefined = undefined;
 
 function findChromiumPath(): string | null {
@@ -21,18 +24,26 @@ function findChromiumPath(): string | null {
 
 async function getBrowser(): Promise<Browser | null> {
   if (cachedBrowser && cachedBrowser.isConnected()) return cachedBrowser;
+  if (launching) return launching;
   const execPath = findChromiumPath();
   if (!execPath) return null;
-  try {
-    cachedBrowser = await chromium.launch({
+  launching = chromium
+    .launch({
       executablePath: execPath,
       args: ["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"],
+    })
+    .then((browser) => {
+      cachedBrowser = browser;
+      return browser;
+    })
+    .catch(() => {
+      cachedBrowser = null;
+      return null;
+    })
+    .finally(() => {
+      launching = null;
     });
-    return cachedBrowser;
-  } catch {
-    cachedBrowser = null;
-    return null;
-  }
+  return launching;
 }
 
 export interface RenderedPage {
