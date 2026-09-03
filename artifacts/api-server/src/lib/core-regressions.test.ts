@@ -21,6 +21,8 @@ import {
   validateCheckoutPrice,
 } from "./billingPolicy.ts";
 import { weeklyDigestEmail } from "./emailTemplates.ts";
+import { selectStripeCustomerCandidate } from "./billingCustomerSelection.ts";
+import { billingWebhookEvents } from "./stripeWebhookPolicy.ts";
 
 test("paid weekly digest points to the user's next task and program status", () => {
   const email = weeklyDigestEmail({
@@ -244,6 +246,28 @@ test("billing reconciliation keeps the highest active entitlement and labels pla
   assert.equal(planChangeDirection("pro", "starter"), "Downgrade");
   assert.equal(planChangeDirection("pro", "agency"), "Upgrade");
   assert.equal(planChangeDirection("agency", "pro"), "Downgrade");
+});
+
+test("legacy Stripe customer recovery is exact or unambiguous", () => {
+  const candidates = [
+    { id: "cus_old", metadataUserId: "old-user", hasBlockingSubscription: true },
+  ];
+  assert.equal(selectStripeCustomerCandidate(candidates, "new-user", true), "cus_old");
+  assert.equal(selectStripeCustomerCandidate([
+    ...candidates,
+    { id: "cus_other", metadataUserId: null, hasBlockingSubscription: true },
+  ], "new-user", true), null);
+  assert.equal(selectStripeCustomerCandidate([
+    { id: "cus_exact", metadataUserId: "new-user", hasBlockingSubscription: false },
+    { id: "cus_other", metadataUserId: null, hasBlockingSubscription: true },
+  ], "new-user", false), "cus_exact");
+});
+
+test("managed Stripe webhooks exclude unsupported upcoming invoice previews", () => {
+  assert.deepEqual(
+    billingWebhookEvents(["checkout.session.completed", "invoice.upcoming", "invoice.payment_succeeded"]),
+    ["checkout.session.completed", "invoice.payment_succeeded"],
+  );
 });
 
 test("rank tracking skips the snapshot lookup when there are no keyword targets", () => {
