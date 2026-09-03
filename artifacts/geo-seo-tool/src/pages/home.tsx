@@ -7,7 +7,8 @@ import { apiErrorMessage } from "@/lib/api-error";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAnalyzeUrl, useListAudits } from "@workspace/api-client-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { customFetch } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { ScoreBadge } from "@/components/score-badge";
 import { usePlan } from "@/hooks/usePlan";
@@ -1002,6 +1003,27 @@ function SignedInDashboard() {
   const { data: audits, isLoading: auditsLoading, isError: auditsError, refetch: refetchAudits } = useListAudits();
   const analyzeUrl = useAnalyzeUrl();
   const queryClient = useQueryClient();
+  const { storedPlan } = usePlan();
+  const hasPaidPlan = storedPlan === "pro" || storedPlan === "agency";
+
+  const googleStatus = useQuery<{
+    configured: boolean;
+    connected: boolean;
+    searchConsoleGranted: boolean;
+    propertyId: string | null;
+  }>({
+    queryKey: ["google", "status"],
+    queryFn: () => customFetch("/api/integrations/google/status"),
+    enabled: hasPaidPlan,
+    retry: false,
+  });
+
+  const monitoredSites = useQuery<{ sites: Array<{ id: number; active: boolean }> }>({
+    queryKey: ["geo", "monitored-sites"],
+    queryFn: () => customFetch("/api/geo/monitored-sites"),
+    enabled: hasPaidPlan,
+    retry: false,
+  });
 
 
   // Post-checkout success handling. Stripe redirects successful upgrades to
@@ -1079,39 +1101,137 @@ function SignedInDashboard() {
   }
 
   const greeting = firstName ? `Welcome back, ${firstName}` : "Welcome back";
+  const latestAudit = audits?.[0];
+  const hasAudit = Boolean(latestAudit);
+  const googleConnected = Boolean(
+    googleStatus.data?.connected && googleStatus.data?.searchConsoleGranted && googleStatus.data?.propertyId,
+  );
+  const monitoringActive = Boolean(monitoredSites.data?.sites?.some((site) => site.active));
+  const confirmedSteps = [hasAudit, hasAudit, googleConnected, monitoringActive];
+  const confirmedCount = confirmedSteps.filter(Boolean).length;
+
+  const StepIcon = ({ complete, number }: { complete: boolean; number: number }) => complete ? (
+    <CheckCircle2 className="h-6 w-6 shrink-0 text-emerald-600" aria-hidden="true" />
+  ) : (
+    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-slate-300 bg-white text-xs font-semibold text-slate-600">
+      {number}
+    </span>
+  );
 
   return (
     <div className="flex-1 w-full max-w-4xl mx-auto px-4 md:px-8 py-10 md:py-14 space-y-10">
-      <div className="space-y-1">
-        <h1 className="text-3xl font-bold tracking-tight">{greeting}</h1>
-        <p className="text-muted-foreground">Audit your site, then run a simulation to see if AI engines name you when real buyers search.</p>
-      </div>
+      <Card className="overflow-hidden border-emerald-500/30 shadow-lg shadow-emerald-500/5">
+        <div className="h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500" />
+        <CardHeader className="space-y-4 pb-4">
+          <div className="space-y-1">
+            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700">Program setup</p>
+            <CardTitle className="text-2xl md:text-3xl">{hasAudit ? "Keep your SEO + GEO program moving" : `${greeting}. Activate your SEO + GEO program.`}</CardTitle>
+            <CardDescription className="max-w-2xl text-sm leading-relaxed">
+              {hasAudit
+                ? "Your baseline is ready. Complete the next steps so we can measure performance, watch for changes, and keep your action plan current."
+                : "Start with your website. We will build the baseline, identify the most valuable improvements, and guide you through measurement and ongoing monitoring."}
+            </CardDescription>
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>{confirmedCount} of 4 setup steps confirmed</span>
+              <span>{Math.round((confirmedCount / 4) * 100)}%</span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+              <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all" style={{ width: `${(confirmedCount / 4) * 100}%` }} />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className={`rounded-xl border p-4 ${hasAudit ? "border-emerald-200 bg-emerald-50/60" : "border-emerald-500/40 bg-emerald-50"}`}>
+            <div className="flex items-start gap-3">
+              <StepIcon complete={hasAudit} number={1} />
+              <div className="min-w-0 flex-1 space-y-3">
+                <div>
+                  <p className="font-semibold">Create your SEO + GEO baseline</p>
+                  <p className="text-sm text-muted-foreground">Audit the site you want to improve. This unlocks your prioritized action plan and AI visibility tests.</p>
+                </div>
+                {!hasAudit ? (
+                  <form onSubmit={handleSubmit} className="flex flex-col gap-2 sm:flex-row">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        aria-label="Website URL to audit"
+                        className="h-11 pl-10 text-base"
+                        placeholder="https://yourwebsite.com"
+                        value={url}
+                        onChange={(e) => setUrl(e.target.value)}
+                        disabled={analyzeUrl.isPending}
+                      />
+                    </div>
+                    <Button type="submit" size="lg" disabled={analyzeUrl.isPending || !url.trim()} className="h-11 bg-emerald-600 px-6 hover:bg-emerald-700">
+                      {analyzeUrl.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Run my baseline <ArrowRight className="ml-1 h-4 w-4" /></>}
+                    </Button>
+                  </form>
+                ) : (
+                  <Link href={`/results/${latestAudit!.id}`}>
+                    <Button size="sm" variant="outline">Open my action plan <ArrowRight className="ml-1 h-4 w-4" /></Button>
+                  </Link>
+                )}
+              </div>
+            </div>
+          </div>
 
-      <form onSubmit={handleSubmit} className="flex gap-2 max-w-2xl">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            aria-label="Website URL to audit"
-            className="pl-10 h-11 text-base"
-            placeholder="https://yourwebsite.com"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            disabled={analyzeUrl.isPending}
-          />
-        </div>
-        <Button
-          type="submit"
-          size="lg"
-          disabled={analyzeUrl.isPending || !url.trim()}
-          className="h-11 px-6 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-md shadow-emerald-500/25"
-        >
-          {analyzeUrl.isPending ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <>Audit <ArrowRight className="ml-1 h-4 w-4" /></>
-          )}
-        </Button>
-      </form>
+          <div className={`rounded-xl border p-4 ${hasAudit ? "border-violet-200 bg-violet-50/50" : "border-slate-200 bg-slate-50/60"}`}>
+            <div className="flex items-start gap-3">
+              <StepIcon complete={hasAudit} number={2} />
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold">Review your first fixes and test buyer prompts</p>
+                <p className="text-sm text-muted-foreground">Work from one ranked action queue, then test whether AI engines name your brand for three high-intent questions.</p>
+                {hasAudit ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Link href={`/results/${latestAudit!.id}`}><Button size="sm" variant="outline">Review improvements</Button></Link>
+                    <Link href={`/simulate/${latestAudit!.id}`}><Button size="sm" variant="outline">Run prompt test</Button></Link>
+                  </div>
+                ) : <p className="mt-2 text-xs font-medium text-slate-500">Available after your baseline audit</p>}
+              </div>
+            </div>
+          </div>
+
+          <div className={`rounded-xl border p-4 ${googleConnected ? "border-emerald-200 bg-emerald-50/60" : "border-slate-200"}`}>
+            <div className="flex items-start gap-3">
+              <StepIcon complete={googleConnected} number={3} />
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold">Connect Google measurement</p>
+                <p className="text-sm text-muted-foreground">Add Search Console and GA4 so recommendations use real queries, clicks, rankings, and AI referral traffic.</p>
+                <div className="mt-3">
+                  {googleConnected ? (
+                    <p className="text-xs font-semibold text-emerald-700">Search Console and GA4 are connected</p>
+                  ) : hasPaidPlan ? (
+                    <Link href="/projects"><Button size="sm" variant="outline">Connect Google</Button></Link>
+                  ) : (
+                    <Link href="/upgrade?source=program-setup"><Button size="sm" variant="outline"><Lock className="mr-1.5 h-3.5 w-3.5" />Activate with a paid plan</Button></Link>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className={`rounded-xl border p-4 ${monitoringActive ? "border-emerald-200 bg-emerald-50/60" : "border-slate-200"}`}>
+            <div className="flex items-start gap-3">
+              <StepIcon complete={monitoringActive} number={4} />
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold">Turn on ongoing monitoring</p>
+                <p className="text-sm text-muted-foreground">Choose the site and weekly cadence. We will preserve the baseline and surface meaningful SEO or GEO changes.</p>
+                <div className="mt-3">
+                  {monitoringActive ? (
+                    <p className="text-xs font-semibold text-emerald-700">Weekly monitoring is active</p>
+                  ) : hasPaidPlan ? (
+                    <Link href="/projects"><Button size="sm" variant="outline">Set up monitoring</Button></Link>
+                  ) : (
+                    <p className="text-xs font-medium text-slate-500">Available after upgrade</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {analyzeUrl.isPending && <AnalysisProgress />}
 
@@ -1119,13 +1239,13 @@ function SignedInDashboard() {
         <AeoJourneyCard audits={audits} />
       )}
 
-      {!analyzeUrl.isPending && (
+      {!analyzeUrl.isPending && audits && audits.length > 0 && (
         <ReferralCard />
       )}
 
-      {!analyzeUrl.isPending && <WhatsNewCard />}
+      {!analyzeUrl.isPending && audits && audits.length > 0 && <WhatsNewCard />}
 
-      {!analyzeUrl.isPending && (!audits || audits.length === 0) && <DashboardLearningHub />}
+      {!analyzeUrl.isPending && audits && audits.length > 0 && <DashboardLearningHub />}
 
       {!analyzeUrl.isPending && (
         <div className="space-y-4">
