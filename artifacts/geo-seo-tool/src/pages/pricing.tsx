@@ -337,7 +337,7 @@ function PlanCard({
           ) : (
             <Link href="/sign-up">
               <Button variant="outline" className="w-full">
-                Start 30-day full-access trial
+                Start 30-day guided trial
               </Button>
             </Link>
           )
@@ -478,7 +478,7 @@ export default function PricingPage() {
       name: "Free",
       price: "$0",
       period: "/mo",
-      description: "After your 30-day full-access trial. No card needed.",
+      description: "After your 30-day guided trial. No card needed.",
       features: PLAN_FEATURES.free,
       isHighlighted: false,
     },
@@ -569,12 +569,12 @@ export default function PricingPage() {
           <Alert className="border-emerald-200 bg-emerald-50 max-w-lg mx-auto">
             <CheckCircle2 className="h-4 w-4 text-emerald-600" />
             <AlertDescription className="text-emerald-800">
-              You're in your <strong>30-day full-access trial</strong>. All audit,
-              simulation, monitoring, and recommendation features are already unlocked
+              You're in your <strong>30-day guided trial</strong>. Audit,
+              simulation, Fix Generator, and recommendation features are unlocked
               {trialEndsAt
                 ? ` until ${new Date(trialEndsAt).toLocaleDateString("en-US", { month: "long", day: "numeric" })}`
                 : ""}
-              . Nothing is charged automatically. Choose a plan below only if you want to keep paid features after it ends.
+              . Nothing is charged automatically. Upgrade to Pro to activate Search Console, GA4, DataForSEO rank tracking, and scheduled monitoring.
             </AlertDescription>
           </Alert>
         )}

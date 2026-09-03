@@ -259,7 +259,7 @@ function SignedOutLanding() {
                   "Get alerted the moment your score drops",
                   "Auto-generated JSON-LD and robots.txt fixes",
                   "Connect Google data when you are ready to measure",
-                  "30-day full-access trial, no card",
+                  "30-day guided trial, no card",
                 ].map(item => (
                   <li key={item} className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-shrink-0" />
@@ -292,7 +292,7 @@ function SignedOutLanding() {
               </div>
               <div className="flex flex-col items-center lg:items-start gap-1">
                 <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                  <Lock className="h-3 w-3" /> 30-day full-access trial. No credit card or automatic charge.
+                  <Lock className="h-3 w-3" /> 30-day guided trial. No credit card or automatic charge.
                 </p>
                 <Link href="/pricing" className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline font-medium">
                   See all plans &amp; pricing →
@@ -452,7 +452,7 @@ function SignedOutLanding() {
           <div className="relative px-8 md:px-16 py-14 md:py-20 flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="text-center md:text-left space-y-4 max-w-xl">
               <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 px-3 py-1 text-xs font-semibold text-emerald-300">
-                <CheckCircle2 className="h-3 w-3" /> 30-day full-access trial, no credit card
+                <CheckCircle2 className="h-3 w-3" /> 30-day guided trial, no credit card
               </div>
               <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight leading-tight">
                 Find out whether AI engines cite you. Then fix what is stopping them.
@@ -1005,6 +1005,15 @@ function SignedInDashboard() {
   const queryClient = useQueryClient();
   const { storedPlan } = usePlan();
   const hasPaidPlan = storedPlan === "pro" || storedPlan === "agency";
+  const latestAudit = audits?.[0];
+  const latestDomain = (() => {
+    if (!latestAudit?.url) return null;
+    try {
+      return new URL(/^https?:\/\//i.test(latestAudit.url) ? latestAudit.url : `https://${latestAudit.url}`).hostname.replace(/^www\./, "");
+    } catch {
+      return null;
+    }
+  })();
 
   const googleStatus = useQuery<{
     configured: boolean;
@@ -1022,6 +1031,13 @@ function SignedInDashboard() {
     queryKey: ["geo", "monitored-sites"],
     queryFn: () => customFetch("/api/geo/monitored-sites"),
     enabled: hasPaidPlan,
+    retry: false,
+  });
+
+  const seoKeywords = useQuery<{ targets: Array<{ id: number; active: boolean }>; providerConfigured: boolean }>({
+    queryKey: ["seo-keywords", latestDomain],
+    queryFn: () => customFetch(`/api/seo/keywords?domain=${encodeURIComponent(latestDomain!)}`),
+    enabled: hasPaidPlan && Boolean(latestDomain),
     retry: false,
   });
 
@@ -1101,13 +1117,13 @@ function SignedInDashboard() {
   }
 
   const greeting = firstName ? `Welcome back, ${firstName}` : "Welcome back";
-  const latestAudit = audits?.[0];
   const hasAudit = Boolean(latestAudit);
   const googleConnected = Boolean(
     googleStatus.data?.connected && googleStatus.data?.searchConsoleGranted && googleStatus.data?.propertyId,
   );
   const monitoringActive = Boolean(monitoredSites.data?.sites?.some((site) => site.active));
-  const confirmedSteps = [hasAudit, hasAudit, googleConnected, monitoringActive];
+  const rankTrackingActive = Boolean(seoKeywords.data?.targets?.some((target) => target.active));
+  const confirmedSteps = [hasAudit, googleConnected, rankTrackingActive, monitoringActive];
   const confirmedCount = confirmedSteps.filter(Boolean).length;
 
   const StepIcon = ({ complete, number }: { complete: boolean; number: number }) => complete ? (
@@ -1134,7 +1150,7 @@ function SignedInDashboard() {
           </div>
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>{confirmedCount} of 4 setup steps confirmed</span>
+              <span>{confirmedCount} of 4 setup steps complete</span>
               <span>{Math.round((confirmedCount / 4) * 100)}%</span>
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-slate-100">
@@ -1177,25 +1193,9 @@ function SignedInDashboard() {
             </div>
           </div>
 
-          <div className={`rounded-xl border p-4 ${hasAudit ? "border-violet-200 bg-violet-50/50" : "border-slate-200 bg-slate-50/60"}`}>
-            <div className="flex items-start gap-3">
-              <StepIcon complete={hasAudit} number={2} />
-              <div className="min-w-0 flex-1">
-                <p className="font-semibold">Review your first fixes and test buyer prompts</p>
-                <p className="text-sm text-muted-foreground">Work from one ranked action queue, then test whether AI engines name your brand for three high-intent questions.</p>
-                {hasAudit ? (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <Link href={`/results/${latestAudit!.id}`}><Button size="sm" variant="outline">Review improvements</Button></Link>
-                    <Link href={`/simulate/${latestAudit!.id}`}><Button size="sm" variant="outline">Run prompt test</Button></Link>
-                  </div>
-                ) : <p className="mt-2 text-xs font-medium text-slate-500">Available after your baseline audit</p>}
-              </div>
-            </div>
-          </div>
-
           <div className={`rounded-xl border p-4 ${googleConnected ? "border-emerald-200 bg-emerald-50/60" : "border-slate-200"}`}>
             <div className="flex items-start gap-3">
-              <StepIcon complete={googleConnected} number={3} />
+              <StepIcon complete={googleConnected} number={2} />
               <div className="min-w-0 flex-1">
                 <p className="font-semibold">Connect Google measurement</p>
                 <p className="text-sm text-muted-foreground">Add Search Console and GA4 so recommendations use real queries, clicks, rankings, and AI referral traffic.</p>
@@ -1206,6 +1206,27 @@ function SignedInDashboard() {
                     <Link href="/projects"><Button size="sm" variant="outline">Connect Google</Button></Link>
                   ) : (
                     <Link href="/upgrade?source=program-setup"><Button size="sm" variant="outline"><Lock className="mr-1.5 h-3.5 w-3.5" />Activate with a paid plan</Button></Link>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className={`rounded-xl border p-4 ${rankTrackingActive ? "border-emerald-200 bg-emerald-50/60" : "border-slate-200"}`}>
+            <div className="flex items-start gap-3">
+              <StepIcon complete={rankTrackingActive} number={3} />
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold">Track the searches that matter</p>
+                <p className="text-sm text-muted-foreground">Choose your priority keywords, location, device, and landing page. Weekly DataForSEO snapshots show movement from your baseline.</p>
+                <div className="mt-3">
+                  {rankTrackingActive ? (
+                    <p className="text-xs font-semibold text-emerald-700">Keyword rank tracking is active</p>
+                  ) : hasPaidPlan && hasAudit ? (
+                    <Link href={`/results/${latestAudit!.id}`}><Button size="sm" variant="outline">Choose tracked keywords</Button></Link>
+                  ) : hasPaidPlan ? (
+                    <p className="text-xs font-medium text-slate-500">Run your baseline audit first</p>
+                  ) : (
+                    <Link href="/upgrade?source=rank-tracking-setup"><Button size="sm" variant="outline"><Lock className="mr-1.5 h-3.5 w-3.5" />Upgrade for SEO rank tracking</Button></Link>
                   )}
                 </div>
               </div>
@@ -1230,24 +1251,28 @@ function SignedInDashboard() {
               </div>
             </div>
           </div>
+
+          {!hasPaidPlan && (
+            <div className="rounded-xl bg-slate-950 p-4 text-white sm:flex sm:items-center sm:justify-between sm:gap-4">
+              <div>
+                <p className="font-semibold">Unlock the complete SEO growth system</p>
+                <p className="mt-1 text-sm text-slate-300">Pro adds Search Console insights, GA4 reporting, DataForSEO rank tracking, and scheduled monitoring.</p>
+              </div>
+              <Link href="/upgrade?source=program-setup-summary">
+                <Button size="sm" className="mt-3 shrink-0 bg-emerald-500 text-slate-950 hover:bg-emerald-400 sm:mt-0">Compare paid plans</Button>
+              </Link>
+            </div>
+          )}
         </CardContent>
       </Card>
 
       {analyzeUrl.isPending && <AnalysisProgress />}
 
-      {!analyzeUrl.isPending && audits && audits.length > 0 && (
+      {!analyzeUrl.isPending && (auditsLoading || auditsError || (audits && audits.length > 0)) && (
         <AeoJourneyCard audits={audits} />
       )}
 
       {!analyzeUrl.isPending && audits && audits.length > 0 && (
-        <ReferralCard />
-      )}
-
-      {!analyzeUrl.isPending && audits && audits.length > 0 && <WhatsNewCard />}
-
-      {!analyzeUrl.isPending && audits && audits.length > 0 && <DashboardLearningHub />}
-
-      {!analyzeUrl.isPending && (
         <div className="space-y-4">
           <h2 className="text-lg font-semibold">Recent audits</h2>
           {auditsLoading ? (
@@ -1261,35 +1286,6 @@ function SignedInDashboard() {
               <CardContent className="py-8 text-center space-y-3">
                 <p className="text-muted-foreground">We couldn't load your recent audits. They're still saved.</p>
                 <Button variant="outline" size="sm" onClick={() => refetchAudits()}>Retry</Button>
-              </CardContent>
-            </Card>
-          ) : !audits || audits.length === 0 ? (
-            <Card className="border-dashed">
-              <CardContent className="py-12 text-center space-y-4">
-                <Sparkles className="h-8 w-8 text-muted-foreground/40 mx-auto" />
-                <p className="text-muted-foreground">No audits yet. Enter a URL above to get your first AEO score.</p>
-                <div className="space-y-2">
-                  <p className="text-xs uppercase tracking-wider text-muted-foreground/70">Or try one of these</p>
-                  <div className="flex flex-wrap items-center justify-center gap-2">
-                    {(() => {
-                      const samples = ["stripe.com", "notion.so", "anthropic.com"];
-                      const userDomain = user?.email?.split("@")[1];
-                      const chips = userDomain && !["gmail.com","yahoo.com","outlook.com","hotmail.com","icloud.com"].includes(userDomain)
-                        ? [userDomain, ...samples.slice(0, 2)]
-                        : samples;
-                      return chips.map((d) => (
-                        <button
-                          key={d}
-                          type="button"
-                          onClick={() => setUrl(d)}
-                          className="rounded-full border border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-400 transition-colors"
-                        >
-                          {d}
-                        </button>
-                      ));
-                    })()}
-                  </div>
-                </div>
               </CardContent>
             </Card>
           ) : (

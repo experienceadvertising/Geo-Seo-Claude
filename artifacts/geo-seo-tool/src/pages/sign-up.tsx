@@ -80,7 +80,7 @@ export default function SignUpPage() {
             <h2 className="text-2xl font-bold">Check your email</h2>
             <p className="text-muted-foreground text-sm">
               We sent a verification link to <strong>{email}</strong>. Click the
-              link to activate your account. Your 30-day full-access trial starts
+              link to activate your account. Your 30-day guided trial starts
               the moment you do.
             </p>
             <p className="text-xs text-muted-foreground">
@@ -123,7 +123,7 @@ export default function SignUpPage() {
           </div>
           <CardTitle className="text-2xl font-bold">Create your account</CardTitle>
           <CardDescription>
-            Your 30-day full-access trial is free. No credit card required.
+            Your 30-day guided trial is free. No credit card required.
           </CardDescription>
         </CardHeader>
         <CardContent>
