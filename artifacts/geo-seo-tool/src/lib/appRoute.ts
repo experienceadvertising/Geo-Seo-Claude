@@ -1,12 +1,13 @@
 export function shouldUseAppShell(pathname: string, isSignedIn: boolean): boolean {
   if (!isSignedIn) return false;
-  return pathname === "/" ||
-    pathname === "/dashboard" ||
-    pathname.startsWith("/results/") ||
-    pathname.startsWith("/simulate/") ||
-    pathname === "/projects" ||
-    pathname.startsWith("/admin") ||
-    pathname.startsWith("/upgrade") ||
-    pathname === "/methodology" ||
-    pathname === "/contact";
+  const route = pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
+  return route === "/" ||
+    route === "/dashboard" ||
+    route.startsWith("/results/") ||
+    route.startsWith("/simulate/") ||
+    route === "/projects" ||
+    route.startsWith("/admin") ||
+    route.startsWith("/upgrade") ||
+    route === "/methodology" ||
+    route === "/contact";
 }
