@@ -23,6 +23,28 @@ import {
 import { weeklyDigestEmail } from "./emailTemplates.ts";
 import { selectStripeCustomerCandidate } from "./billingCustomerSelection.ts";
 import { billingWebhookEvents } from "./stripeWebhookPolicy.ts";
+import { safeBaseUrl } from "./publicUrl.ts";
+
+test("Stripe return URLs preserve the verified public custom domain", () => {
+  const previousReplitDomains = process.env.REPLIT_DOMAINS;
+  process.env.REPLIT_DOMAINS = "geo-seo-claude-example.replit.app";
+
+  try {
+    const req = {
+      protocol: "https",
+      get(name: string) {
+        if (name === "x-forwarded-host") return "aeoimprovement.com";
+        if (name === "x-forwarded-proto") return "https";
+        return undefined;
+      },
+    };
+
+    assert.equal(safeBaseUrl(req as any), "https://aeoimprovement.com");
+  } finally {
+    if (previousReplitDomains === undefined) delete process.env.REPLIT_DOMAINS;
+    else process.env.REPLIT_DOMAINS = previousReplitDomains;
+  }
+});
 
 test("paid weekly digest points to the user's next task and program status", () => {
   const email = weeklyDigestEmail({
