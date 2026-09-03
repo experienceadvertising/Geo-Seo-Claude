@@ -1088,6 +1088,13 @@ function SignedInDashboard() {
     analyzeUrl.mutate({ data: { url: normalized } }, {
       onSuccess: (data: any) => {
         trackEvent("audit_completed", { source });
+        if (source === "post_signup_landing") {
+          localStorage.removeItem("pendingAuditUrl");
+          customFetch("/api/auth/pending-audit", { method: "DELETE" }).catch(() => {
+            // The completed audit is authoritative. A stale server-side URL is
+            // harmless and can be cleared on a later successful visit.
+          });
+        }
         if (!localStorage.getItem("aeo.activationConverted")) {
           localStorage.setItem("aeo.activationConverted", "true");
           trackGoogleAdsConversion("activation");
@@ -1105,10 +1112,23 @@ function SignedInDashboard() {
   }
 
   React.useEffect(() => {
-    if (!pendingAuditUrl.current || autoAuditStarted.current) return;
+    if (autoAuditStarted.current) return;
     autoAuditStarted.current = true;
-    localStorage.removeItem("pendingAuditUrl");
-    runAudit(pendingAuditUrl.current, "post_signup_landing");
+    void (async () => {
+      let urlToAudit = pendingAuditUrl.current;
+      try {
+        const saved = await customFetch<{ pendingAuditUrl: string | null }>("/api/auth/pending-audit");
+        urlToAudit = saved.pendingAuditUrl || urlToAudit;
+      } catch {
+        // Same-browser signups still have the local fallback if the recovery
+        // request is temporarily unavailable.
+      }
+      if (!urlToAudit) return;
+      pendingAuditUrl.current = urlToAudit;
+      localStorage.setItem("pendingAuditUrl", urlToAudit);
+      setUrl(urlToAudit);
+      runAudit(urlToAudit, "post_signup_landing");
+    })();
   }, []); // A saved landing-page audit should run once after authentication.
 
   function handleSubmit(e: React.FormEvent) {

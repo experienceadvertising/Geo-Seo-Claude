@@ -9,6 +9,7 @@ import { logger } from "../lib/logger";
 import { requireAuth } from "../middlewares/auth";
 import { TRIAL_LENGTH_DAYS } from "../lib/planUtils";
 import { revokeUserSessions } from "../lib/sessionRevocation";
+import { normalizePendingAuditUrl } from "../lib/pendingAudit";
 import {
   loginRateLimiter,
   registerRateLimiter,
@@ -123,6 +124,7 @@ router.post("/auth/register", registerRateLimiter, async (req, res): Promise<voi
   const password = str(body.password);
   const firstName = str(body.firstName)?.slice(0, 80);
   const refCode = str(body.referralCode);
+  const pendingAuditUrl = normalizePendingAuditUrl(body.pendingAuditUrl);
 
   if (!email || !password) {
     res.status(400).json({ error: "Email and password are required." });
@@ -183,6 +185,7 @@ router.post("/auth/register", registerRateLimiter, async (req, res): Promise<voi
     unsubscribeToken: unsubToken,
     referralCode: myReferralCode,
     referredBy,
+    pendingAuditUrl,
   });
 
   const baseUrl = baseUrlFromReq(req);
@@ -280,6 +283,25 @@ router.post("/auth/logout", (req, res): void => {
     res.clearCookie("aeo.sid");
     res.json({ ok: true });
   });
+});
+
+// Return the URL captured before signup. The client clears it only after the
+// audit succeeds, so a timeout, closed tab, or refresh never loses the user's
+// first requested audit.
+router.get("/auth/pending-audit", requireAuth, async (req, res): Promise<void> => {
+  const [user] = await db
+    .select({ pendingAuditUrl: usersTable.pendingAuditUrl })
+    .from(usersTable)
+    .where(eq(usersTable.id, req.userId!));
+  res.json({ pendingAuditUrl: user?.pendingAuditUrl ?? null });
+});
+
+router.delete("/auth/pending-audit", requireAuth, async (req, res): Promise<void> => {
+  await db
+    .update(usersTable)
+    .set({ pendingAuditUrl: null })
+    .where(eq(usersTable.id, req.userId!));
+  res.json({ ok: true });
 });
 
 // ── Verify Email ──────────────────────────────────────────────────────────────

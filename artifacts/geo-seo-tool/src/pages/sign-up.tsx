@@ -55,7 +55,13 @@ export default function SignUpPage() {
     try {
       await customFetch("/api/auth/register", {
         method: "POST",
-        body: JSON.stringify({ firstName, email, password, referralCode }),
+        body: JSON.stringify({
+          firstName,
+          email,
+          password,
+          referralCode,
+          pendingAuditUrl: localStorage.getItem("pendingAuditUrl") || undefined,
+        }),
       });
       trackEvent("sign_up_complete");
       trackGoogleAdsConversion("signup");
