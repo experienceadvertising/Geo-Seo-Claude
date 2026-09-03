@@ -15,7 +15,7 @@ export default function GoogleDataUsePage() {
           <ShieldCheck className="h-8 w-8 text-emerald-600" />
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Google data use</h1>
-            <p className="mt-1 text-sm text-slate-500">Effective August 7, 2026</p>
+            <p className="mt-1 text-sm text-slate-500">Effective September 2, 2026</p>
           </div>
         </div>
 
@@ -42,7 +42,7 @@ export default function GoogleDataUsePage() {
 
           <h2>Storage and access</h2>
           <p>
-            Connection tokens are stored server-side and are not exposed to your browser. They are used only to refresh the connection and request the reporting data you asked AEO Improvement to display. Access is limited to the account and services needed to operate the integration.
+            Connection tokens are stored in AEO Improvement's server-side database and are not exposed to your browser. They are used only to refresh the connection and request the reporting data you asked AEO Improvement to display. Access is limited to the systems and service providers needed to operate and secure the integration.
           </p>
 
           <h2>Disconnecting and deleting data</h2>
@@ -50,7 +50,7 @@ export default function GoogleDataUsePage() {
             You can disconnect Google Analytics or Search Console from the integrations area in your account. Disconnecting removes the saved connection from AEO Improvement and attempts to revoke the associated Google token. You can also revoke access from your Google Account permissions.
           </p>
           <p>
-            To request deletion of your account and associated integration data, email <a href="mailto:support@aeoimprovement.com">support@aeoimprovement.com</a>.
+            To request deletion of your account and associated integration data, email <a href="mailto:hello@aeoimprovement.com">hello@aeoimprovement.com</a>.
           </p>
 
           <h2>Google API policy</h2>
