@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { shouldUseAppShell } from "./appRoute.ts";
 
 test("keeps signed-in support pages inside the dashboard shell", () => {
-  for (const pathname of ["/", "/results/44", "/simulate/44", "/projects", "/upgrade", "/methodology", "/methodology/", "/contact", "/contact/"]) {
+  for (const pathname of ["/", "/results/44", "/simulate/44", "/projects", "/recommended-tools", "/recommended-tools/", "/upgrade", "/methodology", "/methodology/", "/contact", "/contact/"]) {
     assert.equal(shouldUseAppShell(pathname, true), true, pathname);
   }
 });

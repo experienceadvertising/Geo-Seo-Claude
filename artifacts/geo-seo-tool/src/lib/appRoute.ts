@@ -6,6 +6,7 @@ export function shouldUseAppShell(pathname: string, isSignedIn: boolean): boolea
     route.startsWith("/results/") ||
     route.startsWith("/simulate/") ||
     route === "/projects" ||
+    route === "/recommended-tools" ||
     route.startsWith("/admin") ||
     route.startsWith("/upgrade") ||
     route === "/methodology" ||

@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Sparkles, LogOut, Shield, Menu, LayoutDashboard, FolderKanban, CreditCard, BookOpen, CircleHelp, CheckCircle2, Search, SlidersHorizontal, MessageSquareText } from "lucide-react";
+import { Sparkles, LogOut, Shield, Menu, LayoutDashboard, FolderKanban, CreditCard, BookOpen, CircleHelp, CheckCircle2, Search, SlidersHorizontal, MessageSquareText, Library } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { customFetch, getGetAuditQueryKey, getListAuditsQueryKey, useGetAudit, useListAudits } from "@workspace/api-client-react";
@@ -145,6 +145,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 const APP_NAV = [
   { label: "Dashboard", href: "/", icon: LayoutDashboard },
   { label: "Tracking", href: "/projects", icon: FolderKanban },
+  { label: "Recommended tools", compactLabel: "Tools", href: "/recommended-tools", icon: Library },
   { label: "Plans", href: "/upgrade", icon: CreditCard },
 ];
 
@@ -153,8 +154,9 @@ const APP_SUPPORT_NAV = [
   { label: "Help", href: "/contact", icon: CircleHelp },
 ];
 
-function AppNavLink({ label, href, icon: Icon, pathname, compact = false }: {
+function AppNavLink({ label, compactLabel, href, icon: Icon, pathname, compact = false }: {
   label: string;
+  compactLabel?: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   pathname: string;
@@ -173,7 +175,7 @@ function AppNavLink({ label, href, icon: Icon, pathname, compact = false }: {
         : `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${active ? "bg-emerald-50 text-emerald-800" : "text-slate-600 hover:bg-slate-100 hover:text-slate-950"}`}
     >
       <Icon className={compact ? "h-5 w-5" : "h-4 w-4"} />
-      <span>{label}</span>
+      <span>{compact ? compactLabel ?? label : label}</span>
     </Link>
   );
 }
