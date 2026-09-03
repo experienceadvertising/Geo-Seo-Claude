@@ -1,11 +1,21 @@
 import cron from "node-cron";
-import { db, pool, usersTable, auditsTable, recommendationProgressTable } from "@workspace/db";
-import { sql, and, isNotNull, eq, gte, lte } from "drizzle-orm";
+import {
+  db,
+  pool,
+  usersTable,
+  auditsTable,
+  recommendationProgressTable,
+  seoKeywordTargetsTable,
+  monitoredSitesTable,
+  googleConnectionsTable,
+} from "@workspace/db";
+import { sql, and, isNotNull, eq, gte, lte, desc, count } from "drizzle-orm";
 import { getUserPlan, getStoredPlan, trialEndFor } from "./planUtils";
 import { EmailService } from "./emailService";
 import { runDueMonitoredSites } from "./monitoring";
 import { runDueSeoRankSnapshots } from "./seoTrackingScheduler";
 import { logger } from "./logger";
+import { buildLatestRankSnapshotsQuery } from "./seoTrackingQueries";
 
 // Cron-driven sends have no inbound HTTP request to derive a base URL from,
 // so we use the configured FRONTEND_URL (preferred in prod) or fall back to
@@ -201,7 +211,8 @@ async function runTrialLifecycle() {
   }
 }
 
-// ── Weekly digest for Pro / Agency (runs every Monday at 8:00 AM UTC) ────────
+// Weekly guided plan for every paid tier. Connected measurement status is
+// included only for Pro and Agency, where those features are available.
 async function runWeeklyDigests() {
   logger.info("Email scheduler: running weekly digest");
 
@@ -209,34 +220,45 @@ async function runWeeklyDigests() {
   const users = await db
     .select()
     .from(usersTable)
-    .where(and(eq(usersTable.emailOptOut, false), isNotNull(usersTable.email)));
+    .where(and(
+      eq(usersTable.emailOptOut, false),
+      eq(usersTable.emailVerified, true),
+      isNotNull(usersTable.email),
+    ));
 
   for (const user of users) {
     if (!user.email) continue;
 
-    const plan = await getUserPlan(user.id);
-    if (plan === "free") continue;
+    const plan = await getStoredPlan(user.id);
+    if (plan !== "starter" && plan !== "pro" && plan !== "agency") continue;
+    const paidSeoEnabled = plan === "pro" || plan === "agency";
 
-    const weekAudits = await db
+    const [weekAuditCount] = await db
+      .select({ total: count() })
+      .from(auditsTable)
+      .where(and(eq(auditsTable.userId, user.id), gte(auditsTable.createdAt, oneWeekAgo)));
+
+    const recentAudits = await db
       .select()
       .from(auditsTable)
-      .where(
-        and(
-          eq(auditsTable.userId, user.id),
-          gte(auditsTable.createdAt, oneWeekAgo)
-        )
-      )
-      .orderBy(sql`${auditsTable.createdAt} DESC`)
+      .where(eq(auditsTable.userId, user.id))
+      .orderBy(desc(auditsTable.createdAt))
       .limit(10);
 
-    const latestAudit = weekAudits[0];
+    const latestAudit = recentAudits[0];
     const firstName = getFirstName(user);
+    const domain = latestAudit ? (() => { try { return new URL(latestAudit.url).hostname.toLowerCase().replace(/^www\./, ""); } catch { return ""; } })() : "";
+    const previousAudit = latestAudit ? recentAudits.slice(1).find((audit) => {
+      try { return new URL(audit.url).hostname.toLowerCase().replace(/^www\./, "") === domain; }
+      catch { return false; }
+    }) : undefined;
     let nextAction: { title: string; detail: string } | undefined;
+    let completedActions = 0;
     if (latestAudit) {
-      const domain = (() => { try { return new URL(latestAudit.url).hostname.toLowerCase().replace(/^www\./, ""); } catch { return ""; } })();
       const completed = domain ? await db.select({ recommendationId: recommendationProgressTable.recommendationId })
         .from(recommendationProgressTable)
         .where(and(eq(recommendationProgressTable.userId, user.id), eq(recommendationProgressTable.domain, domain))) : [];
+      completedActions = completed.length;
       const done = new Set(completed.map((row) => row.recommendationId));
       const rec = ((latestAudit.recommendations as any[]) ?? []).find((item) =>
         item?.id && !done.has(item.id) && (item.priority === "critical" || item.priority === "high"),
@@ -244,20 +266,61 @@ async function runWeeklyDigests() {
       if (rec) nextAction = { title: String(rec.title), detail: String(rec.detail) };
     }
 
+    const activeTargets = paidSeoEnabled && domain ? await db
+      .select({ id: seoKeywordTargetsTable.id })
+      .from(seoKeywordTargetsTable)
+      .where(and(
+        eq(seoKeywordTargetsTable.userId, user.id),
+        eq(seoKeywordTargetsTable.domain, domain),
+        eq(seoKeywordTargetsTable.active, true),
+      )) : [];
+    const latestSnapshotsQuery = buildLatestRankSnapshotsQuery(activeTargets.map((target) => target.id));
+    const latestSnapshots = latestSnapshotsQuery ? await db.execute(latestSnapshotsQuery) : { rows: [] as any[] };
+    const rankedKeywords = latestSnapshots.rows.length;
+
+    const activeSites = paidSeoEnabled ? await db
+      .select({ lastRunAt: monitoredSitesTable.lastRunAt })
+      .from(monitoredSitesTable)
+      .where(and(eq(monitoredSitesTable.userId, user.id), eq(monitoredSitesTable.active, true))) : [];
+
+    const [googleConnection] = paidSeoEnabled ? await db
+      .select({ scope: googleConnectionsTable.scope, ga4PropertyId: googleConnectionsTable.ga4PropertyId })
+      .from(googleConnectionsTable)
+      .where(eq(googleConnectionsTable.userId, user.id))
+      .limit(1) : [];
+    const googleMeasurementConnected = Boolean(
+      googleConnection?.ga4PropertyId && /webmasters/i.test(googleConnection.scope ?? ""),
+    );
+
     const ok = await EmailService.sendWeeklyDigest(
       user.email,
       {
         firstName,
-        auditCount: weekAudits.length,
+        planName: plan === "agency" ? "Agency" : plan === "pro" ? "Pro" : "Starter",
+        paidSeoEnabled,
+        auditCount: Number(weekAuditCount?.total ?? 0),
         latestAudit: latestAudit
           ? {
+              id: latestAudit.id,
               url: latestAudit.url,
               geoScore: latestAudit.geoScore,
+              previousGeoScore: previousAudit?.geoScore,
               quickWins: (latestAudit.quickWins as string[]) ?? [],
               nextAction,
+              completedActions,
               createdAt: latestAudit.createdAt,
             }
           : undefined,
+        tracking: {
+          activeKeywords: activeTargets.length,
+          rankedKeywords,
+          pendingKeywords: Math.max(0, activeTargets.length - rankedKeywords),
+        },
+        monitoring: {
+          activeSites: activeSites.length,
+          waitingForFirstRun: activeSites.filter((site) => !site.lastRunAt).length,
+        },
+        googleMeasurementConnected,
       },
       unsubUrl(user.unsubscribeToken),
     );

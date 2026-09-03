@@ -256,7 +256,7 @@ export default function ProjectsPage() {
   const [frequency, setFrequency] = useState<Frequency>("weekly");
 
   const [copied, setCopied] = useState(false);
-  const { storedPlan, trialActive } = usePlan();
+  const { storedPlan, trialActive, isLoading: planLoading } = usePlan();
   const hasPaidPlan = storedPlan === "pro" || storedPlan === "agency";
   const isPaidAgency = storedPlan === "agency";
 
@@ -606,7 +606,9 @@ export default function ProjectsPage() {
       {!monitoringLocked && (
         <div className="space-y-3">
           <h2 className="text-lg font-semibold flex items-center gap-2"><LineChartIcon className="h-5 w-5 text-emerald-600" /> Traffic impact</h2>
-          {hasPaidPlan ? (
+          {planLoading ? (
+            <div className="h-44 rounded-xl bg-muted/50 animate-pulse" aria-label="Loading Google measurement status" />
+          ) : hasPaidPlan ? (
             <GoogleAnalyticsSection />
           ) : (
             <Card className="border-emerald-500/30 bg-emerald-500/5">

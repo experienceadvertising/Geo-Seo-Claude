@@ -7,7 +7,7 @@ import { apiErrorMessage } from "@/lib/api-error";
 import { hasMonitoringAccess } from "@/lib/planDisplay";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAnalyzeUrl, useListAudits } from "@workspace/api-client-react";
+import { getGetAuditQueryKey, useAnalyzeUrl, useGetAudit, useListAudits } from "@workspace/api-client-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { customFetch } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
@@ -1004,7 +1004,7 @@ function SignedInDashboard() {
   const { data: audits, isLoading: auditsLoading, isError: auditsError, refetch: refetchAudits } = useListAudits();
   const analyzeUrl = useAnalyzeUrl();
   const queryClient = useQueryClient();
-  const { storedPlan, trialActive } = usePlan();
+  const { storedPlan, trialActive, isLoading: planLoading } = usePlan();
   const hasPaidPlan = storedPlan === "pro" || storedPlan === "agency";
   const canUseMonitoring = hasMonitoringAccess(storedPlan, trialActive);
   const latestAudit = audits?.[0];
@@ -1040,6 +1040,21 @@ function SignedInDashboard() {
     queryKey: ["seo-keywords", latestDomain],
     queryFn: () => customFetch(`/api/seo/keywords?domain=${encodeURIComponent(latestDomain!)}`),
     enabled: hasPaidPlan && Boolean(latestDomain),
+    retry: false,
+  });
+  const { data: latestAuditDetails } = useGetAudit(latestAudit?.id ?? 0, {
+    query: {
+      queryKey: getGetAuditQueryKey(latestAudit?.id ?? 0),
+      enabled: Boolean(latestAudit?.id),
+      staleTime: 60_000,
+      retry: false,
+    },
+  });
+  const recommendationProgress = useQuery<{ completed: Array<{ recommendationId: string }> }>({
+    queryKey: ["recommendation-progress", latestDomain],
+    queryFn: () => customFetch(`/api/geo/recommendation-progress?domain=${encodeURIComponent(latestDomain!)}`),
+    enabled: Boolean(latestDomain && latestAuditDetails?.recommendations?.length),
+    staleTime: 30_000,
     retry: false,
   });
 
@@ -1127,6 +1142,15 @@ function SignedInDashboard() {
   const rankTrackingActive = Boolean(seoKeywords.data?.targets?.some((target) => target.active));
   const confirmedSteps = [hasAudit, googleConnected, rankTrackingActive, monitoringActive];
   const confirmedCount = confirmedSteps.filter(Boolean).length;
+  const completedRecommendationIds = new Set((recommendationProgress.data?.completed ?? []).map((item) => item.recommendationId));
+  const nextRecommendation = latestAuditDetails?.recommendations?.find((item) => item.id && !completedRecommendationIds.has(item.id));
+  const activeKeywordCount = seoKeywords.data?.targets?.filter((target) => target.active).length ?? 0;
+  const activeSiteCount = monitoredSites.data?.sites?.filter((site) => site.active).length ?? 0;
+  const programStateLoading = planLoading
+    || auditsLoading
+    || (hasPaidPlan && (googleStatus.isLoading || (Boolean(latestDomain) && seoKeywords.isLoading)))
+    || (canUseMonitoring && monitoredSites.isLoading);
+  const setupComplete = !planLoading && hasPaidPlan && confirmedCount === 4;
 
   const StepIcon = ({ complete, number }: { complete: boolean; number: number }) => complete ? (
     <CheckCircle2 className="h-6 w-6 shrink-0 text-emerald-600" aria-hidden="true" />
@@ -1138,6 +1162,56 @@ function SignedInDashboard() {
 
   return (
     <div className="flex-1 w-full max-w-4xl mx-auto px-4 md:px-8 py-10 md:py-14 space-y-10">
+      {programStateLoading ? (
+        <Card className="overflow-hidden border-emerald-500/20" aria-label="Loading your SEO and GEO program">
+          <div className="h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500" />
+          <CardContent className="space-y-4 py-8">
+            <div className="h-4 w-28 animate-pulse rounded bg-slate-200" />
+            <div className="h-8 w-3/4 animate-pulse rounded bg-slate-200" />
+            <div className="h-20 animate-pulse rounded-xl bg-slate-100" />
+          </CardContent>
+        </Card>
+      ) : setupComplete ? (
+        <Card className="overflow-hidden border-emerald-500/30 shadow-lg shadow-emerald-500/5">
+          <div className="h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500" />
+          <CardHeader className="pb-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700">This week's plan</p>
+            <CardTitle className="text-2xl md:text-3xl">Make one improvement, then measure it</CardTitle>
+            <CardDescription className="max-w-2xl text-sm leading-relaxed">Your SEO and GEO tracking is active. Focus on the next unfinished recommendation, then use the same audit and keyword views to see what changes over time.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700">Recommended next task</p>
+              <p className="mt-1 text-lg font-semibold text-slate-950">{nextRecommendation?.title ?? "Re-scan your site and choose the next opportunity"}</p>
+              <p className="mt-1 text-sm leading-relaxed text-slate-600">{nextRecommendation?.detail ?? "You have completed the current action list. Run a fresh audit after your latest site changes to build the next plan."}</p>
+              <Link href={nextRecommendation ? `/results/${latestAudit!.id}#recommendations` : `/results/${latestAudit!.id}`}>
+                <Button className="mt-4 bg-emerald-600 hover:bg-emerald-700">{nextRecommendation ? "Open this task" : "Re-scan and review"}<ArrowRight className="ml-1.5 h-4 w-4" /></Button>
+              </Link>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Link href={`/results/${latestAudit!.id}`} className="rounded-lg border bg-white p-3 hover:border-emerald-300 hover:bg-emerald-50/30">
+                <p className="text-xs text-muted-foreground">Latest audit</p>
+                <p className="mt-1 font-semibold">{Math.round(latestAudit!.geoScore)}/100</p>
+                <p className="mt-1 text-xs font-medium text-emerald-700">Review action plan</p>
+              </Link>
+              <Link href={`/results/${latestAudit!.id}#seo-opportunities`} className="rounded-lg border bg-white p-3 hover:border-emerald-300 hover:bg-emerald-50/30">
+                <p className="text-xs text-muted-foreground">Rank tracking</p>
+                <p className="mt-1 font-semibold">{activeKeywordCount} active keyword{activeKeywordCount === 1 ? "" : "s"}</p>
+                <p className="mt-1 text-xs font-medium text-emerald-700">View SEO movement</p>
+              </Link>
+              <Link href="/projects" className="rounded-lg border bg-white p-3 hover:border-emerald-300 hover:bg-emerald-50/30">
+                <p className="text-xs text-muted-foreground">Monitoring</p>
+                <p className="mt-1 font-semibold">{activeSiteCount} active site{activeSiteCount === 1 ? "" : "s"}</p>
+                <p className="mt-1 text-xs font-medium text-emerald-700">Check measurement</p>
+              </Link>
+            </div>
+            <div className="flex flex-wrap gap-2 border-t pt-4">
+              <Link href={`/simulate/${latestAudit!.id}`}><Button size="sm" variant="outline"><Sparkles className="mr-1.5 h-3.5 w-3.5" />Test AI visibility</Button></Link>
+              <Link href="/recommended-tools"><Button size="sm" variant="ghost">Browse recommended tools</Button></Link>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
       <Card className="overflow-hidden border-emerald-500/30 shadow-lg shadow-emerald-500/5">
         <div className="h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500" />
         <CardHeader className="space-y-4 pb-4">
@@ -1271,6 +1345,7 @@ function SignedInDashboard() {
           )}
         </CardContent>
       </Card>
+      )}
 
       {analyzeUrl.isPending && <AnalysisProgress />}
 
