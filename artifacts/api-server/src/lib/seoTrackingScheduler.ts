@@ -1,11 +1,11 @@
-import { and, asc, eq, lte, or, isNull, notExists } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { db, pool, seoKeywordTargetsTable, seoRankSnapshotsTable, seoRankTasksTable } from "@workspace/db";
 import { collectQueuedWeeklyRank, isDataForSeoConfigured, submitWeeklyRankTask } from "./dataforseoRankTracker";
 import { getStoredPlan, PLAN_LIMITS } from "./planUtils";
 import { logger } from "./logger";
+import { buildRankEligibilityQuery } from "./seoTrackingQueries";
 
 const log = logger.child({ module: "seoTracking" });
-const WEEK = 7 * 24 * 60 * 60 * 1000;
 
 /** Collect one bounded weekly snapshot per active paid target. Previous data is
  * never overwritten when the provider is unavailable. */
@@ -19,7 +19,6 @@ export async function runDueSeoRankSnapshots(maxPerSweep = 100): Promise<void> {
     const locked = await client.query<{ locked: boolean }>("SELECT pg_try_advisory_lock($1) AS locked", [1_947_026_072]);
     if (!locked.rows[0]?.locked) { log.info("seo.weekly-snapshot.skipped-lock-held"); return; }
     try {
-      const cutoff = new Date(Date.now() - WEEK);
       const queued = await db.select({ task: seoRankTasksTable, target: seoKeywordTargetsTable }).from(seoRankTasksTable)
         .innerJoin(seoKeywordTargetsTable, eq(seoRankTasksTable.targetId, seoKeywordTargetsTable.id))
         .where(eq(seoRankTasksTable.status, "queued")).orderBy(asc(seoRankTasksTable.createdAt)).limit(maxPerSweep);
@@ -34,16 +33,7 @@ export async function runDueSeoRankSnapshots(maxPerSweep = 100): Promise<void> {
         } catch { await db.update(seoRankTasksTable).set({ status: "failed", checkedAt: new Date() }).where(eq(seoRankTasksTable.id, task.id)); failed++; }
       }
       const targets = await db.select().from(seoKeywordTargetsTable)
-        .where(and(
-          eq(seoKeywordTargetsTable.active, true),
-          or(isNull(seoKeywordTargetsTable.updatedAt), lte(seoKeywordTargetsTable.updatedAt, cutoff)),
-          notExists(
-            db.select({ id: seoRankTasksTable.id }).from(seoRankTasksTable).where(and(
-              eq(seoRankTasksTable.targetId, seoKeywordTargetsTable.id),
-              eq(seoRankTasksTable.status, "queued"),
-            )),
-          ),
-        ))
+        .where(buildRankEligibilityQuery())
         .orderBy(asc(seoKeywordTargetsTable.updatedAt)).limit(maxPerSweep);
       for (const target of targets) {
         const plan = await getStoredPlan(target.userId);

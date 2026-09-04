@@ -14,6 +14,7 @@ import { getUserPlan, getStoredPlan, trialEndFor } from "./planUtils";
 import { EmailService } from "./emailService";
 import { runDueMonitoredSites } from "./monitoring";
 import { runDueSeoRankSnapshots } from "./seoTrackingScheduler";
+import { summarizeRankProgress } from "./seoProgressSummary";
 import { logger } from "./logger";
 import { buildLatestRankSnapshotsQuery } from "./seoTrackingQueries";
 import { sameAuditedPage } from "./auditComparison";
@@ -273,7 +274,7 @@ async function runWeeklyDigests() {
       )) : [];
     const latestSnapshotsQuery = buildLatestRankSnapshotsQuery(activeTargets.map((target) => target.id));
     const latestSnapshots = latestSnapshotsQuery ? await db.execute(latestSnapshotsQuery) : { rows: [] as any[] };
-    const rankedKeywords = latestSnapshots.rows.length;
+    const rankProgress = summarizeRankProgress(activeTargets.length, latestSnapshots.rows as Array<{ position: number | null; collected_at: Date }>);
 
     const activeSites = paidSeoEnabled ? await db
       .select({ lastRunAt: monitoredSitesTable.lastRunAt })
@@ -308,11 +309,7 @@ async function runWeeklyDigests() {
               createdAt: latestAudit.createdAt,
             }
           : undefined,
-        tracking: {
-          activeKeywords: activeTargets.length,
-          rankedKeywords,
-          pendingKeywords: Math.max(0, activeTargets.length - rankedKeywords),
-        },
+        tracking: rankProgress,
         monitoring: {
           activeSites: activeSites.length,
           waitingForFirstRun: activeSites.filter((site) => !site.lastRunAt).length,
@@ -518,12 +515,12 @@ export function startEmailScheduler() {
   });
   logger.info("Monitored-sites scheduler started (daily sweep, per-site cadence)");
 
-  // Poll daily so queued provider tasks complete promptly. Each target remains
+  // Poll regularly so queued provider tasks complete promptly. Each target remains
   // on a weekly cadence, and manual refreshes are separately capped.
-  cron.schedule("0 6 * * *", () => {
+  cron.schedule("*/15 * * * *", () => {
     runDueSeoRankSnapshots().catch((err) => logger.error({ err }, "SEO rank snapshot cron error"));
   });
-  logger.info("SEO rank tracking scheduler started (daily queue poll, weekly target cadence)");
+  logger.info("SEO rank tracking scheduler started (15-minute queue poll, weekly target cadence)");
 
   if (!process.env.POSTMARK_API_TOKEN) {
     logger.warn("POSTMARK_API_TOKEN not set — email scheduler disabled");

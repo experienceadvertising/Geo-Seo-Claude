@@ -18,7 +18,23 @@ import { extractContentSignals } from "./geoRecommendations.ts";
 import { errorHandler } from "../middlewares/errorHandler.ts";
 import { SsrfError } from "./safeFetch.ts";
 import { extractDataNoSnippetSignals } from "./snippetControls.ts";
-import { buildLatestRankSnapshotsQuery } from "./seoTrackingQueries.ts";
+import { buildLatestRankSnapshotsQuery, buildRankEligibilityQuery, buildLatestRankTasksQuery } from "./seoTrackingQueries.ts";
+import { summarizeRankProgress } from "./seoProgressSummary.ts";
+
+test("rank scheduling allows a new baseline, guards pending tasks and keeps success weekly", () => {
+  const query = new PgDialect().sqlToQuery(buildRankEligibilityQuery(new Date("2026-09-04T00:00:00Z")));
+  assert.match(query.sql, /updated_at = seo_keyword_targets.created_at/);
+  assert.match(query.sql, /provider_status = 'success'/);
+  assert.match(query.sql, /status = 'queued'/);
+  assert.deepEqual(query.params, [new Date("2026-09-03T00:00:00Z"), new Date("2026-08-28T00:00:00Z"), new Date("2026-09-03T00:00:00Z")]);
+  assert.equal(buildLatestRankTasksQuery([]), null);
+});
+test("weekly summaries separate observations, numeric rankings and stale data", () => {
+  assert.deepEqual(summarizeRankProgress(3, [
+    { position: null, collected_at: "2026-09-04" },
+    { position: 9, collected_at: "2026-08-01" },
+  ], Date.parse("2026-09-04")), { activeKeywords: 3, rankedKeywords: 2, pendingKeywords: 1, foundKeywords: 1, staleKeywords: 1 });
+});
 import { isPaidSeoPlan } from "./seoAccess.ts";
 import { extractCompetitorBrandsFromText, looksLikeCompetitorBrand } from "./competitorNames.ts";
 import { normalizeGeneratedPromptLine, normalizeGeneratedPrompts } from "./promptQuality.ts";
@@ -158,6 +174,9 @@ test("paid weekly digest points to the user's next task and program status", () 
   assert.match(email.html, /Add first-party evidence/);
   assert.match(email.html, /Keywords with a rank baseline/);
   assert.match(email.text, /Active keyword targets: 5/);
+  assert.match(email.text, /1 await first collection/);
+  assert.match(email.text, /Traffic and ranking changes do not prove causation/);
+  assert.match(email.html, /Review collection status and history/);
 });
 
 test("paid weekly digest escapes recommendation content before rendering HTML", () => {

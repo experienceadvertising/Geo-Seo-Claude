@@ -6,7 +6,7 @@ import { readRateLimiter } from "../middlewares/rateLimiters";
 import { currentYearMonth } from "../lib/usageLimits";
 import { getStoredPlan, PLAN_LIMITS } from "../lib/planUtils";
 import { collectGoogleRank, DataForSeoError, isDataForSeoConfigured } from "../lib/dataforseoRankTracker";
-import { buildLatestRankSnapshotsQuery } from "../lib/seoTrackingQueries";
+import { buildLatestRankSnapshotsQuery, buildLatestRankTasksQuery } from "../lib/seoTrackingQueries";
 import { isPaidSeoPlan } from "../lib/seoAccess";
 
 const router: IRouter = Router();
@@ -49,8 +49,11 @@ router.get("/seo/keywords", requireAuth, readRateLimiter, async (req, res): Prom
   const latestSnapshotsQuery = buildLatestRankSnapshotsQuery(targetIds);
   const snapshots = latestSnapshotsQuery ? await db.execute(latestSnapshotsQuery) : { rows: [] as any[] };
   const latest = new Map((snapshots.rows as any[]).map((row) => [Number(row.target_id), row]));
+  const tasksQuery = buildLatestRankTasksQuery(targetIds);
+  const tasks = tasksQuery ? await db.execute(tasksQuery) : { rows: [] as any[] };
+  const latestTasks = new Map((tasks.rows as any[]).map((row) => [Number(row.target_id), row]));
   res.json({
-    targets: targets.map((target) => ({ ...target, latest: latest.get(target.id) ?? null })),
+    targets: targets.map((target) => ({ ...target, latest: latest.get(target.id) ?? null, collection: latestTasks.get(target.id) ?? null })),
     limits: { activeKeywords: PLAN_LIMITS[plan].seoKeywordTargets },
     providerConfigured: isDataForSeoConfigured(),
   });

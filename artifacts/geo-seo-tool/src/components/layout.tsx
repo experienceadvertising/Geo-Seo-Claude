@@ -247,7 +247,7 @@ function AuditResultsNav({ mobile = false }: { mobile?: boolean }) {
 function AppShell({ children, pathname }: { children: React.ReactNode; pathname: string }) {
   return (
     <div className="min-h-screen bg-slate-50 font-sans md:flex">
-      <aside className="hidden min-h-screen w-64 shrink-0 border-r border-slate-200 bg-white md:flex md:flex-col">
+      <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 overflow-y-auto border-r border-slate-200 bg-white md:flex md:flex-col">
         <div className="border-b border-slate-100 px-5 py-5">
           <Link href="/" className="flex items-center gap-2.5 font-bold tracking-tight text-slate-950">
             <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-teal-600 to-emerald-700 text-white shadow-sm">
@@ -285,7 +285,7 @@ function AppShell({ children, pathname }: { children: React.ReactNode; pathname:
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="h-11 w-11" aria-label="Open account navigation"><Menu className="h-5 w-5" /></Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[min(85vw,320px)]">
+            <SheetContent side="right" className="w-[min(85vw,320px)] overflow-y-auto">
               <SheetTitle>Account and support</SheetTitle>
               <nav className="mt-8 flex flex-col gap-1">
                 {APP_NAV.map(({ label, href, icon: Icon }) => (

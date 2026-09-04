@@ -1,4 +1,5 @@
 import React from "react";
+import { sameAuditPage } from "@/lib/auditProgress";
 import { Link, useLocation } from "wouter";
 import { Search, Loader2, ArrowRight, BarChart3, TrendingUp, TrendingDown, Minus, Zap, Shield, Lock, Sparkles, CheckCircle2, BookOpen, Lightbulb, ExternalLink, Globe, FileCode, Building2, Bot, Activity, LineChart, Radar, Bell, Megaphone } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -569,15 +570,9 @@ function AeoJourneyCard({ audits }: { audits: Array<{ id: number; url: string; g
   const { isFree } = usePlan();
   // Audits are returned newest-first by /api/geo/audits.
   const latest = audits[0];
-  // Find the most recent prior audit on the SAME hostname so the delta is
-  // a meaningful "this site moved X" — not "your last audit on a totally
-  // different site scored Y". Falls back to chronological prior if hostname
-  // parse fails.
+  // Keep the display host separate from the strict page comparison below.
   const latestHost = (() => { try { return new URL(latest.url).hostname; } catch { return null; } })();
-  const prior = audits.slice(1).find((a) => {
-    if (!latestHost) return false;
-    try { return new URL(a.url).hostname === latestHost; } catch { return false; }
-  }) ?? audits[1];
+  const prior = audits.slice(1).find((a) => sameAuditPage(a.url, latest.url));
 
   // /api/geo/audits returns geoScore as the DB-stored real value, which is
   // already on a 0-100 scale (the analyzer does Math.round of the weighted
@@ -586,18 +581,8 @@ function AeoJourneyCard({ audits }: { audits: Array<{ id: number; url: string; g
   const priorScore = prior ? Math.round(prior.geoScore) : null;
   const delta = priorScore != null ? currScore - priorScore : null;
 
-  // Sparkline: last 5 audits, oldest → newest, on this hostname if there
-  // are enough; otherwise the global recency window. Plain inline SVG —
-  // no chart library dependency for a 5-point trendline.
-  const sparkAudits = (() => {
-    if (latestHost) {
-      const sameHost = audits.filter((a) => {
-        try { return new URL(a.url).hostname === latestHost; } catch { return false; }
-      });
-      if (sameHost.length >= 2) return sameHost.slice(0, 5).reverse();
-    }
-    return audits.slice(0, 5).reverse();
-  })();
+  // Only this page's history belongs in its trendline.
+  const sparkAudits = audits.filter((a) => sameAuditPage(a.url, latest.url)).slice(0, 5).reverse();
   const sparkValues = sparkAudits.map((a) => Math.round(a.geoScore));
   const sparkMin = Math.min(...sparkValues, 0);
   const sparkMax = Math.max(...sparkValues, 100);
@@ -641,6 +626,7 @@ function AeoJourneyCard({ audits }: { audits: Array<{ id: number; url: string; g
                 </span>
               </div>
             )}
+            {delta == null && <p className="text-xs text-muted-foreground">Baseline established. Re-audit this page after making an improvement to compare results.</p>}
           </div>
           {sparkPath && (
             <svg viewBox="0 0 100 30" className="h-10 w-32 overflow-visible" preserveAspectRatio="none" aria-hidden="true">
@@ -1031,14 +1017,14 @@ function SignedInDashboard() {
     retry: false,
   });
 
-  const monitoredSites = useQuery<{ sites: Array<{ id: number; active: boolean }> }>({
+  const monitoredSites = useQuery<{ sites: Array<{ id: number; active: boolean; lastRunAt?: string | null }> }>({
     queryKey: ["geo", "monitored-sites"],
     queryFn: () => customFetch("/api/geo/monitored-sites"),
     enabled: canUseMonitoring,
     retry: false,
   });
 
-  const seoKeywords = useQuery<{ targets: Array<{ id: number; active: boolean }>; providerConfigured: boolean }>({
+  const seoKeywords = useQuery<{ targets: Array<{ id: number; active: boolean; latest?: { collected_at: string } | null }>; providerConfigured: boolean }>({
     queryKey: ["seo-keywords", latestDomain],
     queryFn: () => customFetch(`/api/seo/keywords?domain=${encodeURIComponent(latestDomain!)}`),
     enabled: hasPaidPlan && Boolean(latestDomain),
@@ -1148,6 +1134,9 @@ function SignedInDashboard() {
   const completedRecommendationIds = new Set((recommendationProgress.data?.completed ?? []).map((item) => item.recommendationId));
   const nextRecommendation = latestAuditDetails?.recommendations?.find((item) => item.id && !completedRecommendationIds.has(item.id));
   const activeKeywordCount = seoKeywords.data?.targets?.filter((target) => target.active).length ?? 0;
+  const baselineCount = seoKeywords.data?.targets?.filter((target) => target.active && target.latest).length ?? 0;
+  const overdueCount = seoKeywords.data?.targets?.filter((target) => target.active && target.latest && Date.now() - Date.parse(target.latest.collected_at) > 8 * 86400000).length ?? 0;
+  const monitoredBaselineCount = monitoredSites.data?.sites?.filter((site) => site.active && site.lastRunAt).length ?? 0;
   const activeSiteCount = monitoredSites.data?.sites?.filter((site) => site.active).length ?? 0;
   const programStateLoading = planLoading
     || auditsLoading
@@ -1181,7 +1170,7 @@ function SignedInDashboard() {
           <CardHeader className="pb-4">
             <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700">This week's plan</p>
             <CardTitle className="text-2xl md:text-3xl">Make one improvement, then measure it</CardTitle>
-            <CardDescription className="max-w-2xl text-sm leading-relaxed">Your SEO and GEO tracking is active. Focus on the next unfinished recommendation, then use the same audit and keyword views to see what changes over time.</CardDescription>
+            <CardDescription className="max-w-2xl text-sm leading-relaxed">Your tracking is configured. Check the latest collection status in SEO opportunities, make one unfinished improvement, then re-audit the same page. Changes in rankings and traffic are observations, not proof that a particular fix caused them.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-4">
@@ -1201,11 +1190,13 @@ function SignedInDashboard() {
               <Link href={`/results/${latestAudit!.id}#seo-opportunities`} className="rounded-lg border bg-white p-3 hover:border-emerald-300 hover:bg-emerald-50/30">
                 <p className="text-xs text-muted-foreground">Rank tracking</p>
                 <p className="mt-1 font-semibold">{activeKeywordCount} active keyword{activeKeywordCount === 1 ? "" : "s"}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{baselineCount} collected · {activeKeywordCount - baselineCount} awaiting baseline · {overdueCount} overdue</p>
                 <p className="mt-1 text-xs font-medium text-emerald-700">View SEO movement</p>
               </Link>
               <Link href="/projects" className="rounded-lg border bg-white p-3 hover:border-emerald-300 hover:bg-emerald-50/30">
                 <p className="text-xs text-muted-foreground">Monitoring</p>
                 <p className="mt-1 font-semibold">{activeSiteCount} active site{activeSiteCount === 1 ? "" : "s"}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{monitoredBaselineCount} have completed a monitoring run</p>
                 <p className="mt-1 text-xs font-medium text-emerald-700">Check measurement</p>
               </Link>
             </div>
@@ -1314,7 +1305,7 @@ function SignedInDashboard() {
                 <p className="text-sm text-muted-foreground">Choose your priority keywords, location, device, and landing page. Weekly DataForSEO snapshots show movement from your baseline.</p>
                 <div className="mt-3">
                   {rankTrackingActive ? (
-                    <p className="text-xs font-semibold text-emerald-700">Keyword rank tracking is active</p>
+                    <p className="text-xs font-semibold text-emerald-700">Keywords selected for tracking</p>
                   ) : hasPaidPlan && hasAudit ? (
                     <Link href={`/results/${latestAudit!.id}#seo-opportunities`}><Button size="sm" variant="outline">Choose tracked keywords</Button></Link>
                   ) : hasPaidPlan ? (

@@ -11,5 +11,5 @@ test("does not treat a zero rank as a no-match value", () => {
 });
 
 test("shows no match only for an explicit null-position no-match result", () => {
-  assert.equal(latestRankDisplay({ position: null, result_present: false }), "No matching result yet");
+  assert.equal(latestRankDisplay({ position: null, result_present: false }), "Not found in the results checked");
 });

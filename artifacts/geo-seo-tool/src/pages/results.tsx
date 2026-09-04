@@ -37,6 +37,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { usePlan } from "@/hooks/usePlan";
 import { UpgradePrompt } from "@/components/upgrade-prompt";
 import { SeoTrackingPanel } from "@/components/seo-tracking-panel";
+import { SeoPerformancePanel } from "@/components/seo-performance-panel";
 import { getAuditDeepLinkState } from "@/lib/audit-deep-link";
 
 export default function Results() {
@@ -411,7 +412,7 @@ export default function Results() {
           <div className="rounded-lg border p-4">
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">3. Measure</p>
             <p className="mt-1 font-semibold">Confirm what changed</p>
-            <p className="mt-1 text-sm text-muted-foreground">Re-scan after publishing. Paid plans add Search Console and DataForSEO trends.</p>
+            <p className="mt-1 text-sm text-muted-foreground">{storedPlan === "pro" || storedPlan === "agency" ? "Re-scan this same page after publishing, then review SEO opportunities for keyword results. Keep the same buyer prompts to compare AI visibility over time." : "Re-scan after publishing. Pro and Agency add connected SEO performance and weekly keyword tracking."}</p>
             <Button variant="link" className="mt-1 h-auto p-0 text-sm" onClick={reScanAudit} disabled={reRun.isPending}>Re-scan this page</Button>
           </div>
         </CardContent>
@@ -622,7 +623,7 @@ export default function Results() {
         </CardContent>
         <CardContent className="pt-0 text-sm text-muted-foreground">
           {hasPaidSeo ? <><Link href="/projects" className="text-primary hover:underline">Open Sites and tracking to connect Search Console</Link>. Manage rank-tracking keywords below. Rank movement is an observed outcome, not proof that a change caused it.</> : <><p>Your audit includes SEO readiness and improvement suggestions. Pro and Agency add Search Console performance, GA4 reporting, and weekly keyword tracking.</p><Link href="/upgrade?source=audit-seo-opportunities" className="mt-3 inline-block font-medium text-primary hover:underline">Compare plans for connected SEO tracking</Link></>}
-          {hasPaidSeo && domain && <SeoTrackingPanel domain={domain} />}
+          {hasPaidSeo && domain && <><SeoPerformancePanel pageUrl={audit.url} /><SeoTrackingPanel domain={domain} /></>}
         </CardContent>
       </Card>
 

@@ -4,15 +4,18 @@
 import { createServer } from 'node:http';
 
 const returning = process.env.QA_AUDIT === '1';
+const paid = process.env.QA_PAID === '1';
 const port = Number(process.env.QA_PORT || 4184);
 const audit = { id: 1, url: 'https://example.com/', geoScore: 54, createdAt: '2026-09-04T12:00:00Z', recommendations: [{ id: 'evidence', title: 'Add a documented example', detail: 'Show a real example of your work.', priority: 'high' }] };
 const fixtures = {
   '/api/auth/me': { id: 'local-test', email: 'tester@example.com', firstName: 'Test', plan: 'free', emailVerified: true },
-  '/api/me': { userId: 'local-test', plan: 'pro', storedPlan: 'free', trial: { active: true, endsAt: '2026-10-04T12:00:00Z' } },
+  '/api/me': { userId: 'local-test', plan: 'pro', storedPlan: paid ? 'pro' : 'free', trial: { active: !paid, endsAt: '2026-10-04T12:00:00Z' } },
   '/api/admin/me': { isAdmin: false },
   '/api/geo/audits': returning ? [audit] : [],
   '/api/geo/audits/1': audit,
-  '/api/geo/monitored-sites': { sites: [] },
+  '/api/geo/monitored-sites': { sites: paid ? [{ id: 1, active: true, lastRunAt: null }] : [] },
+  '/api/integrations/google/status': { connected: paid, searchConsoleGranted: paid, propertyId: paid ? 'fixture-property' : null },
+  '/api/seo/keywords': { providerConfigured: true, targets: paid ? [{ id: 1, active: true, latest: null }, { id: 2, active: true, latest: { collected_at: '2026-08-01' } }] : [] },
   '/api/geo/recommendation-progress': { completed: [] },
 };
 
