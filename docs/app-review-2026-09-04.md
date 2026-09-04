@@ -21,6 +21,7 @@ The signed-in account was stored-free with an active guided trial. This does not
 11. **Inconsistent rank history:** history could say not found despite a numeric stored rank. It now shares the tested display rule used in the target list.
 12. **Crawler and monitoring claims:** removed homepage promises of verified bot visits, indexing, citation probability, and instant citation-drop alerts. The optional pixel records self-reported user agents; scheduled audits observe page signals. Tracking copy makes those limits explicit.
 13. **Accessible controls:** added names to monitoring URL, label, cadence, and snippet-copy controls.
+14. **Incorrect Agency allowance:** the locked tracking screen advertised 50 Agency sites, but the server enforces 10. Corrected the description without changing pricing or entitlements.
 
 ## Validation
 

@@ -370,7 +370,7 @@ export default function ProjectsPage() {
             <div className="space-y-1">
               <p className="font-semibold">Continuous monitoring is a Pro feature</p>
               <p className="text-sm text-muted-foreground">
-                Upgrade to track up to 10 sites with weekly auto-audits and score-change alerts. Agency tracks 50.
+                Pro and Agency include up to 10 monitored sites with scheduled audits and score-change alerts. Agency adds higher audit, simulation, and keyword allowances for client work.
               </p>
             </div>
             <Link href="/pricing">
