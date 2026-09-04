@@ -16,6 +16,7 @@ import { runDueMonitoredSites } from "./monitoring";
 import { runDueSeoRankSnapshots } from "./seoTrackingScheduler";
 import { logger } from "./logger";
 import { buildLatestRankSnapshotsQuery } from "./seoTrackingQueries";
+import { sameAuditedPage } from "./auditComparison";
 
 // Cron-driven sends have no inbound HTTP request to derive a base URL from,
 // so we use the configured FRONTEND_URL (preferred in prod) or fall back to
@@ -248,10 +249,7 @@ async function runWeeklyDigests() {
     const latestAudit = recentAudits[0];
     const firstName = getFirstName(user);
     const domain = latestAudit ? (() => { try { return new URL(latestAudit.url).hostname.toLowerCase().replace(/^www\./, ""); } catch { return ""; } })() : "";
-    const previousAudit = latestAudit ? recentAudits.slice(1).find((audit) => {
-      try { return new URL(audit.url).hostname.toLowerCase().replace(/^www\./, "") === domain; }
-      catch { return false; }
-    }) : undefined;
+    const previousAudit = latestAudit ? recentAudits.slice(1).find((audit) => sameAuditedPage(audit.url, latestAudit.url)) : undefined;
     let nextAction: { title: string; detail: string } | undefined;
     let completedActions = 0;
     if (latestAudit) {

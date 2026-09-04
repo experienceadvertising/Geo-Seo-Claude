@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { visibleRecommendations } from "@/lib/recommendation-list";
 import { useParams, Link, useLocation } from "wouter";
 import { useGetAudit, getGetAuditQueryKey, useAnalyzeUrl, customFetch } from "@workspace/api-client-react";
 import { apiErrorMessage, apiErrorStatus } from "@/lib/api-error";
@@ -620,7 +621,7 @@ export default function Results() {
           <div className="rounded-lg border p-4"><p className="text-xs text-muted-foreground">Next SEO actions</p><p className="mt-1 text-2xl font-semibold">{seoRecommendations.length}</p><p className="mt-1 text-xs text-muted-foreground">Prioritized technical and content improvements below.</p></div>
         </CardContent>
         <CardContent className="pt-0 text-sm text-muted-foreground">
-          <Link href="/projects" className="text-primary hover:underline">Open Sites and tracking to connect Search Console</Link>. Manage rank-tracking keywords directly below. Rank movement is displayed as an observed outcome, not proof that a change caused it.
+          {hasPaidSeo ? <><Link href="/projects" className="text-primary hover:underline">Open Sites and tracking to connect Search Console</Link>. Manage rank-tracking keywords below. Rank movement is an observed outcome, not proof that a change caused it.</> : <><p>Your audit includes SEO readiness and improvement suggestions. Pro and Agency add Search Console performance, GA4 reporting, and weekly keyword tracking.</p><Link href="/upgrade?source=audit-seo-opportunities" className="mt-3 inline-block font-medium text-primary hover:underline">Compare plans for connected SEO tracking</Link></>}
           {hasPaidSeo && domain && <SeoTrackingPanel domain={domain} />}
         </CardContent>
       </Card>
@@ -654,7 +655,7 @@ export default function Results() {
                 ))}
               </div>
               <Button variant="outline" size="sm" onClick={() => setShowAllRecommendations((current) => !current)}>
-                {showAllRecommendations ? "Show top 3" : `Show all ${Math.min(14, audit.recommendations.length)}`}
+                {showAllRecommendations ? "Show top 3" : "Show full list"}
               </Button>
             </div>
           </CardHeader>
@@ -669,11 +670,7 @@ export default function Results() {
             )}
             {(() => {
               const schemaV1 = audit.recommendationsSchemaVersion === "v1";
-              const matchingRecs = audit.recommendations.slice(0, 14).filter((r) => {
-                const done = completedRecommendationIds.has(r.id);
-                return recommendationFilter === "all" || (recommendationFilter === "done" ? done : !done);
-              });
-              const allRecs = matchingRecs.slice(0, showAllRecommendations ? 14 : 3);
+              const allRecs = visibleRecommendations(audit.recommendations, completedRecommendationIds, recommendationFilter, showAllRecommendations);
               const researchRecs = allRecs.filter(r => r.source?.type === "research" || r.source?.type === "internal_benchmark");
               // Everything that isn't research-backed (practitioner consensus,
               // expert guidance, or untagged) — a positive-list here silently

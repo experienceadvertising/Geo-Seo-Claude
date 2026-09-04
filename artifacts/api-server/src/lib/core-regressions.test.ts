@@ -1,5 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { sameAuditedPage } from "./auditComparison.ts";
+
+test("weekly score changes compare the same page, not unrelated pages on a domain", () => {
+  assert.equal(sameAuditedPage("https://example.com/", "https://example.com/about"), false);
+  assert.equal(sameAuditedPage("https://example.com/a?lang=en", "https://example.com/a?lang=fr"), false);
+  assert.equal(sameAuditedPage("https://example.com/a#intro", "https://example.com/a"), true);
+  assert.equal(sameAuditedPage("https://example.com", "https://example.com/"), true);
+  assert.equal(sameAuditedPage("invalid", "invalid"), false);
+});
 import * as cheerio from "cheerio";
 import { PgDialect } from "drizzle-orm/pg-core";
 import { isWikiArticleConfident } from "./entityConfidence.ts";

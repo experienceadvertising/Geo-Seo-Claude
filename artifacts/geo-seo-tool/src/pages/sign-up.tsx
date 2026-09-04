@@ -37,13 +37,16 @@ export default function SignUpPage() {
   async function handleResend() {
     if (!email || resending) return;
     setResending(true);
+    setError(null);
     try {
       await customFetch("/api/auth/resend-verification", {
         method: "POST",
         body: JSON.stringify({ email }),
       });
       setResent(true);
-    } catch { /* ignore — endpoint always returns success */ }
+    } catch (err: unknown) {
+      setError(apiErrorMessage(err, "We couldn't send a new link. Please try again in a moment."));
+    }
     finally { setResending(false); }
   }
 
@@ -93,6 +96,7 @@ export default function SignUpPage() {
                 {resending ? "Sending…" : "Resend verification email"}
               </Button>
             )}
+            {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
             <p className="text-xs text-muted-foreground pt-2">
               Already verified?{" "}
               <Link href={`/sign-in${nextQuerySuffix()}`} className="text-emerald-600 font-medium hover:underline">

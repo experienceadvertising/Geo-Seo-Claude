@@ -19,6 +19,7 @@ export default function VerifyEmailPage() {
   const [resendEmail, setResendEmail] = useState("");
   const [resent, setResent] = useState(false);
   const [resending, setResending] = useState(false);
+  const [resendError, setResendError] = useState<string | null>(null);
   const { refresh } = useAuth();
   const [, setLocation] = useLocation();
 
@@ -53,13 +54,16 @@ export default function VerifyEmailPage() {
     e.preventDefault();
     if (!resendEmail || resending) return;
     setResending(true);
+    setResendError(null);
     try {
       await customFetch("/api/auth/resend-verification", {
         method: "POST",
         body: JSON.stringify({ email: resendEmail }),
       });
       setResent(true);
-    } catch { /* endpoint always returns success */ }
+    } catch (err: unknown) {
+      setResendError(apiErrorMessage(err, "We couldn't send a new link. Please try again in a moment."));
+    }
     finally { setResending(false); }
   }
 
@@ -139,6 +143,7 @@ export default function VerifyEmailPage() {
                 </form>
               )}
 
+              {resendError && <p role="alert" className="text-sm text-red-600">{resendError}</p>}
               <div className="flex items-center justify-center gap-3 pt-2 text-xs">
                 <Link href="/sign-in" className="text-emerald-600 hover:underline">
                   Sign in

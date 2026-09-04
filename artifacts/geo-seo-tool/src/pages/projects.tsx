@@ -370,7 +370,7 @@ export default function ProjectsPage() {
             <div className="space-y-1">
               <p className="font-semibold">Continuous monitoring is a Pro feature</p>
               <p className="text-sm text-muted-foreground">
-                Upgrade to track up to 10 sites with weekly auto-audits and score-change alerts. Agency tracks 50.
+                Pro and Agency include up to 10 monitored sites with scheduled audits and score-change alerts. Agency adds higher audit, simulation, and keyword allowances for client work.
               </p>
             </div>
             <Link href="/pricing">
@@ -390,6 +390,7 @@ export default function ProjectsPage() {
             <form onSubmit={handleAdd} className="flex flex-col sm:flex-row gap-2">
               <Input
                 placeholder="https://example.com"
+                aria-label="Website URL to monitor"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 className="flex-1"
@@ -397,12 +398,14 @@ export default function ProjectsPage() {
               />
               <Input
                 placeholder={isPaidAgency ? "Client name" : "Label (optional)"}
+                aria-label={isPaidAgency ? "Client name" : "Site label (optional)"}
                 value={label}
                 onChange={(e) => setLabel(e.target.value)}
                 className="sm:w-40"
                 disabled={atLimit}
               />
               <select
+                aria-label="Monitoring frequency"
                 value={frequency}
                 onChange={(e) => setFrequency(e.target.value as Frequency)}
                 disabled={atLimit}
@@ -526,12 +529,12 @@ export default function ProjectsPage() {
                 <CardContent className="space-y-2">
                   <div className="flex items-start gap-2">
                     <code className="flex-1 text-xs bg-muted rounded-md p-3 break-all font-mono">{crawler.data.snippet}</code>
-                    <Button size="sm" variant="outline" onClick={() => copySnippet(crawler.data!.snippet)}>
+                    <Button size="sm" variant="outline" aria-label={copied ? "Snippet copied" : "Copy tracking snippet"} onClick={() => copySnippet(crawler.data!.snippet)}>
                       {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    The pixel is invisible, stores no IP addresses, and ignores ordinary browser user-agents. Some crawlers do not fetch images, so this is positive evidence of a visit, not complete server-log coverage.
+                    The pixel is invisible and the application does not store IP addresses with these events. Requests are classified by user agent, which can be spoofed. Some crawlers do not fetch images. These events are not verified bot visits or proof of indexing, and they do not replace server logs.
                   </p>
                 </CardContent>
               </Card>

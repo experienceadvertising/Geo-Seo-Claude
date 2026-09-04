@@ -19,6 +19,7 @@ import { CHANGELOG } from "@/data/changelog";
 import { trackEvent, trackGoogleAdsConversion } from "@/lib/analytics";
 import { SEO } from "@/components/seo";
 import { DashboardWalkthrough } from "@/components/dashboard-walkthrough";
+import { readBrowserStorage, writeBrowserStorage, removeBrowserStorage } from "@/lib/browser-storage";
 
 function MarketStats() {
   const items = [
@@ -26,21 +27,21 @@ function MarketStats() {
       icon: TrendingUp,
       accent: "from-emerald-500 to-teal-500",
       label: "Where buyers are going",
-      title: "Your buyers skip Google. They ask AI.",
+      title: "Your buyers use Google and AI answers.",
       body: "ChatGPT, Claude, Perplexity, and Google AI Overviews increasingly answer questions that once started with a list of links. Make it easy for them to understand, retrieve, and cite your site.",
     },
     {
       icon: Zap,
       accent: "from-teal-500 to-cyan-500",
       label: "Why it pays to be cited",
-      title: "AI-referred visitors already trust you when they arrive.",
+      title: "See what AI-referred visitors do next.",
       body: "A visitor who clicks a citation has already seen your brand in the answer. Connect GA4 to measure whether that traffic is helping your own business.",
     },
     {
       icon: BarChart3,
       accent: "from-cyan-500 to-emerald-500",
       label: "Why tracking matters",
-      title: "Citation status changes every month. Most brands find out too late.",
+      title: "Keep an eye on changing search visibility.",
       body: "AI answers and cited sources can change as content and retrieval systems change. Scheduled re-audits help you spot meaningful shifts before they become a blind spot.",
     },
   ];
@@ -131,7 +132,7 @@ const ENGINE_RESPONSES = [
     borderColor: "border-blue-400/25",
     citeBg: "bg-blue-50 dark:bg-blue-950/50",
     citeText: "text-blue-700 dark:text-blue-400",
-    snippet: "AEO Improvement audits your site across all four major AI engines and identifies exactly why you are not being cited in AI answers.",
+    snippet: "AEO Improvement checks page readiness and lets you sample AI answers to buyer questions. Use both to choose the next improvement.",
   },
   {
     name: "Perplexity",
@@ -139,7 +140,7 @@ const ENGINE_RESPONSES = [
     borderColor: "border-cyan-400/25",
     citeBg: "bg-cyan-50 dark:bg-cyan-950/50",
     citeText: "text-cyan-700 dark:text-cyan-400",
-    snippet: "The AEO score from aeoimprovement.com quantifies citation likelihood across 6 dimensions including schema, authority, and crawler access.",
+    snippet: "The AEO Improvement readiness score summarizes page signals such as schema, authority, and crawler access. It is not a citation probability.",
   },
 ];
 
@@ -228,7 +229,7 @@ function SignedOutLanding() {
     try {
       const parsed = new URL(normalized);
       if (!/^https?:$/.test(parsed.protocol) || !parsed.hostname.includes(".")) throw new Error("Invalid URL");
-      localStorage.setItem("pendingAuditUrl", parsed.toString());
+      writeBrowserStorage("pendingAuditUrl", parsed.toString());
       setLocation("/sign-up");
     } catch {
       setAuditUrlError("Enter a publicly reachable website, such as example.com.");
@@ -257,8 +258,8 @@ function SignedOutLanding() {
               <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm text-foreground/80 max-w-md">
                 {[
                   "Find SEO and AI-search visibility gaps",
-                  "Confirm AI bots actually crawl your pages",
-                  "Get alerted the moment your score drops",
+                  "Check whether your pages allow AI crawlers",
+                  "Track audit changes with scheduled monitoring",
                   "Auto-generated JSON-LD and robots.txt fixes",
                   "Connect Google data when you are ready to measure",
                   "30-day guided trial, no card",
@@ -343,15 +344,15 @@ function SignedOutLanding() {
                 icon: Activity,
                 gradient: "from-blue-500 to-cyan-500",
                 badge: "New",
-                title: "Confirm AI bots actually read your pages",
-                body: "Allowing bots in robots.txt does not mean they visit. Embed one tracking line and see exactly when GPTBot, ClaudeBot, PerplexityBot, and Google-Extended crawl your pages, which paths they hit, and how often. Know your content is being indexed, not just allowed.",
+                title: "Understand crawler access and observed requests",
+                body: "Check crawler access in your audit. The optional tracking pixel records requests with recognized bot user agents when they fetch the pixel. It does not capture every crawler visit, verify the caller, or prove indexing or AI citations. No snippet is needed to run an audit.",
               },
               {
                 icon: Bell,
                 gradient: "from-rose-500 to-pink-500",
                 badge: "New",
-                title: "Never get blindsided by a citation drop",
-                body: "Add any domain and we re-audit on your schedule. The moment your AEO score drops or your crawler access changes, you get an alert — not weeks later when it shows up in traffic, but while you can still act on it.",
+                title: "Keep up with changes to your website",
+                body: "Add your site for scheduled re-audits and review score or crawler-access changes when a new check completes. These checks measure page signals, not continuous AI citation coverage.",
               },
               {
                 icon: LineChart,
@@ -386,7 +387,7 @@ function SignedOutLanding() {
         <section className="space-y-8">
           <div className="text-center space-y-3">
             <p className="text-xs font-semibold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">How it works</p>
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">From invisible to cited in four steps</h2>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">From your first audit to a practical improvement</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {[
@@ -394,7 +395,7 @@ function SignedOutLanding() {
                 step: "01",
                 gradient: "from-violet-500 to-purple-600",
                 title: "Audit",
-                body: "Paste any URL. In 60 seconds, see your score across 6 dimensions with every gap ranked by the impact fixing it will have on your citation rate.",
+                body: "Enter your website URL to check six readiness dimensions and get a prioritized action list. Completion time depends on the page and the services involved. Priority is guidance, not a prediction of citation lift.",
               },
               {
                 step: "02",
@@ -406,13 +407,13 @@ function SignedOutLanding() {
                 step: "03",
                 gradient: "from-emerald-500 to-teal-600",
                 title: "Fix",
-                body: "Get specific changes ranked by research-proven impact, with ready-to-copy code for technical fixes and clear guidance for content ones. Strategies built on 2026 expert research, not guesses.",
+                body: "Get specific changes grounded in detected page signals, technical references, and attributed expert guidance. Review generated code for your website before publishing, and start with one useful fix.",
               },
               {
                 step: "04",
                 gradient: "from-rose-500 to-pink-500",
                 title: "Monitor",
-                body: "Set automatic re-audits and get instant alerts on score drops. Connect Google Analytics to measure whether your improvements are driving real AI-referred traffic.",
+                body: "Set scheduled re-audits and review alerts after a check detects a score change. Paid plans add Google Analytics reporting for AI-referred traffic. Observe trends without assuming one edit caused the result.",
               },
             ].map(({ step, gradient, title, body }) => (
               <div key={step} className="relative rounded-2xl border border-border bg-card p-6">
@@ -994,7 +995,7 @@ function WhatsNewCard() {
 }
 
 function SignedInDashboard() {
-  const pendingAuditUrl = React.useRef(localStorage.getItem("pendingAuditUrl") || "");
+  const pendingAuditUrl = React.useRef(readBrowserStorage("pendingAuditUrl") || "");
   const autoAuditStarted = React.useRef(false);
   const [url, setUrl] = React.useState(() => pendingAuditUrl.current);
   const [, setLocation] = useLocation();
@@ -1105,9 +1106,12 @@ function SignedInDashboard() {
     trackEvent("audit_started", { source });
     analyzeUrl.mutate({ data: { url: normalized } }, {
       onSuccess: (data: any) => {
+        if (source === "post_signup_landing" || rawUrl === pendingAuditUrl.current) {
+          removeBrowserStorage("pendingAuditUrl");
+        }
         trackEvent("audit_completed", { source });
-        if (!localStorage.getItem("aeo.activationConverted")) {
-          localStorage.setItem("aeo.activationConverted", "true");
+        if (!readBrowserStorage("aeo.activationConverted")) {
+          writeBrowserStorage("aeo.activationConverted", "true");
           trackGoogleAdsConversion("activation");
         }
         setLocation(`/results/${data.id}`);
@@ -1125,7 +1129,6 @@ function SignedInDashboard() {
   React.useEffect(() => {
     if (!pendingAuditUrl.current || autoAuditStarted.current) return;
     autoAuditStarted.current = true;
-    localStorage.removeItem("pendingAuditUrl");
     runAudit(pendingAuditUrl.current, "post_signup_landing");
   }, []); // A saved landing-page audit should run once after authentication.
 
@@ -1221,11 +1224,11 @@ function SignedInDashboard() {
             <CardTitle className="text-2xl md:text-3xl">{hasAudit ? "Keep your SEO + GEO program moving" : "Start with your first website audit"}</CardTitle>
             <CardDescription className="max-w-2xl text-sm leading-relaxed">
               {hasAudit
-                ? "Your baseline is ready. Complete the next steps so we can measure performance, watch for changes, and keep your action plan current."
+                ? hasPaidPlan ? "Your baseline is ready. Connect measurement and tracking, then work through one improvement at a time." : "Your baseline is ready. Test a buyer question, then make one useful improvement. You do not need to upgrade to start working on your recommendations."
                 : "Start with your website. We will build the baseline, identify the most valuable improvements, and guide you through measurement and ongoing monitoring."}
             </CardDescription>
           </div>
-          <div className="space-y-2">
+          {hasPaidPlan && <div className="space-y-2">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>{confirmedCount} of 4 setup steps complete</span>
               <span>{Math.round((confirmedCount / 4) * 100)}%</span>
@@ -1233,7 +1236,7 @@ function SignedInDashboard() {
             <div className="h-2 overflow-hidden rounded-full bg-slate-100">
               <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all" style={{ width: `${(confirmedCount / 4) * 100}%` }} />
             </div>
-          </div>
+          </div>}
         </CardHeader>
         <CardContent className="space-y-3">
           <div className={`rounded-xl border p-4 ${hasAudit ? "border-emerald-200 bg-emerald-50/60" : "border-emerald-500/40 bg-emerald-50"}`}>
@@ -1271,7 +1274,20 @@ function SignedInDashboard() {
             </div>
           </div>
 
-          <div className={`rounded-xl border p-4 ${googleConnected ? "border-emerald-200 bg-emerald-50/60" : "border-slate-200"}`}>
+          {!hasPaidPlan && <div className="rounded-xl border border-slate-200 p-4 space-y-4">
+            <div>
+              <p className="font-semibold">2. Test a question your buyer would ask</p>
+              <p className="text-sm text-muted-foreground">Review the suggested prompts for your brand before running a simulation within your allowance. Save this baseline before changing your site.</p>
+              {hasAudit ? <Link href={`/simulate/${latestAudit!.id}`}><Button size="sm" variant="outline" className="mt-3">Test my AI visibility</Button></Link> : <p className="mt-2 text-xs text-muted-foreground">Run your baseline audit to unlock this step.</p>}
+            </div>
+            <div className="border-t pt-4">
+              <p className="font-semibold">3. Make one practical improvement</p>
+              <p className="text-sm text-muted-foreground">{nextRecommendation?.title ?? "Open your top actions and choose one unfinished recommendation."} Follow the instructions on your website, then mark it complete. Re-scan after publishing to check the change.</p>
+              {hasAudit && <Link href={`/results/${latestAudit!.id}#recommendations`}><Button size="sm" variant="outline" className="mt-3">Open my top actions</Button></Link>}
+            </div>
+          </div>}
+
+          {hasPaidPlan && <><div className={`rounded-xl border p-4 ${googleConnected ? "border-emerald-200 bg-emerald-50/60" : "border-slate-200"}`}>
             <div className="flex items-start gap-3">
               <StepIcon complete={googleConnected} number={2} />
               <div className="min-w-0 flex-1">
@@ -1329,6 +1345,8 @@ function SignedInDashboard() {
               </div>
             </div>
           </div>
+
+          </>}
 
           {!hasPaidPlan && (
             <div className="rounded-xl bg-slate-950 p-4 text-white sm:flex sm:items-center sm:justify-between sm:gap-4">
