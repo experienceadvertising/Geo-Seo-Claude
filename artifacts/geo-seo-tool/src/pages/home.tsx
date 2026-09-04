@@ -18,6 +18,7 @@ import { ReferralCard } from "@/components/referral-card";
 import { CHANGELOG } from "@/data/changelog";
 import { trackEvent, trackGoogleAdsConversion } from "@/lib/analytics";
 import { SEO } from "@/components/seo";
+import { DashboardWalkthrough } from "@/components/dashboard-walkthrough";
 
 function MarketStats() {
   const items = [
@@ -1133,7 +1134,6 @@ function SignedInDashboard() {
     runAudit(url, "dashboard_manual");
   }
 
-  const greeting = firstName ? `Welcome back, ${firstName}` : "Welcome back";
   const hasAudit = Boolean(latestAudit);
   const googleConnected = Boolean(
     googleStatus.data?.connected && googleStatus.data?.searchConsoleGranted && googleStatus.data?.propertyId,
@@ -1162,6 +1162,7 @@ function SignedInDashboard() {
 
   return (
     <div className="flex-1 w-full max-w-4xl mx-auto px-4 md:px-8 py-10 md:py-14 space-y-10">
+      <DashboardWalkthrough auditId={latestAudit?.id} paid={hasPaidPlan} />
       {programStateLoading ? (
         <Card className="overflow-hidden border-emerald-500/20" aria-label="Loading your SEO and GEO program">
           <div className="h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500" />
@@ -1217,7 +1218,7 @@ function SignedInDashboard() {
         <CardHeader className="space-y-4 pb-4">
           <div className="space-y-1">
             <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700">Program setup</p>
-            <CardTitle className="text-2xl md:text-3xl">{hasAudit ? "Keep your SEO + GEO program moving" : `${greeting}. Activate your SEO + GEO program.`}</CardTitle>
+            <CardTitle className="text-2xl md:text-3xl">{hasAudit ? "Keep your SEO + GEO program moving" : "Start with your first website audit"}</CardTitle>
             <CardDescription className="max-w-2xl text-sm leading-relaxed">
               {hasAudit
                 ? "Your baseline is ready. Complete the next steps so we can measure performance, watch for changes, and keep your action plan current."
@@ -1248,6 +1249,7 @@ function SignedInDashboard() {
                     <div className="relative flex-1">
                       <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                       <Input
+                        id="baseline-url"
                         aria-label="Website URL to audit"
                         className="h-11 pl-10 text-base"
                         placeholder="https://yourwebsite.com"
@@ -1277,7 +1279,7 @@ function SignedInDashboard() {
                 <p className="text-sm text-muted-foreground">Add Search Console and GA4 so recommendations use real queries, clicks, rankings, and AI referral traffic.</p>
                 <div className="mt-3">
                   {googleConnected ? (
-                    <p className="text-xs font-semibold text-emerald-700">Search Console and GA4 are connected</p>
+                    <p className="text-xs font-semibold text-emerald-700">Search Console is connected. Check GA4 separately in Tracking.</p>
                   ) : hasPaidPlan ? (
                     <Link href="/projects"><Button size="sm" variant="outline">Connect Google</Button></Link>
                   ) : (
@@ -1298,7 +1300,7 @@ function SignedInDashboard() {
                   {rankTrackingActive ? (
                     <p className="text-xs font-semibold text-emerald-700">Keyword rank tracking is active</p>
                   ) : hasPaidPlan && hasAudit ? (
-                    <Link href={`/results/${latestAudit!.id}`}><Button size="sm" variant="outline">Choose tracked keywords</Button></Link>
+                    <Link href={`/results/${latestAudit!.id}#seo-opportunities`}><Button size="sm" variant="outline">Choose tracked keywords</Button></Link>
                   ) : hasPaidPlan ? (
                     <p className="text-xs font-medium text-slate-500">Run your baseline audit first</p>
                   ) : (

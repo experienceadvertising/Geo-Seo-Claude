@@ -48,7 +48,7 @@ function layout(content: string, preheader: string, unsubscribeUrl?: string): st
                 </td>
               </tr>
             </table>
-            <div style="font-size:12px;color:rgba(255,255,255,0.55);letter-spacing:0.04em;text-transform:uppercase;">Answer Engine Optimization</div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.55);letter-spacing:0.04em;text-transform:uppercase;">SEO and AI Search Optimization</div>
           </td>
         </tr>
 
@@ -128,101 +128,48 @@ function scoreBar(label: string, score: number): string {
   </tr>`;
 }
 
+
+function guidedEmail(firstName: string, subject: string, paragraphs: string[], label: string, href: string, unsubscribeUrl?: string) {
+  return {
+    subject,
+    html: layout(h1(esc(subject)) + p(`Hi ${esc(firstName) || "there"},`) + paragraphs.map(line => p(esc(line))).join("") + btn(esc(label), href), esc(paragraphs[0]), unsubscribeUrl),
+    text: `Hi ${firstName || "there"},\n\n${paragraphs.join("\n\n")}\n\n${label}: ${href}`,
+  };
+}
+
 // ── Email 1: Welcome (Day 0) ─────────────────────────────────────────────────
 export function welcomeEmail(firstName: string, unsubscribeUrl?: string) {
-  // Subject leads with the value prop ("first audit") rather than a generic
-  // greeting — Gmail truncates after ~50 chars on mobile, so the action
-  // verb has to land in the first words.
-  const subject = firstName
-    ? `${firstName}, your 30-day full-access trial starts now`
-    : `Your 30-day full-access trial starts now`;
-  const html = layout(
-    `${h1(`Welcome, ${firstName || "there"} 👋`)}
-    ${p("You're set up to improve how your site performs in Google and AI search. Start with the issues holding back SEO, content quality, crawler access, and AI visibility.")}
-    <table cellpadding="0" cellspacing="0" width="100%" style="margin:16px 0;background:#ecfdf5;border-radius:8px;border:1px solid #a7f3d0;">
-      <tr><td style="padding:18px 20px;font-size:14px;color:#065f46;">
-        <strong>Your 30-day full-access trial is completely free.</strong><br/>
-        All 4 AI engines, the Fix Generator, competitor tracking, continuous monitoring, sentiment analysis. No credit card, nothing to activate. It is already on.
-      </td></tr>
-    </table>
-    ${p("Here's how to make the most of it:")}
-
-    <table cellpadding="0" cellspacing="0" width="100%" style="margin:8px 0 24px;">
-      ${feature("🔍", "Run your first SEO + GEO audit", "Enter your website URL and get a prioritized view of technical, content, SEO, and AI-search improvements.")}
-      ${feature("🔬", "Simulate across all 4 engines", "See whether ChatGPT, Claude, Gemini, and Perplexity actually cite you — all engines are unlocked for you.")}
-      ${feature("🛠", "Generate your fixes", "The Fix Generator auto-drafts JSON-LD schema and citation-bot robots.txt patches, with llms.txt clearly labeled optional.")}
-    </table>
-
-    <div style="text-align:center;margin:32px 0;">
-      ${btn("Run my first audit →", BASE_URL)}
-    </div>
-
-    ${divider()}
-    ${p("Questions? Just reply to this email. We read every one.", "color:#6b7280;font-size:14px;")}`,
-    "Your 30-day full-access trial is ready. Run your first SEO + GEO audit now.",
-    unsubscribeUrl,
-  );
-  const text = `Welcome to AEO Improvement!\n\nYour 30-day full-access trial includes all 4 AI engines, Fix Generator, competitor tracking, monitoring, and sentiment analysis. Use it to find and implement SEO and GEO improvements. Connected Google reporting is available on paid plans. No credit card is needed and nothing is charged automatically.\n\nRun your first audit: ${BASE_URL}\n\nQuestions? Reply to this email.`;
-  return { subject, html, text };
+  return guidedEmail(firstName, "Your first step: audit one website", [
+    "Welcome to AEO Improvement. Start with one page you want to improve for Google and AI search.",
+    "Open your dashboard. If the URL you entered at signup is already running, let that audit finish. Otherwise, enter it and run your first audit. No Google connection or tracking snippet is needed for this step.",
+    "When results are ready, open Top actions and choose one useful improvement. You do not need to tackle the entire report at once.",
+    "Your guided trial has usage limits. Connected Search Console, GA4, and keyword tracking require Pro or Agency. No card is required for the trial and it does not charge you automatically."
+  ], "Open my dashboard", BASE_URL, unsubscribeUrl);
 }
 
 // ── Email 2: Day-3 Tips ──────────────────────────────────────────────────────
 export function welcomeD3Email(firstName: string, hasAudit: boolean, unsubscribeUrl?: string) {
-  // Concrete > clever: name the actions, not the category.
-  const subject = hasAudit
-    ? "Your next 3 AEO tasks: fresh dates, FAQ schema, robots.txt"
-    : "Your free month is running — start with this 60-second audit";
-  const html = layout(
-    `${h1(hasAudit ? "3 quick wins for better AI citations" : "Start your optimization journey")}
-    ${p(hasAudit ? `Hi ${firstName || "there"}, your first audit is in. Here are three high-impact improvements to check against its task list:` : `Hi ${firstName || "there"}, you still have all core audit features unlocked. Run your first audit now so we can build a prioritized, trackable optimization journey for your domain.`)}
-
-    <table cellpadding="0" cellspacing="0" width="100%" style="margin:8px 0 24px;">
-      ${feature("1️⃣", "Show a visible 'Last updated' date", "AI engines strongly prefer fresh content — the overwhelming majority of ChatGPT citations go to recently updated pages. Add a visible updated date (and dateModified schema) to your key pages, and actually refresh them.")}
-      ${feature("2️⃣", "Add FAQ schema markup", "AI engines love structured Q&A. Add <code style='font-size:12px;background:#f3f4f6;padding:1px 4px;border-radius:3px;'>FAQPage</code> JSON-LD to your top pages. Our Fix Generator writes it for you.")}
-      ${feature("3️⃣", "Open your robots.txt to AI search bots", "Many sites accidentally block OAI-SearchBot (ChatGPT Search), Claude-SearchBot, or PerplexityBot — the crawlers that decide whether you CAN be cited. Check your audit's Crawler Access section.")}
-    </table>
-
-    <div style="text-align:center;margin:32px 0;">
-      ${btn(hasAudit ? "View my tasks & apply fixes →" : "Run my first audit →", BASE_URL)}
-    </div>
-
-    ${divider()}
-    ${p("The Fix Generator, unlocked during your free first month, writes your JSON-LD and citation-bot robots.txt patches automatically. Copy and deploy in minutes.", "color:#6b7280;font-size:13px;")}`,
-    "3 high-impact improvements most sites can make this week →",
-    unsubscribeUrl,
-  );
-  const text = `Hi ${firstName || "there"},\n\n3 quick AEO wins:\n\n1. Show a visible "Last updated" date on key pages (AI engines strongly prefer fresh content)\n2. Add FAQPage JSON-LD schema\n3. Open robots.txt to AI search bots (OAI-SearchBot, Claude-SearchBot, PerplexityBot)\n\nSee your audit: ${BASE_URL}\n\nThe Fix Generator — unlocked during your free first month — creates the schema and robots.txt fixes for you automatically.`;
-  return { subject, html, text };
+  return guidedEmail(firstName, hasAudit ? "Choose one improvement from your audit" : "Ready for your first website audit?", hasAudit ? [
+    "You have an audit. Your next step is to open Top actions from the dashboard navigation and choose one unfinished recommendation.",
+    "Read the evidence and instructions, make the change on your website, then mark the task complete. Generated code is a draft: check it against your actual page before publishing.",
+    "After that, open Prompt test and try a few questions your buyers would ask. Use the engines and allowance shown in your account."
+  ] : [
+    "Start by entering one website URL in your dashboard. You do not need to connect Google or install anything first.",
+    "Once the audit finishes, open Top actions. Pick one recommendation and work through its instructions before moving on."
+  ], hasAudit ? "Find my next action" : "Run my first audit", BASE_URL, unsubscribeUrl);
 }
 
 // ── Email 3: Day-7 Check-in ──────────────────────────────────────────────────
 // Recipients are one week into their full-access trial (paid users
-// are excluded by the scheduler), so this is NOT an upgrade pitch — it's a
+// are excluded by the scheduler), so this is NOT an upgrade pitch - it's a
 // "use the good stuff while it's free" nudge that seeds the upgrade decision.
 export function welcomeD7Email(firstName: string, unsubscribeUrl?: string) {
-  const subject = "One week in: use these features before your trial ends";
-  const html = layout(
-    `${h1("You're one week into your 30-day full-access trial")}
-    ${p(`Hi ${firstName || "there"}, everything below is already unlocked on your account — no upgrade needed. These are the features users tell us move the needle most:`)}
-
-    <table cellpadding="0" cellspacing="0" width="100%" style="margin:8px 0 24px;background:#f0fdf4;border-radius:8px;padding:16px;">
-      ${feature("✦", "All 4 AI engines", "Run simulations against ChatGPT, Claude, Gemini, and Perplexity — not just one.")}
-      ${feature("🔧", "Fix Generator", "Auto-generate JSON-LD schema and citation-bot robots.txt patches. Copy and deploy in minutes.")}
-      ${feature("📊", "Competitor citation gaps", "See exactly which competitors are being cited instead of you — and why.")}
-      ${feature("📡", "Continuous monitoring", "Add your site once and get re-audited on a schedule, with alerts when your score moves.")}
-      ${feature("💬", "Sentiment analysis", "Understand how AI engines perceive your brand — positive, neutral, or negative.")}
-    </table>
-
-    <div style="text-align:center;margin:32px 0;">
-      ${btn("Use them now — they're free →", BASE_URL)}
-    </div>
-
-    ${p(`When your free month ends you'll move to the free plan unless you subscribe — Pro keeps all of this going. <a href="${BASE_URL}/upgrade?source=welcome-d7" style="color:${BRAND_COLOR};">See plans →</a>`, "color:#9ca3af;font-size:13px;text-align:center;")}`,
-    "Everything is unlocked on your account right now — here's what to try →",
-    unsubscribeUrl,
-  );
-  const text = `Hi ${firstName || "there"},\n\nYou're one week into your free core-feature month. Already unlocked on your account:\n- All 4 AI engines (ChatGPT, Claude, Gemini, Perplexity)\n- Fix Generator (JSON-LD, citation-bot robots.txt, optional llms.txt)\n- Competitor citation gap table\n- Continuous monitoring with alerts\n- Sentiment analysis\n\nUse them now: ${BASE_URL}\n\nWhen your free month ends you'll move to the free plan unless you subscribe: ${BASE_URL}/upgrade?source=welcome-d7`;
-  return { subject, html, text };
+  return guidedEmail(firstName, "What to do next in your SEO + GEO workspace", [
+    "If you have not run an audit yet, start there. If you have, choose one unfinished item under Top actions and implement it on your site.",
+    "Next, open Prompt test for that audit. Review the suggested questions before running them so they reflect what your buyers actually ask.",
+    "You do not need to buy a plan to review your available audit recommendations. When you want connected Google reporting and keyword tracking, compare Pro and Agency on the Plans page.",
+    "Your account shows your current trial status and usage limits. There is no automatic charge when the trial ends."
+  ], "Continue in my dashboard", BASE_URL, unsubscribeUrl);
 }
 
 // ── Email 4: Weekly Digest (Pro+) ────────────────────────────────────────────
@@ -277,7 +224,7 @@ export function weeklyDigestEmail(data: WeeklyDigestData, unsubscribeUrl?: strin
       ? `<div style="margin:22px 0;padding:20px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:10px;">
           <div style="font-size:12px;font-weight:700;color:${BRAND_COLOR};text-transform:uppercase;letter-spacing:0.05em;margin-bottom:7px;">Your recommended task this week</div>
           <div style="font-size:17px;font-weight:700;color:#111827;margin-bottom:7px;">Run a fresh audit after your latest site changes</div>
-          <div style="font-size:14px;color:#4b5563;line-height:1.6;">Your current action list is complete. Re-scan the page to confirm what changed and build the next plan.</div>
+          <div style="font-size:14px;color:#4b5563;line-height:1.6;">Review the remaining recommendations before choosing another task. Re-scan the page to confirm what changed and build the next plan.</div>
           <div style="margin-top:14px;">${btn("Review and re-scan", `${BASE_URL}/results/${latestAudit.id}`)}</div>
         </div>`
       : `<div style="margin:22px 0;padding:20px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:10px;">
@@ -305,10 +252,17 @@ export function weeklyDigestEmail(data: WeeklyDigestData, unsubscribeUrl?: strin
     ] : []),
   ].join("");
 
-  const setupReminder = !paidSeoEnabled
+  const setupText = !paidSeoEnabled || !latestAudit ? "" : !googleMeasurementConnected
+    ? `Next setup step: open Tracking and review your Search Console and GA4 connections: ${BASE_URL}/projects`
+    : tracking?.activeKeywords === 0
+      ? `Next setup step: choose a keyword, location, and device in SEO opportunities: ${BASE_URL}/results/${latestAudit.id}#seo-opportunities`
+      : monitoring?.activeSites === 0
+        ? `Next setup step: add your site to monitoring: ${BASE_URL}/projects`
+        : tracking && tracking.pendingKeywords > 0 ? "Your first rank snapshots are pending. You do not need a manual refresh." : "";
+  const setupReminder = !paidSeoEnabled || !latestAudit
     ? ""
     : !googleMeasurementConnected
-    ? p(`One setup item is still open: <a href="${BASE_URL}/projects" style="color:${BRAND_COLOR};font-weight:600;">connect Search Console and GA4</a> so your recommendations include real search and referral data.`, "padding:12px 14px;background:#fffbeb;border-radius:8px;color:#92400e;font-size:13px;")
+    ? p(`Review your Google connections: <a href="${BASE_URL}/projects" style="color:${BRAND_COLOR};font-weight:600;">connect Search Console and GA4</a> and check which connection still needs attention.`, "padding:12px 14px;background:#fffbeb;border-radius:8px;color:#92400e;font-size:13px;")
     : tracking?.activeKeywords === 0
       ? p(`Add at least one priority keyword to start weekly DataForSEO snapshots. <a href="${latestAudit ? `${BASE_URL}/results/${latestAudit.id}#seo-opportunities` : `${BASE_URL}/projects`}" style="color:${BRAND_COLOR};font-weight:600;">Choose a keyword</a>.`, "padding:12px 14px;background:#fffbeb;border-radius:8px;color:#92400e;font-size:13px;")
       : monitoring?.activeSites === 0
@@ -330,11 +284,11 @@ export function weeklyDigestEmail(data: WeeklyDigestData, unsubscribeUrl?: strin
     latestAudit?.nextAction ? `Your next task: ${esc(latestAudit.nextAction.title)}` : `Your weekly SEO and GEO program update`,
     unsubscribeUrl,
   );
-  const text = `Hi ${firstName || "there"},\n\nYour weekly SEO + GEO plan for ${domain}:\n\n${latestAudit?.nextAction ? `Recommended task: ${latestAudit.nextAction.title}\n${latestAudit.nextAction.detail}\nOpen it: ${actionUrl}` : latestAudit ? `Your current action list is complete. Review and re-scan: ${BASE_URL}/results/${latestAudit.id}` : `Run your first audit: ${BASE_URL}`}\n\nProgram status:\n- Audits in the last 7 days: ${auditCount}\n- Completed recommendations: ${latestAudit?.completedActions ?? 0}${paidSeoEnabled ? `\n- Active keyword targets: ${tracking?.activeKeywords ?? 0}\n- Keywords with a rank baseline: ${tracking?.rankedKeywords ?? 0}\n- Sites under monitoring: ${monitoring?.activeSites ?? 0}` : ""}\n\nOpen your workspace: ${BASE_URL}`;
+  const text = `Hi ${firstName || "there"},\n\nYour weekly SEO + GEO plan for ${domain}:\n\n${latestAudit?.nextAction ? `Recommended task: ${latestAudit.nextAction.title}\n${latestAudit.nextAction.detail}\nOpen it: ${actionUrl}` : latestAudit ? `Review the remaining recommendations before choosing another task. Review and re-scan: ${BASE_URL}/results/${latestAudit.id}` : `Run your first audit: ${BASE_URL}`}\n\nProgram status:\n- Audits in the last 7 days: ${auditCount}\n- Completed recommendations: ${latestAudit?.completedActions ?? 0}${paidSeoEnabled ? `\n- Active keyword targets: ${tracking?.activeKeywords ?? 0}\n- Keywords with a rank baseline: ${tracking?.rankedKeywords ?? 0}\n- Sites under monitoring: ${monitoring?.activeSites ?? 0}` : ""}\n\n${setupText}\n\nOpen your workspace: ${BASE_URL}`;
   return { subject, html, text };
 }
 
-// ── Email: Email Verification (transactional — no unsubscribe) ────────────────
+// ── Email: Email Verification (transactional - no unsubscribe) ────────────────
 export function verificationEmail(firstName: string, verifyUrl: string) {
   const subject = "Verify your AEO Improvement email address";
   const html = layout(
@@ -352,7 +306,7 @@ export function verificationEmail(firstName: string, verifyUrl: string) {
   return { subject, html, text };
 }
 
-// ── Email: Password Reset (transactional — no unsubscribe) ────────────────────
+// ── Email: Password Reset (transactional - no unsubscribe) ────────────────────
 export function passwordResetEmail(firstName: string, resetUrl: string) {
   const subject = "Reset your AEO Improvement password";
   const html = layout(
@@ -362,15 +316,15 @@ export function passwordResetEmail(firstName: string, resetUrl: string) {
       ${btn("Reset my password →", resetUrl)}
     </div>
     ${divider()}
-    ${p("This link expires in 1 hour. If you didn't request a password reset, you can safely ignore this email — your password won't change.", "color:#6b7280;font-size:13px;")}
+    ${p("This link expires in 1 hour. If you didn't request a password reset, you can safely ignore this email - your password won't change.", "color:#6b7280;font-size:13px;")}
     ${p(`Or copy this link into your browser:<br/><a href="${resetUrl}" style="color:${BRAND_COLOR};word-break:break-all;font-size:12px;">${resetUrl}</a>`, "color:#6b7280;font-size:12px;")}`,
     "Reset your AEO Improvement password →",
   );
-  const text = `Hi ${firstName || "there"},\n\nReset your AEO Improvement password by visiting:\n${resetUrl}\n\nThis link expires in 1 hour. If you didn't request this, ignore this email — your password won't change.`;
+  const text = `Hi ${firstName || "there"},\n\nReset your AEO Improvement password by visiting:\n${resetUrl}\n\nThis link expires in 1 hour. If you didn't request this, ignore this email - your password won't change.`;
   return { subject, html, text };
 }
 
-// ── Email: Password Changed (transactional — security notification) ───────────
+// ── Email: Password Changed (transactional - security notification) ───────────
 export function passwordChangedEmail(firstName: string, supportUrl: string) {
   const subject = "Your AEO Improvement password was just changed";
   const html = layout(
@@ -379,7 +333,7 @@ export function passwordChangedEmail(firstName: string, supportUrl: string) {
     <table cellpadding="0" cellspacing="0" width="100%" style="margin:16px 0;background:#fefce8;border-radius:8px;">
       <tr><td style="padding:16px 20px;font-size:14px;color:#713f12;">
         <strong>Didn't make this change?</strong><br/>
-        Reset your password immediately and contact us at info@aeoimprovement.com — your account may be compromised.
+        Reset your password immediately and contact us at info@aeoimprovement.com - your account may be compromised.
       </td></tr>
     </table>
     <div style="text-align:center;margin:24px 0;">
@@ -393,12 +347,12 @@ export function passwordChangedEmail(firstName: string, supportUrl: string) {
   return { subject, html, text };
 }
 
-// ── Email: Payment Failed (transactional — billing) ───────────────────────────
+// ── Email: Payment Failed (transactional - billing) ───────────────────────────
 export function paymentFailedEmail(firstName: string, attemptCount: number, nextRetryAt?: Date | null) {
   const subject = "Action needed: payment failed for AEO Improvement";
   const retryLine = nextRetryAt
     ? `We'll automatically retry on ${nextRetryAt.toLocaleDateString("en-US", { month: "long", day: "numeric" })}.`
-    : "We'll automatically retry over the next few days.";
+    : "Open Manage Billing to check the invoice status and available payment options.";
   const html = layout(
     `${h1("Your payment didn't go through")}
     ${p(`Hi ${firstName || "there"}, we tried to charge your card for your AEO Improvement subscription and it was declined.`)}
@@ -407,24 +361,23 @@ export function paymentFailedEmail(firstName: string, attemptCount: number, next
         <strong>Attempt ${attemptCount} failed.</strong> ${retryLine} If we can't collect payment, your account will be moved to the free plan.
       </td></tr>
     </table>
-    ${p("Please update your payment method to keep access to:")}
+    ${p("Open Plans, then Manage Billing to check your invoice and update your payment method. Your current plan determines which features are included.")}
     <ul style="margin:0 0 16px 0;padding:0 0 0 20px;font-size:14px;line-height:1.8;color:#374151;">
-      <li>All 4 AI engines (ChatGPT, Claude, Gemini, Perplexity)</li>
-      <li>Fix Generator and competitor citation gap reports</li>
-      <li>1-year trend history and sentiment analysis</li>
+      <li>Review the unpaid invoice and payment method in Manage Billing.</li>
+      <li>If the payment details look correct, contact support before trying again.</li>
     </ul>
     <div style="text-align:center;margin:24px 0;">
-      ${btn("Update payment method →", `${BASE_URL}/pricing`)}
+      ${btn("Open Manage Billing", `${BASE_URL}/upgrade`)}
     </div>
     ${divider()}
     ${p("Questions about your bill? Just reply to this email.", "color:#6b7280;font-size:13px;")}`,
     "Action needed: your AEO Improvement payment was declined.",
   );
-  const text = `Hi ${firstName || "there"},\n\nWe tried to charge your card for your AEO Improvement subscription and it was declined (attempt ${attemptCount}).\n\n${retryLine} If we can't collect payment, your account will be moved to the free plan.\n\nUpdate payment method: ${BASE_URL}/pricing\n\nQuestions? Reply to this email.`;
+  const text = `Hi ${firstName || "there"},\n\nWe tried to charge your card for your AEO Improvement subscription and it was declined (attempt ${attemptCount}).\n\n${retryLine} If we can't collect payment, your account will be moved to the free plan.\n\nOpen Plans, then Manage Billing: ${BASE_URL}/upgrade\n\nQuestions? Reply to this email.`;
   return { subject, html, text };
 }
 
-// ── Email: Subscription Canceled (transactional — billing) ────────────────────
+// ── Email: Subscription Canceled (transactional - billing) ────────────────────
 export function subscriptionCanceledEmail(firstName: string, planName: string) {
   const subject = "Your AEO Improvement subscription has ended";
   const html = layout(
@@ -432,7 +385,7 @@ export function subscriptionCanceledEmail(firstName: string, planName: string) {
     ${p(`Hi ${firstName || "there"}, your AEO Improvement <strong>${planName}</strong> subscription has been canceled. Your account is now on the free plan.`)}
     ${p("You can still:")}
     <ul style="margin:0 0 16px 0;padding:0 0 0 20px;font-size:14px;line-height:1.8;color:#374151;">
-      <li>Run AEO audits (3 prompts each, ChatGPT only)</li>
+      <li>Run audits and ChatGPT prompt simulations within free-plan limits</li>
       <li>View your audit history</li>
       <li>Re-subscribe at any time</li>
     </ul>
@@ -440,14 +393,14 @@ export function subscriptionCanceledEmail(firstName: string, planName: string) {
       ${btn("Resubscribe →", `${BASE_URL}/pricing`)}
     </div>
     ${divider()}
-    ${p("Mind sharing why you canceled? Just reply to this email — your feedback shapes what we build next.", "color:#6b7280;font-size:13px;")}`,
+    ${p("Mind sharing why you canceled? Just reply to this email - your feedback shapes what we build next.", "color:#6b7280;font-size:13px;")}`,
     "Your AEO Improvement subscription has been canceled.",
   );
   const text = `Hi ${firstName || "there"},\n\nYour AEO Improvement ${planName} subscription has been canceled. Your account is now on the free plan.\n\nResubscribe anytime: ${BASE_URL}/pricing\n\nMind sharing why? Just reply.`;
   return { subject, html, text };
 }
 
-// ── Email: Card Expiring (transactional — billing) ───────────────────────────
+// ── Email: Card Expiring (transactional - billing) ───────────────────────────
 export function cardExpiringEmail(firstName: string, last4: string, expMonth: number, expYear: number) {
   const subject = "Your card on file is about to expire";
   const exp = `${String(expMonth).padStart(2, "0")}/${String(expYear).slice(-2)}`;
@@ -457,19 +410,19 @@ export function cardExpiringEmail(firstName: string, last4: string, expMonth: nu
   const html = layout(
     `${h1("Your card is about to expire")}
     ${p(`Hi ${firstName || "there"}, the ${cardLine} for your AEO Improvement subscription is expiring soon.`)}
-    ${p("Update it now so your next renewal goes through without interruption — and you keep access to all 4 AI engines, the Fix Generator, competitor tracking, and your trend history.")}
+    ${p("Open Plans, then Manage Billing to review or update your payment method and keep the features included in your current plan.")}
     <div style="text-align:center;margin:24px 0;">
-      ${btn("Update payment method →", `${BASE_URL}/pricing`)}
+      ${btn("Open Manage Billing", `${BASE_URL}/upgrade`)}
     </div>
     ${divider()}
     ${p("Already updated it? You can safely ignore this email. Questions about billing? Just reply.", "color:#6b7280;font-size:13px;")}`,
-    "Your card on file is expiring — update it to avoid an interruption.",
+    "Your card on file is expiring - update it to avoid an interruption.",
   );
-  const text = `Hi ${firstName || "there"},\n\nThe ${last4 ? `card ending in ${last4}` : "card on file"} for your AEO Improvement subscription expires ${exp}.\n\nUpdate it to keep your subscription active: ${BASE_URL}/pricing\n\nAlready updated? Ignore this email. Questions? Reply.`;
+  const text = `Hi ${firstName || "there"},\n\nThe ${last4 ? `card ending in ${last4}` : "card on file"} for your AEO Improvement subscription expires ${exp}.\n\nOpen Plans, then Manage Billing: ${BASE_URL}/upgrade\n\nAlready updated? Ignore this email. Questions? Reply.`;
   return { subject, html, text };
 }
 
-// ── Email: Renewal Receipt (transactional — billing) ─────────────────────────
+// ── Email: Renewal Receipt (transactional - billing) ─────────────────────────
 export function renewalReceiptEmail(
   firstName: string,
   planName: string,
@@ -482,16 +435,17 @@ export function renewalReceiptEmail(
     ? `Your subscription is active through ${periodEnd.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}.`
     : "";
   const html = layout(
-    `${h1("Thanks — your subscription renewed")}
+    `${h1("Thanks - your subscription renewed")}
     ${p(`Hi ${firstName || "there"}, your AEO Improvement <strong>${planName}</strong> subscription has renewed. You were charged <strong>${amount}</strong>.`)}
     ${periodLine ? p(periodLine) : ""}
+    ${p("Next, open your dashboard and choose an unfinished item in Top actions. If you have not run an audit, start with one website. Pro and Agency users can configure Google connections in Tracking and keywords in SEO opportunities.")}
     <div style="text-align:center;margin:24px 0;">
       ${btn("Open your dashboard →", `${BASE_URL}/`)}
     </div>
     ${invoiceUrl ? p(`<a href="${invoiceUrl}" style="color:#059669;">View your invoice / receipt →</a>`, "font-size:13px;") : ""}
     ${divider()}
     ${p("Manage your plan or payment method any time from the billing portal. Questions? Just reply to this email.", "color:#6b7280;font-size:13px;")}`,
-    `Your AEO Improvement ${planName} plan renewed — ${amount}.`,
+    `Your AEO Improvement ${planName} plan renewed - ${amount}.`,
   );
   const text = `Hi ${firstName || "there"},\n\nYour AEO Improvement ${planName} subscription renewed. You were charged ${amount}.\n${periodLine ? `\n${periodLine}\n` : ""}${invoiceUrl ? `\nInvoice: ${invoiceUrl}\n` : ""}\nDashboard: ${BASE_URL}/\n\nQuestions? Reply to this email.`;
   return { subject, html, text };
@@ -510,9 +464,9 @@ export interface MonthlyReportData {
 
 export function monthlyReportEmail(data: MonthlyReportData, unsubscribeUrl?: string) {
   const { firstName, month, totalAudits, avgScore, bestScore, topUrl, quickWins } = data;
-  const subject = `Your AEO monthly report — ${month}`;
+  const subject = `Your AEO monthly report - ${month}`;
   const html = layout(
-    `${h1(`Monthly AEO Report — ${month}`)}
+    `${h1(`Monthly AEO Report - ${month}`)}
     ${p(`Hi ${firstName || "there"}, here's a summary of your AEO performance for ${month}.`)}
 
     ${divider()}
@@ -536,7 +490,7 @@ export function monthlyReportEmail(data: MonthlyReportData, unsubscribeUrl?: str
       </tr>
     </table>
 
-    ${topUrl ? `<div style="margin:16px 0;font-size:13px;color:#6b7280;">Best performing site: <strong style="color:#111827;">${topUrl}</strong></div>` : ""}
+    ${topUrl ? `<div style="margin:16px 0;font-size:13px;color:#6b7280;">Highest audit-score site: <strong style="color:#111827;">${topUrl}</strong></div>` : ""}
 
     ${quickWins.length > 0 ? `
       ${divider()}
@@ -550,16 +504,16 @@ export function monthlyReportEmail(data: MonthlyReportData, unsubscribeUrl?: str
     </div>
 
     ${divider()}
-    ${p("This report is sent monthly to Agency plan subscribers. Upgrade or manage your plan at any time.", "color:#9ca3af;font-size:12px;")}`,
-    `Your AEO monthly performance report for ${month} — ${totalAudits} audits, avg score ${Math.round(avgScore)}`,
+    ${p("Next: open Tracking, choose a client site, and review its latest Top actions. Assign one improvement for that client. These audit scores are not traffic or ranking measurements.", "color:#9ca3af;font-size:12px;")}`,
+    `Your AEO monthly performance report for ${month} - ${totalAudits} audits, avg score ${Math.round(avgScore)}`,
     unsubscribeUrl,
   );
-  const text = `Monthly AEO Report — ${month}\n\nHi ${firstName || "there"},\n\nTotal audits: ${totalAudits}\nAvg AEO score: ${Math.round(avgScore)}\nBest score: ${Math.round(bestScore)}\n${topUrl ? `Best site: ${topUrl}\n` : ""}${quickWins.length > 0 ? `\nTop opportunities:\n${quickWins.slice(0, 5).map(w => `- ${w}`).join("\n")}` : ""}\n\nView dashboard: ${BASE_URL}`;
+  const text = `Monthly AEO Report - ${month}\n\nHi ${firstName || "there"},\n\nTotal audits: ${totalAudits}\nAvg AEO score: ${Math.round(avgScore)}\nBest score: ${Math.round(bestScore)}\n${topUrl ? `Highest audit-score site: ${topUrl}\n` : ""}${quickWins.length > 0 ? `\nTop opportunities:\n${quickWins.slice(0, 5).map(w => `- ${w}`).join("\n")}` : ""}\n\nNext: open Tracking, choose a client site, and review its latest Top actions. Audit scores are not traffic or ranking measurements.\n\nView dashboard: ${BASE_URL}`;
   return { subject, html, text };
 }
 
 // ── Email: Limit Reached (free tier upsell) ──────────────────────────────────
-// Sent at most once per kind per month — the caller (usageLimits.checkQuota)
+// Sent at most once per kind per month - the caller (usageLimits.checkQuota)
 // uses an atomic "claim" to ensure firstDenial is only true once per month
 // per (user, kind). Crucial for not spamming users who retry repeatedly.
 export function limitReachedEmail(
@@ -576,7 +530,7 @@ export function limitReachedEmail(
     : "30 prompt simulations/month with all 4 engines (ChatGPT, Claude, Gemini, Perplexity), 25 prompts each";
   const html = layout(
     `${h1(`You hit your free ${kindLabel} limit 🎯`)}
-    ${p(`Hi ${safeFirstName}, nice work — you've used all ${cap} of your free ${kindLabel}s this month. Your quota will refill on the 1st.`)}
+    ${p(`Hi ${safeFirstName}, nice work - you've used all ${cap} of your free ${kindLabel}s this month. Your quota will refill on the 1st.`)}
     ${p(`If you don't want to wait, the <strong>Pro plan</strong> unlocks:`)}
     <ul style="margin:0 0 16px 0;padding:0 0 0 20px;font-size:14px;line-height:1.8;color:#374151;">
       <li>${proBenefit}</li>
@@ -603,7 +557,7 @@ export function limitReachedEmail(
 
 // ── Email: First Audit Complete (engagement / activation) ─────────────────────
 // Fires exactly once, the first time a user completes any audit. The "first
-// audit" moment is the strongest engagement window — they've experienced
+// audit" moment is the strongest engagement window - they've experienced
 // value, now we show them what's next.
 export function firstAuditEmail(
   firstName: string,
@@ -618,7 +572,7 @@ export function firstAuditEmail(
   const safeFirstName = esc(firstName) || "there";
   const safeTopRec = esc(topRecommendation);
   const scoreColor = geoScore >= 75 ? "#10b981" : geoScore >= 50 ? "#f59e0b" : "#ef4444";
-  const scoreVerdict = geoScore >= 75 ? "you're already ahead of most sites" : geoScore >= 50 ? "you've got a solid foundation with clear room to grow" : "there's significant upside available";
+  const scoreVerdict = geoScore >= 75 ? "the audit found stronger readiness signals" : geoScore >= 50 ? "you've got a solid foundation with clear room to grow" : "there's significant upside available";
   // Subject is plain text (Postmark handles encoding) but URL/host segment
   // is bounded to hostname only above to avoid header-injection surface.
   const subject = `Your SEO + GEO audit is ready: ${hostname} scored ${Math.round(geoScore)}/100`;
@@ -642,7 +596,7 @@ export function firstAuditEmail(
       </div>
     ` : ""}
 
-    ${p("Your audit score measures whether you <em>can</em> be cited. A prompt simulation shows whether you <em>are</em> — here's what to do next:")}
+    ${p("Start with one recommendation under Top actions. Then use a prompt simulation to sample AI responses for relevant buyer questions:")}
     <table cellpadding="0" cellspacing="0" width="100%" style="margin:8px 0 24px;">
       ${feature("🔬", "Run a prompt simulation", "Type the queries your buyers actually use and see whether ChatGPT, Claude, Gemini, and Perplexity name you, cite your site, or recommend a competitor instead.")}
       ${feature("📊", "Compare to competitors", "Run audits on 2–3 competitors to find your AEO gaps and see who the engines are citing in your place.")}
@@ -650,7 +604,7 @@ export function firstAuditEmail(
     </table>
 
     <div style="text-align:center;margin:24px 0;">
-      ${btn("Open your audit →", auditId ? `${BASE_URL}/results/${auditId}` : BASE_URL)}
+      ${btn("Choose my first improvement", auditId ? `${BASE_URL}/results/${auditId}#recommendations` : BASE_URL)}
     </div>
 
     ${divider()}
@@ -662,7 +616,7 @@ export function firstAuditEmail(
   return { subject, html, text };
 }
 
-// ── Email: Audit Complete (transactional — fires on every non-first audit) ────
+// ── Email: Audit Complete (transactional - fires on every non-first audit) ────
 // The first-audit email covers the first run with richer onboarding content.
 // This email fires for all subsequent audits so the user always gets a
 // "your results are ready" link even if they closed the tab mid-run.
@@ -677,7 +631,7 @@ export function auditCompleteEmail(
   const safeHostname = esc(hostname);
   const safeFirstName = esc(firstName) || "there";
   const scoreColor = geoScore >= 75 ? "#10b981" : geoScore >= 50 ? "#f59e0b" : "#ef4444";
-  const subject = `Your AEO audit for ${hostname} is ready — ${Math.round(geoScore)}/100`;
+  const subject = `Your AEO audit for ${hostname} is ready - ${Math.round(geoScore)}/100`;
   const html = layout(
     `${h1(`Audit complete`)}
     ${p(`Hi ${safeFirstName}, your AEO audit for <strong>${safeHostname}</strong> finished. Here's your score:`)}
@@ -692,21 +646,21 @@ export function auditCompleteEmail(
     ${p("Open your full results to see the breakdown, top recommendations, and quick wins you can ship today.")}
 
     <div style="text-align:center;margin:28px 0;">
-      ${btn("View full results →", auditId ? `${BASE_URL}/results/${auditId}` : `${BASE_URL}/dashboard`)}
+      ${btn("View full results →", auditId ? `${BASE_URL}/results/${auditId}` : BASE_URL)}
     </div>
 
     ${divider()}
     <div style="background:#f5f3ff;border-radius:10px;padding:18px 20px;margin:0;">
       <div style="font-size:13px;font-weight:700;color:#5b21b6;margin-bottom:6px;">Next step: run a prompt simulation</div>
-      <div style="font-size:13px;color:#374151;line-height:1.6;">Your score tells you whether you <em>can</em> be cited. A simulation tells you whether you <em>are</em> — enter the queries your buyers actually use and see which engines name you, which cite your domain, and which recommend a competitor instead.</div>
+      <div style="font-size:13px;color:#374151;line-height:1.6;">The score describes audit signals, not citation eligibility. Review a few buyer questions, then sample responses from the engines available on your plan.</div>
       <div style="margin-top:12px;">
-        <a href="${BASE_URL}/simulate/${auditId || ""}" style="font-size:13px;font-weight:600;color:#5b21b6;text-decoration:underline;">Run a simulation for this audit →</a>
+        <a href="${auditId ? `${BASE_URL}/simulate/${auditId}` : BASE_URL}" style="font-size:13px;font-weight:600;color:#5b21b6;text-decoration:underline;">Run a simulation for this audit →</a>
       </div>
     </div>`,
-    `Your AEO audit for ${hostname} scored ${Math.round(geoScore)}/100 — view the full breakdown.`,
+    `Your AEO audit for ${hostname} scored ${Math.round(geoScore)}/100 - view the full breakdown.`,
     unsubscribeUrl,
   );
-  const text = `Hi ${firstName || "there"},\n\nYour AEO audit for ${hostname} is ready. Score: ${Math.round(geoScore)}/100.\n\nView full results: ${auditId ? `${BASE_URL}/results/${auditId}` : `${BASE_URL}/dashboard`}\n\nRun a prompt simulation to see how AI engines answer in your category.`;
+  const text = `Hi ${firstName || "there"},\n\nYour AEO audit for ${hostname} is ready. Score: ${Math.round(geoScore)}/100.\n\nView full results: ${auditId ? `${BASE_URL}/results/${auditId}` : BASE_URL}\n\nRun a prompt simulation to see how AI engines answer in your category.`;
   return { subject, html, text };
 }
 
@@ -743,7 +697,7 @@ export function simulationReminderEmail(
   return { subject, html, text };
 }
 
-// ── Email: Simulation Complete (transactional — fires after every simulation) ─
+// ── Email: Simulation Complete (transactional - fires after every simulation) ─
 // Simulations can take 1-3 minutes. This email lets users close the tab and
 // come back when the results are in rather than watching a spinner.
 export function simulationCompleteEmail(
@@ -757,7 +711,7 @@ export function simulationCompleteEmail(
   const safeFirstName = esc(firstName) || "there";
   const scoreColor = visibilityScore >= 60 ? "#10b981" : visibilityScore >= 30 ? "#f59e0b" : "#ef4444";
   const subject = `Your AI visibility simulation for ${domain} is done`;
-  const simulateUrl = auditId ? `${BASE_URL}/simulate/${auditId}` : `${BASE_URL}/dashboard`;
+  const simulateUrl = auditId ? `${BASE_URL}/simulate/${auditId}` : BASE_URL;
   const html = layout(
     `${h1(`Simulation complete`)}
     ${p(`Hi ${safeFirstName}, your AI prompt simulation for <strong>${safeDomain}</strong> finished. Here's your visibility score:`)}
@@ -769,15 +723,15 @@ export function simulationCompleteEmail(
       </td></tr>
     </table>
 
-    ${p("The full breakdown shows mention rates, citation rates, and per-prompt results across each AI engine.")}
+    ${p("Read the answers and citations for the engines included in this run. Then choose one relevant unfinished recommendation in Top actions.")}
 
     <div style="text-align:center;margin:28px 0;">
       ${btn("View simulation results →", simulateUrl)}
     </div>
 
     ${divider()}
-    ${p("Try adjusting your prompts or adding competitor domains to the Citation Gap table to see how you compare.", "color:#6b7280;font-size:13px;")}`,
-    `Your AI visibility simulation for ${domain} scored ${Math.round(visibilityScore)}/100 — see the full breakdown.`,
+    ${p("Read the individual answers first. Then return to Top actions for this audit, choose a relevant unfinished recommendation, and implement it on your site. A simulation is a sample, not a guarantee of wider visibility.", "color:#6b7280;font-size:13px;")}`,
+    `Your AI visibility simulation for ${domain} scored ${Math.round(visibilityScore)}/100 - see the full breakdown.`,
     unsubscribeUrl,
   );
   const text = `Hi ${firstName || "there"},\n\nYour AI prompt simulation for ${domain} is done. Visibility score: ${Math.round(visibilityScore)}/100.\n\nView full results: ${simulateUrl}\n\nThe breakdown includes mention rates, citation rates, and per-prompt results across each engine.`;
@@ -790,7 +744,7 @@ export function simulationCompleteEmail(
 // value to free users so they associate this product with weekly insight,
 // not just a tool they used once. Each topic is a self-contained tactic
 // they could implement immediately, with a soft contextual pitch tied to
-// the topic — never a hard pitch decoupled from the content.
+// the topic - never a hard pitch decoupled from the content.
 //
 // Topics rotate by ISO week-of-year mod 6 so the same user gets a different
 // tip every week and only sees a repeat after ~6 weeks.
@@ -806,189 +760,59 @@ type InsightTopic = {
 
 const AEO_INSIGHTS: InsightTopic[] = [
   {
-    subject: "The robots.txt mistake quietly blocking AI from your site",
-    preheader: "OAI-SearchBot, Claude-SearchBot, PerplexityBot — the bots that decide if you CAN be cited.",
-    title: "The robots.txt trap blocking AI from your site",
-    intro:
-      "Most sites still ship the robots.txt they wrote for the SEO era — which routinely blocks the AI crawlers without anyone realising. And in 2026 the distinction that matters is SEARCH bots vs TRAINING bots: blocking a search bot removes you from that engine's citations; blocking a training bot only opts you out of model training.",
-    body: `${p("The citation-critical user-agents — these decide whether you <em>can</em> appear in AI answers:")}
-    <ul style="margin:0 0 16px 0;padding:0 0 0 20px;font-size:14px;line-height:1.8;color:#374151;">
-      <li><code style="background:#f3f4f6;padding:1px 6px;border-radius:3px;font-size:13px;">OAI-SearchBot</code> + <code style="background:#f3f4f6;padding:1px 6px;border-radius:3px;font-size:13px;">ChatGPT-User</code> — ChatGPT Search index &amp; live fetches (separate from GPTBot!)</li>
-      <li><code style="background:#f3f4f6;padding:1px 6px;border-radius:3px;font-size:13px;">Claude-SearchBot</code> + <code style="background:#f3f4f6;padding:1px 6px;border-radius:3px;font-size:13px;">Claude-User</code> — Claude's search index &amp; live fetches</li>
-      <li><code style="background:#f3f4f6;padding:1px 6px;border-radius:3px;font-size:13px;">PerplexityBot</code> + <code style="background:#f3f4f6;padding:1px 6px;border-radius:3px;font-size:13px;">Perplexity-User</code> — Perplexity</li>
-    </ul>
-    ${p("Training-only bots (<code style='background:#f3f4f6;padding:1px 4px;border-radius:3px;font-size:13px;'>GPTBot</code>, <code style='background:#f3f4f6;padding:1px 4px;border-radius:3px;font-size:13px;'>ClaudeBot</code>, <code style='background:#f3f4f6;padding:1px 4px;border-radius:3px;font-size:13px;'>Google-Extended</code>) are a separate decision — block them if you don't want to feed model training; it won't cost you citations. And note: Google AI Overviews use the regular Googlebot, not Google-Extended.")}
-    ${p("Drop this near the top of your <code style='background:#f3f4f6;padding:1px 4px;border-radius:3px;font-size:13px;'>/robots.txt</code> to explicitly welcome the search bots:")}
-    <pre style="background:#0f172a;color:#e2e8f0;padding:14px 16px;border-radius:8px;font-size:12px;line-height:1.5;overflow-x:auto;margin:0 0 16px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;">User-agent: OAI-SearchBot
-Allow: /
-
-User-agent: ChatGPT-User
-Allow: /
-
-User-agent: Claude-SearchBot
-Allow: /
-
-User-agent: Claude-User
-Allow: /
-
-User-agent: PerplexityBot
-Allow: /</pre>
-    ${p("If you have an existing <code style='background:#f3f4f6;padding:1px 4px;border-radius:3px;font-size:13px;'>Disallow: /</code> under <code style='background:#f3f4f6;padding:1px 4px;border-radius:3px;font-size:13px;'>User-agent: *</code>, the per-bot rules above override it for those specific agents — but verify in your audit's Crawler Access section.")}`,
-    pitch:
-      "Run an audit on your site to see exactly which engines' search bots are currently blocked, and which are getting through.",
-    textBody:
-      "Most sites still ship the robots.txt they wrote for SEO — which often blocks the AI crawlers.\n\nThe distinction that matters in 2026: SEARCH bots decide whether you can be cited; TRAINING bots only feed model training.\n\nCitation-critical user-agents:\n- OAI-SearchBot + ChatGPT-User (ChatGPT Search — separate from GPTBot!)\n- Claude-SearchBot + Claude-User (Anthropic)\n- PerplexityBot + Perplexity-User\n\nAdd to /robots.txt:\nUser-agent: OAI-SearchBot\nAllow: /\n\nUser-agent: Claude-SearchBot\nAllow: /\n\n(repeat for each search bot)\n\nBlocking GPTBot/ClaudeBot/Google-Extended is a separate training opt-out — it won't cost you citations.\n\nRun an audit to see which engines you're currently blocking.",
+    "subject": "Check access before changing content",
+    "preheader": "One practical task for your SEO and GEO work this week.",
+    "title": "Check access before changing content",
+    "intro": "Use this as a general check, not a finding that we have confirmed on your website.",
+    "body": "<p style=\"font-size:15px;line-height:1.7;color:#374151;\">Review your audit's crawler-access findings. If a public page is blocked, ask your developer to review the specific rule. Keep private areas protected. Permission to crawl does not prove a bot visited or indexed a page.</p>",
+    "pitch": "Open your dashboard, choose the relevant audit, and check Top actions. Apply this suggestion only if it fits your page and the evidence.",
+    "textBody": "Review your audit's crawler-access findings. If a public page is blocked, ask your developer to review the specific rule. Keep private areas protected. Permission to crawl does not prove a bot visited or indexed a page."
   },
   {
-    subject: "llms.txt is optional — what it can and cannot do",
-    preheader: "A cheap extra worth doing right — as long as you know what it can't do.",
-    title: "llms.txt is an optional content map, not a citation lever",
-    intro:
-      "An llms.txt is a plain-markdown summary of your site placed at the root — an executive briefing for AI agents that arrive without context. Honest framing first: crawler-log studies show the major AI search crawlers rarely fetch it today, so treat it as a cheap extra rather than a citation lever. But agents and AI dev tools do read it when pointed at your site, it takes ten minutes, and if you ship one it should be good.",
-    body: `${p("Here's a minimal but effective structure to start from:")}
-    <pre style="background:#0f172a;color:#e2e8f0;padding:14px 16px;border-radius:8px;font-size:12px;line-height:1.5;overflow-x:auto;margin:0 0 16px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;"># Acme Robotics
-
-> Industrial robotic arms for high-mix, low-volume manufacturing.
-
-## What we do
-We design and manufacture 6-axis robotic arms with payloads from
-3kg to 25kg, sold direct to small-batch manufacturers in North
-America and the EU.
-
-## Key pages
-- [Product specs](https://acme.example/products)
-- [Documentation](https://acme.example/docs)
-- [Pricing](https://acme.example/pricing)
-- [Contact](https://acme.example/contact)
-
-## Optional
-- Founded 2018, headquartered in Boston MA
-- Press inquiries: press@acme.example</pre>
-    ${p("A few things this gets right that many drafts miss:")}
-    <ul style="margin:0 0 16px 0;padding:0 0 0 20px;font-size:14px;line-height:1.8;color:#374151;">
-      <li>The <strong>blockquote one-liner</strong> directly under the H1 — this is the line a model will quote when summarising you.</li>
-      <li>It says <strong>what you sell, to whom, where</strong>. Most llms.txt files describe the product but skip the audience and geography.</li>
-      <li>Linked URLs use the <strong>fully-qualified absolute path</strong>, not relative — agents that fetch this file standalone need the absolute reference.</li>
-    </ul>`,
-    pitch:
-      "Finish citation-critical work first. Pro can draft this optional map after your schema, crawler access, and fresh content are in place.",
-    textBody:
-      "An llms.txt is an optional plain-markdown content map at /llms.txt. Major answer-engine crawlers rarely request it, so it should follow fresh server-visible content, schema, and citation-bot access.\n\nMinimal structure:\n# Brand Name\n> One-line description of what you do.\n\n## What we do\n2-3 sentences: product, audience, geography.\n\n## Key pages\n- Absolute URLs to the most important pages.\n\nPro's Fix Generator can draft the optional map after higher-impact work is complete.",
+    "subject": "Make your company easier to understand",
+    "preheader": "One practical task for your SEO and GEO work this week.",
+    "title": "Make your company easier to understand",
+    "intro": "Use this as a general check, not a finding that we have confirmed on your website.",
+    "body": "<p style=\"font-size:15px;line-height:1.7;color:#374151;\">Read your home, about, and product pages together. Do they agree on who you are, what you offer, who it is for, and what makes it different? Fix one conflicting or vague description using facts you can support.</p>",
+    "pitch": "Open your dashboard, choose the relevant audit, and check Top actions. Apply this suggestion only if it fits your page and the evidence.",
+    "textBody": "Read your home, about, and product pages together. Do they agree on who you are, what you offer, who it is for, and what makes it different? Fix one conflicting or vague description using facts you can support."
   },
   {
-    subject: "FAQ schema: the highest-ROI structured data for AEO",
-    preheader: "AI engines lift Q&A pairs straight into their answers. Here's how.",
-    title: "FAQ schema is the highest-ROI structured data for AEO",
-    intro:
-      "Of all the JSON-LD types you could add, FAQPage routinely earns the most direct lift in AI answers — because the format mirrors exactly how an answer engine wants to consume your content: question, then answer, plain prose, no fluff.",
-    body: `${p("Here's a complete example you can adapt — drop it in a <code style='background:#f3f4f6;padding:1px 4px;border-radius:3px;font-size:13px;'>&lt;script type=\"application/ld+json\"&gt;</code> tag in the &lt;head&gt; of any page that already has a Q&amp;A section:")}
-    <pre style="background:#0f172a;color:#e2e8f0;padding:14px 16px;border-radius:8px;font-size:12px;line-height:1.5;overflow-x:auto;margin:0 0 16px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;">{
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  "mainEntity": [
-    {
-      "@type": "Question",
-      "name": "How much does Acme cost?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Acme is sold on a monthly subscription, with a discounted annual option. See our pricing page for current rates."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Does Acme integrate with Salesforce?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Yes — Acme has a native Salesforce integration that syncs contacts, accounts, and opportunities bidirectionally."
-      }
-    }
-  ]
-}</pre>
-    ${p("Three rules that materially affect lift:")}
-    <ul style="margin:0 0 16px 0;padding:0 0 0 20px;font-size:14px;line-height:1.8;color:#374151;">
-      <li>The <code style="background:#f3f4f6;padding:1px 4px;border-radius:3px;font-size:13px;">name</code> must be the exact natural-language question someone would ask. Not a slug, not a heading fragment.</li>
-      <li>The <code style="background:#f3f4f6;padding:1px 4px;border-radius:3px;font-size:13px;">text</code> must be a complete, self-contained answer. Avoid pronouns that reference earlier context ("it", "this") — assume the answer is excerpted in isolation.</li>
-      <li>Mirror the same Q&amp;A in visible HTML on the page. Schema without matching visible content is a quality-guideline violation.</li>
-    </ul>`,
-    pitch:
-      "Pro's Fix Generator scans your existing pages for Q&A patterns and emits valid FAQPage JSON-LD ready to paste into your <head>.",
-    textBody:
-      "FAQPage JSON-LD is the single highest-ROI structured-data add for AEO.\n\nThree rules that matter:\n1. The 'name' must be a natural-language question, not a slug.\n2. The 'text' must be self-contained — no 'it', no 'this' referencing prior context.\n3. Mirror the Q&A in visible HTML — schema without visible content violates guidelines.\n\nPro's Fix Generator emits this for your existing Q&A sections automatically.",
+    "subject": "Answer the buyer's question first",
+    "preheader": "One practical task for your SEO and GEO work this week.",
+    "title": "Answer the buyer's question first",
+    "intro": "Use this as a general check, not a finding that we have confirmed on your website.",
+    "body": "<p style=\"font-size:15px;line-height:1.7;color:#374151;\">Choose one important page. Put a clear answer to its main question near the beginning, then add examples, limitations, and supporting evidence. Keep lists when they make steps easier to follow.</p>",
+    "pitch": "Open your dashboard, choose the relevant audit, and check Top actions. Apply this suggestion only if it fits your page and the evidence.",
+    "textBody": "Choose one important page. Put a clear answer to its main question near the beginning, then add examples, limitations, and supporting evidence. Keep lists when they make steps easier to follow."
   },
   {
-    subject: "Why direct-answer paragraphs beat listicles for AI citations",
-    preheader: "The single content-structure change that lifts citation rate.",
-    title: "Why direct-answer paragraphs beat listicles for AI citations",
-    intro:
-      "Practitioners running citation tracking across the four major engines consistently report the same pattern: pages that lead with a complete, prose answer in the first paragraph get cited far more often than pages that bury the answer inside a numbered list.",
-    body: `${p("The structural pattern that works:")}
-    <table cellpadding="0" cellspacing="0" width="100%" style="margin:8px 0 20px;">
-      <tr><td style="padding:8px 0;font-size:14px;color:#374151;">
-        <strong>H2:</strong> the question, written exactly as a user would ask it<br/>
-        <strong>First paragraph:</strong> a 2–4 sentence complete answer with the key facts<br/>
-        <strong>Following paragraphs:</strong> the supporting detail, examples, edge cases<br/>
-      </td></tr>
-    </table>
-    ${p("This is the inverted-pyramid structure newsrooms have used for a century, and it maps almost perfectly onto how an answer engine extracts a citable snippet — the model wants a bounded, complete fragment that stands alone outside the page.")}
-    ${p("<strong>Before</strong> (listicle, hard to extract):")}
-    <pre style="background:#fff7ed;border-left:3px solid #fb923c;padding:12px 16px;border-radius:0 6px 6px 0;font-size:13px;line-height:1.6;color:#7c2d12;margin:0 0 12px;">## How to set up SSO
-1. Go to settings
-2. Click integrations
-3. Pick your provider
-4. Paste the metadata URL
-5. Test the login</pre>
-    ${p("<strong>After</strong> (direct answer first, list as supporting detail):")}
-    <pre style="background:#f0fdf4;border-left:3px solid #10b981;padding:12px 16px;border-radius:0 6px 6px 0;font-size:13px;line-height:1.6;color:#064e3b;margin:0 0 16px;">## How do I set up SSO?
-
-You set up SSO in Acme by going to Settings → Integrations,
-selecting your identity provider (Okta, Azure AD, or Google
-Workspace), pasting your provider's metadata URL, and running
-the test login. It typically takes 5–10 minutes.
-
-The full step-by-step:
-1. Navigate to Settings → Integrations
-2. ...</pre>`,
-    pitch:
-      "Run a prompt simulation on a few of your top pages — you'll see immediately whether engines are extracting your answer or skipping past it.",
-    textBody:
-      "Pages that lead with a complete prose answer get cited more than pages that bury the answer in a list.\n\nThe pattern:\n- H2: the question as a user would ask it\n- First paragraph: 2-4 sentence complete answer\n- Following paragraphs: supporting detail\n\nThis is inverted-pyramid structure — newsrooms have used it for a century. It maps onto how answer engines extract a citable snippet.\n\nRun a prompt simulation on your top pages to see whether engines are extracting your answers or skipping past them.",
+    "subject": "Make the evidence easy to find",
+    "preheader": "One practical task for your SEO and GEO work this week.",
+    "title": "Make the evidence easy to find",
+    "intro": "Use this as a general check, not a finding that we have confirmed on your website.",
+    "body": "<p style=\"font-size:15px;line-height:1.7;color:#374151;\">Choose one claim on a key page. Add the real example, methodology, source, or testing details that support it. Do not invent experience or add an updated date without a meaningful update.</p>",
+    "pitch": "Open your dashboard, choose the relevant audit, and check Top actions. Apply this suggestion only if it fits your page and the evidence.",
+    "textBody": "Choose one claim on a key page. Add the real example, methodology, source, or testing details that support it. Do not invent experience or add an updated date without a meaningful update."
   },
   {
-    subject: "Brand entity disambiguation — the AEO foundation everyone skips",
-    preheader: "If models can't tell who you are, they can't cite you.",
-    title: "Brand entity disambiguation: the AEO foundation everyone skips",
-    intro:
-      "Before an AI engine can cite your site, it has to be confident your brand is a discrete, well-defined entity — distinguishable from companies with similar names, common-noun collisions, and the general noise of the open web. This is the part of AEO most teams skip entirely.",
-    body: `${p("The three signals that materially improve entity confidence:")}
-    <table cellpadding="0" cellspacing="0" width="100%" style="margin:8px 0 20px;">
-      ${feature("①", "A Wikidata Q-item", "Even a stub Q-item with your name, founding date, headquarters, and official website creates a stable identifier the major engines reconcile against. You can create one yourself at wikidata.org — no Wikipedia article required.")}
-      ${feature("②", "schema.org/Organization with sameAs", "On your homepage, ship Organization JSON-LD with a sameAs array pointing to your LinkedIn, Crunchbase, GitHub, Wikipedia (if any), and Wikidata Q-item. This explicitly cross-references your identity across the graph.")}
-      ${feature("③", "Consistent name across the open web", "Pick exactly one canonical brand name and use it identically — same casing, same spacing, same suffix (Inc., Ltd., or none) — across your homepage title, footer, social bios, and press releases. Name drift is the single biggest cause of failed entity reconciliation.")}
-    </table>
-    ${p("These three together let an engine answer 'who are they?' with confidence — which is the prerequisite for ever answering 'what do they do?' or 'should I recommend them?' in a citable way.")}`,
-    pitch:
-      "Your audit's Brand Signals section flags entity-disambiguation gaps the first time around — start there.",
-    textBody:
-      "Before an AI engine can cite you, it must be confident your brand is a discrete entity. Most teams skip this entirely.\n\nThree signals that improve entity confidence:\n1. A Wikidata Q-item (even a stub) — wikidata.org, no Wikipedia article needed\n2. schema.org/Organization with sameAs[] linking your LinkedIn, Crunchbase, GitHub, Wikidata\n3. One canonical brand name, used identically across homepage, footer, social, press\n\nName drift is the #1 cause of failed entity reconciliation.\n\nYour audit's Brand Signals section flags these gaps.",
+    "subject": "Check that structured data matches the page",
+    "preheader": "One practical task for your SEO and GEO work this week.",
+    "title": "Check that structured data matches the page",
+    "intro": "Use this as a general check, not a finding that we have confirmed on your website.",
+    "body": "<p style=\"font-size:15px;line-height:1.7;color:#374151;\">Review the schema findings in your audit. Correct inaccurate markup and make sure it describes visible content. Validate generated code before publishing. Schema is not a guarantee of rankings or AI citations.</p>",
+    "pitch": "Open your dashboard, choose the relevant audit, and check Top actions. Apply this suggestion only if it fits your page and the evidence.",
+    "textBody": "Review the schema findings in your audit. Correct inaccurate markup and make sure it describes visible content. Validate generated code before publishing. Schema is not a guarantee of rankings or AI citations."
   },
   {
-    subject: "AI bots have a crawl budget too — make your pages light",
-    preheader: "If your hero text only loads after JavaScript, AI engines see an empty page.",
-    title: "AI bots have a crawl budget too — make your pages light",
-    intro:
-      "Most AI crawlers do not execute JavaScript, or execute it only partially and inconsistently. If the substantive content of your page only appears after a client-side render, an AI bot may see a near-empty document — even though the page looks fine in your browser.",
-    body: `${p("Two diagnostics worth running today:")}
-    <table cellpadding="0" cellspacing="0" width="100%" style="margin:8px 0 20px;">
-      ${feature("🔍", "View source vs. inspect element", "Right-click → View Source on your top page. If the body is mostly empty divs, your content is JS-rendered. If you see your headlines and paragraph text right there in the HTML, you're fine.")}
-      ${feature("⚡", "Curl the page and grep for content", "<code style='background:#f3f4f6;padding:1px 6px;border-radius:3px;font-size:13px;'>curl -s https://yoursite.com | grep -i 'a key phrase from your hero'</code> — if it returns nothing, AI bots see nothing either.")}
-    </table>
-    ${p("If your stack is React/Vue/Angular SPA-only, the fix is a server-side render or static pre-render of at least the first viewport's worth of content. Frameworks: Next.js, Nuxt, Astro, Remix, SvelteKit. The bar is low — AI bots are happy with old-fashioned, server-rendered HTML.")}
-    ${p("And keep page weight reasonable. Heavy pages with long third-party script chains can be abandoned mid-fetch by crawlers operating under tight time budgets — strip what you can from the critical render path.")}`,
-    pitch:
-      "Your audit reports both raw-HTML word count and rendered word count — a big gap between the two is the smoking gun for JS-rendering issues.",
-    textBody:
-      "Most AI crawlers don't execute JavaScript, or do so unreliably. If your content only appears after a client-side render, AI bots may see an empty page.\n\nTwo quick diagnostics:\n1. View Source on your top page — if body is mostly empty divs, content is JS-rendered.\n2. curl -s https://yoursite.com | grep 'a key phrase' — if nothing returns, AI bots see nothing.\n\nFix: SSR or static pre-render at least the first viewport. Use Next.js, Nuxt, Astro, Remix, SvelteKit.\n\nYour audit reports raw-HTML word count vs rendered word count — a big gap is the smoking gun.",
-  },
+    "subject": "Compare results after a real improvement",
+    "preheader": "One practical task for your SEO and GEO work this week.",
+    "title": "Compare results after a real improvement",
+    "intro": "Use this as a general check, not a finding that we have confirmed on your website.",
+    "body": "<p style=\"font-size:15px;line-height:1.7;color:#374151;\">Record what you changed and when. Re-audit the same page when you are ready, within your allowance. Pro and Agency users can also review connected Google data and tracked keywords. Changes in results do not establish causation.</p>",
+    "pitch": "Open your dashboard, choose the relevant audit, and check Top actions. Apply this suggestion only if it fits your page and the evidence.",
+    "textBody": "Record what you changed and when. Re-audit the same page when you are ready, within your allowance. Pro and Agency users can also review connected Google data and tracked keywords. Changes in results do not establish causation."
+  }
 ];
 
 export function aeoInsightsEmail(firstName: string, weekIndex: number, unsubscribeUrl?: string) {
@@ -1011,11 +835,11 @@ export function aeoInsightsEmail(firstName: string, weekIndex: number, unsubscri
     <div style="text-align:center;margin:24px 0;">
       ${btn("Open AEO Improvement →", `${BASE_URL}/`)}
     </div>
-    ${p("Reply with what you'd like to read about next week — we curate these from real questions.", "color:#6b7280;font-size:13px;")}`,
+    ${p("Reply with what you'd like to read about next week - we curate these from real questions.", "color:#6b7280;font-size:13px;")}`,
     topic.preheader,
     unsubscribeUrl,
   );
-  const text = `Hi ${firstName || "there"},\n\n${topic.title}\n\n${topic.textBody}\n\n— Try it on your site: ${topic.pitch}\n\nOpen AEO Improvement: ${BASE_URL}/\n\nReply with what you'd like to read about next week.`;
+  const text = `Hi ${firstName || "there"},\n\n${topic.title}\n\n${topic.textBody}\n\n- Try it on your site: ${topic.pitch}\n\nOpen AEO Improvement: ${BASE_URL}/\n\nReply with what you'd like to read about next week.`;
   return { subject: topic.subject, html, text };
 }
 
@@ -1024,98 +848,16 @@ export function aeoInsightsEmail(firstName: string, weekIndex: number, unsubscri
 // for the same user. The signal: someone re-audited their site, which is
 // the strongest engagement moment we get outside of first-audit. Improved
 // scores get a celebration; declined scores get a diagnostic frame.
-export function scoreChangedEmail(
-  firstName: string,
-  url: string,
-  previousScore: number, // 0-100
-  currentScore: number,  // 0-100
-  topRecommendation: string | null,
-  auditId?: string | null,
-  unsubscribeUrl?: string,
-) {
-  const hostname = (() => { try { return new URL(url).hostname; } catch { return url; } })();
-  const safeHostname = esc(hostname);
-  const safeFirstName = esc(firstName) || "there";
-  const safeTopRec = esc(topRecommendation);
-  const prev = Math.round(previousScore);
-  const curr = Math.round(currentScore);
-  const delta = curr - prev;
-  const improved = delta > 0;
-  const arrow = improved ? "↑" : "↓";
-  const accent = improved ? "#10b981" : "#f59e0b"; // celebrate vs amber-warn (not red — we don't want it to feel punitive)
-
-  const subject = improved
-    ? `${safeHostname.replace(/&[^;]+;/g, "")} +${delta} AEO points (${prev} to ${curr})`
-    : `${safeHostname.replace(/&[^;]+;/g, "")} dropped ${Math.abs(delta)} AEO points: let's find the cause`;
-  // (Subject string above will be re-escaped by Postmark; the .replace strips
-  // any HTML-escape entities we accidentally introduced via esc() since
-  // headers don't decode them.)
-  const cleanSubject = improved
-    ? `${hostname} +${delta} AEO points (${prev} to ${curr})`
-    : `${hostname} dropped ${Math.abs(delta)} AEO points: let's find the cause`;
-
-  const headline = improved ? "Your AEO score went up 🎉" : "Your AEO score dropped";
-  const lede = improved
-    ? `Nice — your latest audit on <strong>${safeHostname}</strong> came back <strong style="color:${accent};">+${delta} points</strong> higher than the previous one. Whatever you changed, it's working.`
-    : `Heads up — your latest audit on <strong>${safeHostname}</strong> came back <strong style="color:${accent};">${delta} points</strong> lower than the previous run. Most score drops trace back to one of three causes (below) and are quick to reverse.`;
-
-  const diagnosticBlock = improved
-    ? `${p("To keep the momentum:")}
-    <table cellpadding="0" cellspacing="0" width="100%" style="margin:8px 0 16px;">
-      ${feature("🔬", "Run a prompt simulation", "Confirm the gain is showing up in actual AI answers — not just the audit score.")}
-      ${feature("📈", "Audit again in 2 weeks", "Most improvements take a fresh crawl cycle to fully propagate. The next audit will show the durable change.")}
-      ${feature("🎯", "Tackle one more recommendation", "Compounding small wins is how the leaderboards on this score are built.")}
-    </table>`
-    : `${p("The three most common causes of a score drop:")}
-    <table cellpadding="0" cellspacing="0" width="100%" style="margin:8px 0 16px;">
-      ${feature("①", "A robots.txt change blocked an AI bot", "Check the Crawler Access section of the new audit — if any of the four engines flipped from green to red, that's it.")}
-      ${feature("②", "Schema markup was removed or broke", "JSON-LD that used to validate may have broken on a recent deploy. Check the Schema Types section against the prior audit.")}
-      ${feature("③", "Hero / above-fold content changed", "A redesign that moved key content below the fold or into JS-only renders will tank citability score even though the page looks fine.")}
-    </table>`;
-
-  const recBlock = safeTopRec
-    ? `<div style="margin:20px 0;padding:18px 20px;background:${improved ? "#ecfdf5" : "#fef3c7"};border-left:4px solid ${accent};border-radius:6px;">
-        <div style="font-size:12px;font-weight:600;color:${accent};text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;">${improved ? "Top opportunity to keep going" : "Top fix to recover"}</div>
-        <div style="font-size:14px;color:#374151;line-height:1.6;">${safeTopRec}</div>
-      </div>`
-    : "";
-
-  const html = layout(
-    `${h1(headline)}
-    ${p(lede)}
-
-    <table cellpadding="0" cellspacing="0" width="100%" style="margin:20px 0;background:#f9fafb;border-radius:12px;">
-      <tr><td style="padding:24px;text-align:center;">
-        <div style="display:inline-block;font-size:32px;font-weight:700;color:#9ca3af;line-height:1;">${prev}</div>
-        <div style="display:inline-block;font-size:32px;font-weight:700;color:${accent};line-height:1;padding:0 16px;">${arrow}</div>
-        <div style="display:inline-block;font-size:48px;font-weight:800;color:${accent};line-height:1;">${curr}<span style="font-size:24px;color:#9ca3af;">/100</span></div>
-        <div style="font-size:13px;color:#6b7280;margin-top:8px;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;">${improved ? `+${delta} points` : `${delta} points`}</div>
-      </td></tr>
-    </table>
-
-    ${recBlock}
-    ${diagnosticBlock}
-
-    <div style="text-align:center;margin:24px 0;">
-      ${btn("Open the new audit →", auditId ? `${BASE_URL}/results/${auditId}` : BASE_URL)}
-    </div>
-    ${divider()}
-    ${p(improved
-      ? "Pro unlocks 100 audits per month, the Fix Generator for JSON-LD and crawler rules, and full score history so you can see the arc of every improvement."
-      : "Pro's Fix Generator can re-draft your schema and crawler rules in minutes if a deploy broke them, and full audit history shows you exactly when the drop started.",
-      "color:#6b7280;font-size:13px;")}`,
-    improved
-      ? `Your score on ${hostname} went from ${prev} to ${curr} — nice work.`
-      : `Your score on ${hostname} dropped from ${prev} to ${curr} — three common causes inside.`,
-    unsubscribeUrl,
-  );
-  const text = improved
-    ? `Hi ${firstName || "there"},\n\nYour latest audit on ${hostname} came back +${delta} points higher (${prev} to ${curr}). Whatever you changed, it's working.\n\n${topRecommendation ? `Top opportunity to keep going: ${topRecommendation}\n\n` : ""}To keep momentum:\n- Run a prompt simulation to confirm the gain shows in real AI answers\n- Audit again in 2 weeks (improvements take a crawl cycle to propagate)\n- Tackle one more recommendation\n\nOpen the new audit: ${auditId ? `${BASE_URL}/results/${auditId}` : BASE_URL}`
-    : `Hi ${firstName || "there"},\n\nYour latest audit on ${hostname} came back ${delta} points lower (${prev} to ${curr}). Most score drops trace to one of three causes:\n\n1. A robots.txt change blocked an AI bot — check Crawler Access\n2. Schema markup was removed or broke on a recent deploy\n3. Hero / above-fold content moved below fold or into JS-only renders\n\n${topRecommendation ? `Top fix to recover: ${topRecommendation}\n\n` : ""}Open the new audit: ${auditId ? `${BASE_URL}/results/${auditId}` : BASE_URL}`;
-  return { subject: cleanSubject, html, text };
+export function scoreChangedEmail(firstName: string, url: string, previousScore: number, currentScore: number, topRecommendation: string | null, auditId?: string | null, unsubscribeUrl?: string) {
+  return guidedEmail(firstName, "Your audit score changed: review the findings", [
+    `Your latest audit score changed from ${Math.round(previousScore)} to ${Math.round(currentScore)} for ${url}.`,
+    "Compare the findings for the same page before deciding what to change. Check crawler access, structured data, and visible content against the previous audit.",
+    topRecommendation ? `Recommendation to review: ${topRecommendation}` : "Open Top actions and choose one relevant unfinished recommendation.",
+    "Record your implementation, then re-audit when ready. A score change is not proof of a ranking change or increased AI citations."
+  ], "Review this audit", auditId ? `${BASE_URL}/results/${auditId}#recommendations` : BASE_URL, unsubscribeUrl);
 }
 
-// "Approaching limit" — fires once per kind per month for free users when
+// "Approaching limit" - fires once per kind per month for free users when
 // they hit cap-1 (e.g. 4 of 5 audits used). Lower-friction nudge than
 // the wall-hit limit-reached email; most upgrades happen at THIS step,
 // not at the wall. Single, friendly, one CTA.
@@ -1130,15 +872,15 @@ export function approachingLimitEmail(
   const remaining = Math.max(0, cap - used);
   const kindLabel = kind === "audits" ? "audits" : "prompt simulations";
   const KindCap = kind === "audits" ? "audits" : "simulations";
-  const subject = `${used} of ${cap} free ${KindCap} used — ${remaining} left this month`;
-  const preheader = `Heads up — you're one ${kind === "audits" ? "audit" : "simulation"} away from your monthly cap on the free plan.`;
+  const subject = `${used} of ${cap} free ${KindCap} used - ${remaining} left this month`;
+  const preheader = `Heads up - you're one ${kind === "audits" ? "audit" : "simulation"} away from your monthly cap on the free plan.`;
 
   const proCap = kind === "audits" ? 100 : 30;
   const pitch = kind === "audits"
-    ? "Pro gives you 100 audits a month — plus all 4 AI engines, the Fix Generator for JSON-LD and crawler rules, and competitor citation tracking."
-    : "Pro gives you 30 prompt simulations a month — across all 4 AI engines instead of just ChatGPT, and 25 prompts per simulation instead of 3.";
+    ? "Pro gives you 100 audits a month - plus all 4 AI engines, the Fix Generator for JSON-LD and crawler rules, and competitor citation tracking."
+    : "Pro gives you 30 prompt simulations a month - across all 4 AI engines instead of just ChatGPT, and 25 prompts per simulation instead of 3.";
 
-  // Visual usage bar — pure HTML/CSS table so it renders in every client.
+  // Visual usage bar - pure HTML/CSS table so it renders in every client.
   const pct = Math.round((used / cap) * 100);
   const bar = `
     <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
@@ -1158,111 +900,48 @@ export function approachingLimitEmail(
 
   const content = `
     ${h1(`You're approaching your monthly ${kind === "audits" ? "audit" : "simulation"} limit`)}
-    ${p(`Hi ${safeFirstName} — quick heads up. You've used ${used} of your ${cap} free ${kindLabel} this month, with ${remaining} left before things pause until next month.`)}
+    ${p(`Hi ${safeFirstName} - quick heads up. You've used ${used} of your ${cap} free ${kindLabel} this month, with ${remaining} left before things pause until next month.`)}
     ${bar}
     ${p(pitch)}
-    ${p(`<strong style="color:#111827;">Upgrading takes 30 seconds and you can keep auditing immediately.</strong>`)}
+    ${p(`<strong style="color:#111827;">Review the current plan limits before choosing. You can also keep working on recommendations from existing audits.</strong>`)}
     <div style="text-align:center;margin:8px 0 0;">
-      ${btn(`Upgrade to Pro — ${proCap}/mo`, `${BASE_URL}/upgrade?source=approaching-${kind}`)}
+      ${btn(`Upgrade to Pro - ${proCap}/mo`, `${BASE_URL}/upgrade?source=approaching-${kind}`)}
     </div>
     ${p(`If you'd rather wait, your quota resets on the 1st. No charge, no action needed.`, "margin-top:24px;font-size:13px;color:#6b7280;text-align:center;")}
   `;
 
   const html = layout(content, preheader, unsubscribeUrl);
-  const text = `Hi ${firstName || "there"},\n\nQuick heads up — you've used ${used} of your ${cap} free ${kindLabel} this month. ${remaining} left before next month's reset.\n\n${pitch}\n\nUpgrade to Pro: ${BASE_URL}/upgrade?source=approaching-${kind}\n\nOr wait — your quota resets on the 1st.`;
+  const text = `Hi ${firstName || "there"},\n\nQuick heads up - you've used ${used} of your ${cap} free ${kindLabel} this month. ${remaining} left before next month's reset.\n\n${pitch}\n\nUpgrade to Pro: ${BASE_URL}/upgrade?source=approaching-${kind}\n\nOr wait - your quota resets on the 1st.`;
   return { subject, html, text };
 }
 
-// "What you didn't see" — fires after a free user's audit (NOT their first;
+// "What you didn't see" - fires after a free user's audit (NOT their first;
 // that's handled by firstAuditEmail). Throttled to once per 7 days. Shows
 // what their actual report would look like with all 4 engines + a teaser
 // of the Fix Generator output for their hostname. Specific to their data,
 // not abstract feature marketing.
-export function whatYouMissedEmail(
-  firstName: string,
-  url: string,
-  geoScore: number,
-  unsubscribeUrl?: string,
-) {
-  const safeFirstName = esc(firstName) || "there";
-  const hostname = (() => { try { return new URL(url).hostname; } catch { return url; } })();
-  const safeHostname = esc(hostname);
-  const subject = `Here's what your ${hostname} audit looks like on Pro`;
-  const preheader = `Free shows ChatGPT only. Pro shows all 4 engines and generates technical fixes for ${hostname}.`;
-
-  // Engine row — three locked cards for the engines free users don't get.
-  // We deliberately use real product names; users see them everywhere else
-  // in the AI search ecosystem so they recognize the value gap.
-  const engineCard = (name: string, blurb: string) => `
-    <td width="33%" valign="top" style="padding:0 6px;">
-      <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;">
-        <tr><td style="padding:14px;text-align:center;">
-          <div style="font-size:14px;font-weight:700;color:#111827;margin-bottom:4px;">🔒 ${name}</div>
-          <div style="font-size:11px;color:#6b7280;line-height:1.4;">${blurb}</div>
-        </td></tr>
-      </table>
-    </td>`;
-
-  // Fix Generator preview — a tailored Organization schema teaser that uses
-  // the user's actual hostname. This is a hand-crafted
-  // template fragment that demonstrates what the real generator produces.
-  const schemaPreview = `&lt;script type="application/ld+json"&gt;
-{
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  "name": "[Your verified brand name]",
-  "url": "https://${hostname}/",
-  "sameAs": []
-}
-&lt;/script&gt;
-<span style="color:#9ca3af;">Related profiles stay empty until you confirm ownership.</span>`;
-
-  const content = `
-    ${h1(`Your ${safeHostname} audit, on Pro`)}
-    ${p(`Hi ${safeFirstName} — your free audit gave you a GEO score and a recommendation list. Here's what the same audit returns on the Pro plan, against your actual site.`)}
-
-    <div style="margin:24px 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:0.06em;color:#6b7280;font-weight:600;">
-      Engines you didn't see results from
-    </div>
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
-      <tr>
-        ${engineCard("Claude", "Anthropic's reasoning model — used by enterprise teams for AI search.")}
-        ${engineCard("Gemini", "Google's AI — directly powers AI Overviews in Google Search.")}
-        ${engineCard("Perplexity", "Citation-first AI search; high-intent commercial queries.")}
-      </tr>
-    </table>
-    ${p(`Free runs prompts against ChatGPT only. Pro runs the same prompts against all four — so you actually see whether ${safeHostname} gets cited where your buyers are searching, not just one of four places.`, "font-size:14px;color:#4b5563;")}
-
-    <div style="margin:32px 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:0.06em;color:#6b7280;font-weight:600;">
-      Your Organization schema (preview)
-    </div>
-    <pre style="background:#0f172a;color:#e2e8f0;font-family:'SFMono-Regular',Menlo,Monaco,Consolas,monospace;font-size:12px;line-height:1.65;padding:16px 20px;border-radius:8px;overflow-x:auto;margin:0 0 12px;white-space:pre-wrap;">${schemaPreview}</pre>
-    ${p(`Pro's Fix Generator drafts FAQPage and Organization JSON-LD plus citation-bot robots.txt additions. An llms.txt content map is included as an explicitly optional extra.`, "font-size:14px;color:#4b5563;")}
-
-    <div style="text-align:center;margin:32px 0 0;">
-      ${btn(`Unlock all 4 engines + Fix Generator`, `${BASE_URL}/upgrade?source=what-you-missed`)}
-    </div>
-    ${p(`No commitment — cancel any time from your dashboard. Annual billing saves on the monthly rate.`, "margin-top:16px;font-size:12px;color:#6b7280;text-align:center;")}
-  `;
-
-  const html = layout(content, preheader, unsubscribeUrl);
-  const text = `Hi ${firstName || "there"},\n\nYour free audit on ${hostname} gave you a score (${geoScore}/100) and a recommendation list. Here's what the same audit returns on Pro:\n\nEngines you didn't see:\n- Claude (Anthropic)\n- Gemini (Google — powers AI Overviews)\n- Perplexity (citation-first AI search)\n\nFree = ChatGPT only. Pro = all four, side by side.\n\nPlus, Pro's Fix Generator auto-drafts FAQPage and Organization JSON-LD plus citation-bot robots.txt additions. Copy, paste, ship.\n\nUpgrade: ${BASE_URL}/upgrade?source=what-you-missed\n\nNo commitment — cancel any time.`;
-  return { subject, html, text };
+export function whatYouMissedEmail(firstName: string, url: string, geoScore: number, unsubscribeUrl?: string) {
+  return guidedEmail(firstName, "Need more measurement for your next improvement?", [
+    "Start with the recommendations already available in your dashboard. You can work on your website before upgrading.",
+    "Starter adds more audits and implementation-ready fixes. Pro and Agency add connected Google reporting, selected keyword tracking, and multi-engine prompt simulations within plan limits.",
+    "After upgrading to Pro or Agency, open Tracking to connect Google. Then open SEO opportunities in your audit and choose the keywords, location, and device you want to track.",
+    "Upgrading does not automatically run every test or install changes on your website. Review the current plans and allowances before choosing."
+  ], "Compare plans", `${BASE_URL}/upgrade?source=what-you-missed`, unsubscribeUrl);
 }
 
 // ── Email: Free-month launch promo announcement (one-time) ───────────────────
 // Sent once to every account that existed when the free all-access first
 // month shipped (the promo grant gave them a fresh 30-day window). New
-// signups never get this — their welcome email covers the same ground.
+// signups never get this - their welcome email covers the same ground.
 export function freeMonthPromoEmail(firstName: string, endsAt: Date, unsubscribeUrl?: string) {
   const safeFirstName = esc(firstName) || "there";
   const endDate = endsAt.toLocaleDateString("en-US", { month: "long", day: "numeric" });
   const subject = "Your core audit features are free for a full month 🎁";
   const html = layout(
-    `${h1("We unlocked everything for you")}
+    `${h1("Your guided trial is ready")}
     ${p(`Hi ${safeFirstName}, good news: for the next month, <strong>all core audit features are free on your account</strong>. No credit card and nothing to activate. It's already on.`)}
     <table cellpadding="0" cellspacing="0" width="100%" style="margin:8px 0 24px;">
-      ${feature("🔬", "All 4 AI engines", "Run simulations against ChatGPT, Claude, Gemini, and Perplexity — see exactly who cites you where.")}
+      ${feature("🔬", "All 4 AI engines", "Run simulations against ChatGPT, Claude, Gemini, and Perplexity - see exactly who cites you where.")}
       ${feature("🔧", "Fix Generator", "Auto-drafts JSON-LD schema and citation-bot robots.txt patches. Copy and ship.")}
       ${feature("📡", "Continuous monitoring", "Add your sites once and get re-audited on a schedule, with alerts when your score moves.")}
       ${feature("📊", "Competitor tracking & sentiment", "The citation gap table and brand sentiment analysis, fully unlocked.")}
@@ -1274,14 +953,14 @@ export function freeMonthPromoEmail(firstName: string, endsAt: Date, unsubscribe
       </td></tr>
     </table>
     <div style="text-align:center;margin:24px 0;">
-      ${btn("Start using everything →", BASE_URL)}
+      ${btn("Open my dashboard", BASE_URL)}
     </div>
     ${divider()}
-    ${p(`After ${endDate} your account simply returns to your current plan — nothing is charged and your data stays put. We'll remind you a few days before.`, "color:#6b7280;font-size:13px;")}`,
-    `All 4 engines, Fix Generator, monitoring, competitor tracking — free on your account until ${endDate}.`,
+    ${p(`After ${endDate} your account simply returns to your current plan - nothing is charged and your data stays put. We'll remind you a few days before.`, "color:#6b7280;font-size:13px;")}`,
+    `All 4 engines, Fix Generator, monitoring, competitor tracking - free on your account until ${endDate}.`,
     unsubscribeUrl,
   );
-  const text = `Hi ${firstName || "there"},\n\nGood news: for the next month, all core audit features are free on your account. No credit card and nothing to activate.\n\nNow unlocked for you:\n- All 4 AI engines (ChatGPT, Claude, Gemini, Perplexity)\n- Fix Generator (JSON-LD, citation-bot robots.txt, optional llms.txt)\n- Continuous monitoring with alerts\n- Competitor tracking & sentiment analysis\n- 150 audits + 40 simulations this month\n\nConnected GA4 reporting is available on paid plans.\n\nFree until ${endDate}: ${BASE_URL}\n\nAfter that your account simply returns to your current plan and nothing is charged. We'll remind you a few days before.`;
+  const text = `Hi ${firstName || "there"},\n\nGood news: for the next month, all core audit features are free on your account. No credit card and nothing to activate.\n\nNow unlocked for you:\n- All 4 AI engines (ChatGPT, Claude, Gemini, Perplexity)\n- Fix Generator (JSON-LD, citation-bot robots.txt, optional llms.txt)\n- Continuous monitoring with alerts\n- Competitor tracking & sentiment analysis\n- 150 audits + 40 simulations this month\n\nConnected Google reporting and keyword tracking require Pro or Agency.\n\nFree until ${endDate}: ${BASE_URL}\n\nAfter that your account simply returns to your current plan and nothing is charged. We'll remind you a few days before.`;
   return { subject, html, text };
 }
 
@@ -1292,13 +971,13 @@ export function freeMonthPromoEmail(firstName: string, endsAt: Date, unsubscribe
 export function trialEndingSoonEmail(firstName: string, endsAt: Date, unsubscribeUrl?: string) {
   const safeFirstName = esc(firstName) || "there";
   const endDate = endsAt.toLocaleDateString("en-US", { month: "long", day: "numeric" });
-  const subject = `Your 30-day full-access trial ends ${endDate}`;
+  const subject = `Your 30-day guided trial ends ${endDate}`;
   const html = layout(
     `${h1("Your free month is almost up")}
     ${p(`Hi ${safeFirstName}, your free month of AEO Improvement with all core audit features unlocked ends on <strong>${endDate}</strong>.`)}
     ${p("After that, your account moves to the free plan and you'll lose:")}
     <table cellpadding="0" cellspacing="0" width="100%" style="margin:8px 0 24px;">
-      ${feature("🔬", "All 4 AI engines", "Simulations drop back to ChatGPT only — no more Claude, Gemini, or Perplexity results.")}
+      ${feature("🔬", "All 4 AI engines", "Simulations drop back to ChatGPT only - no more Claude, Gemini, or Perplexity results.")}
       ${feature("🔧", "Fix Generator", "No more auto-generated JSON-LD schema or citation-bot robots.txt patches.")}
       ${feature("📡", "Continuous monitoring", "Scheduled re-audits and score alerts stop running for your sites.")}
       ${feature("📊", "Competitor tracking & sentiment", "The citation gap table and brand sentiment analysis lock again.")}
@@ -1314,11 +993,11 @@ export function trialEndingSoonEmail(firstName: string, endsAt: Date, unsubscrib
       ${btn("Choose my plan →", `${BASE_URL}/pricing?source=trial-ending`)}
     </div>
     ${divider()}
-    ${p("Do nothing and you'll land on the free plan — 5 audits and 2 simulations a month, ChatGPT only. Your audit history and account stay safe either way.", "color:#6b7280;font-size:13px;")}`,
+    ${p("Do nothing and you'll land on the free plan - 5 audits and 2 simulations a month, ChatGPT only. Your account remains available; audit history follows your plan's retention window.", "color:#6b7280;font-size:13px;")}`,
     `Your core audit features stay unlocked until ${endDate}. Here's how to keep them after that.`,
     unsubscribeUrl,
   );
-  const text = `Hi ${firstName || "there"},\n\nYour free core-feature month ends on ${endDate}. After that your account moves to the free plan and you'll lose:\n- All 4 AI engines (back to ChatGPT only)\n- Fix Generator\n- Continuous monitoring & alerts\n- Competitor tracking & sentiment analysis\n\nChoose the next step that fits:\n- Starter, $29/month: one site, more SEO and GEO audits, guided improvements, and implementation-ready fixes\n- Pro, $79/month: Search Console, GA4, rank tracking, monitoring, and all four AI engines\n\nChoose your plan: ${BASE_URL}/pricing?source=trial-ending\n\nDo nothing and you'll land on the free plan. Your audit history and account stay safe either way.`;
+  const text = `Hi ${firstName || "there"},\n\nYour free core-feature month ends on ${endDate}. After that your account moves to the free plan and you'll lose:\n- All 4 AI engines (back to ChatGPT only)\n- Fix Generator\n- Continuous monitoring & alerts\n- Competitor tracking & sentiment analysis\n\nChoose the next step that fits:\n- Starter, $29/month: one site, more SEO and GEO audits, guided improvements, and implementation-ready fixes\n- Pro, $79/month: Search Console, GA4, rank tracking, monitoring, and all four AI engines\n\nChoose your plan: ${BASE_URL}/pricing?source=trial-ending\n\nDo nothing and you'll land on the free plan. Your account remains available; audit history follows your plan's retention window.`;
   return { subject, html, text };
 }
 
@@ -1329,7 +1008,7 @@ export function trialEndingSoonEmail(firstName: string, endsAt: Date, unsubscrib
 // firing for long-lapsed legacy accounts.
 export function trialEndedEmail(firstName: string, unsubscribeUrl?: string) {
   const safeFirstName = esc(firstName) || "there";
-  const subject = "Your 30-day full-access trial has ended";
+  const subject = "Your 30-day guided trial has ended";
   const html = layout(
     `${h1("Your free month has ended")}
     ${p(`Hi ${safeFirstName}, your free month with all core audit features unlocked is over, and your account is now on the <strong>free plan</strong>.`)}
@@ -1337,7 +1016,7 @@ export function trialEndedEmail(firstName: string, unsubscribeUrl?: string) {
     <ul style="margin:0 0 16px 0;padding:0 0 0 20px;font-size:14px;line-height:1.8;color:#374151;">
       <li>5 AEO audits per month with full recommendations</li>
       <li>2 prompt simulations per month (ChatGPT, 3 prompts)</li>
-      <li>Your complete audit history from your free month</li>
+      <li>Audit history within your plan's retention window</li>
     </ul>
     ${p("You can now choose the next level based on whether you want guided improvements or ongoing measurement:")}
     <table cellpadding="0" cellspacing="0" width="100%" style="margin:16px 0;background:#ecfdf5;border-radius:8px;border:1px solid #a7f3d0;">
@@ -1350,31 +1029,31 @@ export function trialEndedEmail(firstName: string, unsubscribeUrl?: string) {
       ${btn("Compare Starter and Pro →", `${BASE_URL}/pricing?source=trial-ended`)}
     </div>
     ${divider()}
-    ${p("No pressure — the free plan doesn't expire, and your data isn't going anywhere.", "color:#6b7280;font-size:13px;")}`,
-    "Your account is now on the free plan — here's what you keep, and how to get everything back.",
+    ${p("You can keep using the free plan. Audit history follows your plan's retention window.", "color:#6b7280;font-size:13px;")}`,
+    "Your account is now on the free plan - here's what you keep, and how to get everything back.",
     unsubscribeUrl,
   );
-  const text = `Hi ${firstName || "there"},\n\nYour free core-feature month has ended and your account is now on the free plan.\n\nYou keep, free forever:\n- 5 audits/month\n- 2 simulations/month (ChatGPT)\n- Your full audit history\n\nChoose the next step that fits:\n- Starter, $29/month: one site, guided SEO and GEO improvements, and implementation-ready fixes\n- Pro, $79/month: Google data, rank tracking, monitoring, all four AI engines, and competitor analysis\n\nCompare plans: ${BASE_URL}/pricing?source=trial-ended\n\nNo pressure. The free plan doesn't expire.`;
+  const text = `Hi ${firstName || "there"},\n\nYour free core-feature month has ended and your account is now on the free plan.\n\nYou keep, free forever:\n- 5 audits/month\n- 2 simulations/month (ChatGPT)\n- Audit history within your plan's retention window\n\nChoose the next step that fits:\n- Starter, $29/month: one site, guided SEO and GEO improvements, and implementation-ready fixes\n- Pro, $79/month: Google data, rank tracking, monitoring, all four AI engines, and competitor analysis\n\nCompare plans: ${BASE_URL}/pricing?source=trial-ended\n\nNo pressure. The free plan doesn't expire.`;
   return { subject, html, text };
 }
 
 export function referralRewardPendingEmail(firstName: string, amountDollars: number, upgradeUrl?: string, unsubscribeUrl?: string) {
   const safeName = esc(firstName || "there");
-  const subject = `You earned $${amountDollars} — upgrade to claim your referral credit`;
+  const subject = `You earned $${amountDollars} - upgrade to claim your referral credit`;
   const preheader = `Someone you referred just upgraded. Your $${amountDollars} is waiting.`;
   const upgradeLink = upgradeUrl || `${BASE_URL}/pricing`;
   const content = `
     ${h1(`You earned $${amountDollars}`)}
-    ${p(`Hi ${safeName} — someone you referred just upgraded to a paid AEO Improvement plan. Your $${amountDollars} referral credit is banked and waiting.`)}
+    ${p(`Hi ${safeName} - someone you referred just upgraded to a paid AEO Improvement plan. Your $${amountDollars} referral credit is banked and waiting.`)}
     <div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;padding:24px 28px;margin:24px 0;text-align:center;">
       <div style="font-size:40px;font-weight:800;color:#059669;">$${amountDollars}</div>
       <div style="font-size:14px;color:#065f46;margin-top:4px;">ready to apply to your account</div>
     </div>
-    ${p(`When you upgrade to a paid plan, this credit will be applied automatically to your first invoice. No action needed — it just happens.`)}
+    ${p(`When you upgrade to a paid plan, this credit will be applied automatically to your first invoice. No action needed - it just happens.`)}
     <div style="text-align:center;margin:28px 0 0;">
       ${btn("See plans", upgradeLink)}
     </div>
-    ${p(`No commitment — cancel any time. Annual billing saves on the monthly rate.`, "margin-top:16px;font-size:12px;color:#6b7280;text-align:center;")}
+    ${p(`No commitment - cancel any time. Annual billing saves on the monthly rate.`, "margin-top:16px;font-size:12px;color:#6b7280;text-align:center;")}
   `;
   const html = layout(content, preheader, unsubscribeUrl);
   const text = `Hi ${firstName || "there"},\n\nSomeone you referred just upgraded to a paid plan. Your $${amountDollars} referral credit is waiting.\n\nWhen you upgrade, this credit applies automatically to your first invoice.\n\nSee plans: ${upgradeLink}`;
@@ -1383,11 +1062,11 @@ export function referralRewardPendingEmail(firstName: string, amountDollars: num
 
 export function referralRewardEmail(firstName: string, amountDollars: number, unsubscribeUrl?: string) {
   const safeName = esc(firstName || "there");
-  const subject = `You earned $${amountDollars} — someone you referred just upgraded`;
+  const subject = `You earned $${amountDollars} - someone you referred just upgraded`;
   const preheader = `Your $${amountDollars} referral credit has been applied to your account.`;
   const content = `
     ${h1(`You earned $${amountDollars}`)}
-    ${p(`Hi ${safeName} — someone you referred just upgraded to a paid AEO Improvement plan. We have applied a $${amountDollars} credit to your account. It will be deducted automatically from your next invoice.`)}
+    ${p(`Hi ${safeName} - someone you referred just upgraded to a paid AEO Improvement plan. We have applied a $${amountDollars} credit to your account. It will be deducted automatically from your next invoice.`)}
     <div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;padding:24px 28px;margin:24px 0;text-align:center;">
       <div style="font-size:40px;font-weight:800;color:#059669;">$${amountDollars}</div>
       <div style="font-size:14px;color:#065f46;margin-top:4px;">applied to your account</div>

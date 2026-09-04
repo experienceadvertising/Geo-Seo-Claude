@@ -260,9 +260,8 @@ async function runWeeklyDigests() {
         .where(and(eq(recommendationProgressTable.userId, user.id), eq(recommendationProgressTable.domain, domain))) : [];
       completedActions = completed.length;
       const done = new Set(completed.map((row) => row.recommendationId));
-      const rec = ((latestAudit.recommendations as any[]) ?? []).find((item) =>
-        item?.id && !done.has(item.id) && (item.priority === "critical" || item.priority === "high"),
-      );
+      const remaining = ((latestAudit.recommendations as any[]) ?? []).filter((item) => item?.id && !done.has(item.id));
+      const rec = remaining.find((item) => item.priority === "critical" || item.priority === "high") ?? remaining[0];
       if (rec) nextAction = { title: String(rec.title), detail: String(rec.detail) };
     }
 
