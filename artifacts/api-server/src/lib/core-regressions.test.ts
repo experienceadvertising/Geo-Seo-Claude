@@ -24,6 +24,37 @@ import { weeklyDigestEmail } from "./emailTemplates.ts";
 import { selectStripeCustomerCandidate } from "./billingCustomerSelection.ts";
 import { billingWebhookEvents } from "./stripeWebhookPolicy.ts";
 import { safeBaseUrl } from "./publicUrl.ts";
+import { getBillingSubscription } from "./billingSubscription.ts";
+
+test("billing lookup expands only the selected subscription within Stripe's depth limit", async () => {
+  const calls: unknown[] = [];
+  const expected = { id: "sub_active", status: "active" };
+  const stripe = { subscriptions: {
+    list: async (params: any) => {
+      assert.equal(params.expand, undefined);
+      assert.equal(params.customer, "cus_test");
+      return { data: [{ id: "sub_old", status: "canceled" }, expected] };
+    },
+    retrieve: async (id: string, params: any) => {
+      calls.push(id);
+      assert.deepEqual(params.expand, ["items.data.price.product"]);
+      assert.ok(params.expand.every((path: string) => path.split(".").length <= 4));
+      return expected;
+    },
+  } };
+  assert.equal(await getBillingSubscription(stripe as any, "cus_test"), expected);
+  assert.deepEqual(calls, ["sub_active"]);
+});
+
+test("billing lookup preserves no-subscription and provider-failure states", async () => {
+  const stripe = { subscriptions: {
+    list: async () => ({ data: [{ status: "canceled" }] }),
+    retrieve: async () => { throw new Error("must not retrieve"); },
+  } };
+  assert.equal(await getBillingSubscription(stripe as any, "cus_test"), null);
+  stripe.subscriptions.list = async () => { throw new Error("provider unavailable"); };
+  await assert.rejects(getBillingSubscription(stripe as any, "cus_test"), /provider unavailable/);
+});
 
 test("Stripe return URLs preserve the verified public custom domain", () => {
   const previousReplitDomains = process.env.REPLIT_DOMAINS;

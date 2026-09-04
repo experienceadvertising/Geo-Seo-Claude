@@ -377,7 +377,7 @@ export default function PricingPage() {
   // "Current Plan" and hide every checkout button from trial users.
   const { storedPlan: currentPlan, trialActive, trialEndsAt } = usePlan();
   const { data: productsData } = useStripeProducts();
-  const { data: subData } = useStripeSubscription();
+  const { data: subData, isError: subscriptionError, refetch: retrySubscription } = useStripeSubscription();
   const checkout = useCheckout();
   const portal = useCustomerPortal();
   const { toast } = useToast();
@@ -587,6 +587,12 @@ export default function PricingPage() {
           </Alert>
         )}
 
+        {subscriptionError && (
+          <div role="alert" className="rounded-xl border border-amber-300 bg-amber-50 p-4 max-w-lg mx-auto">
+            <p>We couldn't load your billing details. Your plan has not changed.</p>
+            <Button variant="outline" onClick={() => void retrySubscription()}>Retry billing lookup</Button>
+          </div>
+        )}
         {isSignedIn && currentPlan !== "free" && (
           <Alert className="border-emerald-200 bg-emerald-50 max-w-lg mx-auto">
             <CheckCircle2 className="h-4 w-4 text-emerald-600" />
