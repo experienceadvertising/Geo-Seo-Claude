@@ -34,8 +34,7 @@ function snapshotDate(snapshot: RankSnapshot): string {
 }
 
 function snapshotPosition(snapshot: RankSnapshot): string {
-  const present = snapshot.resultPresent ?? snapshot.result_present;
-  return present && snapshot.position ? `#${snapshot.position}` : "Not found";
+  return latestRankDisplay({ position: snapshot.position, result_present: snapshot.resultPresent ?? snapshot.result_present ?? true });
 }
 
 function RankHistory({ targetId, open }: { targetId: number; open: boolean }) {

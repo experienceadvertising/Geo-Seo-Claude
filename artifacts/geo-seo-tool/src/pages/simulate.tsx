@@ -152,10 +152,12 @@ function SearchConsoleOpportunityCard({
 
       {!isPro ? (
         <p className="text-sm text-muted-foreground">
-          <Lock className="h-3.5 w-3.5 inline mr-1" /> Upgrade to Pro to connect read-only Search Console data.
+          <Lock className="h-3.5 w-3.5 inline mr-1" /> Search Console requires Pro or Agency, including during the guided trial. <Link href="/upgrade?source=prompt-search-console" className="font-medium text-primary underline">Compare plans</Link>. You can still write or generate buyer prompts without connecting Google.
         </p>
       ) : status.isLoading ? (
         <div className="h-16 rounded-md bg-muted/60 animate-pulse" />
+      ) : status.isError ? (
+        <div role="alert" className="text-sm">We couldn't check your Google connection. <Button size="sm" variant="outline" onClick={() => status.refetch()}>Retry connection check</Button></div>
       ) : !status.data?.configured ? (
         <p className="text-sm text-muted-foreground">Google integration is not configured on this server yet.</p>
       ) : !status.data.connected ? (
@@ -174,6 +176,8 @@ function SearchConsoleOpportunityCard({
         </div>
       ) : sites.isLoading ? (
         <div className="h-16 rounded-md bg-muted/60 animate-pulse" />
+      ) : sites.isError ? (
+        <div role="alert" className="text-sm">We couldn't load your Search Console properties. <Button size="sm" variant="outline" onClick={() => sites.refetch()}>Retry properties</Button></div>
       ) : !sites.data?.sites?.length ? (
         <p className="text-sm text-muted-foreground">No verified Search Console properties were found for this Google account.</p>
       ) : (
@@ -690,7 +694,7 @@ export default function SimulatePage() {
             <SearchConsoleOpportunityCard
               auditId={auditId}
               pageUrl={audit.url}
-              isPro={isPro}
+              isPro={storedPlan === "pro" || storedPlan === "agency"}
               selectedQuery={seedQuery}
               onSelectQuery={(query) => {
                 setSeedQuery(query);

@@ -54,7 +54,7 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
     // Remember where the user was trying to go so we can return them after
     // they sign in. wouter strips the BASE_URL prefix from window.location,
     // so use the relative path here.
-    const next = window.location.pathname + window.location.search;
+    const next = window.location.pathname + window.location.search + window.location.hash;
     const target = `/sign-in?next=${encodeURIComponent(next)}`;
     return <Redirect to={target} />;
   }
