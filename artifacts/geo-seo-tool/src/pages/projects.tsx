@@ -256,7 +256,7 @@ export default function ProjectsPage() {
   const [frequency, setFrequency] = useState<Frequency>("weekly");
 
   const [copied, setCopied] = useState(false);
-  const { storedPlan, trialActive } = usePlan();
+  const { storedPlan, trialActive, isLoading: planLoading } = usePlan();
   const hasPaidPlan = storedPlan === "pro" || storedPlan === "agency";
   const isPaidAgency = storedPlan === "agency";
 
@@ -344,8 +344,8 @@ export default function ProjectsPage() {
           <Bell className="h-6 w-6 text-emerald-600" /> Sites and tracking
         </h1>
         <p className="text-muted-foreground text-sm max-w-2xl">
-          Monitor the sites and search performance that matter. Scheduled audits, crawler activity, Google data, and
-          ranking changes stay together here.
+          Monitor the sites and search performance that matter. Scheduled audits, crawler activity, and Google data
+          stay together here. Open an audit result to add keywords and review DataForSEO ranking history.
         </p>
       </div>
 
@@ -370,7 +370,7 @@ export default function ProjectsPage() {
             <div className="space-y-1">
               <p className="font-semibold">Continuous monitoring is a Pro feature</p>
               <p className="text-sm text-muted-foreground">
-                Upgrade to track up to 10 sites with weekly auto-audits and score-change alerts. Agency tracks 50.
+                Pro and Agency include up to 10 monitored sites with scheduled audits and score-change alerts. Agency adds higher audit, simulation, and keyword allowances for client work.
               </p>
             </div>
             <Link href="/pricing">
@@ -390,6 +390,7 @@ export default function ProjectsPage() {
             <form onSubmit={handleAdd} className="flex flex-col sm:flex-row gap-2">
               <Input
                 placeholder="https://example.com"
+                aria-label="Website URL to monitor"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 className="flex-1"
@@ -397,12 +398,14 @@ export default function ProjectsPage() {
               />
               <Input
                 placeholder={isPaidAgency ? "Client name" : "Label (optional)"}
+                aria-label={isPaidAgency ? "Client name" : "Site label (optional)"}
                 value={label}
                 onChange={(e) => setLabel(e.target.value)}
                 className="sm:w-40"
                 disabled={atLimit}
               />
               <select
+                aria-label="Monitoring frequency"
                 value={frequency}
                 onChange={(e) => setFrequency(e.target.value as Frequency)}
                 disabled={atLimit}
@@ -526,12 +529,12 @@ export default function ProjectsPage() {
                 <CardContent className="space-y-2">
                   <div className="flex items-start gap-2">
                     <code className="flex-1 text-xs bg-muted rounded-md p-3 break-all font-mono">{crawler.data.snippet}</code>
-                    <Button size="sm" variant="outline" onClick={() => copySnippet(crawler.data!.snippet)}>
+                    <Button size="sm" variant="outline" aria-label={copied ? "Snippet copied" : "Copy tracking snippet"} onClick={() => copySnippet(crawler.data!.snippet)}>
                       {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    The pixel is invisible, stores no IP addresses, and ignores ordinary browser user-agents. Some crawlers do not fetch images, so this is positive evidence of a visit, not complete server-log coverage.
+                    The pixel is invisible and the application does not store IP addresses with these events. Requests are classified by user agent, which can be spoofed. Some crawlers do not fetch images. These events are not verified bot visits or proof of indexing, and they do not replace server logs.
                   </p>
                 </CardContent>
               </Card>
@@ -606,7 +609,9 @@ export default function ProjectsPage() {
       {!monitoringLocked && (
         <div className="space-y-3">
           <h2 className="text-lg font-semibold flex items-center gap-2"><LineChartIcon className="h-5 w-5 text-emerald-600" /> Traffic impact</h2>
-          {hasPaidPlan ? (
+          {planLoading ? (
+            <div className="h-44 rounded-xl bg-muted/50 animate-pulse" aria-label="Loading Google measurement status" />
+          ) : hasPaidPlan ? (
             <GoogleAnalyticsSection />
           ) : (
             <Card className="border-emerald-500/30 bg-emerald-500/5">

@@ -10,6 +10,8 @@ import { logger } from "../lib/logger";
 import { db, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { isBlockingSubscriptionStatus, paidPlanFromProduct, validateCheckoutPrice } from "../lib/billingPolicy";
+import { reconcileStripeCustomerForUser } from "../lib/billingReconciliation";
+import { getBillingSubscription } from "../lib/billingSubscription";
 
 const router: IRouter = Router();
 
@@ -69,20 +71,22 @@ router.get("/stripe/subscription", requireAuth, async (req, res): Promise<void> 
   try {
     const userId = req.userId!;
     const user = await stripeStorage.getUser(userId);
-    if (!user?.stripeCustomerId) {
-      const plan = await getStoredPlan(userId);
+    const plan = await getStoredPlan(userId);
+    const stripe = await getUncachableStripeClient();
+    let customerId = user?.stripeCustomerId ?? null;
+    if (!customerId && user?.email) {
+      customerId = await reconcileStripeCustomerForUser({
+        stripe,
+        userId,
+        email: user.email,
+        requireBlockingSubscription: plan !== "free",
+      });
+    }
+    if (!customerId) {
       res.json({ subscription: null, plan, canManageBilling: false });
       return;
     }
-    const stripe = await getUncachableStripeClient();
-    const subs = await stripe.subscriptions.list({
-      customer: user.stripeCustomerId,
-      status: "all",
-      limit: 100,
-      expand: ["data.items.data.price.product"],
-    });
-    const subscription = subs.data.find((sub) => isBlockingSubscriptionStatus(sub.status)) ?? null;
-    const plan = await getStoredPlan(userId);
+    const subscription = await getBillingSubscription(stripe, customerId);
     const price = subscription?.items.data[0]?.price;
     res.json({
       subscription: subscription ? {
@@ -93,7 +97,9 @@ router.get("/stripe/subscription", requireAuth, async (req, res): Promise<void> 
         plan: price ? paidPlanFromProduct(price.product) : null,
       } : null,
       plan,
-      canManageBilling: true,
+      // A Stripe customer can outlive every subscription. Returning users with
+      // only canceled subscriptions must be able to start a fresh checkout.
+      canManageBilling: !!subscription,
     });
   } catch (err: any) {
     logger.error({ err: err?.message, userId: req.userId }, "Failed to get subscription");
@@ -122,22 +128,29 @@ router.post("/stripe/checkout", requireAuth, async (req, res): Promise<void> => 
       return;
     }
 
-    let user = await stripeStorage.getUser(userId);
+    const user = await stripeStorage.getUser(userId);
     let customerId = user?.stripeCustomerId ?? null;
 
     if (!customerId) {
-      // Get email from DB
       const [dbUser] = await db
         .select({ email: usersTable.email })
         .from(usersTable)
         .where(eq(usersTable.id, userId));
       const email = dbUser?.email ?? undefined;
-      const customer = await stripe.customers.create({
+      customerId = await reconcileStripeCustomerForUser({
+        stripe,
+        userId,
         email,
-        metadata: { userId },
-      }, { idempotencyKey: `aeo-customer-${userId}` });
-      customerId = customer.id;
-      await stripeStorage.upsertUser(userId, email ?? null, customerId);
+        requireBlockingSubscription: false,
+      });
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email,
+          metadata: { userId },
+        }, { idempotencyKey: `aeo-customer-${userId}` });
+        customerId = customer.id;
+        await stripeStorage.upsertUser(userId, email ?? null, customerId);
+      }
     }
 
     const openSessions = await stripe.checkout.sessions.list({
@@ -205,16 +218,25 @@ router.post("/stripe/portal", requireAuth, async (req, res): Promise<void> => {
   try {
     const userId = req.userId!;
     const user = await stripeStorage.getUser(userId);
+    const stripe = await getUncachableStripeClient();
+    let customerId = user?.stripeCustomerId ?? null;
+    if (!customerId && user?.email) {
+      customerId = await reconcileStripeCustomerForUser({
+        stripe,
+        userId,
+        email: user.email,
+        requireBlockingSubscription: true,
+      });
+    }
 
-    if (!user?.stripeCustomerId) {
+    if (!customerId) {
       res.status(400).json({ error: "No billing account found. Please subscribe first." });
       return;
     }
 
-    const stripe = await getUncachableStripeClient();
     const baseUrl = getBaseUrl(req);
     const session = await stripe.billingPortal.sessions.create({
-      customer: user.stripeCustomerId,
+      customer: customerId,
       return_url: `${baseUrl}/`,
     });
 

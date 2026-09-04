@@ -4,9 +4,10 @@ import { Search, Loader2, ArrowRight, BarChart3, TrendingUp, TrendingDown, Minus
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { apiErrorMessage } from "@/lib/api-error";
+import { hasMonitoringAccess } from "@/lib/planDisplay";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAnalyzeUrl, useListAudits } from "@workspace/api-client-react";
+import { getGetAuditQueryKey, useAnalyzeUrl, useGetAudit, useListAudits } from "@workspace/api-client-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { customFetch } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
@@ -17,6 +18,8 @@ import { ReferralCard } from "@/components/referral-card";
 import { CHANGELOG } from "@/data/changelog";
 import { trackEvent, trackGoogleAdsConversion } from "@/lib/analytics";
 import { SEO } from "@/components/seo";
+import { DashboardWalkthrough } from "@/components/dashboard-walkthrough";
+import { readBrowserStorage, writeBrowserStorage, removeBrowserStorage } from "@/lib/browser-storage";
 
 function MarketStats() {
   const items = [
@@ -24,21 +27,21 @@ function MarketStats() {
       icon: TrendingUp,
       accent: "from-emerald-500 to-teal-500",
       label: "Where buyers are going",
-      title: "Your buyers skip Google. They ask AI.",
+      title: "Your buyers use Google and AI answers.",
       body: "ChatGPT, Claude, Perplexity, and Google AI Overviews increasingly answer questions that once started with a list of links. Make it easy for them to understand, retrieve, and cite your site.",
     },
     {
       icon: Zap,
       accent: "from-teal-500 to-cyan-500",
       label: "Why it pays to be cited",
-      title: "AI-referred visitors already trust you when they arrive.",
+      title: "See what AI-referred visitors do next.",
       body: "A visitor who clicks a citation has already seen your brand in the answer. Connect GA4 to measure whether that traffic is helping your own business.",
     },
     {
       icon: BarChart3,
       accent: "from-cyan-500 to-emerald-500",
       label: "Why tracking matters",
-      title: "Citation status changes every month. Most brands find out too late.",
+      title: "Keep an eye on changing search visibility.",
       body: "AI answers and cited sources can change as content and retrieval systems change. Scheduled re-audits help you spot meaningful shifts before they become a blind spot.",
     },
   ];
@@ -129,7 +132,7 @@ const ENGINE_RESPONSES = [
     borderColor: "border-blue-400/25",
     citeBg: "bg-blue-50 dark:bg-blue-950/50",
     citeText: "text-blue-700 dark:text-blue-400",
-    snippet: "AEO Improvement audits your site across all four major AI engines and identifies exactly why you are not being cited in AI answers.",
+    snippet: "AEO Improvement checks page readiness and lets you sample AI answers to buyer questions. Use both to choose the next improvement.",
   },
   {
     name: "Perplexity",
@@ -137,7 +140,7 @@ const ENGINE_RESPONSES = [
     borderColor: "border-cyan-400/25",
     citeBg: "bg-cyan-50 dark:bg-cyan-950/50",
     citeText: "text-cyan-700 dark:text-cyan-400",
-    snippet: "The AEO score from aeoimprovement.com quantifies citation likelihood across 6 dimensions including schema, authority, and crawler access.",
+    snippet: "The AEO Improvement readiness score summarizes page signals such as schema, authority, and crawler access. It is not a citation probability.",
   },
 ];
 
@@ -226,7 +229,7 @@ function SignedOutLanding() {
     try {
       const parsed = new URL(normalized);
       if (!/^https?:$/.test(parsed.protocol) || !parsed.hostname.includes(".")) throw new Error("Invalid URL");
-      localStorage.setItem("pendingAuditUrl", parsed.toString());
+      writeBrowserStorage("pendingAuditUrl", parsed.toString());
       setLocation("/sign-up");
     } catch {
       setAuditUrlError("Enter a publicly reachable website, such as example.com.");
@@ -255,8 +258,8 @@ function SignedOutLanding() {
               <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm text-foreground/80 max-w-md">
                 {[
                   "Find SEO and AI-search visibility gaps",
-                  "Confirm AI bots actually crawl your pages",
-                  "Get alerted the moment your score drops",
+                  "Check whether your pages allow AI crawlers",
+                  "Track audit changes with scheduled monitoring",
                   "Auto-generated JSON-LD and robots.txt fixes",
                   "Connect Google data when you are ready to measure",
                   "30-day guided trial, no card",
@@ -341,15 +344,15 @@ function SignedOutLanding() {
                 icon: Activity,
                 gradient: "from-blue-500 to-cyan-500",
                 badge: "New",
-                title: "Confirm AI bots actually read your pages",
-                body: "Allowing bots in robots.txt does not mean they visit. Embed one tracking line and see exactly when GPTBot, ClaudeBot, PerplexityBot, and Google-Extended crawl your pages, which paths they hit, and how often. Know your content is being indexed, not just allowed.",
+                title: "Understand crawler access and observed requests",
+                body: "Check crawler access in your audit. The optional tracking pixel records requests with recognized bot user agents when they fetch the pixel. It does not capture every crawler visit, verify the caller, or prove indexing or AI citations. No snippet is needed to run an audit.",
               },
               {
                 icon: Bell,
                 gradient: "from-rose-500 to-pink-500",
                 badge: "New",
-                title: "Never get blindsided by a citation drop",
-                body: "Add any domain and we re-audit on your schedule. The moment your AEO score drops or your crawler access changes, you get an alert — not weeks later when it shows up in traffic, but while you can still act on it.",
+                title: "Keep up with changes to your website",
+                body: "Add your site for scheduled re-audits and review score or crawler-access changes when a new check completes. These checks measure page signals, not continuous AI citation coverage.",
               },
               {
                 icon: LineChart,
@@ -384,7 +387,7 @@ function SignedOutLanding() {
         <section className="space-y-8">
           <div className="text-center space-y-3">
             <p className="text-xs font-semibold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">How it works</p>
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">From invisible to cited in four steps</h2>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">From your first audit to a practical improvement</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {[
@@ -392,7 +395,7 @@ function SignedOutLanding() {
                 step: "01",
                 gradient: "from-violet-500 to-purple-600",
                 title: "Audit",
-                body: "Paste any URL. In 60 seconds, see your score across 6 dimensions with every gap ranked by the impact fixing it will have on your citation rate.",
+                body: "Enter your website URL to check six readiness dimensions and get a prioritized action list. Completion time depends on the page and the services involved. Priority is guidance, not a prediction of citation lift.",
               },
               {
                 step: "02",
@@ -404,13 +407,13 @@ function SignedOutLanding() {
                 step: "03",
                 gradient: "from-emerald-500 to-teal-600",
                 title: "Fix",
-                body: "Get specific changes ranked by research-proven impact, with ready-to-copy code for technical fixes and clear guidance for content ones. Strategies built on 2026 expert research, not guesses.",
+                body: "Get specific changes grounded in detected page signals, technical references, and attributed expert guidance. Review generated code for your website before publishing, and start with one useful fix.",
               },
               {
                 step: "04",
                 gradient: "from-rose-500 to-pink-500",
                 title: "Monitor",
-                body: "Set automatic re-audits and get instant alerts on score drops. Connect Google Analytics to measure whether your improvements are driving real AI-referred traffic.",
+                body: "Set scheduled re-audits and review alerts after a check detects a score change. Paid plans add Google Analytics reporting for AI-referred traffic. Observe trends without assuming one edit caused the result.",
               },
             ].map(({ step, gradient, title, body }) => (
               <div key={step} className="relative rounded-2xl border border-border bg-card p-6">
@@ -992,7 +995,7 @@ function WhatsNewCard() {
 }
 
 function SignedInDashboard() {
-  const pendingAuditUrl = React.useRef(localStorage.getItem("pendingAuditUrl") || "");
+  const pendingAuditUrl = React.useRef(readBrowserStorage("pendingAuditUrl") || "");
   const autoAuditStarted = React.useRef(false);
   const [url, setUrl] = React.useState(() => pendingAuditUrl.current);
   const [, setLocation] = useLocation();
@@ -1003,8 +1006,9 @@ function SignedInDashboard() {
   const { data: audits, isLoading: auditsLoading, isError: auditsError, refetch: refetchAudits } = useListAudits();
   const analyzeUrl = useAnalyzeUrl();
   const queryClient = useQueryClient();
-  const { storedPlan } = usePlan();
+  const { storedPlan, trialActive, isLoading: planLoading } = usePlan();
   const hasPaidPlan = storedPlan === "pro" || storedPlan === "agency";
+  const canUseMonitoring = hasMonitoringAccess(storedPlan, trialActive);
   const latestAudit = audits?.[0];
   const latestDomain = (() => {
     if (!latestAudit?.url) return null;
@@ -1030,7 +1034,7 @@ function SignedInDashboard() {
   const monitoredSites = useQuery<{ sites: Array<{ id: number; active: boolean }> }>({
     queryKey: ["geo", "monitored-sites"],
     queryFn: () => customFetch("/api/geo/monitored-sites"),
-    enabled: hasPaidPlan,
+    enabled: canUseMonitoring,
     retry: false,
   });
 
@@ -1038,6 +1042,21 @@ function SignedInDashboard() {
     queryKey: ["seo-keywords", latestDomain],
     queryFn: () => customFetch(`/api/seo/keywords?domain=${encodeURIComponent(latestDomain!)}`),
     enabled: hasPaidPlan && Boolean(latestDomain),
+    retry: false,
+  });
+  const { data: latestAuditDetails } = useGetAudit(latestAudit?.id ?? 0, {
+    query: {
+      queryKey: getGetAuditQueryKey(latestAudit?.id ?? 0),
+      enabled: Boolean(latestAudit?.id),
+      staleTime: 60_000,
+      retry: false,
+    },
+  });
+  const recommendationProgress = useQuery<{ completed: Array<{ recommendationId: string }> }>({
+    queryKey: ["recommendation-progress", latestDomain],
+    queryFn: () => customFetch(`/api/geo/recommendation-progress?domain=${encodeURIComponent(latestDomain!)}`),
+    enabled: Boolean(latestDomain && latestAuditDetails?.recommendations?.length),
+    staleTime: 30_000,
     retry: false,
   });
 
@@ -1087,9 +1106,12 @@ function SignedInDashboard() {
     trackEvent("audit_started", { source });
     analyzeUrl.mutate({ data: { url: normalized } }, {
       onSuccess: (data: any) => {
+        if (source === "post_signup_landing" || rawUrl === pendingAuditUrl.current) {
+          removeBrowserStorage("pendingAuditUrl");
+        }
         trackEvent("audit_completed", { source });
-        if (!localStorage.getItem("aeo.activationConverted")) {
-          localStorage.setItem("aeo.activationConverted", "true");
+        if (!readBrowserStorage("aeo.activationConverted")) {
+          writeBrowserStorage("aeo.activationConverted", "true");
           trackGoogleAdsConversion("activation");
         }
         setLocation(`/results/${data.id}`);
@@ -1107,7 +1129,6 @@ function SignedInDashboard() {
   React.useEffect(() => {
     if (!pendingAuditUrl.current || autoAuditStarted.current) return;
     autoAuditStarted.current = true;
-    localStorage.removeItem("pendingAuditUrl");
     runAudit(pendingAuditUrl.current, "post_signup_landing");
   }, []); // A saved landing-page audit should run once after authentication.
 
@@ -1116,7 +1137,6 @@ function SignedInDashboard() {
     runAudit(url, "dashboard_manual");
   }
 
-  const greeting = firstName ? `Welcome back, ${firstName}` : "Welcome back";
   const hasAudit = Boolean(latestAudit);
   const googleConnected = Boolean(
     googleStatus.data?.connected && googleStatus.data?.searchConsoleGranted && googleStatus.data?.propertyId,
@@ -1125,6 +1145,15 @@ function SignedInDashboard() {
   const rankTrackingActive = Boolean(seoKeywords.data?.targets?.some((target) => target.active));
   const confirmedSteps = [hasAudit, googleConnected, rankTrackingActive, monitoringActive];
   const confirmedCount = confirmedSteps.filter(Boolean).length;
+  const completedRecommendationIds = new Set((recommendationProgress.data?.completed ?? []).map((item) => item.recommendationId));
+  const nextRecommendation = latestAuditDetails?.recommendations?.find((item) => item.id && !completedRecommendationIds.has(item.id));
+  const activeKeywordCount = seoKeywords.data?.targets?.filter((target) => target.active).length ?? 0;
+  const activeSiteCount = monitoredSites.data?.sites?.filter((site) => site.active).length ?? 0;
+  const programStateLoading = planLoading
+    || auditsLoading
+    || (hasPaidPlan && (googleStatus.isLoading || (Boolean(latestDomain) && seoKeywords.isLoading)))
+    || (canUseMonitoring && monitoredSites.isLoading);
+  const setupComplete = !planLoading && hasPaidPlan && confirmedCount === 4;
 
   const StepIcon = ({ complete, number }: { complete: boolean; number: number }) => complete ? (
     <CheckCircle2 className="h-6 w-6 shrink-0 text-emerald-600" aria-hidden="true" />
@@ -1136,19 +1165,70 @@ function SignedInDashboard() {
 
   return (
     <div className="flex-1 w-full max-w-4xl mx-auto px-4 md:px-8 py-10 md:py-14 space-y-10">
+      <DashboardWalkthrough auditId={latestAudit?.id} paid={hasPaidPlan} />
+      {programStateLoading ? (
+        <Card className="overflow-hidden border-emerald-500/20" aria-label="Loading your SEO and GEO program">
+          <div className="h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500" />
+          <CardContent className="space-y-4 py-8">
+            <div className="h-4 w-28 animate-pulse rounded bg-slate-200" />
+            <div className="h-8 w-3/4 animate-pulse rounded bg-slate-200" />
+            <div className="h-20 animate-pulse rounded-xl bg-slate-100" />
+          </CardContent>
+        </Card>
+      ) : setupComplete ? (
+        <Card className="overflow-hidden border-emerald-500/30 shadow-lg shadow-emerald-500/5">
+          <div className="h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500" />
+          <CardHeader className="pb-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700">This week's plan</p>
+            <CardTitle className="text-2xl md:text-3xl">Make one improvement, then measure it</CardTitle>
+            <CardDescription className="max-w-2xl text-sm leading-relaxed">Your SEO and GEO tracking is active. Focus on the next unfinished recommendation, then use the same audit and keyword views to see what changes over time.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700">Recommended next task</p>
+              <p className="mt-1 text-lg font-semibold text-slate-950">{nextRecommendation?.title ?? "Re-scan your site and choose the next opportunity"}</p>
+              <p className="mt-1 text-sm leading-relaxed text-slate-600">{nextRecommendation?.detail ?? "You have completed the current action list. Run a fresh audit after your latest site changes to build the next plan."}</p>
+              <Link href={nextRecommendation ? `/results/${latestAudit!.id}#recommendations` : `/results/${latestAudit!.id}`}>
+                <Button className="mt-4 bg-emerald-600 hover:bg-emerald-700">{nextRecommendation ? "Open this task" : "Re-scan and review"}<ArrowRight className="ml-1.5 h-4 w-4" /></Button>
+              </Link>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Link href={`/results/${latestAudit!.id}`} className="rounded-lg border bg-white p-3 hover:border-emerald-300 hover:bg-emerald-50/30">
+                <p className="text-xs text-muted-foreground">Latest audit</p>
+                <p className="mt-1 font-semibold">{Math.round(latestAudit!.geoScore)}/100</p>
+                <p className="mt-1 text-xs font-medium text-emerald-700">Review action plan</p>
+              </Link>
+              <Link href={`/results/${latestAudit!.id}#seo-opportunities`} className="rounded-lg border bg-white p-3 hover:border-emerald-300 hover:bg-emerald-50/30">
+                <p className="text-xs text-muted-foreground">Rank tracking</p>
+                <p className="mt-1 font-semibold">{activeKeywordCount} active keyword{activeKeywordCount === 1 ? "" : "s"}</p>
+                <p className="mt-1 text-xs font-medium text-emerald-700">View SEO movement</p>
+              </Link>
+              <Link href="/projects" className="rounded-lg border bg-white p-3 hover:border-emerald-300 hover:bg-emerald-50/30">
+                <p className="text-xs text-muted-foreground">Monitoring</p>
+                <p className="mt-1 font-semibold">{activeSiteCount} active site{activeSiteCount === 1 ? "" : "s"}</p>
+                <p className="mt-1 text-xs font-medium text-emerald-700">Check measurement</p>
+              </Link>
+            </div>
+            <div className="flex flex-wrap gap-2 border-t pt-4">
+              <Link href={`/simulate/${latestAudit!.id}`}><Button size="sm" variant="outline"><Sparkles className="mr-1.5 h-3.5 w-3.5" />Test AI visibility</Button></Link>
+              <Link href="/recommended-tools"><Button size="sm" variant="ghost">Browse recommended tools</Button></Link>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
       <Card className="overflow-hidden border-emerald-500/30 shadow-lg shadow-emerald-500/5">
         <div className="h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500" />
         <CardHeader className="space-y-4 pb-4">
           <div className="space-y-1">
             <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700">Program setup</p>
-            <CardTitle className="text-2xl md:text-3xl">{hasAudit ? "Keep your SEO + GEO program moving" : `${greeting}. Activate your SEO + GEO program.`}</CardTitle>
+            <CardTitle className="text-2xl md:text-3xl">{hasAudit ? "Keep your SEO + GEO program moving" : "Start with your first website audit"}</CardTitle>
             <CardDescription className="max-w-2xl text-sm leading-relaxed">
               {hasAudit
-                ? "Your baseline is ready. Complete the next steps so we can measure performance, watch for changes, and keep your action plan current."
+                ? hasPaidPlan ? "Your baseline is ready. Connect measurement and tracking, then work through one improvement at a time." : "Your baseline is ready. Test a buyer question, then make one useful improvement. You do not need to upgrade to start working on your recommendations."
                 : "Start with your website. We will build the baseline, identify the most valuable improvements, and guide you through measurement and ongoing monitoring."}
             </CardDescription>
           </div>
-          <div className="space-y-2">
+          {hasPaidPlan && <div className="space-y-2">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>{confirmedCount} of 4 setup steps complete</span>
               <span>{Math.round((confirmedCount / 4) * 100)}%</span>
@@ -1156,7 +1236,7 @@ function SignedInDashboard() {
             <div className="h-2 overflow-hidden rounded-full bg-slate-100">
               <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all" style={{ width: `${(confirmedCount / 4) * 100}%` }} />
             </div>
-          </div>
+          </div>}
         </CardHeader>
         <CardContent className="space-y-3">
           <div className={`rounded-xl border p-4 ${hasAudit ? "border-emerald-200 bg-emerald-50/60" : "border-emerald-500/40 bg-emerald-50"}`}>
@@ -1172,6 +1252,7 @@ function SignedInDashboard() {
                     <div className="relative flex-1">
                       <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                       <Input
+                        id="baseline-url"
                         aria-label="Website URL to audit"
                         className="h-11 pl-10 text-base"
                         placeholder="https://yourwebsite.com"
@@ -1193,7 +1274,20 @@ function SignedInDashboard() {
             </div>
           </div>
 
-          <div className={`rounded-xl border p-4 ${googleConnected ? "border-emerald-200 bg-emerald-50/60" : "border-slate-200"}`}>
+          {!hasPaidPlan && <div className="rounded-xl border border-slate-200 p-4 space-y-4">
+            <div>
+              <p className="font-semibold">2. Test a question your buyer would ask</p>
+              <p className="text-sm text-muted-foreground">Review the suggested prompts for your brand before running a simulation within your allowance. Save this baseline before changing your site.</p>
+              {hasAudit ? <Link href={`/simulate/${latestAudit!.id}`}><Button size="sm" variant="outline" className="mt-3">Test my AI visibility</Button></Link> : <p className="mt-2 text-xs text-muted-foreground">Run your baseline audit to unlock this step.</p>}
+            </div>
+            <div className="border-t pt-4">
+              <p className="font-semibold">3. Make one practical improvement</p>
+              <p className="text-sm text-muted-foreground">{nextRecommendation?.title ?? "Open your top actions and choose one unfinished recommendation."} Follow the instructions on your website, then mark it complete. Re-scan after publishing to check the change.</p>
+              {hasAudit && <Link href={`/results/${latestAudit!.id}#recommendations`}><Button size="sm" variant="outline" className="mt-3">Open my top actions</Button></Link>}
+            </div>
+          </div>}
+
+          {hasPaidPlan && <><div className={`rounded-xl border p-4 ${googleConnected ? "border-emerald-200 bg-emerald-50/60" : "border-slate-200"}`}>
             <div className="flex items-start gap-3">
               <StepIcon complete={googleConnected} number={2} />
               <div className="min-w-0 flex-1">
@@ -1201,7 +1295,7 @@ function SignedInDashboard() {
                 <p className="text-sm text-muted-foreground">Add Search Console and GA4 so recommendations use real queries, clicks, rankings, and AI referral traffic.</p>
                 <div className="mt-3">
                   {googleConnected ? (
-                    <p className="text-xs font-semibold text-emerald-700">Search Console and GA4 are connected</p>
+                    <p className="text-xs font-semibold text-emerald-700">Search Console is connected. Check GA4 separately in Tracking.</p>
                   ) : hasPaidPlan ? (
                     <Link href="/projects"><Button size="sm" variant="outline">Connect Google</Button></Link>
                   ) : (
@@ -1222,7 +1316,7 @@ function SignedInDashboard() {
                   {rankTrackingActive ? (
                     <p className="text-xs font-semibold text-emerald-700">Keyword rank tracking is active</p>
                   ) : hasPaidPlan && hasAudit ? (
-                    <Link href={`/results/${latestAudit!.id}`}><Button size="sm" variant="outline">Choose tracked keywords</Button></Link>
+                    <Link href={`/results/${latestAudit!.id}#seo-opportunities`}><Button size="sm" variant="outline">Choose tracked keywords</Button></Link>
                   ) : hasPaidPlan ? (
                     <p className="text-xs font-medium text-slate-500">Run your baseline audit first</p>
                   ) : (
@@ -1242,7 +1336,7 @@ function SignedInDashboard() {
                 <div className="mt-3">
                   {monitoringActive ? (
                     <p className="text-xs font-semibold text-emerald-700">Weekly monitoring is active</p>
-                  ) : hasPaidPlan ? (
+                  ) : canUseMonitoring ? (
                     <Link href="/projects"><Button size="sm" variant="outline">Set up monitoring</Button></Link>
                   ) : (
                     <p className="text-xs font-medium text-slate-500">Available after upgrade</p>
@@ -1252,11 +1346,17 @@ function SignedInDashboard() {
             </div>
           </div>
 
+          </>}
+
           {!hasPaidPlan && (
             <div className="rounded-xl bg-slate-950 p-4 text-white sm:flex sm:items-center sm:justify-between sm:gap-4">
               <div>
-                <p className="font-semibold">Unlock the complete SEO growth system</p>
-                <p className="mt-1 text-sm text-slate-300">Pro adds Search Console insights, GA4 reporting, DataForSEO rank tracking, and scheduled monitoring.</p>
+                <p className="font-semibold">{trialActive ? "Keep your monitoring and activate connected SEO tracking" : "Unlock the complete SEO growth system"}</p>
+                <p className="mt-1 text-sm text-slate-300">
+                  {trialActive
+                    ? "Your trial includes monitoring now. Pro keeps it active and adds Search Console, GA4, and DataForSEO rank tracking."
+                    : "Pro adds Search Console insights, GA4 reporting, DataForSEO rank tracking, and scheduled monitoring."}
+                </p>
               </div>
               <Link href="/upgrade?source=program-setup-summary">
                 <Button size="sm" className="mt-3 shrink-0 bg-emerald-500 text-slate-950 hover:bg-emerald-400 sm:mt-0">Compare paid plans</Button>
@@ -1265,6 +1365,7 @@ function SignedInDashboard() {
           )}
         </CardContent>
       </Card>
+      )}
 
       {analyzeUrl.isPending && <AnalysisProgress />}
 

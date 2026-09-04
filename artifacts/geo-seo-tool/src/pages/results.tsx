@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { visibleRecommendations } from "@/lib/recommendation-list";
 import { useParams, Link, useLocation } from "wouter";
 import { useGetAudit, getGetAuditQueryKey, useAnalyzeUrl, customFetch } from "@workspace/api-client-react";
 import { apiErrorMessage, apiErrorStatus } from "@/lib/api-error";
@@ -36,6 +37,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { usePlan } from "@/hooks/usePlan";
 import { UpgradePrompt } from "@/components/upgrade-prompt";
 import { SeoTrackingPanel } from "@/components/seo-tracking-panel";
+import { getAuditDeepLinkState } from "@/lib/audit-deep-link";
 
 export default function Results() {
   const params = useParams<{ id: string }>();
@@ -60,7 +62,7 @@ export default function Results() {
       enabled: !!id,
       queryKey: getGetAuditQueryKey(id),
       // A 404 is final. Without this, React Query retried three times with
-      // backoff and the page sat on "Analyzing GEO signals…" for ~7s before
+      // backoff and the page sat on the saved-audit loading state for ~7s before
       // admitting the audit doesn't exist.
       retry: (count, err) => apiErrorStatus(err) !== 404 && count < 2,
     }
@@ -150,14 +152,44 @@ export default function Results() {
   }, [showFixes, fixGenerator]);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("details") === "1") setShowTechnicalDetails(true);
-  }, []);
+    if (!audit) return;
+
+    let frame = 0;
+    const syncDeepLink = () => {
+      const { showTechnicalDetails: shouldShowDetails, targetId } = getAuditDeepLinkState(
+        window.location.search,
+        window.location.hash,
+      );
+      if (shouldShowDetails) setShowTechnicalDetails(true);
+
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        if (targetId) {
+          document.getElementById(targetId)?.scrollIntoView({ block: "start" });
+        } else {
+          window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+        }
+      });
+    };
+
+    syncDeepLink();
+    for (const eventName of ["pushState", "replaceState", "popstate", "hashchange"]) {
+      window.addEventListener(eventName, syncDeepLink);
+    }
+    return () => {
+      cancelAnimationFrame(frame);
+      for (const eventName of ["pushState", "replaceState", "popstate", "hashchange"]) {
+        window.removeEventListener(eventName, syncDeepLink);
+      }
+    };
+  }, [audit]);
 
   useEffect(() => {
-    if (!audit || !window.location.hash) return;
-    const target = document.getElementById(window.location.hash.slice(1));
-    if (target) requestAnimationFrame(() => target.scrollIntoView({ block: "start" }));
+    if (!audit || !showTechnicalDetails || window.location.hash !== "#technical-breakdown") return;
+    const frame = requestAnimationFrame(() => {
+      document.getElementById("technical-breakdown")?.scrollIntoView({ block: "start" });
+    });
+    return () => cancelAnimationFrame(frame);
   }, [audit, showTechnicalDetails]);
 
   const copyToClipboard = async (text: string, key: string) => {
@@ -191,7 +223,7 @@ export default function Results() {
     return (
       <div className="flex-1 w-full max-w-6xl mx-auto p-4 md:p-8 space-y-8 animate-in fade-in duration-500 flex flex-col items-center justify-center min-h-[50vh]">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        <p className="text-muted-foreground animate-pulse font-mono">Analyzing GEO signals...</p>
+        <p className="text-muted-foreground animate-pulse">Loading your saved SEO and GEO audit...</p>
       </div>
     );
   }
@@ -589,7 +621,7 @@ export default function Results() {
           <div className="rounded-lg border p-4"><p className="text-xs text-muted-foreground">Next SEO actions</p><p className="mt-1 text-2xl font-semibold">{seoRecommendations.length}</p><p className="mt-1 text-xs text-muted-foreground">Prioritized technical and content improvements below.</p></div>
         </CardContent>
         <CardContent className="pt-0 text-sm text-muted-foreground">
-          <Link href="/projects" className="text-primary hover:underline">Open Projects to connect Search Console and manage paid keyword tracking</Link>. Rank movement is displayed as an observed outcome, not proof that a change caused it.
+          {hasPaidSeo ? <><Link href="/projects" className="text-primary hover:underline">Open Sites and tracking to connect Search Console</Link>. Manage rank-tracking keywords below. Rank movement is an observed outcome, not proof that a change caused it.</> : <><p>Your audit includes SEO readiness and improvement suggestions. Pro and Agency add Search Console performance, GA4 reporting, and weekly keyword tracking.</p><Link href="/upgrade?source=audit-seo-opportunities" className="mt-3 inline-block font-medium text-primary hover:underline">Compare plans for connected SEO tracking</Link></>}
           {hasPaidSeo && domain && <SeoTrackingPanel domain={domain} />}
         </CardContent>
       </Card>
@@ -623,7 +655,7 @@ export default function Results() {
                 ))}
               </div>
               <Button variant="outline" size="sm" onClick={() => setShowAllRecommendations((current) => !current)}>
-                {showAllRecommendations ? "Show top 3" : `Show all ${Math.min(14, audit.recommendations.length)}`}
+                {showAllRecommendations ? "Show top 3" : "Show full list"}
               </Button>
             </div>
           </CardHeader>
@@ -638,11 +670,7 @@ export default function Results() {
             )}
             {(() => {
               const schemaV1 = audit.recommendationsSchemaVersion === "v1";
-              const matchingRecs = audit.recommendations.slice(0, 14).filter((r) => {
-                const done = completedRecommendationIds.has(r.id);
-                return recommendationFilter === "all" || (recommendationFilter === "done" ? done : !done);
-              });
-              const allRecs = matchingRecs.slice(0, showAllRecommendations ? 14 : 3);
+              const allRecs = visibleRecommendations(audit.recommendations, completedRecommendationIds, recommendationFilter, showAllRecommendations);
               const researchRecs = allRecs.filter(r => r.source?.type === "research" || r.source?.type === "internal_benchmark");
               // Everything that isn't research-backed (practitioner consensus,
               // expert guidance, or untagged) — a positive-list here silently

@@ -3,18 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 
 /**
- * Authority Signals card — recommends third-party citation channels that
- * boost AEO/GEO/SEO. AI engines weight off-site authority signals heavily
- * (the same E-E-A-T axes that traditional search uses), so getting cited,
- * quoted, and linked from authoritative third-party publishers is one of
- * the highest-leverage moves a brand can make.
+ * Authority Signals card recommends third-party discovery and publishing
+ * channels that can help a brand earn legitimate coverage and references.
  *
  * We list a mix of paid and free channels, label them honestly, and link
  * out (target=_blank, rel=noopener) so users can evaluate each themselves.
  * No affiliate codes — these are recommendations, not partnerships.
  *
- * Lives inside DashboardLearningHub on the home page, but exported for
- * potential reuse on a dedicated /authority page later.
+ * It lives on the authenticated Recommended tools page.
  */
 
 interface Channel {
@@ -34,16 +30,8 @@ const CHANNELS: Channel[] = [
     href: "https://www.linkby.com/",
     icon: <Newspaper className="h-4 w-4" />,
     cost: "Paid",
-    what: "Sponsored editorial placements on real publisher sites with editorial review (Forbes, BuzzFeed, etc).",
-    why: "Citations from high-authority publishers train and reinforce how AI engines describe your brand. One placement compounds across multiple AI training cycles.",
-  },
-  {
-    name: "Connectively (formerly HARO)",
-    href: "https://connectively.us/",
-    icon: <Megaphone className="h-4 w-4" />,
-    cost: "Freemium",
-    what: "Daily email of journalist queries looking for expert quotes. Reply with relevant expertise to get quoted.",
-    why: "Free way to land in news articles, which AI engines treat as authoritative source material. Most replies don't land — but the ones that do compound for years.",
+    what: "A performance-based publisher network where brands set campaign budgets and pay for delivered engagement.",
+    why: "Relevant editorial coverage can create discoverable third-party references, referral traffic, and brand context. Results depend on publisher fit and the quality of the coverage.",
   },
   {
     name: "Featured.com",
@@ -51,7 +39,7 @@ const CHANNELS: Channel[] = [
     icon: <Megaphone className="h-4 w-4" />,
     cost: "Freemium",
     what: "Q&A platform where experts answer journalist and brand questions; selected answers get published with attribution.",
-    why: "Lower effort than HARO and the answer-based format is highly chunkable for AI engines that surface bite-size citations.",
+    why: "Useful, attributable expert answers can earn independent mentions and links. Publication and visibility are not guaranteed.",
   },
   {
     name: "PodMatch",
@@ -59,31 +47,31 @@ const CHANNELS: Channel[] = [
     icon: <Mic className="h-4 w-4" />,
     cost: "Freemium",
     what: "Matches podcast guests with podcast hosts, similar to dating-app mechanics.",
-    why: "Podcast transcripts are increasingly indexed by AI engines. A 45-min interview becomes a multi-citation source for years.",
+    why: "Relevant interviews can create useful third-party context, branded searches, referral traffic, and crawlable transcripts when the publisher makes them available.",
   },
   {
     name: "Wikipedia / Wikidata",
     href: "https://en.wikipedia.org/wiki/Wikipedia:Notability_(organizations_and_companies)",
     icon: <Globe2 className="h-4 w-4" />,
     cost: "Free",
-    what: "Build a notability case (independent press coverage, etc), then either propose an article or wait for a third-party editor to create one.",
-    why: "Wikipedia is one of the most heavily-weighted sources in every major LLM's training data. Even a stub entry significantly impacts how AI describes your brand.",
+    what: "Reference projects with strict notability, neutrality, sourcing, and conflict-of-interest requirements.",
+    why: "Use these only when the organization independently qualifies. Never create promotional entries or treat a thin listing as an optimization shortcut.",
   },
   {
     name: "Reddit",
     href: "https://www.reddit.com/",
     icon: <Users className="h-4 w-4" />,
     cost: "Free",
-    what: "Authentic participation in subreddits relevant to your category (NOT astroturfing — that gets you banned and torched in AI engines).",
-    why: "Reddit is heavily cited by Perplexity and ChatGPT for opinion-style queries. A genuinely helpful comment thread can outrank a marketing page.",
+    what: "Authentic participation in communities relevant to your category. Do not use fake accounts or undisclosed promotion.",
+    why: "Helpful discussions can build trust, surface real customer language, and create discoverable context. Participate for the community, not to manufacture mentions.",
   },
   {
     name: "YouTube",
     href: "https://www.youtube.com/",
     icon: <Youtube className="h-4 w-4" />,
     cost: "Free",
-    what: "Publish demos, walkthroughs, and explainers; transcripts are auto-generated and indexed.",
-    why: "Google AI Overviews and Gemini draw heavily from YouTube transcripts. A good 8-min walkthrough beats a written blog post for AI surfacing in many categories.",
+    what: "Publish useful demos, walkthroughs, interviews, and explainers with accurate titles, descriptions, and transcripts.",
+    why: "Video gives searchers and AI systems another public format for understanding products, methods, and expertise. Performance depends on usefulness and distribution.",
   },
 ];
 
@@ -101,9 +89,9 @@ export function AuthoritySignalsCard() {
           </Badge>
         </div>
         <CardDescription className="text-xs leading-relaxed pt-1">
-          AI engines weight third-party citations heavily — getting quoted, cited, or linked from
-          authoritative publishers is one of the highest-leverage moves you can make. These are
-          the channels we'd actually recommend.
+          Use these channels to pursue legitimate third-party coverage, expert contributions, and
+          public brand context. They can support SEO and GEO, but none guarantees rankings, traffic,
+          or AI citations.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-2.5">
@@ -147,8 +135,9 @@ export function AuthoritySignalsCard() {
           </a>
         ))}
         <p className="text-[11px] text-muted-foreground pt-1 leading-relaxed">
-          Disclosure: these are recommendations, not partnerships. We don't earn affiliate
-          commissions on any of these links.
+          Disclosure: these are independent recommendations, not partnerships. We do not earn
+          affiliate commissions from these links. Verify current pricing, eligibility, and fit
+          directly with each provider before spending money.
         </p>
       </CardContent>
     </Card>

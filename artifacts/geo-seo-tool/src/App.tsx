@@ -42,6 +42,7 @@ const TermsPage = lazy(() => import("@/pages/terms"));
 const GoogleDataUsePage = lazy(() => import("@/pages/google-data-use"));
 const ContentEffortGuide = lazy(() => import("@/pages/content-effort-guide"));
 const SeoSolutionPage = lazy(() => import("@/pages/seo-solution-page"));
+const RecommendedTools = lazy(() => import("@/pages/recommended-tools"));
 
 const queryClient = new QueryClient();
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -53,7 +54,7 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
     // Remember where the user was trying to go so we can return them after
     // they sign in. wouter strips the BASE_URL prefix from window.location,
     // so use the relative path here.
-    const next = window.location.pathname + window.location.search;
+    const next = window.location.pathname + window.location.search + window.location.hash;
     const target = `/sign-in?next=${encodeURIComponent(next)}`;
     return <Redirect to={target} />;
   }
@@ -84,6 +85,9 @@ function AppRoutes() {
         </Route>
         <Route path="/projects">
           <RequireAuth><Projects /></RequireAuth>
+        </Route>
+        <Route path="/recommended-tools">
+          <RequireAuth><RecommendedTools /></RequireAuth>
         </Route>
         <Route path="/admin">
           <RequireAuth><Admin /></RequireAuth>

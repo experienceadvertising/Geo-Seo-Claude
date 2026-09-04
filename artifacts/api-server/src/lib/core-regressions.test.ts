@@ -1,5 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { sameAuditedPage } from "./auditComparison.ts";
+
+test("weekly score changes compare the same page, not unrelated pages on a domain", () => {
+  assert.equal(sameAuditedPage("https://example.com/", "https://example.com/about"), false);
+  assert.equal(sameAuditedPage("https://example.com/a?lang=en", "https://example.com/a?lang=fr"), false);
+  assert.equal(sameAuditedPage("https://example.com/a#intro", "https://example.com/a"), true);
+  assert.equal(sameAuditedPage("https://example.com", "https://example.com/"), true);
+  assert.equal(sameAuditedPage("invalid", "invalid"), false);
+});
 import * as cheerio from "cheerio";
 import { PgDialect } from "drizzle-orm/pg-core";
 import { isWikiArticleConfident } from "./entityConfidence.ts";
@@ -11,6 +20,8 @@ import { SsrfError } from "./safeFetch.ts";
 import { extractDataNoSnippetSignals } from "./snippetControls.ts";
 import { buildLatestRankSnapshotsQuery } from "./seoTrackingQueries.ts";
 import { isPaidSeoPlan } from "./seoAccess.ts";
+import { extractCompetitorBrandsFromText, looksLikeCompetitorBrand } from "./competitorNames.ts";
+import { normalizeGeneratedPromptLine, normalizeGeneratedPrompts } from "./promptQuality.ts";
 import {
   highestPaidPlan,
   isBlockingSubscriptionStatus,
@@ -18,12 +29,217 @@ import {
   planChangeDirection,
   validateCheckoutPrice,
 } from "./billingPolicy.ts";
+import { weeklyDigestEmail } from "./emailTemplates.ts";
+import { welcomeEmail, welcomeD3Email, welcomeD7Email, auditCompleteEmail, simulationCompleteEmail, aeoInsightsEmail, paymentFailedEmail, cardExpiringEmail, scoreChangedEmail } from "./emailTemplates.ts";
+
+test("onboarding gives stage-appropriate actions without full-access promises", () => {
+  const first = welcomeEmail("<b>Test</b>", "https://example.com/unsubscribe");
+  assert.ok(first.html.includes("&lt;b&gt;Test&lt;/b&gt;"));
+  assert.ok(first.html.includes("https://example.com/unsubscribe"));
+  assert.match(first.text, /No Google connection or tracking snippet/);
+  assert.match(welcomeD3Email("Test", false).text, /entering one website URL/);
+  assert.match(welcomeD3Email("Test", true).text, /unfinished recommendation/);
+  assert.match(welcomeD7Email("Test").text, /no automatic charge/);
+  assert.doesNotMatch(first.html, /full-access|everything.*unlocked/);
+});
+
+test("email links have safe missing-audit fallbacks and correct billing destination", () => {
+  for (const email of [auditCompleteEmail("Test", "https://example.com", 50, null), simulationCompleteEmail("Test", "example.com", 50, null)]) {
+    assert.doesNotMatch(email.html, /\/dashboard|\/simulate\/"/);
+    assert.doesNotMatch(email.text, /\/dashboard/);
+  }
+  for (const email of [paymentFailedEmail("Test", 1), cardExpiringEmail("Test", "1234", 12, 2030)]) {
+    assert.ok(email.html.includes("https://aeoimprovement.com/upgrade"));
+    assert.ok(email.text.includes("https://aeoimprovement.com/upgrade"));
+  }
+});
+
+test("educational and score emails distinguish guidance from measured outcomes", () => {
+  for (let week = 0; week < 6; week++) {
+    const email = aeoInsightsEmail("Test", week);
+    assert.doesNotMatch(email.html + email.text + email.subject, /—|highest-ROI|guaranteed lift/);
+    assert.match(email.text, /Top actions/);
+  }
+  assert.match(scoreChangedEmail("Test", "https://example.com", 50, 70, null, "42").text, /not proof/);
+});
+import { selectStripeCustomerCandidate } from "./billingCustomerSelection.ts";
+import { billingWebhookEvents } from "./stripeWebhookPolicy.ts";
+import { safeBaseUrl } from "./publicUrl.ts";
+import { getBillingSubscription } from "./billingSubscription.ts";
+
+test("billing lookup expands only the selected subscription within Stripe's depth limit", async () => {
+  const calls: unknown[] = [];
+  const expected = { id: "sub_active", status: "active" };
+  const stripe = { subscriptions: {
+    list: async (params: any) => {
+      assert.equal(params.expand, undefined);
+      assert.equal(params.customer, "cus_test");
+      return { data: [{ id: "sub_old", status: "canceled" }, expected] };
+    },
+    retrieve: async (id: string, params: any) => {
+      calls.push(id);
+      assert.deepEqual(params.expand, ["items.data.price.product"]);
+      assert.ok(params.expand.every((path: string) => path.split(".").length <= 4));
+      return expected;
+    },
+  } };
+  assert.equal(await getBillingSubscription(stripe as any, "cus_test"), expected);
+  assert.deepEqual(calls, ["sub_active"]);
+});
+
+test("billing lookup preserves no-subscription and provider-failure states", async () => {
+  const stripe = { subscriptions: {
+    list: async () => ({ data: [{ status: "canceled" }] }),
+    retrieve: async () => { throw new Error("must not retrieve"); },
+  } };
+  assert.equal(await getBillingSubscription(stripe as any, "cus_test"), null);
+  stripe.subscriptions.list = async () => { throw new Error("provider unavailable"); };
+  await assert.rejects(getBillingSubscription(stripe as any, "cus_test"), /provider unavailable/);
+});
+
+test("Stripe return URLs preserve the verified public custom domain", () => {
+  const previousReplitDomains = process.env.REPLIT_DOMAINS;
+  const previousNodeEnv = process.env.NODE_ENV;
+  process.env.REPLIT_DOMAINS = "geo-seo-claude-example.replit.app";
+  process.env.NODE_ENV = "production";
+
+  try {
+    const req = {
+      protocol: "https",
+      get(name: string) {
+        if (name === "x-forwarded-host") return "aeoimprovement.com";
+        if (name === "x-forwarded-proto") return "https";
+        return undefined;
+      },
+    };
+
+    assert.equal(safeBaseUrl(req as any), "https://aeoimprovement.com");
+
+    const proxiedReq = {
+      protocol: "https",
+      get(name: string) {
+        if (name === "x-forwarded-host") return "geo-seo-claude-example.replit.app";
+        if (name === "x-forwarded-proto") return "https";
+        return undefined;
+      },
+    };
+
+    assert.equal(safeBaseUrl(proxiedReq as any), "https://aeoimprovement.com");
+  } finally {
+    if (previousReplitDomains === undefined) delete process.env.REPLIT_DOMAINS;
+    else process.env.REPLIT_DOMAINS = previousReplitDomains;
+    if (previousNodeEnv === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = previousNodeEnv;
+  }
+});
+
+test("paid weekly digest points to the user's next task and program status", () => {
+  const email = weeklyDigestEmail({
+    firstName: "Jamie",
+    planName: "Pro",
+    auditCount: 2,
+    latestAudit: {
+      id: 42,
+      url: "https://example.com/",
+      geoScore: 61,
+      previousGeoScore: 55,
+      quickWins: [],
+      nextAction: { title: "Add first-party evidence", detail: "Document one example you can support." },
+      completedActions: 3,
+      createdAt: new Date("2026-09-01T12:00:00Z"),
+    },
+    tracking: { activeKeywords: 5, rankedKeywords: 4, pendingKeywords: 1 },
+    monitoring: { activeSites: 1, waitingForFirstRun: 0 },
+    googleMeasurementConnected: true,
+  });
+
+  assert.equal(email.subject, "Your SEO + GEO task for example.com");
+  assert.match(email.html, /\/results\/42#recommendations/);
+  assert.match(email.html, /Add first-party evidence/);
+  assert.match(email.html, /Keywords with a rank baseline/);
+  assert.match(email.text, /Active keyword targets: 5/);
+});
+
+test("paid weekly digest escapes recommendation content before rendering HTML", () => {
+  const email = weeklyDigestEmail({
+    firstName: "<Jamie>",
+    auditCount: 0,
+    latestAudit: {
+      id: 7,
+      url: "https://example.com/",
+      geoScore: 50,
+      quickWins: [],
+      nextAction: { title: "Add <evidence>", detail: "Use <script>alert(1)</script> nowhere." },
+      createdAt: new Date("2026-09-01T12:00:00Z"),
+    },
+  });
+
+  assert.doesNotMatch(email.html, /<script>/);
+  assert.match(email.html, /Add &lt;evidence&gt;/);
+  assert.match(email.html, /Hi &lt;Jamie&gt;/);
+});
+
+test("Starter weekly digest guides audit work without promising connected SEO tracking", () => {
+  const email = weeklyDigestEmail({
+    firstName: "Jamie",
+    planName: "Starter",
+    paidSeoEnabled: false,
+    auditCount: 1,
+  });
+
+  assert.match(email.html, /Create your SEO and GEO baseline/);
+  assert.doesNotMatch(email.html, /Active keyword targets/);
+  assert.doesNotMatch(email.html, /connect Search Console and GA4/);
+  assert.doesNotMatch(email.text, /Keywords with a rank baseline/);
+});
 
 test("limits provider-backed SEO tracking to paid Pro and Agency plans", () => {
   assert.equal(isPaidSeoPlan("free"), false);
   assert.equal(isPaidSeoPlan("starter"), false);
   assert.equal(isPaidSeoPlan("pro"), true);
   assert.equal(isPaidSeoPlan("agency"), true);
+});
+
+test("normalizes generated suggestions into complete buyer questions", () => {
+  assert.equal(
+    normalizeGeneratedPromptLine("How to hire a performance marketing agency for Google and Meta ads"),
+    "How can I hire a performance marketing agency for Google and Meta ads?",
+  );
+  assert.equal(
+    normalizeGeneratedPromptLine("In-house paid media team vs hiring performance marketing agency pros and cons"),
+    "Should I choose in-house paid media team or hire a performance marketing agency?",
+  );
+  assert.equal(
+    normalizeGeneratedPromptLine("Set up Google, Meta, TikTok ads and affiliate program for scaling ecommerce"),
+    "Who can help me set up Google, Meta, TikTok ads and affiliate program for scaling ecommerce?",
+  );
+  assert.deepEqual(normalizeGeneratedPrompts("Best AEO tools for agencies\nBest AEO tools for agencies"), [
+    "What are the best AEO tools for agencies?",
+  ]);
+});
+
+test("filters answer headings and keeps plausible company names", () => {
+  for (const heading of [
+    "Goal",
+    "Primary KPI",
+    "Constraints",
+    "Performance Max (PMax",
+    "Your offer + funnel",
+    "Testing / sprint",
+    "Ongoing management",
+    "Cross-channel",
+  ]) {
+    assert.equal(looksLikeCompetitorBrand(heading), false, `${heading} is structural text, not a brand`);
+  }
+  assert.equal(looksLikeCompetitorBrand("WebFX"), true);
+  assert.equal(looksLikeCompetitorBrand("Disruptive Advertising"), true);
+  assert.deepEqual(
+    extractCompetitorBrandsFromText(
+      "**Goal** **Primary KPI** **WebFX** **Performance Max (PMax)** **Disruptive Advertising**",
+      "Experience Advertising",
+    ),
+    ["WebFX", "Disruptive Advertising"],
+  );
 });
 
 test("rejects an ambiguous publication as a brand entity", () => {
@@ -139,6 +355,28 @@ test("billing reconciliation keeps the highest active entitlement and labels pla
   assert.equal(planChangeDirection("pro", "starter"), "Downgrade");
   assert.equal(planChangeDirection("pro", "agency"), "Upgrade");
   assert.equal(planChangeDirection("agency", "pro"), "Downgrade");
+});
+
+test("legacy Stripe customer recovery is exact or unambiguous", () => {
+  const candidates = [
+    { id: "cus_old", metadataUserId: "old-user", hasBlockingSubscription: true },
+  ];
+  assert.equal(selectStripeCustomerCandidate(candidates, "new-user", true), "cus_old");
+  assert.equal(selectStripeCustomerCandidate([
+    ...candidates,
+    { id: "cus_other", metadataUserId: null, hasBlockingSubscription: true },
+  ], "new-user", true), null);
+  assert.equal(selectStripeCustomerCandidate([
+    { id: "cus_exact", metadataUserId: "new-user", hasBlockingSubscription: false },
+    { id: "cus_other", metadataUserId: null, hasBlockingSubscription: true },
+  ], "new-user", false), "cus_exact");
+});
+
+test("managed Stripe webhooks exclude unsupported upcoming invoice previews", () => {
+  assert.deepEqual(
+    billingWebhookEvents(["checkout.session.completed", "invoice.upcoming", "invoice.payment_succeeded"]),
+    ["checkout.session.completed", "invoice.payment_succeeded"],
+  );
 });
 
 test("rank tracking skips the snapshot lookup when there are no keyword targets", () => {
