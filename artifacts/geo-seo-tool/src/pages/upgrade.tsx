@@ -302,7 +302,7 @@ export default function UpgradePage() {
   const { storedPlan, trialActive, trialEndsAt, usage, isLoading: planLoading } = usePlan();
   const isFree = storedPlan === "free";
   const { data: productsData, isLoading: productsLoading } = useStripeProducts();
-  const { data: subData, isLoading: subscriptionLoading } = useStripeSubscription();
+  const { data: subData, isLoading: subscriptionLoading, isError: subscriptionError, refetch: retrySubscription } = useStripeSubscription();
   const checkout = useCheckout();
   const portal = useCustomerPortal();
   const { toast } = useToast();
@@ -407,6 +407,17 @@ export default function UpgradePage() {
         <meta name="robots" content="noindex,nofollow" />
       </Helmet>
       <div className="max-w-4xl mx-auto space-y-10">
+        {subscriptionError && (
+          <div role="alert" className="rounded-xl border border-amber-300 bg-amber-50 p-4">
+            <p>We couldn't load your billing details. Your plan has not changed.</p>
+            <Button variant="outline" onClick={() => void retrySubscription()}>Retry billing lookup</Button>
+          </div>
+        )}
+        {canManageBilling && (
+          <Button variant="outline" onClick={() => portal.mutate()} disabled={portal.isPending}>
+            {portal.isPending ? "Opening billing..." : "Manage Billing"}
+          </Button>
+        )}
         {/* Hero */}
         <div className="text-center space-y-4">
           <Badge className={`${TONE_CLASSES[hero.badgeTone]} border px-3 py-1 text-xs font-semibold inline-flex items-center gap-1.5`}>

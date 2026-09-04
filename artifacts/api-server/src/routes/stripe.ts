@@ -11,6 +11,7 @@ import { db, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { isBlockingSubscriptionStatus, paidPlanFromProduct, validateCheckoutPrice } from "../lib/billingPolicy";
 import { reconcileStripeCustomerForUser } from "../lib/billingReconciliation";
+import { getBillingSubscription } from "../lib/billingSubscription";
 
 const router: IRouter = Router();
 
@@ -85,13 +86,7 @@ router.get("/stripe/subscription", requireAuth, async (req, res): Promise<void> 
       res.json({ subscription: null, plan, canManageBilling: false });
       return;
     }
-    const subs = await stripe.subscriptions.list({
-      customer: customerId,
-      status: "all",
-      limit: 100,
-      expand: ["data.items.data.price.product"],
-    });
-    const subscription = subs.data.find((sub) => isBlockingSubscriptionStatus(sub.status)) ?? null;
+    const subscription = await getBillingSubscription(stripe, customerId);
     const price = subscription?.items.data[0]?.price;
     res.json({
       subscription: subscription ? {
