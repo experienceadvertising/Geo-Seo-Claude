@@ -15,7 +15,7 @@ export default function GoogleDataUsePage() {
           <ShieldCheck className="h-8 w-8 text-emerald-600" />
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Google data use</h1>
-            <p className="mt-1 text-sm text-slate-500">Effective September 2, 2026</p>
+            <p className="mt-1 text-sm text-slate-500">Updated September 4, 2026</p>
           </div>
         </div>
 
@@ -33,12 +33,13 @@ export default function GoogleDataUsePage() {
 
           <h2>How we use the data</h2>
           <ul>
-            <li>Identify traffic referred by AI assistants and answer engines in your GA4 reporting.</li>
+            <li>Read GA4 property names and identifiers, dates, session sources and session counts to identify traffic referred by AI assistants and answer engines.</li>
             <li>Show page and query performance from Search Console.</li>
             <li>Find pages and queries that may benefit from specific AEO improvements.</li>
             <li>Measure changes over time inside your account.</li>
           </ul>
           <p>We do not sell Google user data, use it for advertising, or use it to train general-purpose AI models.</p>
+          <p>If you select a Search Console query as an input to prompt generation, that query and page context are sent to the AI service used for the requested feature. Google connection tokens are not sent to AI services. Hosting and database providers process connection and reporting information to operate the integration.</p>
 
           <h2>Storage and access</h2>
           <p>
@@ -46,6 +47,7 @@ export default function GoogleDataUsePage() {
           </p>
 
           <h2>Disconnecting and deleting data</h2>
+          <p>Google reporting requests use HTTPS. Connected-data requests require a signed-in account and are restricted to that account's connection. Disconnecting does not automatically delete saved audits or prompts; contact evan@aeoimprovement.com to request their deletion. See the Privacy Policy for retention details.</p>
           <p>
             You can disconnect Google Analytics or Search Console from the integrations area in your account. Disconnecting removes the saved connection from AEO Improvement and attempts to revoke the associated Google token. You can also revoke access from your Google Account permissions.
           </p>

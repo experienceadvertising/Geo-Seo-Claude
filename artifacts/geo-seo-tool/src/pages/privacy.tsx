@@ -33,10 +33,13 @@ const sections = [
     title: "Google user data",
     body: [
       "Connecting Google is optional and happens only after you choose to authorize it. We request analytics.readonly to list the GA4 properties you can access and read reporting data, and webmasters.readonly to list verified Search Console properties and read search-performance data.",
-      "We use GA4 data to show traffic and engagement reporting, including visits referred by AI assistants and answer engines. We use Search Console data to show page and query performance, identify SEO opportunities, and compare observed changes over time inside your private account.",
+      "We read GA4 property identifiers and names, report dates, session sources, and session counts to show traffic referred by AI assistants and answer engines. We read Search Console property URLs, search queries, page URLs, clicks, impressions, click-through rate, and average position to show SEO opportunities and observed performance inside your account.",
       "These permissions are read-only. AEO Improvement cannot edit your Google Analytics or Search Console properties, and it does not use Google user data for advertising or to train general-purpose AI models.",
       "OAuth access and refresh tokens are stored in AEO Improvement's server-side database and are not exposed to the browser. They are used only to maintain the connection and request the reporting data you ask the product to display. Access is limited to the systems and service providers needed to operate and secure the integration.",
       "We do not sell Google user data. We do not transfer it to unrelated third parties. We may disclose information when required by law or when necessary to protect users, the public, or the service.",
+      "Our hosting and database providers process Google connection and reporting information to operate the integration. If you choose a Search Console query as a prompt-generation input, that query and the page context are sent to the AI service used for that requested feature. Google connection tokens are not sent to those AI services. Google data is not shared with advertising networks or data brokers.",
+      "Google reporting requests use HTTPS. Requests for connected data require a signed-in account and are restricted to that account's connection. Connection credentials remain in the server-side database. No security measure can guarantee absolute protection.",
+      "Disconnecting stops future access through the saved connection; it does not automatically delete audits, prompts, or other saved product records. Request deletion of those records by contacting evan@aeoimprovement.com. We retain product records as described below and do not promise immediate removal from backups or records subject to legal retention.",
       "Connection tokens are retained while the Google integration remains connected. Disconnecting Google from the product deletes the saved connection and its tokens from AEO Improvement and triggers a best-effort request to revoke the token with Google. You can also revoke access at any time from your Google Account permissions page.",
       "AEO Improvement's use and transfer of information received from Google APIs follows the Google API Services User Data Policy, including its Limited Use requirements.",
     ],
@@ -67,7 +70,7 @@ export default function PrivacyPage() {
         path="/privacy"
       />
       <div className="space-y-3 border-b pb-8">
-        <p className="text-sm font-semibold text-emerald-700">Effective September 2, 2026</p>
+        <p className="text-sm font-semibold text-emerald-700">Updated September 4, 2026</p>
         <h1 className="text-4xl font-bold tracking-tight">Privacy Policy</h1>
         <p className="text-muted-foreground">
           This policy explains what AEO Improvement collects and how that information is used.
