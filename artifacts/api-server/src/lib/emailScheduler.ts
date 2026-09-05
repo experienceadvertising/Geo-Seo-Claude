@@ -18,6 +18,7 @@ import { summarizeRankProgress } from "./seoProgressSummary";
 import { logger } from "./logger";
 import { buildLatestRankSnapshotsQuery } from "./seoTrackingQueries";
 import { sameAuditedPage } from "./auditComparison";
+import type { WorkerJob } from "./workerPlan";
 
 // Cron-driven sends have no inbound HTTP request to derive a base URL from,
 // so we use the configured FRONTEND_URL (preferred in prod) or fall back to
@@ -505,6 +506,10 @@ async function runSimulationFollowUps() {
 
 // ── Start all schedules ───────────────────────────────────────────────────────
 export function startEmailScheduler() {
+  if (process.env.SCHEDULER_MODE === "external") {
+    logger.info("In-process schedules disabled; external worker owns scheduled jobs");
+    return;
+  }
   // Continuous monitoring sweep runs independently of email config — the
   // re-audits still happen (and feed the Projects trend view) even when
   // Postmark isn't set; only the alert emails are skipped in that case.
@@ -582,4 +587,19 @@ export function startEmailScheduler() {
   });
 
   logger.info("Email scheduler started (welcome series, trial lifecycle, weekly digest, monthly report, weekly insights)");
+}
+
+/** Called only by the separately activated scheduled-worker entrypoint. */
+export async function runExternalScheduledJob(job: WorkerJob): Promise<void> {
+  if (job === "ranks") return runDueSeoRankSnapshots(25);
+  if (job === "monitoring") return runDueMonitoredSites(25);
+  const jobs = {
+    welcome: runWelcomeSeries,
+    trial: runTrialLifecycle,
+    "simulation-followup": runSimulationFollowUps,
+    "weekly-digest": runWeeklyDigests,
+    "monthly-report": runMonthlyReports,
+    "weekly-insights": runWeeklyInsights,
+  };
+  return withSchedulerLock(job, jobs[job]);
 }
