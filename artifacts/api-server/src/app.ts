@@ -8,10 +8,14 @@ import { WebhookHandlers } from "./lib/webhookHandlers";
 import { createSessionMiddleware } from "./middlewares/session";
 import { errorHandler, notFoundHandler } from "./middlewares/errorHandler";
 import { isProduction } from "./lib/env";
+import { schedulerHttp } from "./lib/schedulerHttp";
 
 const app: Express = express();
 
 app.set("trust proxy", 1);
+
+// Dedicated machine credential, exact-body signature, no browser/session authority.
+app.post("/api/internal/scheduler", express.raw({ type: "application/json", limit: "4kb" }), schedulerHttp);
 
 // ── Raw-body webhook routes (must be BEFORE express.json()) ──────────────────
 app.post(

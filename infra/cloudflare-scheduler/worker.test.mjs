@@ -32,3 +32,9 @@ test("failed or unconfirmed responses are sanitized and never retried", async ()
     assert.equal(calls, 1);
   }
 });
+test("one tick has a hard cap of 40 requests even when backlog remains", async () => {
+  let calls = 0;
+  const result = await trigger({ SCHEDULER_ENABLED: "true", SCHEDULER_SECRET: secret }, async () => { calls++; return Response.json({ status: "completed", more: true }); });
+  assert.equal(calls, 40);
+  assert.deepEqual(result, { status: "batch-limit-reached" });
+});

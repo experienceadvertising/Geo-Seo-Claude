@@ -17,10 +17,12 @@ export async function signedHeaders(secret, body, now = Date.now()) {
 export async function trigger(env, request = fetch) {
   if (env.SCHEDULER_ENABLED !== "true") return { status: "disabled" };
   const body = JSON.stringify({ operation: "run-due" });
-  const headers = await signedHeaders(env.SCHEDULER_SECRET, body);
   // Never follow a redirect carrying this authenticated request to another host.
   // A timeout is uncertain completion, not permission to replay email sends.
   try {
+    const started = Date.now();
+    for (let step = 0; step < 40 && Date.now() - started < 600_000; step++) {
+    const headers = await signedHeaders(env.SCHEDULER_SECRET, body);
     const response = await request(endpoint, {
       method: "POST", headers, body, redirect: "error",
       signal: AbortSignal.timeout(90_000),
@@ -30,7 +32,9 @@ export async function trigger(env, request = fetch) {
     if (result?.status !== "completed" && result?.status !== "idle") {
       throw new Error("Scheduler completion not confirmed");
     }
-    return { status: result.status };
+    if (!result.more) return { status: result.status };
+    }
+    return { status: "batch-limit-reached" };
   } catch {
     // Do not log response bodies, secret headers, or provider/customer payloads.
     throw new Error("Scheduler request failed or completion is uncertain; inspect the job ledger before retrying");
