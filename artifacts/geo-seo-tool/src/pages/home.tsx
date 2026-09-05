@@ -118,7 +118,7 @@ const ENGINE_RESPONSES = [
     borderColor: "border-emerald-500/25",
     citeBg: "bg-emerald-50 dark:bg-emerald-950/50",
     citeText: "text-emerald-700 dark:text-emerald-400",
-    snippet: "AEO Improvement provides a structured audit of how each AI engine perceives your site, with specific fixes you can ship the same day.",
+    snippet: "AEO Improvement reviews page content and technical signals, then suggests specific improvements you can apply to your website.",
   },
   {
     name: "Claude",
@@ -126,7 +126,7 @@ const ENGINE_RESPONSES = [
     borderColor: "border-orange-400/25",
     citeBg: "bg-orange-50 dark:bg-orange-950/50",
     citeText: "text-orange-700 dark:text-orange-400",
-    snippet: "For teams serious about AI search visibility, aeoimprovement.com delivers multi-engine citation simulation and a score you can track over time.",
+    snippet: "Use the audit to prioritize changes, then test buyer questions and compare the mentions and citations in sampled AI responses.",
   },
   {
     name: "Gemini",
@@ -205,7 +205,7 @@ function HeroVisual() {
           92
         </div>
         <div className="flex flex-col">
-          <span className="text-[10px] uppercase tracking-wider text-muted-foreground">AEO Score</span>
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Example readiness score</span>
           <span className="text-sm font-semibold flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
             <CheckCircle2 className="h-3.5 w-3.5" /> Excellent
           </span>
@@ -247,23 +247,24 @@ function SignedOutLanding() {
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <div className="flex flex-col items-center lg:items-start text-center lg:text-left space-y-6">
               <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400 backdrop-blur-sm">
-                <Sparkles className="h-3 w-3" /> Built on 2026 expert research
+                <Sparkles className="h-3 w-3" /> SEO + GEO, with a clear next step
               </div>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.05]">
-                Improve how your brand appears in Google and AI search.
+                Turn SEO and AI-search insights into your next improvement.
               </h1>
               <p className="text-lg md:text-xl text-muted-foreground max-w-[560px]">
-                One guided workflow for SEO and GEO. Find the technical, content, and visibility gaps
-                holding you back, then get the next practical improvement to make for Google and AI search.
+                Find what is holding your website back, know what to fix first, and track what changes.
+                AEO Improvement brings SEO audits, GEO recommendations, AI prompt testing, and keyword
+                tracking into one guided workspace for brands and agencies.
               </p>
 
               <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm text-foreground/80 max-w-md">
                 {[
-                  "Find SEO and AI-search visibility gaps",
-                  "Check whether your pages allow AI crawlers",
-                  "Track audit changes with scheduled monitoring",
-                  "Auto-generated JSON-LD and robots.txt fixes",
-                  "Connect Google data when you are ready to measure",
+                  "A prioritized action plan for your website",
+                  "Content, schema, and AI crawler checks",
+                  "Buyer-question tests across AI models",
+                  "Suggested fixes you can review and apply",
+                  "Weekly keyword tracking on Pro and Agency",
                   "30-day guided trial, no card",
                 ].map(item => (
                   <li key={item} className="flex items-center gap-2">
@@ -312,6 +313,17 @@ function SignedOutLanding() {
       <div className="w-full max-w-5xl mx-auto px-4 md:px-8 py-12 md:py-20 space-y-16">
         <MarketStats />
 
+        <section aria-labelledby="guided-growth" className="rounded-2xl border bg-card p-6 md:p-8">
+          <h2 id="guided-growth" className="text-2xl md:text-3xl font-bold">Less guesswork. One useful improvement at a time.</h2>
+          <p className="mt-3 text-muted-foreground">You do not need to interpret a wall of scores before getting started. Your dashboard highlights the next action, keeps your audit within reach, and records the changes you make. Start with one page, improve it, then check your progress.</p>
+          <div className="mt-6 grid gap-6 md:grid-cols-3">
+            <div><h3 className="font-semibold">Build a stronger search foundation</h3><p className="mt-2 text-sm text-muted-foreground">Find technical SEO issues, unclear brand facts, missing evidence, and content that is hard to understand or cite. Each recommendation tells you what to change and why.</p><Link href="/methodology" className="mt-3 inline-block text-sm text-primary hover:underline">How the audit works →</Link></div>
+            <div><h3 className="font-semibold">Test how AI answers buyer questions</h3><p className="mt-2 text-sm text-muted-foreground">Review suggested prompts, sample model responses, and inspect mentions and citations. These are observations from individual tests, not a prediction of every answer a customer will see.</p><Link href="/ai-visibility-checker" className="mt-3 inline-block text-sm text-primary hover:underline">Explore AI visibility checks →</Link></div>
+            <div><h3 className="font-semibold">Measure progress on paid plans</h3><p className="mt-2 text-sm text-muted-foreground">On Pro and Agency, track selected Google keywords weekly by location and device. Connect Search Console for search performance and GA4 for traffic context. Compare the evidence with your completed actions.</p><Link href="/pricing" className="mt-3 inline-block text-sm text-primary hover:underline">Compare tracking and plan limits →</Link></div>
+          </div>
+          <p className="mt-5 text-sm text-muted-foreground">Built to help you work toward stronger Google rankings and clearer AI-search visibility. You control the changes to your site; rankings and citations are not guaranteed.</p>
+        </section>
+
         <section className="rounded-2xl border bg-card p-6 md:p-8" aria-labelledby="improvement-example">
           <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700">An example workflow, not a customer result</p>
           <h2 id="improvement-example" className="mt-2 text-2xl font-bold">What happens after your SEO and GEO audit?</h2>
@@ -338,7 +350,7 @@ function SignedOutLanding() {
                 gradient: "from-violet-500 to-purple-600",
                 badge: null,
                 title: "Test the AI questions your buyers ask",
-                body: "Run the exact questions your buyers type into ChatGPT, Claude, Gemini, and Perplexity. See whether you get cited, what your competitors share looks like, and what AI actually says about your brand. Fan-out mode tests 6 topic clusters at once.",
+                body: "Test buyer questions with supported ChatGPT, Claude, Gemini, and Perplexity models. Inspect sampled answers, brand mentions, and citations, then use what you learn to improve your pages. Results depend on the prompt, model, and available retrieval context.",
               },
               {
                 icon: BarChart3,
@@ -351,8 +363,8 @@ function SignedOutLanding() {
                 icon: Zap,
                 gradient: "from-amber-500 to-orange-500",
                 badge: null,
-                title: "Get the exact code to fix it. Copy, paste, ship.",
-                body: "Instead of figuring out what to write, AEO Improvement auto-drafts your JSON-LD schema blocks, citation-bot robots.txt entries, and optional llms.txt based on your actual audit gaps. No guesswork. No dev backlog. Ready to deploy in minutes.",
+                title: "Start with a fix you can review and use",
+                body: "Get draft JSON-LD schema, crawler-access guidance, and optional llms.txt suggestions based on your audit. Review them for your content and website setup before publishing. Your developer or website editor stays in control.",
               },
               {
                 icon: Activity,
@@ -415,7 +427,7 @@ function SignedOutLanding() {
                 step: "02",
                 gradient: "from-amber-500 to-orange-500",
                 title: "Simulate",
-                body: "Run the exact queries your buyers type. See whether ChatGPT, Claude, Gemini, and Perplexity cite you, what your competitors share looks like, and what AI says about your brand.",
+                body: "Choose buyer questions and inspect sampled AI responses, mentions, and citations. Compare selected competitors where supported, then turn what you learn into clearer, more useful content.",
               },
               {
                 step: "03",
@@ -442,17 +454,10 @@ function SignedOutLanding() {
         </section>
 
         <section className="relative rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 to-teal-500/5 px-8 md:px-14 py-10 md:py-14">
-          <div className="absolute top-6 left-8 text-emerald-500/20 select-none" aria-hidden>
-            <svg width="64" height="48" viewBox="0 0 64 48" fill="currentColor"><path d="M0 48V29.333C0 12.8 10.667 3.2 32 0l4.267 6.4C24.533 8.533 18.133 13.867 16 22.4H28.8V48H0zm35.2 0V29.333C35.2 12.8 45.867 3.2 67.2 0L71.467 6.4C59.733 8.533 53.333 13.867 51.2 22.4H64V48H35.2z"/></svg>
-          </div>
           <div className="relative max-w-3xl mx-auto text-center space-y-6">
-            <p className="text-xl md:text-2xl font-semibold leading-snug text-foreground">
-              "Twenty years in digital marketing and I have never seen a category move this fast. AEO Improvement is the only tool that shows you exactly where your site stands with ChatGPT, Claude, Gemini, and Perplexity, diagnoses why you are not being cited, and hands you a prioritized fix list you can act on the same day. Every agency and in-house team needs this right now."
-            </p>
-            <div className="flex flex-col items-center gap-1">
-              <span className="font-bold text-sm text-foreground">Evan Weber</span>
-              <span className="text-xs text-muted-foreground">Digital Marketing Expert, Experience Advertising</span>
-            </div>
+            <h2 className="text-xl md:text-2xl font-semibold leading-snug text-foreground">Built for the people doing the work</h2>
+            <p className="text-muted-foreground">For a brand, that means a clear next step instead of another report to decode. For an agency, it means a repeatable workflow for client audits, improvements, and tracking. Keep your recommendations and observed results connected, without presenting guesses as proof.</p>
+            <Link href="/geo-software-for-agencies" className="inline-block font-semibold text-primary hover:underline">Explore the agency workflow →</Link>
           </div>
         </section>
 
@@ -472,10 +477,10 @@ function SignedOutLanding() {
                 <CheckCircle2 className="h-3 w-3" /> 30-day guided trial, no credit card
               </div>
               <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight leading-tight">
-                Find out whether AI engines cite you. Then fix what is stopping them.
+                Start with your website. Leave with a clear next step.
               </h2>
               <p className="text-emerald-100/70 text-base">
-                Full AEO score, crawler audit, and research-backed recommendations. Free for your first month.
+                Find SEO and GEO opportunities, review practical recommendations, and start improving your pages. Your 30-day guided trial needs no credit card.
               </p>
             </div>
             <div className="shrink-0 flex flex-col sm:flex-row gap-3">

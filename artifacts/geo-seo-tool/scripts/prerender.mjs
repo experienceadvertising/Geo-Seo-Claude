@@ -24,6 +24,7 @@ import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { brotliCompress, gzip, constants as zlibConstants } from "node:zlib";
 import { ROUTES, SITE_ORIGIN } from "./seo-manifest.mjs";
+import { bootHead, bootStatus } from "./boot-shell.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DIST = resolve(__dirname, "..", "dist", "public");
@@ -207,8 +208,10 @@ async function main() {
     html = stripExistingHeadTags(html);
 
     const injection = buildHeadInjection(route);
+    html = html.replace(/<head>/i, `<head>${bootHead}`);
     html = html.replace(/<\/head>/i, `    ${injection}\n  </head>`);
     html = html.replace(/<div\s+id=["']root["']>\s*<\/div>/i, `<div id="root">${buildStaticContent(route)}</div>`);
+    html = html.replace(/<body>/i, `<body>${bootStatus}`);
     html = html.replace(/<noscript>[\s\S]*?<\/noscript>\s*/i, "");
 
     if (isHome) {

@@ -13,20 +13,20 @@ const COPY: Record<Variant, { path: string; title: string; h1: string; intro: st
   audit: {
     path: "/free-aeo-audit-tool",
     title: "Free AEO Audit Tool for ChatGPT and AI Search | AEO Improvement",
-    h1: "Find out why AI search skips your site and fix it",
-    intro: "Most brands have no idea why AI engines skip them. This audit shows you exactly why, then gives you a prioritized fix list backed by 2026 expert research, with ready-to-copy code for every technical change.",
+    h1: "Find the gaps in your site's AI-search readiness",
+    intro: "Check your page for technical, content, and brand clarity gaps. Get a prioritized improvement list with source-backed guidance and draft code where available. You review and apply the changes to your site.",
   },
   visibility: {
     path: "/ai-visibility-checker",
     title: "AI Visibility Checker for ChatGPT, Claude, Gemini and Perplexity",
     h1: "See whether AI engines can find, trust, and cite your site",
-    intro: "Get a clear picture of where AI engines stand on your brand today. Run live buyer queries to see if citations follow. Know your score, know your gaps, know exactly what to change.",
+    intro: "Assess your page's AI-search readiness, then test selected buyer questions across supported AI models. Review mentions and available citations in the sampled responses, and choose your next improvement.",
   },
   citations: {
     path: "/chatgpt-citation-tracker",
     title: "ChatGPT Citation Tracker and Visibility Monitor | AEO Improvement",
     h1: "Track whether ChatGPT cites your brand or your competitors",
-    intro: "Run real buyer queries across ChatGPT, Claude, Gemini, and Perplexity. See your citation share, get alerted when your standing changes, and turn every gap into a specific fix your team can ship this week.",
+    intro: "Test buyer questions across supported AI models and review brand mentions and available citations. Compare saved runs to understand what changed in those responses. Results vary by prompt, model, and retrieval context; they do not represent every user's AI-search experience.",
   },
 };
 
@@ -67,9 +67,9 @@ export default function ProductLanding({ variant }: { variant: Variant }) {
       </section>
       <section className="mx-auto max-w-5xl px-5 py-12 grid md:grid-cols-3 gap-8">
         {[
-          ["Measure", "Score every dimension that determines whether AI engines trust and cite you, including crawler access and brand authority signals that most tools miss entirely."],
-          ["Prove", "Run the exact questions your buyers type and see whether you show up, what your competitors share is, and what AI actually says about your brand."],
-          ["Improve", "Work through fixes ranked by research-proven impact. Each recommendation comes with the evidence behind it and ready-to-copy code where applicable."],
+          ["Assess", "Check visible readiness signals such as crawler access, schema, content structure, and clear brand facts. Readiness is not a predicted citation rate."],
+          ["Test", "Choose questions relevant to your buyers and inspect the model responses. Use the findings to identify gaps worth investigating, not as proof of universal visibility."],
+          ["Improve", "Follow prioritized recommendations with supporting sources. Review suggested content and draft code before applying them, then compare later audits and prompt runs. Rankings and citations are not guaranteed."],
         ].map(([title, body]) => <div key={title}><CheckCircle2 className="h-5 w-5 text-emerald-600 mb-3" /><h2 className="font-semibold text-lg">{title}</h2><p className="mt-2 text-sm leading-relaxed text-slate-600">{body}</p></div>)}
       </section>
     </div>
