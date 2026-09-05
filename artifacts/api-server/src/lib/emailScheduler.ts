@@ -251,17 +251,19 @@ async function runWeeklyDigests() {
     const firstName = getFirstName(user);
     const domain = latestAudit ? (() => { try { return new URL(latestAudit.url).hostname.toLowerCase().replace(/^www\./, ""); } catch { return ""; } })() : "";
     const previousAudit = latestAudit ? recentAudits.slice(1).find((audit) => sameAuditedPage(audit.url, latestAudit.url)) : undefined;
-    let nextAction: { title: string; detail: string } | undefined;
+    let nextAction: { id: string; title: string; detail: string } | undefined;
     let completedActions = 0;
     if (latestAudit) {
       const completed = domain ? await db.select({ recommendationId: recommendationProgressTable.recommendationId })
         .from(recommendationProgressTable)
         .where(and(eq(recommendationProgressTable.userId, user.id), eq(recommendationProgressTable.domain, domain))) : [];
-      completedActions = completed.length;
       const done = new Set(completed.map((row) => row.recommendationId));
-      const remaining = ((latestAudit.recommendations as any[]) ?? []).filter((item) => item?.id && !done.has(item.id));
-      const rec = remaining.find((item) => item.priority === "critical" || item.priority === "high") ?? remaining[0];
-      if (rec) nextAction = { title: String(rec.title), detail: String(rec.detail) };
+      const currentRecommendations = ((latestAudit.recommendations as any[]) ?? []).filter((item) => item?.id);
+      completedActions = currentRecommendations.filter((item) => done.has(item.id)).length;
+      const remaining = currentRecommendations.filter((item) => !done.has(item.id));
+      const priority: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
+      const rec = remaining.sort((a, b) => (priority[a.priority] ?? 4) - (priority[b.priority] ?? 4))[0];
+      if (rec) nextAction = { id: String(rec.id), title: String(rec.title), detail: String(rec.detail) };
     }
 
     const activeTargets = paidSeoEnabled && domain ? await db

@@ -183,7 +183,7 @@ export interface WeeklyDigestData {
     geoScore: number;
     previousGeoScore?: number;
     quickWins: string[];
-    nextAction?: { title: string; detail: string };
+    nextAction?: { id?: string; title: string; detail: string };
     completedActions?: number;
     createdAt: Date;
   };
@@ -208,7 +208,7 @@ export function weeklyDigestEmail(data: WeeklyDigestData, unsubscribeUrl?: strin
     try { return new URL(latestAudit.url).hostname.replace(/^www\./, ""); }
     catch { return latestAudit.url; }
   })() : "your site";
-  const actionUrl = latestAudit ? `${BASE_URL}/results/${latestAudit.id}#recommendations` : BASE_URL;
+  const actionUrl = latestAudit ? `${BASE_URL}/results/${latestAudit.id}${latestAudit.nextAction?.id ? `?task=${encodeURIComponent(latestAudit.nextAction.id)}` : ""}#recommendations` : BASE_URL;
   const subject = latestAudit?.nextAction
     ? `Your SEO + GEO task for ${domain}`
     : `Your weekly SEO + GEO update`;
@@ -220,6 +220,7 @@ export function weeklyDigestEmail(data: WeeklyDigestData, unsubscribeUrl?: strin
         <div style="font-size:12px;font-weight:700;color:${BRAND_COLOR};text-transform:uppercase;letter-spacing:0.05em;margin-bottom:7px;">Your recommended task this week</div>
         <div style="font-size:17px;font-weight:700;color:#111827;margin-bottom:7px;">${esc(latestAudit.nextAction.title)}</div>
         <div style="font-size:14px;color:#4b5563;line-height:1.6;">${esc(latestAudit.nextAction.detail)}</div>
+        <div style="margin-top:12px;font-size:13px;color:#4b5563;line-height:1.6;">Make the change in your website editor, publish it, and mark the task done. Then re-audit the same page and review subsequent search performance. Marking a task done records your work; it does not verify a ranking improvement.</div>
         <div style="margin-top:14px;">${btn("Open this task", actionUrl)}</div>
       </div>`
     : latestAudit

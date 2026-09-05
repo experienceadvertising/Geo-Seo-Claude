@@ -188,7 +188,7 @@ test("paid weekly digest escapes recommendation content before rendering HTML", 
       url: "https://example.com/",
       geoScore: 50,
       quickWins: [],
-      nextAction: { title: "Add <evidence>", detail: "Use <script>alert(1)</script> nowhere." },
+      nextAction: { id: "evidence&method", title: "Add <evidence>", detail: "Use <script>alert(1)</script> nowhere." },
       createdAt: new Date("2026-09-01T12:00:00Z"),
     },
   });
@@ -196,6 +196,8 @@ test("paid weekly digest escapes recommendation content before rendering HTML", 
   assert.doesNotMatch(email.html, /<script>/);
   assert.match(email.html, /Add &lt;evidence&gt;/);
   assert.match(email.html, /Hi &lt;Jamie&gt;/);
+  assert.ok(email.html.includes("/results/7?task=evidence%26method#recommendations"));
+  assert.ok(email.text.includes("/results/7?task=evidence%26method#recommendations"));
 });
 
 test("Starter weekly digest guides audit work without promising connected SEO tracking", () => {

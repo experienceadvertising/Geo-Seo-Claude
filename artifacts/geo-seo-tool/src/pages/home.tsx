@@ -1,5 +1,6 @@
 import React from "react";
 import { sameAuditPage } from "@/lib/auditProgress";
+import { nextImprovement, improvementLink } from "@/lib/nextImprovement";
 import { Link, useLocation } from "wouter";
 import { Search, Loader2, ArrowRight, BarChart3, TrendingUp, TrendingDown, Minus, Zap, Shield, Lock, Sparkles, CheckCircle2, BookOpen, Lightbulb, ExternalLink, Globe, FileCode, Building2, Bot, Activity, LineChart, Radar, Bell, Megaphone } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -310,6 +311,18 @@ function SignedOutLanding() {
 
       <div className="w-full max-w-5xl mx-auto px-4 md:px-8 py-12 md:py-20 space-y-16">
         <MarketStats />
+
+        <section className="rounded-2xl border bg-card p-6 md:p-8" aria-labelledby="improvement-example">
+          <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700">An example workflow, not a customer result</p>
+          <h2 id="improvement-example" className="mt-2 text-2xl font-bold">What happens after your SEO and GEO audit?</h2>
+          <div className="mt-6 grid gap-5 md:grid-cols-3">
+            <div><h3 className="font-semibold">1. Find a specific gap</h3><p className="mt-2 text-sm text-muted-foreground">A service page makes broad claims but provides no concrete examples. The audit recommends adding evidence readers can evaluate.</p></div>
+            <div><h3 className="font-semibold">2. Make a useful change</h3><p className="mt-2 text-sm text-muted-foreground">Add a real example with your method, limitations, and a source where appropriate. Publish it on your site and record the task as done.</p></div>
+            <div><h3 className="font-semibold">3. Check what changed</h3><p className="mt-2 text-sm text-muted-foreground">Re-audit that page. On Pro or Agency, review selected keyword rankings and connected Search Console performance over time. Results may rise, fall, or stay the same.</p></div>
+          </div>
+          <p className="mt-5 text-xs text-muted-foreground">The tool guides your work; it does not automatically edit your website or guarantee rankings or AI citations.</p>
+          <Link href="/sign-up" className="mt-4 inline-block font-semibold text-primary hover:underline">Start with your own page →</Link>
+        </section>
 
         <section className="space-y-8">
           <div className="text-center space-y-3">
@@ -1030,7 +1043,7 @@ function SignedInDashboard() {
     enabled: hasPaidPlan && Boolean(latestDomain),
     retry: false,
   });
-  const { data: latestAuditDetails } = useGetAudit(latestAudit?.id ?? 0, {
+  const { data: latestAuditDetails, isLoading: detailsLoading, isError: detailsError } = useGetAudit(latestAudit?.id ?? 0, {
     query: {
       queryKey: getGetAuditQueryKey(latestAudit?.id ?? 0),
       enabled: Boolean(latestAudit?.id),
@@ -1132,7 +1145,10 @@ function SignedInDashboard() {
   const confirmedSteps = [hasAudit, googleConnected, rankTrackingActive, monitoringActive];
   const confirmedCount = confirmedSteps.filter(Boolean).length;
   const completedRecommendationIds = new Set((recommendationProgress.data?.completed ?? []).map((item) => item.recommendationId));
-  const nextRecommendation = latestAuditDetails?.recommendations?.find((item) => item.id && !completedRecommendationIds.has(item.id));
+  const nextTask = nextImprovement(latestAuditDetails?.recommendations, completedRecommendationIds,
+    detailsError || recommendationProgress.isError ? "error"
+      : detailsLoading || (Boolean(latestAuditDetails?.recommendations?.length) && recommendationProgress.isLoading) ? "loading" : "ready");
+  const nextRecommendation = nextTask.task;
   const activeKeywordCount = seoKeywords.data?.targets?.filter((target) => target.active).length ?? 0;
   const baselineCount = seoKeywords.data?.targets?.filter((target) => target.active && target.latest).length ?? 0;
   const overdueCount = seoKeywords.data?.targets?.filter((target) => target.active && target.latest && Date.now() - Date.parse(target.latest.collected_at) > 8 * 86400000).length ?? 0;
@@ -1155,6 +1171,17 @@ function SignedInDashboard() {
   return (
     <div className="flex-1 w-full max-w-4xl mx-auto px-4 md:px-8 py-10 md:py-14 space-y-10">
       <DashboardWalkthrough auditId={latestAudit?.id} paid={hasPaidPlan} />
+      {hasAudit && <Card className="border-emerald-200" aria-label="Your next improvement">
+        <CardHeader>
+          <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700">Your next improvement</p>
+          <CardTitle>{nextTask.state === "loading" ? "Finding your next task…" : nextTask.state === "error" ? "Your action plan could not be loaded" : nextRecommendation?.title ?? (nextTask.state === "complete" ? "Your recorded tasks are complete" : "Review your page and build an action plan")}</CardTitle>
+          <CardDescription>{nextRecommendation?.detail ?? (nextTask.state === "complete" ? "These are changes you marked done, not verified results. Re-audit the same page after publishing, then review any changes in search performance." : nextTask.state === "error" ? "We have not changed your saved progress. Open your audit to try again." : nextTask.state === "loading" ? "Checking your audit and saved progress." : "Open your audit and re-scan if it does not contain current recommendations.")}</CardDescription>
+        </CardHeader>
+        {nextTask.state !== "loading" && <CardContent>
+          <Link href={improvementLink(latestAudit!.id, nextRecommendation?.id)}><Button>{nextRecommendation ? "Work on this improvement" : "Review my audit"}<ArrowRight className="ml-2 h-4 w-4" /></Button></Link>
+          <p className="mt-3 text-xs text-muted-foreground">Change your website → mark the task done → re-audit → review measured progress. Connecting Google is optional and does not block your fixes.</p>
+        </CardContent>}
+      </Card>}
       {programStateLoading ? (
         <Card className="overflow-hidden border-emerald-500/20" aria-label="Loading your SEO and GEO program">
           <div className="h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500" />
@@ -1173,14 +1200,6 @@ function SignedInDashboard() {
             <CardDescription className="max-w-2xl text-sm leading-relaxed">Your tracking is configured. Check the latest collection status in SEO opportunities, make one unfinished improvement, then re-audit the same page. Changes in rankings and traffic are observations, not proof that a particular fix caused them.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700">Recommended next task</p>
-              <p className="mt-1 text-lg font-semibold text-slate-950">{nextRecommendation?.title ?? "Re-scan your site and choose the next opportunity"}</p>
-              <p className="mt-1 text-sm leading-relaxed text-slate-600">{nextRecommendation?.detail ?? "You have completed the current action list. Run a fresh audit after your latest site changes to build the next plan."}</p>
-              <Link href={nextRecommendation ? `/results/${latestAudit!.id}#recommendations` : `/results/${latestAudit!.id}`}>
-                <Button className="mt-4 bg-emerald-600 hover:bg-emerald-700">{nextRecommendation ? "Open this task" : "Re-scan and review"}<ArrowRight className="ml-1.5 h-4 w-4" /></Button>
-              </Link>
-            </div>
             <div className="grid gap-3 sm:grid-cols-3">
               <Link href={`/results/${latestAudit!.id}`} className="rounded-lg border bg-white p-3 hover:border-emerald-300 hover:bg-emerald-50/30">
                 <p className="text-xs text-muted-foreground">Latest audit</p>

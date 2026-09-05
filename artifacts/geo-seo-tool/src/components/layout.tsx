@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { nextImprovement, improvementLink } from "@/lib/nextImprovement";
 import { Link, useLocation } from "wouter";
 import { Sparkles, LogOut, Shield, Menu, LayoutDashboard, FolderKanban, CreditCard, BookOpen, CircleHelp, CheckCircle2, Search, SlidersHorizontal, MessageSquareText, Library } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -195,7 +196,7 @@ function AuditResultsNav({ mobile = false }: { mobile?: boolean }) {
 
   let domain = audit?.url ?? "";
   try { domain = new URL(domain).hostname.replace(/^www\./, ""); } catch { /* keep stored URL */ }
-  const { data: progress } = useQuery<{ completed: Array<{ recommendationId: string }> }>({
+  const { data: progress, isError: progressError, isLoading: progressLoading } = useQuery<{ completed: Array<{ recommendationId: string }> }>({
     queryKey: ["recommendation-progress", domain],
     queryFn: () => customFetch(`/api/geo/recommendation-progress?domain=${encodeURIComponent(domain)}`),
     enabled: !!domain && !!auditDetails?.recommendations?.length,
@@ -205,7 +206,7 @@ function AuditResultsNav({ mobile = false }: { mobile?: boolean }) {
   if (!audit) return null;
 
   const completedIds = new Set((progress?.completed ?? []).map((item) => item.recommendationId));
-  const nextRecommendation = auditDetails?.recommendations?.find((item) => !completedIds.has(item.id));
+  const nextRecommendation = nextImprovement(auditDetails?.recommendations, completedIds, progressError ? "error" : progressLoading ? "loading" : "ready").task;
 
   const links = [
     { label: "Overview", href: `/results/${audit.id}`, icon: LayoutDashboard },
@@ -225,7 +226,7 @@ function AuditResultsNav({ mobile = false }: { mobile?: boolean }) {
         <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-800">{Math.round(audit.geoScore)}</span>
       </div>
       {nextRecommendation && (
-        <Link href={`/results/${audit.id}#recommendations`} className="mx-2 mb-2 block rounded-lg border border-emerald-100 bg-emerald-50/70 p-3 hover:border-emerald-200 hover:bg-emerald-50">
+        <Link href={improvementLink(selectedAuditId, nextRecommendation.id)} className="mx-2 mb-2 block rounded-lg border border-emerald-100 bg-emerald-50/70 p-3 hover:border-emerald-200 hover:bg-emerald-50">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700">Next improvement</p>
           <p className="mt-1 line-clamp-2 text-xs font-semibold leading-5 text-slate-800">{nextRecommendation.title}</p>
           <p className="mt-1 text-[11px] font-medium text-emerald-800">Open action plan</p>

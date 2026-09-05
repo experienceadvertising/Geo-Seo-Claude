@@ -74,19 +74,19 @@ function RankHistory({ targetId, open }: { targetId: number; open: boolean }) {
   );
 }
 
-export function SeoTrackingPanel({ domain }: { domain: string }) {
+export function SeoTrackingPanel({ domain, pageUrl }: { domain: string; pageUrl?: string }) {
   const client = useQueryClient();
   const [keyword, setKeyword] = useState("");
   const [locationCode, setLocationCode] = useState(2840);
   const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
-  const [targetUrl, setTargetUrl] = useState(`https://${domain}`);
-  const [showOptions, setShowOptions] = useState(false);
+  const [targetUrl, setTargetUrl] = useState(pageUrl || `https://${domain}`);
+  const [showOptions, setShowOptions] = useState(true);
   const [openHistoryId, setOpenHistoryId] = useState<number | null>(null);
   useEffect(() => {
-    setTargetUrl(`https://${domain}`);
+    setTargetUrl(pageUrl || `https://${domain}`);
     setKeyword("");
     setOpenHistoryId(null);
-  }, [domain]);
+  }, [domain, pageUrl]);
   const queryKey = ["seo-keywords", domain];
   const overviewKey = ["seo-overview", domain];
   const { data, error } = useQuery<KeywordResponse>({
@@ -137,6 +137,7 @@ export function SeoTrackingPanel({ domain }: { domain: string }) {
     {data && !data.providerConfigured && <p className="mt-3 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">Rank tracking is not connected yet. AEO audits and Search Console features continue to work normally.</p>}
     <p className="mt-3 text-xs text-muted-foreground">Start with a few buyer searches that matter to your business. Establish a baseline, improve the relevant page, then compare weekly results. Each check requests up to 100 Google results; not being found does not mean your site is absent from all Google results.</p>
     <form className="mt-3 space-y-3" onSubmit={(event) => { event.preventDefault(); if (keyword.trim()) add.mutate(); }}>
+      <p className="text-xs font-medium">1. Choose a buyer search. 2. Confirm your page, country, and device. 3. Add the target and return here to review collection status.</p>
       <div className="flex flex-col gap-2 sm:flex-row">
         <Input aria-label="Keyword to track" value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="Add a target keyword" maxLength={250} />
         <Button type="button" variant="outline" size="sm" className="sm:h-10" onClick={() => setShowOptions((value) => !value)} aria-expanded={showOptions}>
@@ -170,6 +171,7 @@ export function SeoTrackingPanel({ domain }: { domain: string }) {
         </div>
       )}
     </form>
+    {add.isSuccess && <p role="status" className="mt-2 text-xs text-emerald-700">Keyword saved. Its first snapshot is not available yet. Review the collection status below; you do not need to spend a manual refresh to finish setup.</p>}
     {add.error && <p className="mt-2 text-xs text-destructive">{apiMessage(add.error, "Could not add keyword.")}</p>}
     {data?.targets?.length ? <ul className="mt-4 divide-y text-sm">{data.targets.map((target) => {
       const historyOpen = openHistoryId === target.id;
