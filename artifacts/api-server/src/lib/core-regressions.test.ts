@@ -1,6 +1,45 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { sameAuditedPage } from "./auditComparison.ts";
+import { competitorContext, freshInsight, insightLimit, parseKeywordInsight, selectInsightTargets } from "./seoKeywordInsights.ts";
+
+test("keyword insights preserve unknowns and distinguish real zero demand", () => {
+  const missing = parseKeywordInsight({});
+  assert.equal(missing.searchVolume, null);
+  assert.equal(missing.intent, null);
+  const parsed = parseKeywordInsight({ keyword_info: { search_volume: 0, monthly_searches: [{ year: 2026, month: 2, search_volume: null }, { year: 2026, month: 1, search_volume: 0 }, { year: 2026, month: 13, search_volume: 9 }] }, search_intent_info: { main_intent: "commercial" } });
+  assert.equal(parsed.searchVolume, 0);
+  assert.equal(parsed.intent, "commercial");
+  assert.deepEqual(parsed.monthlySearches.map((m: any) => m.volume), [0, null]);
+  assert.equal(parseKeywordInsight({ keyword_info: { search_volume: -1 } }).searchVolume, null);
+});
+test("insight cache and account allowance block repeated spending", () => {
+  const now = Date.parse("2026-09-05T00:00:00Z");
+  assert.equal(freshInsight({ collectedAt: "2026-09-04" }, now), true);
+  assert.equal(freshInsight({ collectedAt: "2026-10-01" }, now), false);
+  assert.equal(freshInsight({ collectedAt: "invalid" }, now), false);
+  const targets = Array.from({ length: 120 }, (_, id) => ({ id, locationCode: 2840, languageCode: "en", insights: null }));
+  assert.equal(selectInsightTargets(targets, new Set(), "free", now).length, 0);
+  assert.equal(selectInsightTargets(targets, new Set(), "pro", now).length, 25);
+  assert.equal(selectInsightTargets(targets, new Set(), "agency", now).length, 100);
+  assert.equal(selectInsightTargets(targets, new Set(Array.from({ length: 25 }, (_, i) => i)), "pro", now).length, 0);
+  assert.equal(selectInsightTargets(targets.map(t => ({ ...t, locationCode: t.id })), new Set(), "agency", now).length, 4);
+  assert.equal(selectInsightTargets([{ ...targets[0], insights: { collectedAt: "2026-09-04" } }], new Set(), "pro", now).length, 0);
+  assert.equal(insightLimit("unknown"), 0);
+});
+test("search competitors are bounded, safe, distinct and ahead of the tracked result", () => {
+  const items = [
+    { type: "organic", url: "https://example.com", rank_absolute: 1 },
+    { type: "organic", url: "javascript:alert(1)", rank_absolute: 2 },
+    { type: "organic", url: "https://other.com/a", rank_absolute: 3, title: "Other" },
+    { type: "organic", url: "https://other.com/b", rank_absolute: 4 },
+    { type: "paid", url: "https://ad.com", rank_absolute: 2 },
+    { type: "organic", url: "https://later.com", rank_absolute: 7 },
+  ];
+  assert.deepEqual(competitorContext(items, "example.com", 5).map(r => r.domain), ["other.com"]);
+  assert.equal(competitorContext(items, "example.com", null).length, 2);
+  assert.equal(competitorContext(items, "example.com", 1).length, 0);
+});
 
 test("weekly score changes compare the same page, not unrelated pages on a domain", () => {
   assert.equal(sameAuditedPage("https://example.com/", "https://example.com/about"), false);

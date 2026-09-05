@@ -43,6 +43,7 @@ const GoogleDataUsePage = lazy(() => import("@/pages/google-data-use"));
 const ContentEffortGuide = lazy(() => import("@/pages/content-effort-guide"));
 const SeoSolutionPage = lazy(() => import("@/pages/seo-solution-page"));
 const RecommendedTools = lazy(() => import("@/pages/recommended-tools"));
+const WorkspaceSection = lazy(() => import("@/pages/workspace-section"));
 
 const queryClient = new QueryClient();
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -86,6 +87,11 @@ function AppRoutes() {
         <Route path="/projects">
           <RequireAuth><Projects /></RequireAuth>
         </Route>
+        {["seo", "actions", "ai-visibility"].map(section => (
+          <Route key={section} path={`/${section}/:id?`}>
+            <RequireAuth><WorkspaceSection section={section as "seo" | "actions" | "ai-visibility"} /></RequireAuth>
+          </Route>
+        ))}
         <Route path="/recommended-tools">
           <RequireAuth><RecommendedTools /></RequireAuth>
         </Route>

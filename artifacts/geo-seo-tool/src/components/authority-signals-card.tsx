@@ -30,8 +30,8 @@ const CHANNELS: Channel[] = [
     href: "https://www.linkby.com/",
     icon: <Newspaper className="h-4 w-4" />,
     cost: "Paid",
-    what: "A performance-based publisher network where brands set campaign budgets and pay for delivered engagement.",
-    why: "Relevant editorial coverage can create discoverable third-party references, referral traffic, and brand context. Results depend on publisher fit and the quality of the coverage.",
+    what: "Paid publisher distribution with CPC and CPM campaign options. This is not a way to buy organic rankings or independent endorsement.",
+    why: "Start by checking publisher relevance, sponsorship disclosures, and your campaign budget. Evaluate referral traffic and useful exposure, not promised ranking or citation gains.",
   },
   {
     name: "Featured.com",
@@ -45,16 +45,16 @@ const CHANNELS: Channel[] = [
     name: "PodMatch",
     href: "https://podmatch.com/",
     icon: <Mic className="h-4 w-4" />,
-    cost: "Freemium",
-    what: "Matches podcast guests with podcast hosts, similar to dating-app mechanics.",
+    cost: "Paid",
+    what: "Matches podcast guests with podcast hosts. Prepare a useful interview topic and check the current membership price before signing up.",
     why: "Relevant interviews can create useful third-party context, branded searches, referral traffic, and crawlable transcripts when the publisher makes them available.",
   },
   {
-    name: "Wikipedia / Wikidata",
+    name: "Wikipedia eligibility reference",
     href: "https://en.wikipedia.org/wiki/Wikipedia:Notability_(organizations_and_companies)",
     icon: <Globe2 className="h-4 w-4" />,
     cost: "Free",
-    what: "Reference projects with strict notability, neutrality, sourcing, and conflict-of-interest requirements.",
+    what: "An advanced reference, not a routine growth task. Wikipedia has strict notability, neutrality, sourcing, and conflict-of-interest requirements.",
     why: "Use these only when the organization independently qualifies. Never create promotional entries or treat a thin listing as an optimization shortcut.",
   },
   {
@@ -82,7 +82,7 @@ export function AuthoritySignalsCard() {
         <div className="flex items-center justify-between flex-wrap gap-2">
           <CardTitle className="text-base flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-emerald-600" />
-            Boost your authority signals
+            Build awareness: optional distribution channels
           </CardTitle>
           <Badge variant="outline" className="text-[10px] uppercase tracking-wider border-emerald-300 text-emerald-700">
             Off-site AEO

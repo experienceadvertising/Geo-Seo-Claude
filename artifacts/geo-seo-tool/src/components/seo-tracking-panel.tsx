@@ -15,9 +15,10 @@ type RankSnapshot = {
   collectedAt?: string;
   collected_at?: string;
 };
-type Target = { id: number; keyword: string; locationName: string; device: string; targetUrl?: string | null; active: boolean; collection?: { status: string; created_at: string } | null; latest?: { position: number | null; result_present: boolean; collected_at: string; result_url?: string | null } | null };
+type KeywordInsight = { collectedAt: string; sourceUpdatedAt: string | null; intentUpdatedAt: string | null; searchVolume: number | null; intent: string | null; monthlySearches: { year: number; month: number; volume: number | null }[] };
+type Target = { id: number; keyword: string; locationName: string; device: string; targetUrl?: string | null; active: boolean; insights?: KeywordInsight | null; collection?: { status: string; created_at: string } | null; latest?: { position: number | null; result_present: boolean; collected_at: string; result_url?: string | null; competitors?: { url: string; domain: string; title: string; position: number }[] | null } | null };
 type KeywordResponse = { targets: Target[]; limits: { activeKeywords: number }; providerConfigured: boolean };
-type OverviewResponse = { limits: { activeKeywords: number; manualRefreshes: number }; usage: { activeKeywords: number; manualRefreshes: number } };
+type OverviewResponse = { limits: { activeKeywords: number; manualRefreshes: number; keywordInsights?: number }; usage: { activeKeywords: number; manualRefreshes: number; keywordInsights?: number } };
 type HistoryResponse = { snapshots: RankSnapshot[] };
 
 function apiMessage(error: unknown, fallback: string): string {
@@ -74,6 +75,32 @@ function RankHistory({ targetId, open }: { targetId: number; open: boolean }) {
   );
 }
 
+function KeywordContext({ target }: { target: Target }) {
+  const insight = target.insights;
+  const stale = insight && Date.now() - Date.parse(insight.collectedAt) >= 30 * 86400000;
+  const guidance: Record<string, string> = {
+    commercial: "Help buyers compare options with concrete differences, pricing context, and evidence.",
+    transactional: "Make the offer, purchase or booking step, and key decision details easy to find.",
+    informational: "Answer the question directly, then add useful examples and first-party evidence.",
+    navigational: "Make the relevant brand or product page easy to identify and navigate to.",
+  };
+  const competitors = target.latest?.competitors;
+  return <details className="mt-3 rounded-md border p-3 text-xs">
+    <summary className="cursor-pointer font-semibold">Keyword insights and search competitors</summary>
+    <div className="mt-3 space-y-3">
+      {insight ? <>
+        <p>Estimated monthly searches: <strong>{insight.searchVolume === null ? "Unavailable" : insight.searchVolume.toLocaleString()}</strong> · Estimated intent: <strong>{insight.intent ?? "Unavailable"}</strong></p>
+        <p className="text-muted-foreground">DataForSEO Keyword Database · {target.locationName} · Language of this target · All devices, not device-specific. These are market estimates, not your site's traffic.</p>
+        <p className="text-muted-foreground">Collected {new Date(insight.collectedAt).toLocaleDateString()}{stale ? " (stale; eligible for a new lookup subject to allowance)" : " (cached for 30 days)"}. Volume source updated: {insight.sourceUpdatedAt ?? "Unavailable"}. Intent source updated: {insight.intentUpdatedAt ?? "Unavailable"}.</p>
+        {insight.intent && <p><strong>What to do next:</strong> {guidance[insight.intent]} Validate this suggestion against the actual search results before changing your page.</p>}
+        {insight.monthlySearches.length > 0 && <div className="overflow-x-auto"><table className="w-full text-left"><caption className="mb-2 text-left font-semibold">Monthly demand history: look for seasonal patterns, not guaranteed future demand</caption><thead><tr><th className="p-1">Month</th><th className="p-1">Estimated searches</th></tr></thead><tbody>{insight.monthlySearches.map(row => <tr key={`${row.year}-${row.month}`}><td className="p-1">{row.year}-{String(row.month).padStart(2, "0")}</td><td className="p-1">{row.volume === null ? "Unavailable" : row.volume.toLocaleString()}</td></tr>)}</tbody></table></div>}
+      </> : <p>No keyword demand data yet. Use “Update keyword insights” above. Missing provider data is not treated as zero searches.</p>}
+      <p className="font-semibold">{target.latest?.result_present ? "Who appeared above you?" : "Leading search results to review"}</p>
+      {competitors == null ? <p>Competitor context will be saved with the next successful rank check. Historical snapshots have not been backfilled.</p> : competitors.length ? <><ul className="space-y-2">{competitors.map(item => <li key={item.domain}><a className="text-primary underline break-words" href={item.url} target="_blank" rel="noopener noreferrer">#{item.position} · {item.title || item.domain}</a><span className="block text-muted-foreground">{item.domain}</span></li>)}</ul><p>Compare intent, evidence, and useful details. These are search competitors, not necessarily business competitors. Do not copy their content. Positions use the same location, device, and collection time as your rank snapshot.</p></> : <p>No qualifying results ahead of your page were captured in this snapshot.</p>}
+    </div>
+  </details>;
+}
+
 export function SeoTrackingPanel({ domain, pageUrl }: { domain: string; pageUrl?: string }) {
   const client = useQueryClient();
   const [keyword, setKeyword] = useState("");
@@ -123,6 +150,7 @@ export function SeoTrackingPanel({ domain, pageUrl }: { domain: string; pageUrl?
   });
   const refresh = useMutation({ mutationFn: (id: number) => customFetch(`/api/seo/keywords/${id}/refresh`, { method: "POST" }), onSuccess: (_result, id) => { invalidate(); client.invalidateQueries({ queryKey: ["seo-keyword-history", id] }); } });
   const toggle = useMutation({ mutationFn: ({ id, active }: { id: number; active: boolean }) => customFetch(`/api/seo/keywords/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ active }) }), onSuccess: invalidate });
+  const enrich = useMutation<{ updated: number; failed: number; message: string }>({ mutationFn: () => customFetch("/api/seo/insights/refresh", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ domain }) }), onSuccess: invalidate });
   if (error instanceof ApiError && error.status === 403) return <p className="text-xs text-muted-foreground">Pro and Agency plans can connect Search Console and manage weekly rank tracking.</p>;
   if (error) return <p className="text-xs text-destructive">Rank tracking could not load. Your audit and Search Console tools are still available.</p>;
   const refreshesRemaining = overview ? Math.max(0, overview.limits.manualRefreshes - overview.usage.manualRefreshes) : null;
@@ -136,6 +164,13 @@ export function SeoTrackingPanel({ domain, pageUrl }: { domain: string; pageUrl?
     </div>
     {data && !data.providerConfigured && <p className="mt-3 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">Rank tracking is not connected yet. AEO audits and Search Console features continue to work normally.</p>}
     <p className="mt-3 text-xs text-muted-foreground">Start with a few buyer searches that matter to your business. Establish a baseline, improve the relevant page, then compare weekly results. Each check requests up to 100 Google results; not being found does not mean your site is absent from all Google results.</p>
+    <div className="my-4 space-y-2 rounded-lg border bg-muted/20 p-3">
+      <p className="text-sm font-semibold">Choose keywords with demand and intent in mind</p>
+      <p className="text-xs text-muted-foreground">Look up volume, monthly demand, and estimated intent for active targets on this site. Cached for 30 days. The monthly allowance is shared across all your sites: {overview?.usage.keywordInsights ?? 0}/{overview?.limits.keywordInsights ?? "..."} target lookups used. Attempts, including unavailable results, count. No lookups run just by opening this page.</p>
+      <Button variant="outline" size="sm" onClick={() => enrich.mutate()} disabled={enrich.isPending || !data?.providerConfigured || !data.targets.some(target => target.active) || (overview?.limits.keywordInsights !== undefined && (overview.usage.keywordInsights ?? 0) >= overview.limits.keywordInsights)}>{enrich.isPending ? "Looking up keyword insights..." : "Update keyword insights"}</Button>
+      {enrich.data && <p role="status" className="text-xs">{enrich.data.updated} updated. {enrich.data.message}</p>}
+      {enrich.error && <p role="alert" className="text-xs text-destructive">{apiMessage(enrich.error, "Keyword insights could not update. Saved data is preserved.")}</p>}
+    </div>
     <form className="mt-3 space-y-3" onSubmit={(event) => { event.preventDefault(); if (keyword.trim()) add.mutate(); }}>
       <p className="text-xs font-medium">1. Choose a buyer search. 2. Confirm your page, country, and device. 3. Add the target and return here to review collection status.</p>
       <div className="flex flex-col gap-2 sm:flex-row">
@@ -189,6 +224,7 @@ export function SeoTrackingPanel({ domain, pageUrl }: { domain: string; pageUrl?
         {target.latest?.result_url && <p className="mt-1 break-all text-xs">Page found: {target.latest.result_url}</p>}
         {landingPageDiffers(target.targetUrl, target.latest?.result_url) && <p className="mt-1 text-xs text-amber-700">Google returned a different page. Review whether that page fits this search before changing your intended landing page.</p>}
         <RankHistory targetId={target.id} open={historyOpen} />
+        <KeywordContext target={target} />
       </li>;
     })}</ul> : <p className="mt-3 text-xs text-muted-foreground">Add a high-value keyword now, or import a query from the Search Console opportunity view.</p>}
     {refresh.error && <p className="mt-2 text-xs text-destructive">{apiMessage(refresh.error, "Could not refresh this rank.")}</p>}

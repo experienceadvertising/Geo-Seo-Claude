@@ -20,7 +20,7 @@ export function buildLatestRankSnapshotsQuery(targetIds: number[]) {
 
   const ids = sql.join(targetIds.map((id) => sql`${id}`), sql`, `);
   return sql`
-    SELECT DISTINCT ON (target_id) target_id, position, result_present, result_url, provider_status, collected_at
+    SELECT DISTINCT ON (target_id) target_id, position, result_present, result_url, competitors, provider_status, collected_at
     FROM seo_rank_snapshots WHERE target_id IN (${ids}) ORDER BY target_id, collected_at DESC
   `;
 }
