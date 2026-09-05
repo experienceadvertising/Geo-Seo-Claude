@@ -44,8 +44,12 @@ all-customer email loop or detached work after responding.
 ## Deployment and operation
 
 1. Sync the reviewed merge without discarding Replit publication history.
-2. Apply scripts/sql/cloudflare-scheduler-items.sql to the production database.
-   This only creates the scheduler queue and its index; no customer rows change.
+2. Use Replit's supported schema-publishing flow for the registered Drizzle
+   scheduler tables. Production DDL is restricted through the read-only agent
+   connection. Prepare the additive development schema, then review the publish
+   migration so only the two scheduler tables and their constraints/indexes are
+   created. Never copy development data or approve unrelated destructive changes.
+   The SQL files remain equivalent references for local testing/other hosts.
 3. Preserve SCHEDULER_SECRET in both providers. Set Replit production
    SCHEDULER_MODE=cloudflare and SCHEDULED_WORKER_ENABLED=true for the release.
    This disables the former in-process timers; the standalone worker stays off.
