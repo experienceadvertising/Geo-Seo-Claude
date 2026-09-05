@@ -177,6 +177,7 @@ function loadCatalog(): { byId: Map<string, Recommendation>; all: readonly Recom
   return { byId, all };
 }
 
+export { getImplementationGuide } from "./implementation.ts";
 const CATALOG = loadCatalog();
 
 /** All non-retired recommendations in declaration order. */

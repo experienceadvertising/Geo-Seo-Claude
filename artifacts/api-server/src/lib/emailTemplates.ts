@@ -1,3 +1,4 @@
+import { getImplementationGuide } from "@workspace/recommendations";
 const BASE_URL = process.env.FRONTEND_URL || "https://aeoimprovement.com";
 const BRAND_COLOR = "#10b981";
 
@@ -220,6 +221,7 @@ export function weeklyDigestEmail(data: WeeklyDigestData, unsubscribeUrl?: strin
         <div style="font-size:12px;font-weight:700;color:${BRAND_COLOR};text-transform:uppercase;letter-spacing:0.05em;margin-bottom:7px;">Your recommended task this week</div>
         <div style="font-size:17px;font-weight:700;color:#111827;margin-bottom:7px;">${esc(latestAudit.nextAction.title)}</div>
         <div style="font-size:14px;color:#4b5563;line-height:1.6;">${esc(latestAudit.nextAction.detail)}</div>
+        <div style="margin-top:12px;font-size:14px;line-height:1.6;"><strong>How to implement:</strong><ol>${getImplementationGuide(latestAudit.nextAction.id).steps.map(step => `<li>${esc(step)}</li>`).join("")}</ol><p><strong>Verify:</strong> ${esc(getImplementationGuide(latestAudit.nextAction.id).verify)}</p></div>
         <div style="margin-top:12px;font-size:13px;color:#4b5563;line-height:1.6;">Make the change in your website editor, publish it, and mark the task done. Then re-audit the same page and review subsequent search performance. Marking a task done records your work; it does not verify a ranking improvement.</div>
         <div style="margin-top:14px;">${btn("Open this task", actionUrl)}</div>
       </div>`
@@ -288,11 +290,15 @@ export function weeklyDigestEmail(data: WeeklyDigestData, unsubscribeUrl?: strin
     latestAudit?.nextAction ? `Your next task: ${esc(latestAudit.nextAction.title)}` : `Your weekly SEO and GEO program update`,
     unsubscribeUrl,
   );
-  const text = `Hi ${firstName || "there"},\n\nYour weekly SEO + GEO plan for ${domain}:\n\n${latestAudit?.nextAction ? `Recommended task: ${latestAudit.nextAction.title}\n${latestAudit.nextAction.detail}\nOpen it: ${actionUrl}` : latestAudit ? `Review the remaining recommendations before choosing another task. Review and re-scan: ${BASE_URL}/results/${latestAudit.id}` : `Run your first audit: ${BASE_URL}`}\n\nProgram status:\n- Audits in the last 7 days: ${auditCount}\n- Completed recommendations: ${latestAudit?.completedActions ?? 0}${paidSeoEnabled ? `\n- Active keyword targets: ${tracking?.activeKeywords ?? 0}\n- Keywords with a rank baseline: ${tracking?.rankedKeywords ?? 0}\n- Sites under monitoring: ${monitoring?.activeSites ?? 0}` : ""}\n\n${setupText}\n\nOpen your workspace: ${BASE_URL}`;
+  const text = `Hi ${firstName || "there"},\n\nYour weekly SEO + GEO plan for ${domain}:\n\n${latestAudit?.nextAction ? `Recommended task: ${latestAudit.nextAction.title}\n${latestAudit.nextAction.detail}\n\nHow to implement:\n${getImplementationGuide(latestAudit.nextAction.id).steps.map((step, i) => `${i + 1}. ${step}`).join("\n")}\nVerify: ${getImplementationGuide(latestAudit.nextAction.id).verify}\nWatch afterward: ${getImplementationGuide(latestAudit.nextAction.id).measure}\nOpen it: ${actionUrl}` : latestAudit ? `Review the remaining recommendations before choosing another task. Review and re-scan: ${BASE_URL}/results/${latestAudit.id}` : `Run your first audit: ${BASE_URL}`}\n\nProgram status:\n- Audits in the last 7 days: ${auditCount}\n- Completed recommendations: ${latestAudit?.completedActions ?? 0}${paidSeoEnabled ? `\n- Active keyword targets: ${tracking?.activeKeywords ?? 0}\n- Keywords with a rank baseline: ${tracking?.rankedKeywords ?? 0}\n- Sites under monitoring: ${monitoring?.activeSites ?? 0}` : ""}\n\n${setupText}\n\nOpen your workspace: ${BASE_URL}`;
   const measurementText = paidSeoEnabled && latestAudit
     ? `\n\nMeasurement check: ${tracking?.rankedKeywords ?? 0} keywords have collected snapshots; ${tracking?.foundKeywords ?? 0} have numeric rankings. ${tracking?.pendingKeywords ?? 0} await first collection; ${tracking?.staleKeywords ?? 0} have overdue results. Review status before drawing conclusions: ${BASE_URL}/results/${latestAudit.id}#seo-opportunities\nAfter completing a task, publish your change, mark it done, and re-audit the same page. Traffic and ranking changes do not prove causation.`
     : "";
-  return { subject, html, text: text + measurementText };
+  const references = latestAudit?.nextAction ? getImplementationGuide(latestAudit.nextAction.id).sources : [];
+  const context = latestAudit?.nextAction ? getImplementationGuide(latestAudit.nextAction.id).context : undefined;
+  const referenceText = (context ? `\n\nWhen this applies: ${context}` : "") + (references.length ? `\n\nImplementation references:\n${references.map(source => `${source.title}: ${source.url} (reviewed ${source.reviewed})`).join("\n")}` : "");
+  const referenceHtml = (context ? `<p>When this applies: ${esc(context)}</p>` : "") + (references.length ? `<p style="font-size:13px;">Implementation references: ${references.map(source => `<a href="${esc(source.url)}">${esc(source.title)}</a> (reviewed ${esc(source.reviewed)})`).join("; ")}</p>` : "");
+  return { subject, html: html.replace("</body>", `${referenceHtml}</body>`), text: text + measurementText + referenceText };
 }
 
 // ── Email: Email Verification (transactional - no unsubscribe) ────────────────

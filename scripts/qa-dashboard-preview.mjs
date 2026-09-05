@@ -9,12 +9,12 @@ const paid = process.env.QA_PAID === '1';
 const signedOut = process.env.QA_SIGNED_OUT === '1';
 const previewOrigin = process.env.QA_PREVIEW_ORIGIN || 'http://127.0.0.1:4173';
 const port = Number(process.env.QA_PORT || 4184);
-const audit = { id: 1, url: 'https://example.com/', geoScore: 54, createdAt: '2026-09-04T12:00:00Z', recommendations: [{ id: 'evidence', title: 'Add a documented example', detail: 'Show a real example of your work.', priority: 'high' }] };
+const audit = { id: 1, url: 'https://example.com/', geoScore: 54, createdAt: '2026-09-04T12:00:00Z', recommendations: [{ id: 'add-faq', title: 'Answer a relevant buyer question', detail: 'Help visitors choose the right option.', category: 'structure', priority: 'high' }, { id: 'increase-depth', title: 'Improve useful page detail', detail: 'Add verified details.', category: 'depth', priority: 'medium' }] };
 Object.assign(audit, {
   scores: { citability: 50, brandAuthority: 50, aiCrawlerAccess: 75, technicalSeo: 60, structuredData: 40, platformOptimization: 50 },
   title: 'Local test page', brandName: 'Example', recommendationsSchemaVersion: 'v1',
   crawlers: [], platforms: [], citabilityBlocks: [], quickWins: [], technicalIssues: [], schemaTypes: [],
-  brandSignals: {}, aiInsights: null, wordCount: 500, rawHtmlWordCount: 500,
+  brandSignals: [], aiInsights: null, wordCount: 500, rawHtmlWordCount: 500,
 });
 const fixtures = {
   '/api/auth/me': { id: 'local-test', email: 'tester@example.com', firstName: 'Test', plan: 'free', emailVerified: true },

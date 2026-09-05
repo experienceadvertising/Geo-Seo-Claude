@@ -678,7 +678,7 @@ export function generateGeoRecommendations(ctx: RecommendationContext): GeoRecom
 
   if (!s.hasByline) {
     recs.push(composeRec("add-byline", {
-      detail: "No author byline detected. Add a visible \"By [Name], [Title with credentials]\" line linked to an author page. Claude in particular requires visible author credibility, and named authors are part of the 2026 baseline for content cited across all four engines.",
+      detail: "No author byline detected. Where authorship is relevant, identify the actual author or reviewer and link to accurate background information. Do not invent credentials. A byline is not a universal AI-citation requirement.",
     }));
   }
 
@@ -697,29 +697,29 @@ export function generateGeoRecommendations(ctx: RecommendationContext): GeoRecom
   // === TECHNICAL — schema gaps ===
   if (!ctx.hasArticleSchema && s.wordCount > 600) {
     recs.push(composeRec("article-schema", {
-      detail: "Long-form content but no Article schema. Add Article JSON-LD with author, datePublished, and dateModified — and also include a Person entry for the author so the author becomes a recognizable entity to AI engines.",
+      detail: "Long-form content but no Article schema detected. If this page is an article, consider accurate Article markup matching its visible author and dates. Word count alone does not establish page type, and markup does not guarantee citations.",
     }));
   }
   if (!ctx.hasFaqSchema && s.faqCount >= 3) {
     recs.push(composeRec("faq-schema", {
-      detail: "Question-style headings exist but no FAQPage schema. Wrap your Q/A pairs in FAQPage JSON-LD — it remains among the highest-ROI structured-data types for AI citations in 2026.",
+      detail: "Question-style headings exist but no FAQPage schema detected. First confirm that they are genuine questions with visible answers. Markup is optional and must match the page; it is not a proven AI-citation boost or a guarantee of Google rich results.",
     }));
   }
   if (s.hasNumberedStepList && !ctx.hasHowToSchema) {
     recs.push(composeRec("howto-schema", {
-      detail: "Numbered step-by-step list detected but no HowTo JSON-LD schema. Wrap the steps in HowTo schema — it enables richer AI extraction and distinct step-level rich results in Google AI Overviews for instructional queries.",
+      detail: "A numbered list was detected without HowTo markup. If it describes a genuine procedure, optional markup can describe those visible steps. Do not expect special step-level Google AI Overview results or guaranteed citations.",
     }));
   }
   if (!ctx.hasOrgSchema) {
     recs.push(composeRec("org-schema", {
-      detail: "No Organization schema detected. Add Organization JSON-LD with name, url, logo, and sameAs links to social profiles, Wikipedia, and Crunchbase to anchor brand identity in the AI knowledge graph.",
+      detail: "No Organization schema detected. Where appropriate, describe your actual organization and verified profiles with accurate markup. Do not add profiles that do not represent your company or assume this creates an AI knowledge-graph entry.",
     }));
   }
 
   // nosnippet directive — Critical: directly blocks AI extraction (Zyppy Signal score 9.2/10)
   if (ctx.hasNoSnippet) {
     recs.push(composeRec("nosnippet-directive", {
-      detail: "A nosnippet or max-snippet:0 directive was found in your meta robots tag or x-robots-tag HTTP header. This explicitly instructs AI engines not to extract content from your page, making citation impossible regardless of how good your content is. Remove the nosnippet value from the robots tag — if you need to block traditional featured snippets for specific pages, use max-snippet with a positive value instead.",
+      detail: "A nosnippet or max-snippet:0 directive was found. Review its intended purpose with the site owner. These controls can restrict previews and use on supported search surfaces, but their effects are platform-specific. Preserve intentional restrictions and obtain approval before changing them.",
       priority: "critical",
     }));
   }
