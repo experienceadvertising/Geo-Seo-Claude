@@ -37,7 +37,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { usePlan } from "@/hooks/usePlan";
 import { UpgradePrompt } from "@/components/upgrade-prompt";
 import { SeoTrackingPanel } from "@/components/seo-tracking-panel";
+import { SeoPerformancePanel } from "@/components/seo-performance-panel";
 import { getAuditDeepLinkState } from "@/lib/audit-deep-link";
+import { sameAuditPage } from "@/lib/auditProgress";
+import { improvementLink } from "@/lib/nextImprovement";
 
 export default function Results() {
   const params = useParams<{ id: string }>();
@@ -56,6 +59,7 @@ export default function Results() {
   const [recommendationFilter, setRecommendationFilter] = useState<"open" | "all" | "done">("open");
   const [showAllRecommendations, setShowAllRecommendations] = useState(false);
   const [showTechnicalDetails, setShowTechnicalDetails] = useState(false);
+  const [focusedTaskId, setFocusedTaskId] = useState<string | null>(null);
 
   const { data: audit, isLoading, isError } = useGetAudit(id, {
     query: {
@@ -86,7 +90,7 @@ export default function Results() {
   }, [audit?.url]);
 
   const progressKey = ["recommendation-progress", domain];
-  const { data: recommendationProgress } = useQuery<{ completed: Array<{ recommendationId: string; completedAt: string }> }>({
+  const { data: recommendationProgress, isLoading: progressLoading, isError: progressError } = useQuery<{ completed: Array<{ recommendationId: string; completedAt: string }> }>({
     queryKey: progressKey,
     queryFn: () => customFetch(`/api/geo/recommendation-progress?domain=${encodeURIComponent(domain!)}`),
     enabled: !!domain,
@@ -121,12 +125,12 @@ export default function Results() {
 
   const trendData = useMemo(() => {
     if (!historyData?.history) return [];
-    return historyData.history.map((h) => ({
+    return historyData.history.filter((h) => Boolean(audit && sameAuditPage(h.url, audit.url))).map((h) => ({
       date: new Date(h.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
       score: h.geoScore,
       id: h.id,
     }));
-  }, [historyData]);
+  }, [historyData, audit]);
 
   const { data: fixesData, isLoading: fixesLoading, isError: fixesError } = useQuery({
     queryKey: ["audit-fixes", id],
@@ -156,6 +160,8 @@ export default function Results() {
 
     let frame = 0;
     const syncDeepLink = () => {
+      const requestedTask = new URLSearchParams(window.location.search).get("task");
+      setFocusedTaskId(audit.recommendations?.some((item) => item.id === requestedTask) ? requestedTask : null);
       const { showTechnicalDetails: shouldShowDetails, targetId } = getAuditDeepLinkState(
         window.location.search,
         window.location.hash,
@@ -411,7 +417,7 @@ export default function Results() {
           <div className="rounded-lg border p-4">
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">3. Measure</p>
             <p className="mt-1 font-semibold">Confirm what changed</p>
-            <p className="mt-1 text-sm text-muted-foreground">Re-scan after publishing. Paid plans add Search Console and DataForSEO trends.</p>
+            <p className="mt-1 text-sm text-muted-foreground">{storedPlan === "pro" || storedPlan === "agency" ? "Re-scan this same page after publishing, then review SEO opportunities for keyword results. Keep the same buyer prompts to compare AI visibility over time." : "Re-scan after publishing. Pro and Agency add connected SEO performance and weekly keyword tracking."}</p>
             <Button variant="link" className="mt-1 h-auto p-0 text-sm" onClick={reScanAudit} disabled={reRun.isPending}>Re-scan this page</Button>
           </div>
         </CardContent>
@@ -622,7 +628,7 @@ export default function Results() {
         </CardContent>
         <CardContent className="pt-0 text-sm text-muted-foreground">
           {hasPaidSeo ? <><Link href="/projects" className="text-primary hover:underline">Open Sites and tracking to connect Search Console</Link>. Manage rank-tracking keywords below. Rank movement is an observed outcome, not proof that a change caused it.</> : <><p>Your audit includes SEO readiness and improvement suggestions. Pro and Agency add Search Console performance, GA4 reporting, and weekly keyword tracking.</p><Link href="/upgrade?source=audit-seo-opportunities" className="mt-3 inline-block font-medium text-primary hover:underline">Compare plans for connected SEO tracking</Link></>}
-          {hasPaidSeo && domain && <SeoTrackingPanel domain={domain} />}
+          {hasPaidSeo && domain && <><SeoPerformancePanel pageUrl={audit.url} /><SeoTrackingPanel domain={domain} pageUrl={audit.url} /></>}
         </CardContent>
       </Card>
 
@@ -660,6 +666,29 @@ export default function Results() {
             </div>
           </CardHeader>
           <CardContent className="pt-6">
+            {progressError && <p role="alert" className="mb-4 rounded border border-amber-200 p-3 text-sm">Your saved progress could not be loaded. Completion controls are paused so we do not overwrite an unknown status. Reload this page to try again.</p>}
+            {progressLoading && <p role="status" className="mb-4 text-sm text-muted-foreground">Loading your saved progress…</p>}
+            {(() => {
+              const task = audit.recommendations.find((item) => item.id === focusedTaskId);
+              if (!task) return null;
+              const done = completedRecommendationIds.has(task.id);
+              const recorded = recommendationProgress?.completed.find((item) => item.recommendationId === task.id);
+              return <section className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50/50 p-5" aria-label="Selected improvement">
+                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Work on this improvement</p>
+                <h3 className="mt-2 text-lg font-semibold">{task.title}</h3>
+                <p className="mt-2 text-sm">{task.detail}</p>
+                <ol className="mt-4 list-decimal space-y-2 pl-5 text-sm text-muted-foreground">
+                  <li>Open <a href={audit.url} target="_blank" rel="noopener noreferrer" className="text-primary underline">the audited page</a> in your website editor. Make the change above and check it on desktop and mobile.</li>
+                  <li>Publish the change on your website. This tool does not publish website edits for you.</li>
+                  <li>Mark this task done, then re-audit this same URL using the Re-scan button above.</li>
+                  <li>Review SEO opportunities for subsequent rankings and Search Console movement. A change in performance does not prove this fix caused it.</li>
+                </ol>
+                {recorded && !progressError && <p className="mt-3 text-sm text-emerald-800">You marked this done on {new Date(recorded.completedAt).toLocaleDateString()}. Completion is self-reported, not independently verified.</p>}
+                <Button className="mt-4" variant={done ? "outline" : "default"} disabled={needsRefresh || progressLoading || progressError || updateRecommendation.isPending} onClick={() => updateRecommendation.mutate({ recommendationId: task.id, completed: !done })}>{done ? "Reopen task" : "I published this improvement"}</Button>
+                <Link href={`/results/${id}#seo-opportunities`} className="ml-4 inline-block text-sm font-medium text-primary underline">Review SEO progress</Link>
+                {needsRefresh && <p className="mt-2 text-sm">Re-scan this historical audit before recording a change.</p>}
+              </section>;
+            })()}
             {/* Legacy notice: audits stored before source-tracking shipped have no
                 schema version and no per-rec source field. Word-for-word identical
                 with the same notice in the PDF export. */}
@@ -692,7 +721,7 @@ export default function Results() {
                       className={`mt-0.5 h-5 w-5 shrink-0 rounded border flex items-center justify-center ${done ? "bg-emerald-600 border-emerald-600 text-white" : "border-muted-foreground/40 hover:border-emerald-600"}`}
                       aria-label={done ? `Mark ${r.title} as not done` : `Mark ${r.title} as done`}
                       title={done ? "Mark as not done" : "Mark as done"}
-                      disabled={updateRecommendation.isPending}
+                      disabled={needsRefresh || !r.id || progressLoading || progressError || updateRecommendation.isPending}
                       onClick={() => updateRecommendation.mutate({ recommendationId: r.id, completed: !done })}
                     >
                       {done && <Check className="h-3.5 w-3.5" />}
@@ -709,6 +738,7 @@ export default function Results() {
                         {r.category} · {r.impact}
                       </div>
                       <p className="text-sm text-muted-foreground leading-snug mt-1">{r.detail}</p>
+                      {r.id && <Link href={improvementLink(id, r.id)} className="mt-2 inline-block text-xs font-semibold text-primary hover:underline">{done ? "Review completed task" : "Work through this task"} →</Link>}
                     </div>
                   </li>
                 );

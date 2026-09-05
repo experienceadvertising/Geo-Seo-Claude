@@ -6,6 +6,6 @@ export type LatestRankSnapshot = {
 export function latestRankDisplay(latest: LatestRankSnapshot): string {
   if (!latest) return "No rank snapshot yet";
   if (typeof latest.position === "number") return `Position ${latest.position}`;
-  if (latest.result_present === false) return "No matching result yet";
+  if (latest.result_present === false) return "Not found in the results checked";
   return "Rank unavailable";
 }

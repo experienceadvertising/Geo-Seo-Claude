@@ -183,7 +183,7 @@ export interface WeeklyDigestData {
     geoScore: number;
     previousGeoScore?: number;
     quickWins: string[];
-    nextAction?: { title: string; detail: string };
+    nextAction?: { id?: string; title: string; detail: string };
     completedActions?: number;
     createdAt: Date;
   };
@@ -192,6 +192,8 @@ export interface WeeklyDigestData {
     activeKeywords: number;
     rankedKeywords: number;
     pendingKeywords: number;
+    foundKeywords?: number;
+    staleKeywords?: number;
   };
   monitoring?: {
     activeSites: number;
@@ -206,7 +208,7 @@ export function weeklyDigestEmail(data: WeeklyDigestData, unsubscribeUrl?: strin
     try { return new URL(latestAudit.url).hostname.replace(/^www\./, ""); }
     catch { return latestAudit.url; }
   })() : "your site";
-  const actionUrl = latestAudit ? `${BASE_URL}/results/${latestAudit.id}#recommendations` : BASE_URL;
+  const actionUrl = latestAudit ? `${BASE_URL}/results/${latestAudit.id}${latestAudit.nextAction?.id ? `?task=${encodeURIComponent(latestAudit.nextAction.id)}` : ""}#recommendations` : BASE_URL;
   const subject = latestAudit?.nextAction
     ? `Your SEO + GEO task for ${domain}`
     : `Your weekly SEO + GEO update`;
@@ -218,6 +220,7 @@ export function weeklyDigestEmail(data: WeeklyDigestData, unsubscribeUrl?: strin
         <div style="font-size:12px;font-weight:700;color:${BRAND_COLOR};text-transform:uppercase;letter-spacing:0.05em;margin-bottom:7px;">Your recommended task this week</div>
         <div style="font-size:17px;font-weight:700;color:#111827;margin-bottom:7px;">${esc(latestAudit.nextAction.title)}</div>
         <div style="font-size:14px;color:#4b5563;line-height:1.6;">${esc(latestAudit.nextAction.detail)}</div>
+        <div style="margin-top:12px;font-size:13px;color:#4b5563;line-height:1.6;">Make the change in your website editor, publish it, and mark the task done. Then re-audit the same page and review subsequent search performance. Marking a task done records your work; it does not verify a ranking improvement.</div>
         <div style="margin-top:14px;">${btn("Open this task", actionUrl)}</div>
       </div>`
     : latestAudit
@@ -275,6 +278,7 @@ export function weeklyDigestEmail(data: WeeklyDigestData, unsubscribeUrl?: strin
     `${h1(`Your weekly SEO + GEO plan`)}
     ${p(`Hi ${esc(firstName) || "there"}, here is the next practical step for ${esc(domain)}, plus the measurement updates behind it.`)}
     ${nextTask}
+    ${paidSeoEnabled && latestAudit ? p(`Measurement check: ${tracking?.rankedKeywords ?? 0} keywords have collected snapshots; ${tracking?.foundKeywords ?? 0} have a numeric ranking. ${tracking?.pendingKeywords ?? 0} await their first collection and ${tracking?.staleKeywords ?? 0} have overdue results. <a href="${BASE_URL}/results/${latestAudit.id}#seo-opportunities">Review collection status and history</a> before deciding what to change.`, "padding:12px 14px;background:#f8fafc;border-radius:8px;color:#475569;font-size:13px;") : ""}
     ${scoreSection}
     ${divider()}
     <div style="margin-bottom:8px;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6b7280;">Your program status</div>
@@ -285,7 +289,10 @@ export function weeklyDigestEmail(data: WeeklyDigestData, unsubscribeUrl?: strin
     unsubscribeUrl,
   );
   const text = `Hi ${firstName || "there"},\n\nYour weekly SEO + GEO plan for ${domain}:\n\n${latestAudit?.nextAction ? `Recommended task: ${latestAudit.nextAction.title}\n${latestAudit.nextAction.detail}\nOpen it: ${actionUrl}` : latestAudit ? `Review the remaining recommendations before choosing another task. Review and re-scan: ${BASE_URL}/results/${latestAudit.id}` : `Run your first audit: ${BASE_URL}`}\n\nProgram status:\n- Audits in the last 7 days: ${auditCount}\n- Completed recommendations: ${latestAudit?.completedActions ?? 0}${paidSeoEnabled ? `\n- Active keyword targets: ${tracking?.activeKeywords ?? 0}\n- Keywords with a rank baseline: ${tracking?.rankedKeywords ?? 0}\n- Sites under monitoring: ${monitoring?.activeSites ?? 0}` : ""}\n\n${setupText}\n\nOpen your workspace: ${BASE_URL}`;
-  return { subject, html, text };
+  const measurementText = paidSeoEnabled && latestAudit
+    ? `\n\nMeasurement check: ${tracking?.rankedKeywords ?? 0} keywords have collected snapshots; ${tracking?.foundKeywords ?? 0} have numeric rankings. ${tracking?.pendingKeywords ?? 0} await first collection; ${tracking?.staleKeywords ?? 0} have overdue results. Review status before drawing conclusions: ${BASE_URL}/results/${latestAudit.id}#seo-opportunities\nAfter completing a task, publish your change, mark it done, and re-audit the same page. Traffic and ranking changes do not prove causation.`
+    : "";
+  return { subject, html, text: text + measurementText };
 }
 
 // ── Email: Email Verification (transactional - no unsubscribe) ────────────────

@@ -14,9 +14,11 @@ import { getUserPlan, getStoredPlan, trialEndFor } from "./planUtils";
 import { EmailService } from "./emailService";
 import { runDueMonitoredSites } from "./monitoring";
 import { runDueSeoRankSnapshots } from "./seoTrackingScheduler";
+import { summarizeRankProgress } from "./seoProgressSummary";
 import { logger } from "./logger";
 import { buildLatestRankSnapshotsQuery } from "./seoTrackingQueries";
 import { sameAuditedPage } from "./auditComparison";
+import type { WorkerJob } from "./workerPlan";
 
 // Cron-driven sends have no inbound HTTP request to derive a base URL from,
 // so we use the configured FRONTEND_URL (preferred in prod) or fall back to
@@ -63,7 +65,7 @@ function getFirstName(user: { firstName?: string | null; email?: string | null }
 }
 
 // ── Welcome series (runs daily at 9:00 AM UTC) ───────────────────────────────
-async function runWelcomeSeries() {
+async function runWelcomeSeries(userId?: string) {
   logger.info("Email scheduler: running welcome series check");
 
   // Only email users who have actually verified their address. Sending the
@@ -74,6 +76,7 @@ async function runWelcomeSeries() {
     .from(usersTable)
     .where(
       and(
+        userId ? eq(usersTable.id, userId) : undefined,
         eq(usersTable.emailOptOut, false),
         eq(usersTable.emailVerified, true),
         isNotNull(usersTable.email),
@@ -138,7 +141,7 @@ async function runWelcomeSeries() {
 // nothing expiring. The "ended" send is bounded to trials that lapsed in
 // the LAST 7 DAYS so legacy accounts (whose derived trial ended long ago)
 // are never mass-mailed on the day this feature ships.
-async function runTrialLifecycle() {
+async function runTrialLifecycle(userId?: string) {
   logger.info("Email scheduler: running trial lifecycle check");
 
   const now = new Date();
@@ -147,6 +150,7 @@ async function runTrialLifecycle() {
     .from(usersTable)
     .where(
       and(
+        userId ? eq(usersTable.id, userId) : undefined,
         eq(usersTable.emailOptOut, false),
         eq(usersTable.emailVerified, true),
         isNotNull(usersTable.email),
@@ -214,7 +218,7 @@ async function runTrialLifecycle() {
 
 // Weekly guided plan for every paid tier. Connected measurement status is
 // included only for Pro and Agency, where those features are available.
-async function runWeeklyDigests() {
+async function runWeeklyDigests(userId?: string) {
   logger.info("Email scheduler: running weekly digest");
 
   const oneWeekAgo = daysAgo(7);
@@ -222,6 +226,7 @@ async function runWeeklyDigests() {
     .select()
     .from(usersTable)
     .where(and(
+      userId ? eq(usersTable.id, userId) : undefined,
       eq(usersTable.emailOptOut, false),
       eq(usersTable.emailVerified, true),
       isNotNull(usersTable.email),
@@ -250,17 +255,19 @@ async function runWeeklyDigests() {
     const firstName = getFirstName(user);
     const domain = latestAudit ? (() => { try { return new URL(latestAudit.url).hostname.toLowerCase().replace(/^www\./, ""); } catch { return ""; } })() : "";
     const previousAudit = latestAudit ? recentAudits.slice(1).find((audit) => sameAuditedPage(audit.url, latestAudit.url)) : undefined;
-    let nextAction: { title: string; detail: string } | undefined;
+    let nextAction: { id: string; title: string; detail: string } | undefined;
     let completedActions = 0;
     if (latestAudit) {
       const completed = domain ? await db.select({ recommendationId: recommendationProgressTable.recommendationId })
         .from(recommendationProgressTable)
         .where(and(eq(recommendationProgressTable.userId, user.id), eq(recommendationProgressTable.domain, domain))) : [];
-      completedActions = completed.length;
       const done = new Set(completed.map((row) => row.recommendationId));
-      const remaining = ((latestAudit.recommendations as any[]) ?? []).filter((item) => item?.id && !done.has(item.id));
-      const rec = remaining.find((item) => item.priority === "critical" || item.priority === "high") ?? remaining[0];
-      if (rec) nextAction = { title: String(rec.title), detail: String(rec.detail) };
+      const currentRecommendations = ((latestAudit.recommendations as any[]) ?? []).filter((item) => item?.id);
+      completedActions = currentRecommendations.filter((item) => done.has(item.id)).length;
+      const remaining = currentRecommendations.filter((item) => !done.has(item.id));
+      const priority: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
+      const rec = remaining.sort((a, b) => (priority[a.priority] ?? 4) - (priority[b.priority] ?? 4))[0];
+      if (rec) nextAction = { id: String(rec.id), title: String(rec.title), detail: String(rec.detail) };
     }
 
     const activeTargets = paidSeoEnabled && domain ? await db
@@ -273,7 +280,7 @@ async function runWeeklyDigests() {
       )) : [];
     const latestSnapshotsQuery = buildLatestRankSnapshotsQuery(activeTargets.map((target) => target.id));
     const latestSnapshots = latestSnapshotsQuery ? await db.execute(latestSnapshotsQuery) : { rows: [] as any[] };
-    const rankedKeywords = latestSnapshots.rows.length;
+    const rankProgress = summarizeRankProgress(activeTargets.length, latestSnapshots.rows as Array<{ position: number | null; collected_at: Date }>);
 
     const activeSites = paidSeoEnabled ? await db
       .select({ lastRunAt: monitoredSitesTable.lastRunAt })
@@ -308,11 +315,7 @@ async function runWeeklyDigests() {
               createdAt: latestAudit.createdAt,
             }
           : undefined,
-        tracking: {
-          activeKeywords: activeTargets.length,
-          rankedKeywords,
-          pendingKeywords: Math.max(0, activeTargets.length - rankedKeywords),
-        },
+        tracking: rankProgress,
         monitoring: {
           activeSites: activeSites.length,
           waitingForFirstRun: activeSites.filter((site) => !site.lastRunAt).length,
@@ -332,7 +335,7 @@ async function runWeeklyDigests() {
 }
 
 // ── Monthly report for Agency (runs 1st of each month at 8:00 AM UTC) ────────
-async function runMonthlyReports() {
+async function runMonthlyReports(userId?: string) {
   logger.info("Email scheduler: running monthly report");
 
   const now = new Date();
@@ -343,7 +346,7 @@ async function runMonthlyReports() {
   const users = await db
     .select()
     .from(usersTable)
-    .where(and(eq(usersTable.emailOptOut, false), isNotNull(usersTable.email)));
+    .where(and(userId ? eq(usersTable.id, userId) : undefined, eq(usersTable.emailOptOut, false), eq(usersTable.emailVerified, true), isNotNull(usersTable.email)));
 
   for (const user of users) {
     if (!user.email) continue;
@@ -420,7 +423,7 @@ function isoWeekOfYear(d: Date): number {
   return 1 + Math.round((target.getTime() - firstThursday.getTime()) / (7 * 24 * 60 * 60 * 1000));
 }
 
-async function runWeeklyInsights() {
+async function runWeeklyInsights(userId?: string) {
   logger.info("Email scheduler: running weekly AEO insights");
 
   const eightDaysAgo = daysAgo(8);
@@ -429,6 +432,7 @@ async function runWeeklyInsights() {
     .from(usersTable)
     .where(
       and(
+        userId ? eq(usersTable.id, userId) : undefined,
         eq(usersTable.emailOptOut, false),
         eq(usersTable.emailVerified, true),
         isNotNull(usersTable.email),
@@ -453,7 +457,7 @@ async function runWeeklyInsights() {
 }
 
 // ── Prompt-simulation follow-up (daily) ───────────────────────────────────────
-async function runSimulationFollowUps() {
+async function runSimulationFollowUps(userId?: string) {
   logger.info("Email scheduler: running prompt-simulation follow-up");
 
   // Each eligible audit appears in one 24-hour window, so this sends one
@@ -469,6 +473,7 @@ async function runSimulationFollowUps() {
     FROM audits a
     INNER JOIN users u ON u.id = a.user_id
     WHERE a.user_id IS NOT NULL
+      AND ${userId ? sql`u.id = ${userId}` : sql`true`}
       AND u.email_verified = true
       AND u.email_opt_out = false
       AND u.email IS NOT NULL
@@ -506,6 +511,10 @@ async function runSimulationFollowUps() {
 
 // ── Start all schedules ───────────────────────────────────────────────────────
 export function startEmailScheduler() {
+  if (process.env.SCHEDULER_MODE === "external" || process.env.SCHEDULER_MODE === "cloudflare") {
+    logger.info("In-process schedules disabled; external worker owns scheduled jobs");
+    return;
+  }
   // Continuous monitoring sweep runs independently of email config — the
   // re-audits still happen (and feed the Projects trend view) even when
   // Postmark isn't set; only the alert emails are skipped in that case.
@@ -518,12 +527,12 @@ export function startEmailScheduler() {
   });
   logger.info("Monitored-sites scheduler started (daily sweep, per-site cadence)");
 
-  // Poll daily so queued provider tasks complete promptly. Each target remains
+  // Poll regularly so queued provider tasks complete promptly. Each target remains
   // on a weekly cadence, and manual refreshes are separately capped.
-  cron.schedule("0 6 * * *", () => {
+  cron.schedule("*/15 * * * *", () => {
     runDueSeoRankSnapshots().catch((err) => logger.error({ err }, "SEO rank snapshot cron error"));
   });
-  logger.info("SEO rank tracking scheduler started (daily queue poll, weekly target cadence)");
+  logger.info("SEO rank tracking scheduler started (15-minute queue poll, weekly target cadence)");
 
   if (!process.env.POSTMARK_API_TOKEN) {
     logger.warn("POSTMARK_API_TOKEN not set — email scheduler disabled");
@@ -583,4 +592,29 @@ export function startEmailScheduler() {
   });
 
   logger.info("Email scheduler started (welcome series, trial lifecycle, weekly digest, monthly report, weekly insights)");
+}
+
+/** Called only by the separately activated scheduled-worker entrypoint. */
+export async function runExternalScheduledJob(job: WorkerJob): Promise<void> {
+  if (job === "ranks") { await runDueSeoRankSnapshots(25); return; }
+  if (job === "monitoring") return runDueMonitoredSites(25);
+  const jobs = {
+    welcome: runWelcomeSeries,
+    trial: runTrialLifecycle,
+    "simulation-followup": runSimulationFollowUps,
+    "weekly-digest": runWeeklyDigests,
+    "monthly-report": runMonthlyReports,
+    "weekly-insights": runWeeklyInsights,
+  };
+  return withSchedulerLock(job, jobs[job]);
+}
+
+/** One recipient per authenticated HTTP job; all normal eligibility checks stay in place. */
+export async function runScheduledEmailForUser(job: Exclude<WorkerJob, "ranks" | "monitoring">, userId: string): Promise<void> {
+  const jobs = {
+    welcome: runWelcomeSeries, trial: runTrialLifecycle,
+    "simulation-followup": runSimulationFollowUps, "weekly-digest": runWeeklyDigests,
+    "monthly-report": runMonthlyReports, "weekly-insights": runWeeklyInsights,
+  };
+  await jobs[job](userId);
 }

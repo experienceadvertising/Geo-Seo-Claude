@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ChevronDown, ChevronUp, PauseCircle, PlayCircle, RefreshCw, SlidersHorizontal } from "lucide-react";
 import { latestRankDisplay } from "@/lib/rankTrackingDisplay";
+import { collectionMessage, landingPageDiffers } from "@/lib/seoProgress";
 
 type RankSnapshot = {
   id: number;
@@ -14,7 +15,7 @@ type RankSnapshot = {
   collectedAt?: string;
   collected_at?: string;
 };
-type Target = { id: number; keyword: string; locationName: string; device: string; targetUrl?: string | null; active: boolean; latest?: { position: number | null; result_present: boolean; collected_at: string } | null };
+type Target = { id: number; keyword: string; locationName: string; device: string; targetUrl?: string | null; active: boolean; collection?: { status: string; created_at: string } | null; latest?: { position: number | null; result_present: boolean; collected_at: string; result_url?: string | null } | null };
 type KeywordResponse = { targets: Target[]; limits: { activeKeywords: number }; providerConfigured: boolean };
 type OverviewResponse = { limits: { activeKeywords: number; manualRefreshes: number }; usage: { activeKeywords: number; manualRefreshes: number } };
 type HistoryResponse = { snapshots: RankSnapshot[] };
@@ -27,7 +28,7 @@ function apiMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
-function snapshotDate(snapshot: RankSnapshot): string {
+function snapshotDate(snapshot: { collectedAt?: string; collected_at?: string }): string {
   const value = snapshot.collectedAt ?? snapshot.collected_at;
   if (!value) return "Unknown date";
   return new Date(value).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
@@ -73,23 +74,23 @@ function RankHistory({ targetId, open }: { targetId: number; open: boolean }) {
   );
 }
 
-export function SeoTrackingPanel({ domain }: { domain: string }) {
+export function SeoTrackingPanel({ domain, pageUrl }: { domain: string; pageUrl?: string }) {
   const client = useQueryClient();
   const [keyword, setKeyword] = useState("");
   const [locationCode, setLocationCode] = useState(2840);
   const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
-  const [targetUrl, setTargetUrl] = useState(`https://${domain}`);
-  const [showOptions, setShowOptions] = useState(false);
+  const [targetUrl, setTargetUrl] = useState(pageUrl || `https://${domain}`);
+  const [showOptions, setShowOptions] = useState(true);
   const [openHistoryId, setOpenHistoryId] = useState<number | null>(null);
   useEffect(() => {
-    setTargetUrl(`https://${domain}`);
+    setTargetUrl(pageUrl || `https://${domain}`);
     setKeyword("");
     setOpenHistoryId(null);
-  }, [domain]);
+  }, [domain, pageUrl]);
   const queryKey = ["seo-keywords", domain];
   const overviewKey = ["seo-overview", domain];
   const { data, error } = useQuery<KeywordResponse>({
-    queryKey, queryFn: () => customFetch(`/api/seo/keywords?domain=${encodeURIComponent(domain)}`), retry: false,
+    queryKey, queryFn: () => customFetch(`/api/seo/keywords?domain=${encodeURIComponent(domain)}`), retry: false, refetchInterval: 60_000,
   });
   const { data: overview } = useQuery<OverviewResponse>({
     queryKey: overviewKey, queryFn: () => customFetch(`/api/seo/overview?domain=${encodeURIComponent(domain)}`), retry: false,
@@ -134,7 +135,9 @@ export function SeoTrackingPanel({ domain }: { domain: string }) {
       </div>
     </div>
     {data && !data.providerConfigured && <p className="mt-3 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">Rank tracking is not connected yet. AEO audits and Search Console features continue to work normally.</p>}
+    <p className="mt-3 text-xs text-muted-foreground">Start with a few buyer searches that matter to your business. Establish a baseline, improve the relevant page, then compare weekly results. Each check requests up to 100 Google results; not being found does not mean your site is absent from all Google results.</p>
     <form className="mt-3 space-y-3" onSubmit={(event) => { event.preventDefault(); if (keyword.trim()) add.mutate(); }}>
+      <p className="text-xs font-medium">1. Choose a buyer search. 2. Confirm your page, country, and device. 3. Add the target and return here to review collection status.</p>
       <div className="flex flex-col gap-2 sm:flex-row">
         <Input aria-label="Keyword to track" value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="Add a target keyword" maxLength={250} />
         <Button type="button" variant="outline" size="sm" className="sm:h-10" onClick={() => setShowOptions((value) => !value)} aria-expanded={showOptions}>
@@ -168,6 +171,7 @@ export function SeoTrackingPanel({ domain }: { domain: string }) {
         </div>
       )}
     </form>
+    {add.isSuccess && <p role="status" className="mt-2 text-xs text-emerald-700">Keyword saved. Its first snapshot is not available yet. Review the collection status below; you do not need to spend a manual refresh to finish setup.</p>}
     {add.error && <p className="mt-2 text-xs text-destructive">{apiMessage(add.error, "Could not add keyword.")}</p>}
     {data?.targets?.length ? <ul className="mt-4 divide-y text-sm">{data.targets.map((target) => {
       const historyOpen = openHistoryId === target.id;
@@ -175,11 +179,15 @@ export function SeoTrackingPanel({ domain }: { domain: string }) {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0"><span className="font-medium">{target.keyword}</span>{!target.active && <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase text-muted-foreground">Paused</span>}<span className="block text-xs text-muted-foreground sm:inline sm:ml-2">{target.locationName} · {target.device} · {latestRankDisplay(target.latest)}</span>{target.targetUrl && <span className="block max-w-xl truncate text-xs text-muted-foreground" title={target.targetUrl}>Watching {target.targetUrl}</span>}</div>
           <div className="flex flex-wrap gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setOpenHistoryId(historyOpen ? null : target.id)}>{historyOpen ? <ChevronUp className="mr-1 h-3 w-3" /> : <ChevronDown className="mr-1 h-3 w-3" />}History</Button>
+            <Button aria-label={`Ranking history for ${target.keyword}`} aria-expanded={historyOpen} variant="ghost" size="sm" onClick={() => setOpenHistoryId(historyOpen ? null : target.id)}>{historyOpen ? <ChevronUp className="mr-1 h-3 w-3" /> : <ChevronDown className="mr-1 h-3 w-3" />}History</Button>
             <Button variant="outline" size="sm" disabled={refresh.isPending || !target.active || !data.providerConfigured || refreshesRemaining === 0} onClick={() => refresh.mutate(target.id)}><RefreshCw className="mr-1 h-3 w-3" />Refresh</Button>
             <Button variant="outline" size="sm" disabled={toggle.isPending} onClick={() => toggle.mutate({ id: target.id, active: !target.active })}>{target.active ? <PauseCircle className="mr-1 h-3 w-3" /> : <PlayCircle className="mr-1 h-3 w-3" />}{target.active ? "Pause" : "Resume"}</Button>
           </div>
         </div>
+        <p className="mt-2 text-xs text-muted-foreground" role="status">{collectionMessage(target, data.providerConfigured)}</p>
+        {target.latest && <p className="mt-1 text-xs text-muted-foreground">Last checked: {snapshotDate(target.latest)}. Next scheduled collection becomes eligible {new Date(Date.parse(target.latest.collected_at) + 7 * 86400000).toLocaleDateString("en-US")}.</p>}
+        {target.latest?.result_url && <p className="mt-1 break-all text-xs">Page found: {target.latest.result_url}</p>}
+        {landingPageDiffers(target.targetUrl, target.latest?.result_url) && <p className="mt-1 text-xs text-amber-700">Google returned a different page. Review whether that page fits this search before changing your intended landing page.</p>}
         <RankHistory targetId={target.id} open={historyOpen} />
       </li>;
     })}</ul> : <p className="mt-3 text-xs text-muted-foreground">Add a high-value keyword now, or import a query from the Search Console opportunity view.</p>}

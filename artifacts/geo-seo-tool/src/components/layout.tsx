@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { nextImprovement, improvementLink } from "@/lib/nextImprovement";
 import { Link, useLocation } from "wouter";
 import { Sparkles, LogOut, Shield, Menu, LayoutDashboard, FolderKanban, CreditCard, BookOpen, CircleHelp, CheckCircle2, Search, SlidersHorizontal, MessageSquareText, Library } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -195,7 +196,7 @@ function AuditResultsNav({ mobile = false }: { mobile?: boolean }) {
 
   let domain = audit?.url ?? "";
   try { domain = new URL(domain).hostname.replace(/^www\./, ""); } catch { /* keep stored URL */ }
-  const { data: progress } = useQuery<{ completed: Array<{ recommendationId: string }> }>({
+  const { data: progress, isError: progressError, isLoading: progressLoading } = useQuery<{ completed: Array<{ recommendationId: string }> }>({
     queryKey: ["recommendation-progress", domain],
     queryFn: () => customFetch(`/api/geo/recommendation-progress?domain=${encodeURIComponent(domain)}`),
     enabled: !!domain && !!auditDetails?.recommendations?.length,
@@ -205,7 +206,7 @@ function AuditResultsNav({ mobile = false }: { mobile?: boolean }) {
   if (!audit) return null;
 
   const completedIds = new Set((progress?.completed ?? []).map((item) => item.recommendationId));
-  const nextRecommendation = auditDetails?.recommendations?.find((item) => !completedIds.has(item.id));
+  const nextRecommendation = nextImprovement(auditDetails?.recommendations, completedIds, progressError ? "error" : progressLoading ? "loading" : "ready").task;
 
   const links = [
     { label: "Overview", href: `/results/${audit.id}`, icon: LayoutDashboard },
@@ -225,7 +226,7 @@ function AuditResultsNav({ mobile = false }: { mobile?: boolean }) {
         <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-800">{Math.round(audit.geoScore)}</span>
       </div>
       {nextRecommendation && (
-        <Link href={`/results/${audit.id}#recommendations`} className="mx-2 mb-2 block rounded-lg border border-emerald-100 bg-emerald-50/70 p-3 hover:border-emerald-200 hover:bg-emerald-50">
+        <Link href={improvementLink(selectedAuditId, nextRecommendation.id)} className="mx-2 mb-2 block rounded-lg border border-emerald-100 bg-emerald-50/70 p-3 hover:border-emerald-200 hover:bg-emerald-50">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700">Next improvement</p>
           <p className="mt-1 line-clamp-2 text-xs font-semibold leading-5 text-slate-800">{nextRecommendation.title}</p>
           <p className="mt-1 text-[11px] font-medium text-emerald-800">Open action plan</p>
@@ -247,7 +248,7 @@ function AuditResultsNav({ mobile = false }: { mobile?: boolean }) {
 function AppShell({ children, pathname }: { children: React.ReactNode; pathname: string }) {
   return (
     <div className="min-h-screen bg-slate-50 font-sans md:flex">
-      <aside className="hidden min-h-screen w-64 shrink-0 border-r border-slate-200 bg-white md:flex md:flex-col">
+      <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 overflow-y-auto border-r border-slate-200 bg-white md:flex md:flex-col">
         <div className="border-b border-slate-100 px-5 py-5">
           <Link href="/" className="flex items-center gap-2.5 font-bold tracking-tight text-slate-950">
             <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-teal-600 to-emerald-700 text-white shadow-sm">
@@ -285,7 +286,7 @@ function AppShell({ children, pathname }: { children: React.ReactNode; pathname:
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="h-11 w-11" aria-label="Open account navigation"><Menu className="h-5 w-5" /></Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[min(85vw,320px)]">
+            <SheetContent side="right" className="w-[min(85vw,320px)] overflow-y-auto">
               <SheetTitle>Account and support</SheetTitle>
               <nav className="mt-8 flex flex-col gap-1">
                 {APP_NAV.map(({ label, href, icon: Icon }) => (
