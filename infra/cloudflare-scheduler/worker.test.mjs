@@ -19,7 +19,7 @@ test("signature binds timestamp, method, endpoint and exact body", async () => {
 test("confirmed requests have fixed destination and cannot follow redirects", async () => {
   const result = await trigger({ SCHEDULER_ENABLED: "true", SCHEDULER_SECRET: secret }, async (url, options) => {
     assert.equal(url, "https://aeoimprovement.com/api/internal/scheduler");
-    assert.equal(options.redirect, "error");
+    assert.equal(options.redirect, "manual");
     assert.equal(options.method, "POST");
     return Response.json({ status: "completed" });
   });

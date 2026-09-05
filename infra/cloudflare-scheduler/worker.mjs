@@ -24,7 +24,7 @@ export async function trigger(env, request = fetch) {
     for (let step = 0; step < 40 && Date.now() - started < 600_000; step++) {
     const headers = await signedHeaders(env.SCHEDULER_SECRET, body);
     const response = await request(endpoint, {
-      method: "POST", headers, body, redirect: "error",
+      method: "POST", headers, body, redirect: "manual",
       signal: AbortSignal.timeout(90_000),
     });
     if (!response.ok) throw new Error("Scheduler request failed");
