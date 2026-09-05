@@ -131,6 +131,15 @@ function buildStaticContent(route) {
   const faqs = (route.faqs || []).map(({ question, answer }) => (
     `<section style="margin-top:20px"><h3>${escapeHtmlText(question)}</h3><p>${escapeHtmlText(answer)}</p></section>`
   )).join("\n    ");
+  if (route.legal) {
+    return `<main data-static-route="${escapeHtmlAttr(route.path)}" style="max-width:800px;margin:0 auto;padding:48px 24px;font-family:system-ui,sans-serif;line-height:1.65;color:#0f172a">
+      <p style="font-size:14px;font-weight:700;color:#047857">AEO Improvement</p>
+      <h1 style="font-size:clamp(32px,6vw,48px);line-height:1.08;margin:12px 0 20px">${heading}</h1>
+      <p style="font-size:18px;max-width:760px;color:#475569">${description}</p>
+      ${sections}
+      <nav aria-label="Related policies" style="margin-top:32px"><a href="/privacy">Privacy Policy</a> · <a href="/google-data-use">Google Data Use</a> · <a href="/terms">Terms of Service</a></nav>
+    </main>`;
+  }
   return `<main data-static-route="${escapeHtmlAttr(route.path)}" style="max-width:960px;margin:0 auto;padding:48px 24px;font-family:system-ui,sans-serif;line-height:1.65;color:#0f172a">
     <p style="font-size:14px;font-weight:700;color:#047857">AEO Improvement</p>
     <h1 style="font-size:clamp(32px,6vw,56px);line-height:1.08;margin:12px 0 20px">${heading}</h1>
