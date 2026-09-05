@@ -1,0 +1,11 @@
+{
+  "name": "aeo-improvement-scheduler",
+  "account_id": "673aa197a09beac350d09a25096480c3",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-09-04",
+  "workers_dev": false,
+  "preview_urls": false,
+  "triggers": { "crons": [] },
+  "vars": { "SCHEDULER_ENABLED": "false" },
+  "observability": { "enabled": true }
+}
