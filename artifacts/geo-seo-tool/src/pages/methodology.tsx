@@ -76,6 +76,18 @@ export default function Methodology() {
       </div>
 
       <Card>
+        <CardHeader><CardTitle>From a finding to an implemented improvement</CardTitle></CardHeader>
+        <CardContent className="space-y-3 text-sm leading-relaxed">
+          <p>Each audit finding now includes a practical implementation guide: who can help, steps to take, an example, checks after publishing, and signals to watch afterward. Weekly task emails use the same guidance. You remain in control of changes to your website.</p>
+          <p>Our editorial guidance draws on Cyrus Shepard and Zyppy Signal's public work, including <a className="underline" href="https://signal.zyppy.com/p/content-effort">Content Effort (August 13, 2026)</a> and <a className="underline" href="https://signal.zyppy.com/p/seo-strategies-for-ai-search">SEO strategies for AI search (August 4, 2026)</a>. These are attributed expert guidance, not guaranteed outcomes or proof of Google's private ranking weights.</p>
+          <p>We assess visible page signals. We cannot establish whether underlying testing really happened, whether every AI system sees a page, or whether a later ranking change was caused by your edit. Generated code and examples need review before use.</p>
+          <p><strong>Is a 2024 source too old?</strong> Not automatically. The KDD 2024 GEO paper is foundational research in its own experimental setting. Its results do not establish expected gains on today's production models. Current platform documentation governs platform-specific advice; newer evidence can qualify or replace older recommendations.</p>
+          <p>For Google AI Overviews and AI Mode, <a className="underline" href="https://developers.google.com/search/docs/appearance/ai-features">Google's guidance</a> emphasizes established SEO practices and states that no special AI markup is required. We do not treat an optional file or a schema type as a citation guarantee.</p>
+          <p className="text-muted-foreground">Implementation guidance reviewed September 5, 2026. Scoring weights are unchanged by this documentation update.</p>
+        </CardContent>
+      </Card>
+
+      <Card>
         <CardHeader>
           <CardTitle className="text-base">The six-dimension AEO score</CardTitle>
           <CardDescription>The UI, API, PDF report, and benchmark use this same weighted formula.</CardDescription>
@@ -123,24 +135,16 @@ export default function Methodology() {
             AI-engine citation behavior across a held-out prompt corpus.
           </p>
           <p>
-            Two methods showed measurable, repeatable lift across most prompt
-            categories: adding{" "}
-            <strong>quotations from authoritative sources</strong> (the paper labels
-            this <em>Quotation Addition</em>) and adding{" "}
-            <strong>statistics with sources</strong> (<em>Statistics Addition</em>).
-            The paper reports group-level improvements on its <em>Position-Adjusted
-            Word Count</em> (PAWC) and <em>Subjective Impression</em> (SI) metrics
-            — these are aggregate effects on the corpus the paper studied, not
-            guarantees for any specific page.
+            The paper evaluates content changes in a particular experimental
+            setting. Its results are useful context for evidence-led content,
+            but they do not establish what every current AI platform rewards
+            or predict the outcome for an individual page.
           </p>
           <p>
-            Eight of the ten methods the paper tested showed{" "}
-            <strong>weak, mixed, or negative</strong> results. We do not surface
-            those as research-backed in our recommendations. When you see a "Research"
-            badge in your audit, it points to one of the two consistently positive
-            methods. When you see "Industry consensus," the underlying advice is
-            sound practitioner technique that the paper either did not test or
-            found inconclusive.
+            A "Research" badge links to the cited study. "Expert guidance"
+            identifies attributed practitioner interpretation, including Zyppy
+            Signal. Neither badge means a recommendation guarantees a ranking
+            or citation improvement. Review the source and the finding together.
           </p>
           <p className="text-muted-foreground italic">
             We deliberately do not display the paper's percent-lift numbers next
@@ -159,7 +163,7 @@ export default function Methodology() {
           <CardTitle className="flex items-center gap-2 text-base">
             <BarChart3 className="h-4 w-4 text-sky-600" /> A note on SERP position
           </CardTitle>
-          <CardDescription>Why we don't currently personalize advice based on your search rank.</CardDescription>
+          <CardDescription>Use observed performance to put page-level findings in context.</CardDescription>
         </CardHeader>
         <CardContent className="text-sm leading-relaxed space-y-3">
           <p>
@@ -171,24 +175,30 @@ export default function Methodology() {
             This is a real, important finding.
           </p>
           <p>
-            We do not yet personalize recommendations based on your current
-            SERP position — our audits look at the page in isolation. Position-
-            conditional advice is on our roadmap as a future feature: once we
-            integrate live ranking data, we'll be able to suppress or rephrase
-            recommendations that work against high-ranking pages. Until then,
-            assume our recommendations are tuned for pages that are <em>not
-            already</em> dominating their target queries.
+            Connected Search Console performance and tracked keyword snapshots
+            provide context alongside page-level findings. Protect pages that
+            already perform well: make a focused change, record it, and compare
+            later observations. A ranking position does not prove that a particular
+            edit will help, and traffic movement does not establish causation.
           </p>
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader><CardTitle className="text-base">Primary references</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-base">How we choose sources</CardTitle></CardHeader>
         <CardContent className="text-sm leading-relaxed">
+          <p className="mb-3">No single publisher defines our advice. Official platform documentation explains eligibility and controls. Primary studies provide evidence within their tested settings. Practitioner sources, including Zyppy Signal, provide attributed interpretation. Your connected performance data helps put findings in context, but does not prove causation.</p>
+          <p className="mb-3">We favor actionable guidance tied to an observed finding. We do not treat a preferred word count, an updated date, a byline, or special AI markup as a ranking guarantee. Implementation references are separate from the evidence label on the original finding.</p>
           <ul className="list-disc pl-5 space-y-2">
+            <li><a className="underline" href="https://www.searchpilot.com/resources/case-studies/will-adding-faq-content-to-footer-copy-improve-organic-traffic">SearchPilot's category-page experiment</a> informs conditional buying-question examples. Its result is site-specific, not a promise for every FAQ.</li>
+            <li><a className="underline" href="https://www.searchpilot.com/resources/case-studies/how-does-ai-content-impact-listing-pages">SearchPilot's listing-page experiment</a> supports testing useful content and checking rendering separately. The test changed both, so it cannot isolate either as the sole cause.</li>
+            <li><a className="underline" href="https://ahrefs.com/blog/schema-ai-citations/">Ahrefs' schema study</a> did not find a clear citation uplift in its already-cited sample. We retain accurate markup guidance without promising citation gains.</li>
+            <li><a className="underline" href="https://ahrefs.com/blog/do-ai-assistants-prefer-to-cite-fresh-content/">Ahrefs' freshness analysis</a> is observational. It does not show that changing dates improves visibility.</li>
+            <li><a className="underline" href="https://developers.google.com/search/docs/fundamentals/creating-helpful-content">Google's helpful-content guidance</a>: genuine experience, useful information, and transparent authorship.</li>
+            <li><a className="underline" href="https://developers.google.com/search/docs/crawling-indexing/links-crawlable">Google's link guidance</a>: discoverable links and descriptive anchor text. Our implementation checklist includes checks users can carry out on the affected page, not a claim that we crawled their entire site.</li>
             <li>
               <a className="text-emerald-700 underline" href="https://signal.zyppy.com/p/seo-strategies-for-ai-search" target="_blank" rel="noreferrer">SEO Strategies for AI Search</a>
-              {" "}by <strong>Cyrus Shepard</strong>, Zyppy Signal — cross-references 54 AI citation studies and ranks the top citation factors by score. Several of our highest-weighted recommendations, including snippet controls (Preview Controls, 9.2/10) and content placement (8.8/10), trace directly to this analysis.
+              {" "}by <strong>Cyrus Shepard</strong>, Zyppy Signal. Expert guidance on search eligibility, useful content, and brand clarity. This editorial framework is not a measurement of Google's ranking weights.
             </li>
             <li><a className="text-emerald-700 underline" href="https://dl.acm.org/doi/10.1145/3637528.3671900" target="_blank" rel="noreferrer">GEO: Generative Engine Optimization</a> — Aggarwal, Murahari et al. (Princeton / IIT Delhi, KDD 2024). The academic foundation for our research-tagged recommendations around quotation addition and statistics with sources.</li>
             <li><a className="text-emerald-700 underline" href="https://platform.openai.com/docs/bots" target="_blank" rel="noreferrer">OpenAI crawler documentation</a> for OAI-SearchBot, ChatGPT-User, and GPTBot roles.</li>
@@ -270,27 +280,21 @@ export default function Methodology() {
         </CardHeader>
         <CardContent className="text-sm leading-relaxed space-y-3">
           <p>
-            A recurring finding in practitioner research is that AI engines do not
-            discover new brands — they select from brands they already recognize.
-            Citation behavior is downstream of entity recognition: if the model's
-            knowledge graph does not associate your brand with a specific problem
-            space, additional content on your site produces little lift because
-            the retrieval step never reaches you.
+            Clear, consistent brand facts help people understand who you are,
+            what you offer, and who you serve. Describe those facts accurately
+            on your home, about, and product pages rather than expecting readers
+            to piece them together from vague claims.
           </p>
           <p>
-            The practical consequence is that off-site signals — mentions on
-            Wikipedia, industry publications, Reddit, LinkedIn, and authoritative
-            directories — often move the needle faster than on-page changes for
-            brands with low existing AI visibility. Our audit surfaces your current
-            brand authority footprint precisely because this is where the gap is
-            most likely to be.
+            Keep profiles you control consistent with your website. Seek genuine
+            coverage and customer feedback where relevant, without manufacturing
+            reviews or mentions. Off-site presence complements useful on-site
+            information; it is not a substitute for it.
           </p>
           <p>
-            A second finding worth understanding: cited sources are not stable.
-            Industry analysis of major AI platforms shows that between 40% and 60%
-            of cited sources rotate month-to-month. This is why a single audit
-            taken as a permanent baseline is misleading. Our AEO score is designed
-            to be tracked over time, not read once.
+            Citation observations can vary across prompts, platforms, and time.
+            Keep the test conditions visible when comparing results. An audit
+            readiness score is not a measurement of actual citation share.
           </p>
         </CardContent>
       </Card>

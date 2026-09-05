@@ -5,6 +5,21 @@
   "archiveNote": "Earlier release notes retain their original recorded dates. Descriptions were clarified on September 5, 2026 to remove unsupported performance and visibility claims. Historical offers are not current plan entitlements.",
   "entries": [
     {
+      "slug": "evidence-led-implementation-guides",
+      "isoDate": "2026-09-05",
+      "badge": "Improvement",
+      "title": "Practical implementation guides with clearer sources",
+      "summary": "Audit tasks explain how to make and verify improvements, with matching guidance in weekly digests.",
+      "audience": "Audit users and eligible weekly-digest recipients",
+      "items": [
+        "Expanded task instructions include ownership, examples, verification and measurement limits.",
+        "Added conditional category and listing-page examples informed by SearchPilot experiments alongside Google, OpenAI and Zyppy guidance.",
+        "Corrected overstated schema and citation claims and clarified research limitations."
+      ],
+      "links": [{ "label": "Read our methodology", "href": "/methodology" }],
+      "evidence": "Implementation-guidance release; source review recorded in docs/independent-evidence-review-2026-09-05.md."
+    },
+    {
       "slug": "clearer-seo-geo-homepage",
       "isoDate": "2026-09-05",
       "badge": "Fix",

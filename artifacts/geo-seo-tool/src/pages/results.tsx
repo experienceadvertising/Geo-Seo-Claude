@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ScoreBadge } from "@/components/score-badge";
 import { SourceBadge } from "@/components/source-badge";
+import { ImplementationGuide } from "@/components/implementation-guide";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info } from "lucide-react";
 
@@ -738,6 +739,7 @@ export default function Results() {
                         {r.category} · {r.impact}
                       </div>
                       <p className="text-sm text-muted-foreground leading-snug mt-1">{r.detail}</p>
+                      <ImplementationGuide id={r.id} />
                       {r.id && <Link href={improvementLink(id, r.id)} className="mt-2 inline-block text-xs font-semibold text-primary hover:underline">{done ? "Review completed task" : "Work through this task"} →</Link>}
                     </div>
                   </li>

@@ -170,6 +170,10 @@ test("paid weekly digest points to the user's next task and program status", () 
   });
 
   assert.equal(email.subject, "Your SEO + GEO task for example.com");
+  assert.match(email.html, /Implementation references:/);
+  assert.match(email.text, /Implementation references:/);
+  assert.match(email.html, /creating-helpful-content/);
+  assert.match(email.text, /reviewed 2026-09-05/);
   assert.match(email.html, /\/results\/42#recommendations/);
   assert.match(email.html, /Add first-party evidence/);
   assert.match(email.html, /Keywords with a rank baseline/);
