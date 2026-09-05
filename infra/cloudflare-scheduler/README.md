@@ -9,10 +9,17 @@
 - Both production scheduler tables exist and were empty before activation.
   Production configuration contains SCHEDULER_MODE=cloudflare and
   SCHEDULED_WORKER_ENABLED=true.
-- This configuration enables hourly collection at minute 40 UTC. Verify the
+- This configuration enables hourly collection at minute 48 UTC. Verify the
   deployed Worker version and an actual cron invocation separately; a committed
   configuration is not proof of execution.
 - No Cloudflare plan change was required. The existing account has Workers Paid.
+
+The first activation exposed a runtime incompatibility before any outbound
+request: Cloudflare rejects fetch redirect mode `error`. The timer was paused,
+production queue counts remained zero, and the failure was reproduced in
+Miniflare with all outbound traffic mocked. The sender now uses `manual` and
+rejects non-success responses, including redirects, without following them.
+Two Cloudflare-runtime regression tests plus six sender unit tests pass.
 
 The preparation notes below describe the earlier inactive state, not current
 deployment status. Roll back by removing cron triggers and setting
@@ -74,7 +81,7 @@ all-customer email loop or detached work after responding.
 4. Publish and verify POST /api/internal/scheduler: missing/bad signatures must
    return 401; a correctly signed {"operation":"probe"} must return
    {"status":"ready","protocol":1}, with no provider/email/queue side effects.
-5. Only then set the Worker's SCHEDULER_ENABLED=true and cron to 40 * * * *.
+5. Only then set the Worker's SCHEDULER_ENABLED=true and cron to 48 * * * *.
    It awaits at most 40 small requests, stops starting new requests after ten
    minutes, and stops on an uncertain result instead of replaying it.
 6. Confirm an actual scheduled invocation and aggregate queue status. Completed
@@ -94,6 +101,10 @@ old app timers. Do not run both schedulers simultaneously. Keep the additive
 queue table so delivery-attempt history is retained.
 
 Tests: node --test infra/cloudflare-scheduler/worker.test.mjs
+Runtime checks: install Miniflare in a test environment, or set MINIFLARE_MODULE
+to Wrangler's bundled Miniflare module, then run node --test
+infra/cloudflare-scheduler/worker.runtime.test.mjs. These checks intercept all
+outbound requests and use a fixture secret, never production credentials.
 Validate with Wrangler deploy --dry-run using this directory's configuration.
 Before activation, test missing/invalid/stale signatures against the actual
 receiver, duplicate slots, provider failures and a harmless authenticated probe.
