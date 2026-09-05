@@ -6,7 +6,7 @@
   "workers_dev": false,
   "preview_urls": false,
   "limits": { "cpu_ms": 1000 },
-  "triggers": { "crons": [] },
-  "vars": { "SCHEDULER_ENABLED": "false" },
+  "triggers": { "crons": ["40 * * * *"] },
+  "vars": { "SCHEDULER_ENABLED": "true" },
   "observability": { "enabled": true }
 }

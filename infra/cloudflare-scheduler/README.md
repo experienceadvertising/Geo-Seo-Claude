@@ -1,4 +1,22 @@
-# Cloudflare scheduler connection (not active)
+# Cloudflare scheduler connection
+
+## Release verification, September 5, 2026 UTC
+
+- PRs 46 and 47 are merged. Replit published the reviewed release after a
+  browser review of the additive migration: two new tables and one index only.
+- The live homepage returns HTTP 200. Unsigned scheduler requests return 401.
+  A privately signed, side-effect-free probe returns HTTP 200, ready, protocol 1.
+- Both production scheduler tables exist and were empty before activation.
+  Production configuration contains SCHEDULER_MODE=cloudflare and
+  SCHEDULED_WORKER_ENABLED=true.
+- This configuration enables hourly collection at minute 40 UTC. Verify the
+  deployed Worker version and an actual cron invocation separately; a committed
+  configuration is not proof of execution.
+- No Cloudflare plan change was required. The existing account has Workers Paid.
+
+The preparation notes below describe the earlier inactive state, not current
+deployment status. Roll back by removing cron triggers and setting
+SCHEDULER_ENABLED=false before considering any app timer changes.
 
 ## Setup status, September 4, 2026
 
@@ -56,7 +74,7 @@ all-customer email loop or detached work after responding.
 4. Publish and verify POST /api/internal/scheduler: missing/bad signatures must
    return 401; a correctly signed {"operation":"probe"} must return
    {"status":"ready","protocol":1}, with no provider/email/queue side effects.
-5. Only then set the Worker's SCHEDULER_ENABLED=true and cron to 5 * * * *.
+5. Only then set the Worker's SCHEDULER_ENABLED=true and cron to 40 * * * *.
    It awaits at most 40 small requests, stops starting new requests after ten
    minutes, and stops on an uncertain result instead of replaying it.
 6. Confirm an actual scheduled invocation and aggregate queue status. Completed
