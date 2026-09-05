@@ -1,0 +1,268 @@
+{
+  "title": "What's New | SEO and GEO Updates | AEO Improvement",
+  "heading": "What's new in AEO Improvement",
+  "description": "Explore SEO and GEO product updates, guided workflow improvements, and fixes. See what changed, who it helps, and where to try it in AEO Improvement.",
+  "archiveNote": "Earlier release notes retain their original recorded dates. Descriptions were clarified on September 5, 2026 to remove unsupported performance and visibility claims. Historical offers are not current plan entitlements.",
+  "entries": [
+    {
+      "slug": "clearer-seo-geo-homepage",
+      "isoDate": "2026-09-05",
+      "badge": "Fix",
+      "title": "A clearer SEO and GEO workflow, without the homepage flash",
+      "summary": "The public site now explains how audits, suggested fixes, AI prompt tests, and paid keyword tracking work together.",
+      "audience": "All visitors and users",
+      "items": [
+        "Removed the brief flash of plain text before the designed homepage loads.",
+        "Clarified which features need a paid plan and which results are illustrative.",
+        "Kept readable page content available if JavaScript fails to load."
+      ],
+      "links": [
+        {
+          "label": "Explore the workflow",
+          "href": "/"
+        }
+      ],
+      "evidence": "PR #50, merged and live-verified September 5, 2026."
+    },
+    {
+      "slug": "seo-progress-and-baselines",
+      "isoDate": "2026-09-05",
+      "badge": "Improvement",
+      "title": "SEO progress with clearer baselines and next steps",
+      "summary": "Paid users get more context for interpreting tracked rankings and connected search performance, alongside their improvement actions.",
+      "audience": "Pro and Agency for ongoing SEO tracking",
+      "items": [
+        "Distinguish a missing baseline, queued collection, stale data, and an observed ranking result.",
+        "Connect page-level SEO opportunities with practical next actions.",
+        "Scheduled collection infrastructure was activated. A submitted provider task is not shown as a completed ranking result."
+      ],
+      "links": [
+        {
+          "label": "Open sites and tracking",
+          "href": "/projects"
+        },
+        {
+          "label": "Compare paid plan limits",
+          "href": "/pricing"
+        }
+      ],
+      "evidence": "PR #46 and scheduler PRs #47-49, merged September 5. Live scheduler delivery and queued tasks verified; no claim that all tasks produced snapshots."
+    },
+    {
+      "slug": "guided-dashboard-and-followups",
+      "isoDate": "2026-09-04",
+      "badge": "Improvement",
+      "title": "A guided dashboard and more useful follow-up emails",
+      "summary": "New users get a clearer starting point, and follow-up guidance points them toward the next useful action instead of another list of features.",
+      "audience": "New and returning users; guidance varies by plan and account progress",
+      "items": [
+        "Added dashboard walkthrough and next-step guidance.",
+        "Improved free-user onboarding and access to audit actions.",
+        "Updated automated email guidance to reflect the user's next step. Delivery depends on the account's eligibility and email settings."
+      ],
+      "links": [
+        {
+          "label": "Open your dashboard",
+          "href": "/"
+        },
+        {
+          "label": "Learn how recommendations work",
+          "href": "/methodology"
+        }
+      ],
+      "evidence": "PRs #44 and #45, merged September 4; included in the subsequently live-verified release ancestry."
+    },
+    {
+      "slug": "paid-weekly-guidance",
+      "isoDate": "2026-09-03",
+      "badge": "Improvement",
+      "title": "Paid tracking and weekly guidance are easier to follow",
+      "summary": "The paid experience brings tracking setup and weekly recommendations closer to the work users need to do on their pages.",
+      "audience": "Eligible paid users",
+      "items": [
+        "Improved the SEO tracking interface and setup guidance.",
+        "Refined weekly paid-user recommendations and next-step messaging.",
+        "Kept progress reporting focused on observed changes, not claims that a particular edit caused a ranking gain."
+      ],
+      "links": [
+        {
+          "label": "Review tracking setup",
+          "href": "/projects"
+        },
+        {
+          "label": "View plans",
+          "href": "/pricing"
+        }
+      ],
+      "evidence": "PRs #38 and #39, merged September 3; included in the subsequently live-verified release ancestry."
+    },
+    {
+      "isoDate": "2026-07-22",
+      "slug": "audit-results-tracking",
+      "title": "Audit results and recommendation tracking",
+      "badge": "Improvement",
+      "summary": "Added clearer audit breakdowns and a saved recommendation checklist.",
+      "archive": true,
+      "audience": "Historical release; current availability may differ",
+      "items": [],
+      "links": [
+        {
+          "label": "Current methodology and limitations",
+          "href": "/methodology"
+        },
+        {
+          "label": "Current plans",
+          "href": "/pricing"
+        }
+      ],
+      "evidence": "Date retained from the original public changelog. Historical wording clarified September 5, 2026; original deployment date not independently reverified."
+    },
+    {
+      "isoDate": "2026-07-14",
+      "slug": "methodology-review",
+      "title": "Crawler and methodology review",
+      "badge": "Improvement",
+      "summary": "Revised crawler classifications and guidance around optional llms.txt files. See the current methodology for today's interpretation and sources.",
+      "archive": true,
+      "audience": "Historical release; current availability may differ",
+      "items": [],
+      "links": [
+        {
+          "label": "Current methodology and limitations",
+          "href": "/methodology"
+        },
+        {
+          "label": "Current plans",
+          "href": "/pricing"
+        }
+      ],
+      "evidence": "Date retained from the original public changelog. Historical wording clarified September 5, 2026; original deployment date not independently reverified."
+    },
+    {
+      "isoDate": "2026-07-12",
+      "slug": "audit-performance",
+      "title": "Audit processing improvements",
+      "badge": "Performance",
+      "summary": "Changed page loading and parallel checks to reduce avoidable waiting. Completion time varies by page and service availability.",
+      "archive": true,
+      "audience": "Historical release; current availability may differ",
+      "items": [],
+      "links": [
+        {
+          "label": "Current methodology and limitations",
+          "href": "/methodology"
+        },
+        {
+          "label": "Current plans",
+          "href": "/pricing"
+        }
+      ],
+      "evidence": "Date retained from the original public changelog. Historical wording clarified September 5, 2026; original deployment date not independently reverified."
+    },
+    {
+      "isoDate": "2026-07-01",
+      "slug": "trial-introduction",
+      "title": "Guided trial introduced",
+      "badge": "New",
+      "summary": "Introduced a no-card trial. This historical note is not a statement of current plan entitlements; check pricing for today's limits.",
+      "archive": true,
+      "audience": "Historical release; current availability may differ",
+      "items": [],
+      "links": [
+        {
+          "label": "Current methodology and limitations",
+          "href": "/methodology"
+        },
+        {
+          "label": "Current plans",
+          "href": "/pricing"
+        }
+      ],
+      "evidence": "Date retained from the original public changelog. Historical wording clarified September 5, 2026; original deployment date not independently reverified."
+    },
+    {
+      "isoDate": "2026-06-15",
+      "slug": "crawler-request-tracking",
+      "title": "Optional crawler request tracking",
+      "badge": "New",
+      "summary": "Added an optional tracking snippet. It records recognized bot user-agent requests that fetch the pixel, not every crawl. It does not verify bot identity, indexing, or citations.",
+      "archive": true,
+      "audience": "Historical release; current availability may differ",
+      "items": [],
+      "links": [
+        {
+          "label": "Current methodology and limitations",
+          "href": "/methodology"
+        },
+        {
+          "label": "Current plans",
+          "href": "/pricing"
+        }
+      ],
+      "evidence": "Date retained from the original public changelog. Historical wording clarified September 5, 2026; original deployment date not independently reverified."
+    },
+    {
+      "isoDate": "2026-06-01",
+      "slug": "project-monitoring",
+      "title": "Project monitoring and alerts",
+      "badge": "New",
+      "summary": "Added scheduled re-audits and alerts after checks detect changes. This is not continuous monitoring of every AI answer.",
+      "archive": true,
+      "audience": "Historical release; current availability may differ",
+      "items": [],
+      "links": [
+        {
+          "label": "Current methodology and limitations",
+          "href": "/methodology"
+        },
+        {
+          "label": "Current plans",
+          "href": "/pricing"
+        }
+      ],
+      "evidence": "Date retained from the original public changelog. Historical wording clarified September 5, 2026; original deployment date not independently reverified."
+    },
+    {
+      "isoDate": "2026-05-15",
+      "slug": "prompt-simulation",
+      "title": "AI prompt simulation",
+      "badge": "New",
+      "summary": "Added sampled AI responses, brand mentions, and available citations for selected prompts. Results depend on model and retrieval context.",
+      "archive": true,
+      "audience": "Historical release; current availability may differ",
+      "items": [],
+      "links": [
+        {
+          "label": "Current methodology and limitations",
+          "href": "/methodology"
+        },
+        {
+          "label": "Current plans",
+          "href": "/pricing"
+        }
+      ],
+      "evidence": "Date retained from the original public changelog. Historical wording clarified September 5, 2026; original deployment date not independently reverified."
+    },
+    {
+      "isoDate": "2026-05-01",
+      "slug": "fix-generator",
+      "title": "Draft fixes for review",
+      "badge": "New",
+      "summary": "Introduced draft schema and crawler-access suggestions. Review generated code for your actual content and website before publishing.",
+      "archive": true,
+      "audience": "Historical release; current availability may differ",
+      "items": [],
+      "links": [
+        {
+          "label": "Current methodology and limitations",
+          "href": "/methodology"
+        },
+        {
+          "label": "Current plans",
+          "href": "/pricing"
+        }
+      ],
+      "evidence": "Date retained from the original public changelog. Historical wording clarified September 5, 2026; original deployment date not independently reverified."
+    }
+  ]
+}

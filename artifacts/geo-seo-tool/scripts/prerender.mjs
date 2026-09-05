@@ -25,6 +25,7 @@ import { promisify } from "node:util";
 import { brotliCompress, gzip, constants as zlibConstants } from "node:zlib";
 import { ROUTES, SITE_ORIGIN } from "./seo-manifest.mjs";
 import { bootHead, bootStatus } from "./boot-shell.mjs";
+import { releases, renderReleaseNotes } from "./changelog-content.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DIST = resolve(__dirname, "..", "dist", "public");
@@ -123,6 +124,9 @@ function buildHeadInjection(route) {
 }
 
 function buildStaticContent(route) {
+  if (route.path === "/changelog") {
+    return `<main data-static-route="/changelog" style="max-width:900px;margin:auto;padding:48px 24px;font-family:system-ui,sans-serif;line-height:1.65"><h1>${escapeHtmlText(releases.heading)}</h1><p>${escapeHtmlText(releases.description)}</p><p>Latest release: ${releases.entries[0].isoDate}</p><p>${escapeHtmlText(releases.archiveNote)}</p>${renderReleaseNotes()}<p><a href="/sign-up">Start your guided trial</a> · <a href="/pricing">Compare current plans</a></p></main>`;
+  }
   const title = escapeHtmlText(route.title);
   const heading = escapeHtmlText(route.h1 || route.title);
   const description = escapeHtmlText(route.description);
