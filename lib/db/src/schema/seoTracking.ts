@@ -1,4 +1,4 @@
-import { boolean, index, integer, pgTable, serial, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { boolean, index, integer, jsonb, pgTable, serial, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 
 /** A paid user's deliberate keyword/location/device tracking target. */
 export const seoKeywordTargetsTable = pgTable("seo_keyword_targets", {
@@ -12,6 +12,7 @@ export const seoKeywordTargetsTable = pgTable("seo_keyword_targets", {
   device: text("device").notNull().default("desktop"),
   targetUrl: text("target_url"),
   active: boolean("active").notNull().default(true),
+  insights: jsonb("insights").$type<Record<string, any>>(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (table) => ({
@@ -28,6 +29,7 @@ export const seoRankSnapshotsTable = pgTable("seo_rank_snapshots", {
   position: integer("position"),
   resultPresent: boolean("result_present").notNull().default(false),
   resultUrl: text("result_url"),
+  competitors: jsonb("competitors").$type<{ url: string; domain: string; position: number; title: string }[]>(),
   providerStatus: text("provider_status").notNull(),
   collectedAt: timestamp("collected_at").notNull().defaultNow(),
   collectionMode: text("collection_mode").notNull().default("weekly"),

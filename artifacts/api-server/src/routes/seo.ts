@@ -5,7 +5,8 @@ import { requireAuth } from "../middlewares/auth";
 import { readRateLimiter } from "../middlewares/rateLimiters";
 import { currentYearMonth } from "../lib/usageLimits";
 import { getStoredPlan, PLAN_LIMITS } from "../lib/planUtils";
-import { collectGoogleRank, DataForSeoError, isDataForSeoConfigured } from "../lib/dataforseoRankTracker";
+import { collectGoogleRank, dataForSeoRequest, DataForSeoError, isDataForSeoConfigured } from "../lib/dataforseoRankTracker";
+import { insightLimit, keywordKey, parseKeywordInsight, selectInsightTargets } from "../lib/seoKeywordInsights";
 import { buildLatestRankSnapshotsQuery, buildLatestRankTasksQuery } from "../lib/seoTrackingQueries";
 import { isPaidSeoPlan } from "../lib/seoAccess";
 
@@ -37,8 +38,59 @@ router.get("/seo/overview", requireAuth, readRateLimiter, async (req, res): Prom
   const domain = domainFrom(req.query.domain); if (!domain) { res.status(400).json({ error: "Valid domain required." }); return; }
   const [active] = await db.select({ total: count() }).from(seoKeywordTargetsTable).where(and(eq(seoKeywordTargetsTable.userId, req.userId!), eq(seoKeywordTargetsTable.domain, domain), eq(seoKeywordTargetsTable.active, true)));
   const month = currentYearMonth();
+  const insightUsage = await db.execute(sql`SELECT count(*) AS total FROM seo_insight_usage WHERE user_id = ${req.userId!} AND month = ${month}`);
   const [refreshes] = await db.select({ total: count() }).from(seoRefreshUsageTable).where(and(eq(seoRefreshUsageTable.userId, req.userId!), eq(seoRefreshUsageTable.month, month)));
-  res.json({ domain, plan, providerConfigured: isDataForSeoConfigured(), limits: { activeKeywords: PLAN_LIMITS[plan].seoKeywordTargets, manualRefreshes: PLAN_LIMITS[plan].manualRankRefreshes }, usage: { activeKeywords: Number(active?.total || 0), manualRefreshes: Number(refreshes?.total || 0) } });
+  res.json({ domain, plan, providerConfigured: isDataForSeoConfigured(), limits: { activeKeywords: PLAN_LIMITS[plan].seoKeywordTargets, manualRefreshes: PLAN_LIMITS[plan].manualRankRefreshes, keywordInsights: insightLimit(plan) }, usage: { activeKeywords: Number(active?.total || 0), manualRefreshes: Number(refreshes?.total || 0), keywordInsights: Number(insightUsage.rows[0]?.total || 0) } });
+});
+
+/** Explicit batch action only. Reserve account-wide units before any provider
+ * request. Failed/uncertain calls keep their reservations so retries cannot
+ * create unbounded spend. No scheduled jobs or GETs purchase enrichment. */
+router.post("/seo/insights/refresh", requireAuth, readRateLimiter, async (req, res): Promise<void> => {
+  const plan = await paidPlan(req.userId!, res); if (!plan) return;
+  const domain = domainFrom(req.body?.domain);
+  if (!domain) { res.status(400).json({ error: "Valid domain required." }); return; }
+  if (!isDataForSeoConfigured()) { res.status(503).json({ error: "Keyword insights are not connected yet. Saved data is preserved." }); return; }
+  const month = currentYearMonth();
+  const reserved = await db.transaction(async (tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`seo-insights:${req.userId!}:${month}`}))`);
+    const used = await tx.execute(sql`SELECT target_id FROM seo_insight_usage WHERE user_id = ${req.userId!} AND month = ${month}`);
+    const usedIds = new Set(used.rows.map(row => Number(row.target_id)));
+    const targets = await tx.select().from(seoKeywordTargetsTable).where(and(eq(seoKeywordTargetsTable.userId, req.userId!), eq(seoKeywordTargetsTable.domain, domain), eq(seoKeywordTargetsTable.active, true))).orderBy(seoKeywordTargetsTable.id);
+    const selected = selectInsightTargets(targets, usedIds, plan);
+    for (const target of selected) await tx.execute(sql`INSERT INTO seo_insight_usage (user_id, target_id, month) VALUES (${req.userId!}, ${target.id}, ${month})`);
+    return selected;
+  });
+  if (!reserved.length) { res.json({ updated: 0, failed: 0, message: "No eligible lookups: results may still be cached, or this month's account allowance has been used." }); return; }
+  const groups = new Map<string, typeof reserved>();
+  for (const target of reserved) {
+    const key = `${target.locationCode}:${target.languageCode}`;
+    groups.set(key, [...(groups.get(key) ?? []), target]);
+  }
+  let updated = 0; let failed = 0;
+  // At most four location/language batches, all within the request timeout.
+  await Promise.all([...groups.values()].map(async (targets) => {
+    try {
+      const payload = await dataForSeoRequest("/dataforseo_labs/google/keyword_overview/live", [{
+        keywords: [...new Set(targets.map(target => keywordKey(target.keyword)))],
+        location_code: targets[0].locationCode, language_code: targets[0].languageCode,
+        include_serp_info: false, include_clickstream_data: false,
+      }]);
+      const task = payload?.tasks?.[0];
+      if (task?.status_code !== 20000 || !Array.isArray(task.result?.[0]?.items)) throw new Error("Unusable keyword response");
+      const items = new Map<string, any>(task.result[0].items.filter((item: any) => typeof item?.keyword === "string").map((item: any) => [keywordKey(item.keyword), item]));
+      for (const target of targets) {
+        const item = items.get(keywordKey(target.keyword));
+        if (!item) { failed++; continue; }
+        const insights = parseKeywordInsight(item);
+        if (insights.searchVolume === null && insights.intent === null && !insights.monthlySearches.some((row: any) => row.volume !== null)) { failed++; continue; }
+        await db.update(seoKeywordTargetsTable).set({ insights }).where(and(eq(seoKeywordTargetsTable.id, target.id), eq(seoKeywordTargetsTable.userId, req.userId!)));
+        updated++;
+      }
+    } catch { failed += targets.length; }
+  }));
+  req.log.info({ updated, failed, requested: reserved.length }, "seo.keyword-insights.complete");
+  res.json({ updated, failed, message: failed ? "Some insights were unavailable. Previous data is preserved. Attempted lookups count toward this month's allowance; those targets can be tried again next month." : "Keyword insights updated. Results are cached for 30 days." });
 });
 
 router.get("/seo/keywords", requireAuth, readRateLimiter, async (req, res): Promise<void> => {

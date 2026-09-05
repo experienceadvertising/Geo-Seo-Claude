@@ -37,15 +37,12 @@ import { Helmet } from "react-helmet-async";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { usePlan } from "@/hooks/usePlan";
 import { UpgradePrompt } from "@/components/upgrade-prompt";
-import { SeoTrackingPanel } from "@/components/seo-tracking-panel";
-import { SeoPerformancePanel } from "@/components/seo-performance-panel";
 import { getAuditDeepLinkState } from "@/lib/audit-deep-link";
 import { sameAuditPage } from "@/lib/auditProgress";
-import { improvementLink } from "@/lib/nextImprovement";
 
-export default function Results() {
+export default function Results({ view = "audit", auditId }: { view?: "audit" | "actions"; auditId?: number } = {}) {
   const params = useParams<{ id: string }>();
-  const id = parseInt(params.id || "0", 10);
+  const id = auditId ?? parseInt(params.id || "0", 10);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -281,9 +278,11 @@ export default function Results() {
   return (
     <div className="flex-1 w-full max-w-7xl mx-auto p-4 md:p-8 space-y-8 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <Helmet>
-        <title>Audit results — AEO Improvement</title>
+        <title>{view === "actions" ? "Action plan | AEO Improvement" : "Audit results | AEO Improvement"}</title>
         <meta name="robots" content="noindex,nofollow" />
       </Helmet>
+      {view === "actions" && <header><p className="mt-2 text-muted-foreground">SEO and AI-search improvements for {domain}. Choose one task, follow its instructions, then record what you changed.</p><Link href={`/results/${id}`} className="mt-2 inline-block text-primary underline">View the full audit</Link></header>}
+      {view === "audit" && <>
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 border-b pb-6">
         <div className="space-y-2">
@@ -628,11 +627,12 @@ export default function Results() {
           <div className="rounded-lg border p-4"><p className="text-xs text-muted-foreground">Next SEO actions</p><p className="mt-1 text-2xl font-semibold">{seoRecommendations.length}</p><p className="mt-1 text-xs text-muted-foreground">Prioritized technical and content improvements below.</p></div>
         </CardContent>
         <CardContent className="pt-0 text-sm text-muted-foreground">
-          {hasPaidSeo ? <><Link href="/projects" className="text-primary hover:underline">Open Sites and tracking to connect Search Console</Link>. Manage rank-tracking keywords below. Rank movement is an observed outcome, not proof that a change caused it.</> : <><p>Your audit includes SEO readiness and improvement suggestions. Pro and Agency add Search Console performance, GA4 reporting, and weekly keyword tracking.</p><Link href="/upgrade?source=audit-seo-opportunities" className="mt-3 inline-block font-medium text-primary hover:underline">Compare plans for connected SEO tracking</Link></>}
-          {hasPaidSeo && domain && <><SeoPerformancePanel pageUrl={audit.url} /><SeoTrackingPanel domain={domain} pageUrl={audit.url} /></>}
+          {hasPaidSeo ? <><Link href="/projects" className="text-primary hover:underline">Open Sites &amp; connections to connect Search Console</Link>. Manage keywords in SEO performance. Rank movement is an observed outcome, not proof that a change caused it.</> : <><p>Your audit includes SEO readiness and improvement suggestions. Pro and Agency add Search Console performance, GA4 reporting, and weekly keyword tracking.</p><Link href="/upgrade?source=audit-seo-opportunities" className="mt-3 inline-block font-medium text-primary hover:underline">Compare plans for connected SEO tracking</Link></>}
+          <Link href={`/seo/${audit.id}`} className="mt-4 block font-semibold text-primary underline">Open SEO performance, keyword tracking, and insights</Link>
         </CardContent>
       </Card>
 
+      </>}
       {/* Prioritized GEO Recommendations */}
       {audit.recommendations && audit.recommendations.length > 0 && (
         <Card className="shadow-sm border-border mb-6" id="recommendations">
@@ -740,7 +740,7 @@ export default function Results() {
                       </div>
                       <p className="text-sm text-muted-foreground leading-snug mt-1">{r.detail}</p>
                       <ImplementationGuide id={r.id} />
-                      {r.id && <Link href={improvementLink(id, r.id)} className="mt-2 inline-block text-xs font-semibold text-primary hover:underline">{done ? "Review completed task" : "Work through this task"} →</Link>}
+                      {r.id && <Link href={`/actions/${id}?task=${encodeURIComponent(r.id)}#recommendations`} className="mt-2 inline-block text-xs font-semibold text-primary hover:underline">{done ? "Review completed task" : "Work through this task"} →</Link>}
                     </div>
                   </li>
                 );
@@ -793,12 +793,12 @@ export default function Results() {
           <ol className="grid gap-3 text-sm text-muted-foreground sm:grid-cols-3">
             <li><span className="mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold text-white">1</span>Deploy the change, then re-run this audit to confirm the technical gap is resolved.</li>
             <li><span className="mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold text-white">2</span>Re-run the same buyer prompts and compare citation share, not a single AI response.</li>
-            <li><span className="mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold text-white">3</span>Use Bing Webmaster AI Performance and Google Search Console AI Features alongside your audit history when available.</li>
+            <li><span className="mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold text-white">3</span>Review Google Search Console for organic performance and Bing Webmaster AI Performance for supported AI citations. Compare with your audit history without assuming causation.</li>
           </ol>
         </CardContent>
       </Card>
 
-      {showTechnicalDetails && <div className={`grid grid-cols-1 gap-6 ${audit.recommendations?.length ? "" : "lg:grid-cols-2"}`}>
+      {view === "audit" && showTechnicalDetails && <div className={`grid grid-cols-1 gap-6 ${audit.recommendations?.length ? "" : "lg:grid-cols-2"}`}>
         {/* Quick wins only appear when the audit did not already provide a
             prioritized recommendation set, avoiding the same advice twice. */}
         {!audit.recommendations?.length && <Card className="flex flex-col shadow-sm border-border">
@@ -854,7 +854,7 @@ export default function Results() {
       </div>}
 
       {/* Crawlers & Platforms */}
-      {showTechnicalDetails && <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {view === "audit" && showTechnicalDetails && <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="shadow-sm border-border">
           <CardHeader className="pb-4">
             <CardTitle className="text-sm font-mono uppercase tracking-wider flex items-center gap-2">
@@ -962,7 +962,7 @@ export default function Results() {
       </div>}
 
       {/* Brand Authority Signals */}
-      {showTechnicalDetails && audit.brandSignals && audit.brandSignals.length > 0 && (
+      {view === "audit" && showTechnicalDetails && audit.brandSignals && audit.brandSignals.length > 0 && (
         <Card className="shadow-sm border-border" data-testid="card-brand-authority">
           <CardHeader className="pb-4">
             <CardTitle className="text-sm font-mono uppercase tracking-wider flex items-center gap-2">
@@ -1108,7 +1108,7 @@ export default function Results() {
       )}
 
       {/* Citability Blocks Preview */}
-      {showTechnicalDetails && <div className="space-y-4">
+      {view === "audit" && showTechnicalDetails && <div className="space-y-4">
         <h3 className="text-sm font-mono uppercase tracking-wider flex items-center gap-2 font-bold px-2">
           <FileText className="h-4 w-4" /> Citability Blocks (Avg: {audit.avgCitabilityScore})
         </h3>

@@ -1,4 +1,5 @@
 import type { SeoKeywordTarget } from "@workspace/db";
+import { competitorContext } from "./seoKeywordInsights";
 
 const API_ROOT = "https://api.dataforseo.com/v3";
 
@@ -25,9 +26,10 @@ export interface RankCollection {
   position: number | null;
   resultPresent: boolean;
   resultUrl: string | null;
+  competitors?: ReturnType<typeof competitorContext>;
 }
 
-async function dataForSeoRequest(path: string, body?: unknown): Promise<any> {
+export async function dataForSeoRequest(path: string, body?: unknown): Promise<any> {
   const auth = credentials();
   if (!auth) throw new DataForSeoError("Rank tracking is not configured yet. Please try again later.", 503);
   let response: Response;
@@ -76,9 +78,9 @@ export async function collectGoogleRank(target: SeoKeywordTarget): Promise<RankC
     if (item?.type !== "organic" || typeof item?.url !== "string") return false;
     try { return new URL(item.url).hostname.replace(/^www\./, "") === host; } catch { return false; }
   });
-  if (!match) return { position: null, resultPresent: false, resultUrl: null };
+  if (!match) return { position: null, resultPresent: false, resultUrl: null, competitors: competitorContext(items, host, null) };
   const position = Number(match.rank_absolute ?? match.rank_group);
-  return { position: Number.isFinite(position) && position > 0 ? position : null, resultPresent: true, resultUrl: match.url };
+  return { position: Number.isFinite(position) && position > 0 ? position : null, resultPresent: true, resultUrl: match.url, competitors: competitorContext(items, host, Number.isFinite(position) && position > 0 ? position : null) };
 }
 
 export async function submitWeeklyRankTask(target: SeoKeywordTarget): Promise<string> {
@@ -94,8 +96,9 @@ export async function collectQueuedWeeklyRank(target: SeoKeywordTarget, provider
   if (task?.status_code === 40602 || task?.status_code === 40601 || task?.status_code === 20100) return null;
   if (task?.status_code !== 20000) throw new DataForSeoError("Rank provider could not finish this weekly snapshot.");
   const items = task?.result?.[0]?.items;
-  if (!Array.isArray(items)) return { position: null, resultPresent: false, resultUrl: null };
+  if (!Array.isArray(items)) throw new DataForSeoError("Rank provider returned no usable result. Your previous snapshots are preserved.");
   const host = desiredHost(target); const match = items.find((item: any) => { try { return item?.type === "organic" && new URL(item.url).hostname.replace(/^www\./, "") === host; } catch { return false; } });
   const position = Number(match?.rank_absolute ?? match?.rank_group);
-  return match ? { position: Number.isFinite(position) ? position : null, resultPresent: true, resultUrl: match.url } : { position: null, resultPresent: false, resultUrl: null };
+  const competitors = competitorContext(items, host, match && Number.isFinite(position) && position > 0 ? position : null);
+  return match ? { position: Number.isFinite(position) && position > 0 ? position : null, resultPresent: true, resultUrl: match.url, competitors } : { position: null, resultPresent: false, resultUrl: null, competitors };
 }

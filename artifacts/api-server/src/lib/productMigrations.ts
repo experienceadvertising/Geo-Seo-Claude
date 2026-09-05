@@ -51,6 +51,12 @@ export async function runProductMigrations(): Promise<void> {
     )
   `);
   await db.execute(sql`CREATE INDEX IF NOT EXISTS seo_rank_snapshots_target_collected_idx ON seo_rank_snapshots (target_id, collected_at)`);
+  await db.execute(sql`ALTER TABLE seo_rank_snapshots ADD COLUMN IF NOT EXISTS competitors JSONB`);
+  await db.execute(sql`ALTER TABLE seo_keyword_targets ADD COLUMN IF NOT EXISTS insights JSONB`);
+  await db.execute(sql`CREATE TABLE IF NOT EXISTS seo_insight_usage (
+    user_id TEXT NOT NULL, target_id INTEGER NOT NULL, month TEXT NOT NULL,
+    requested_at TIMESTAMP NOT NULL DEFAULT NOW(), PRIMARY KEY (user_id, target_id, month)
+  )`);
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS seo_refresh_usage (
       id SERIAL PRIMARY KEY, user_id TEXT NOT NULL, target_id INTEGER NOT NULL, month TEXT NOT NULL,

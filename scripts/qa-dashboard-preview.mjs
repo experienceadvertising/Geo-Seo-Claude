@@ -29,6 +29,16 @@ const fixtures = {
   '/api/geo/recommendation-progress': { completed: [] },
 };
 
+if (paid) {
+  fixtures['/api/seo/overview'].limits.keywordInsights = 25;
+  fixtures['/api/seo/overview'].usage.keywordInsights = 1;
+  fixtures['/api/seo/keywords'].targets[1].insights = {
+    collectedAt: new Date().toISOString(), sourceUpdatedAt: '2026-08-15', intentUpdatedAt: '2026-07-01', searchVolume: 120, intent: 'commercial',
+    monthlySearches: [{year: 2026,month: 6,volume: 90},{year: 2026,month: 7,volume: null},{year: 2026,month: 8,volume: 120}],
+  };
+  fixtures['/api/seo/keywords'].targets[1].latest.competitors = [{url:'https://competitor.example/',domain:'competitor.example',position:3,title:'Example competitor for local testing'}];
+}
+
 createServer(async (req, res) => {
   const pathname = new URL(req.url, 'http://localhost').pathname;
   if (pathname.startsWith('/api/')) {

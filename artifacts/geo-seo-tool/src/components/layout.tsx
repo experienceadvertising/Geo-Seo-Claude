@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { nextImprovement, improvementLink } from "@/lib/nextImprovement";
+import { nextImprovement } from "@/lib/nextImprovement";
 import { Link, useLocation } from "wouter";
 import { Sparkles, LogOut, Shield, Menu, LayoutDashboard, FolderKanban, CreditCard, BookOpen, CircleHelp, CheckCircle2, Search, SlidersHorizontal, MessageSquareText, Library } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { UsageMeter } from "@/components/usage-meter";
 import { TrialBanner } from "@/components/trial-banner";
 import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { shouldUseAppShell } from "@/lib/appRoute";
+import { shouldUseAppShell, pageWorkspaceLink } from "@/lib/appRoute";
 
 function AdminLink() {
   const { isSignedIn } = useAuth();
@@ -145,7 +145,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 const APP_NAV = [
   { label: "Dashboard", href: "/", icon: LayoutDashboard },
-  { label: "Tracking", href: "/projects", icon: FolderKanban },
+  { label: "Action plan", compactLabel: "Actions", href: "/actions", icon: CheckCircle2 },
+  { label: "SEO performance", compactLabel: "SEO", href: "/seo", icon: Search },
+  { label: "AI visibility (AEO/GEO)", compactLabel: "AI visibility", href: "/ai-visibility", icon: MessageSquareText },
+  { label: "Sites & connections", compactLabel: "Sites", href: "/projects", icon: FolderKanban },
   { label: "Recommended tools", compactLabel: "Tools", href: "/recommended-tools", icon: Library },
   { label: "Plans", href: "/upgrade", icon: CreditCard },
 ];
@@ -164,12 +167,13 @@ function AppNavLink({ label, compactLabel, href, icon: Icon, pathname, compact =
   compact?: boolean;
 }) {
   const active = href === "/"
-    ? pathname === "/" || pathname.startsWith("/results/") || pathname.startsWith("/simulate/")
-    : pathname === href || pathname.startsWith(`${href}/`);
+    ? pathname === "/"
+    : pathname === href || pathname.startsWith(`${href}/`) || (href === "/ai-visibility" && pathname.startsWith("/simulate/"));
+  const destination = pageWorkspaceLink(href, pathname);
 
   return (
     <Link
-      href={href}
+      href={destination}
       aria-current={active ? "page" : undefined}
       className={compact
         ? `flex min-h-14 flex-1 flex-col items-center justify-center gap-1 px-2 text-[11px] font-medium ${active ? "text-emerald-700" : "text-slate-500"}`
@@ -183,7 +187,7 @@ function AppNavLink({ label, compactLabel, href, icon: Icon, pathname, compact =
 
 function AuditResultsNav({ mobile = false }: { mobile?: boolean }) {
   const [pathname] = useLocation();
-  const routeMatch = pathname.match(/^\/(?:results|simulate)\/(\d+)/);
+  const routeMatch = pathname.match(/^\/(?:results|simulate|seo|actions|ai-visibility)\/(\d+)/);
   const currentAuditId = routeMatch ? Number(routeMatch[1]) : 0;
   const { data: audits } = useListAudits({ limit: 1 }, {
     query: { queryKey: getListAuditsQueryKey({ limit: 1 }), staleTime: 60_000, retry: false },
@@ -209,10 +213,7 @@ function AuditResultsNav({ mobile = false }: { mobile?: boolean }) {
   const nextRecommendation = nextImprovement(auditDetails?.recommendations, completedIds, progressError ? "error" : progressLoading ? "loading" : "ready").task;
 
   const links = [
-    { label: "Overview", href: `/results/${audit.id}`, icon: LayoutDashboard },
-    { label: "Top actions", href: `/results/${audit.id}#recommendations`, icon: CheckCircle2 },
-    { label: "SEO opportunities", href: `/results/${audit.id}#seo-opportunities`, icon: Search },
-    { label: "Prompt test", href: `/simulate/${audit.id}`, icon: MessageSquareText },
+    { label: "Full audit", href: `/results/${audit.id}`, icon: LayoutDashboard },
     { label: "Technical details", href: `/results/${audit.id}?details=1#technical-breakdown`, icon: SlidersHorizontal },
   ];
 
@@ -220,13 +221,13 @@ function AuditResultsNav({ mobile = false }: { mobile?: boolean }) {
     <section className={mobile ? "mt-5 border-t pt-5" : "mt-4 border-t border-slate-100 pt-4"} aria-label="Latest audit results">
       <div className="mb-2 flex items-start justify-between gap-2 px-3">
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Latest audit</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">{currentAuditId ? "Selected audit" : "Latest audit"}</p>
           <p className="truncate text-xs font-medium text-slate-700" title={domain}>{domain}</p>
         </div>
         <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-800">{Math.round(audit.geoScore)}</span>
       </div>
       {nextRecommendation && (
-        <Link href={improvementLink(selectedAuditId, nextRecommendation.id)} className="mx-2 mb-2 block rounded-lg border border-emerald-100 bg-emerald-50/70 p-3 hover:border-emerald-200 hover:bg-emerald-50">
+        <Link href={`/actions/${selectedAuditId}?task=${encodeURIComponent(nextRecommendation.id)}#recommendations`} className="mx-2 mb-2 block rounded-lg border border-emerald-100 bg-emerald-50/70 p-3 hover:border-emerald-200 hover:bg-emerald-50">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700">Next improvement</p>
           <p className="mt-1 line-clamp-2 text-xs font-semibold leading-5 text-slate-800">{nextRecommendation.title}</p>
           <p className="mt-1 text-[11px] font-medium text-emerald-800">Open action plan</p>
@@ -291,7 +292,7 @@ function AppShell({ children, pathname }: { children: React.ReactNode; pathname:
               <nav className="mt-8 flex flex-col gap-1">
                 {APP_NAV.map(({ label, href, icon: Icon }) => (
                   <SheetClose asChild key={href}>
-                    <Link href={href} className="flex items-center gap-3 rounded-md px-3 py-3 text-sm font-medium hover:bg-muted"><Icon className="h-4 w-4" />{label}</Link>
+                    <Link href={pageWorkspaceLink(href, pathname)} className="flex items-center gap-3 rounded-md px-3 py-3 text-sm font-medium hover:bg-muted"><Icon className="h-4 w-4" />{label}</Link>
                   </SheetClose>
                 ))}
                 <AuditResultsNav mobile />
@@ -309,7 +310,7 @@ function AppShell({ children, pathname }: { children: React.ReactNode; pathname:
         <main className="min-h-screen pb-20 md:pb-0">{children}</main>
 
         <nav className="fixed inset-x-0 bottom-0 z-40 flex border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden" aria-label="Primary application navigation">
-          {APP_NAV.map((item) => <AppNavLink key={item.href} {...item} pathname={pathname} compact />)}
+          {APP_NAV.slice(0, 4).map((item) => <AppNavLink key={item.href} {...item} pathname={pathname} compact />)}
         </nav>
       </div>
     </div>
