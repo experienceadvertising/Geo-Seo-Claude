@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { ROUTES, SITE_ORIGIN } from "./seo-manifest.mjs";
+import { releases } from "./changelog-content.mjs";
 
 for (const route of ROUTES) {
   const file = new URL(`../dist/public/${route.path === "/" ? "index.html" : route.path.slice(1)}`, import.meta.url);
@@ -20,6 +21,13 @@ for (const route of ROUTES) {
   }
 }
 const home = readFileSync(new URL('../dist/public/index.html', import.meta.url), 'utf8');
+const changelog = readFileSync(new URL('../dist/public/changelog', import.meta.url), 'utf8');
+for (const entry of releases.entries) {
+  assert.ok(changelog.includes('id="' + entry.slug + '"'), "Release anchor in initial HTML: " + entry.slug);
+  assert.ok(changelog.includes(entry.isoDate), "Release date in initial HTML");
+  for (const link of entry.links) assert.ok(changelog.includes('href="' + link.href + '"'));
+}
+assert.ok(!changelog.includes('<h2>Audit, simulate, improve, and monitor</h2>'));
 assert.ok(home.includes('Measure progress on Pro and Agency'));
 assert.ok(!home.includes('scores website visibility across ChatGPT'));
 console.log(`Validated metadata, schema JSON, headings, and loading fallback for ${ROUTES.length} public routes.`);

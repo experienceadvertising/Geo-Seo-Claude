@@ -10,6 +10,7 @@
 // The runtime <SEO /> component is still in charge for users. This file only
 // drives the static HTML written to disk for non-JS crawlers.
 
+import { releases, changelogSchema } from "./changelog-content.mjs";
 const SITE = "https://aeoimprovement.com";
 
 const PUBLISHER = {
@@ -363,23 +364,16 @@ export const ROUTES = [
 
   {
     path: "/changelog",
-    title: "What's New — AEO Improvement Changelog",
-    description:
-      "New features, methodology corrections, and performance improvements — see every update to AEO Improvement, newest first.",
-    ogType: "article",
+    title: releases.title,
+    h1: releases.heading,
+    description: releases.description,
+    ogType: "website",
     ogImage: "https://aeoimprovement.com/og-changelog.png",
     publishedTime: "2026-05-01",
-    modifiedTime: "2026-07-22",
+    modifiedTime: releases.entries[0].isoDate,
     authorName: AUTHOR.name,
     jsonLd: [
-      articleLd({
-        path: "/changelog",
-        title: "What's New — AEO Improvement Changelog",
-        description:
-          "New features, methodology corrections, and performance improvements — see every update to AEO Improvement, newest first.",
-        datePublished: "2026-05-01",
-        dateModified: "2026-07-22",
-      }),
+      changelogSchema,
       breadcrumbLd([
         { name: "Home", path: "/" },
         { name: "Changelog", path: "/changelog" },

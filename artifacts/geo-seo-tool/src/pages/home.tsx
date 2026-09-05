@@ -987,7 +987,7 @@ function WhatsNewCard() {
                   </span>
                   <span className="text-xs text-muted-foreground">{entry.date}</span>
                 </div>
-                <p className="text-sm font-medium leading-snug">{entry.title}</p>
+                <Link href={"/changelog#" + entry.slug} className="text-sm font-medium leading-snug hover:underline">{entry.title}</Link>
                 <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">{entry.summary}</p>
               </div>
             </div>
