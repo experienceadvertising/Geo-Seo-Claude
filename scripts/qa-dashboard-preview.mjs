@@ -6,6 +6,8 @@ import { createServer } from 'node:http';
 
 const returning = process.env.QA_AUDIT === '1';
 const paid = process.env.QA_PAID === '1';
+const signedOut = process.env.QA_SIGNED_OUT === '1';
+const previewOrigin = process.env.QA_PREVIEW_ORIGIN || 'http://127.0.0.1:4173';
 const port = Number(process.env.QA_PORT || 4184);
 const audit = { id: 1, url: 'https://example.com/', geoScore: 54, createdAt: '2026-09-04T12:00:00Z', recommendations: [{ id: 'evidence', title: 'Add a documented example', detail: 'Show a real example of your work.', priority: 'high' }] };
 Object.assign(audit, {
@@ -31,6 +33,11 @@ createServer(async (req, res) => {
   const pathname = new URL(req.url, 'http://localhost').pathname;
   if (pathname.startsWith('/api/')) {
     res.setHeader('Content-Type', 'application/json');
+    if (signedOut) {
+      res.statusCode = 401;
+      res.end(JSON.stringify({ error: 'Local signed-out fixture' }));
+      return;
+    }
     if (req.method === 'POST' && pathname === '/api/geo/recommendation-progress') {
       let body = '';
       for await (const chunk of req) body += chunk;
@@ -49,7 +56,15 @@ createServer(async (req, res) => {
     return;
   }
   try {
-    const response = await fetch(`http://127.0.0.1:4173${req.url}`);
+    if (pathname.endsWith('.js') && process.env.QA_BLOCK_BUNDLE === '1') {
+      res.statusCode = 503;
+      res.end('Local bundle-failure fixture');
+      return;
+    }
+    if (pathname.endsWith('.js') && process.env.QA_DELAY_MS) {
+      await new Promise(resolve => setTimeout(resolve, Number(process.env.QA_DELAY_MS)));
+    }
+    const response = await fetch(`${previewOrigin}${req.url}`);
     res.statusCode = response.status;
     res.setHeader('Content-Type', response.headers.get('content-type') || 'text/html');
     res.setHeader('Cache-Control', 'no-store');

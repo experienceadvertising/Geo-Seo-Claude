@@ -15,7 +15,7 @@ import { SEO, breadcrumbJsonLd } from "@/components/seo";
 import { trackEvent } from "@/lib/analytics";
 import { paidPlanActionLabel } from "@/lib/billingDisplay";
 
-const PRICING_TITLE = "Pricing | AEO Improvement SEO and GEO platform";
+const PRICING_TITLE = "Pricing | SEO and GEO Plans | AEO Improvement";
 const PRICING_DESC =
   "A guided SEO and GEO platform. Start free, then choose Starter from $29/month for more audits and implementation help, or Pro for Search Console, rank tracking, multi-engine simulations, and monitoring.";
 

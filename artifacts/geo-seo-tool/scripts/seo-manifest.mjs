@@ -72,10 +72,15 @@ export const ROUTES = [
   {
     path: "/",
     title: "AEO Improvement | Guided SEO and AI Search Optimization",
-    h1: "Improve how your brand appears in Google and AI search",
+    h1: "Turn SEO and AI-search insights into your next improvement.",
     description:
       "Audit your website for SEO, GEO, and AI search visibility. Find the next technical and content improvement, test buyer prompts, and track progress from one guided workspace.",
     ogType: "website",
+    staticSections: [
+      { heading: "Less guesswork. One useful improvement at a time.", body: "AEO Improvement brings SEO audits, GEO recommendations, AI prompt testing, and keyword tracking into one guided workspace for brands and agencies. Your dashboard highlights the next action and records the changes you make. Start with one page, improve it, then check your progress." },
+      { heading: "Build a stronger search foundation", body: "Find technical SEO issues, unclear brand facts, missing evidence, and content that is hard to understand or cite. Each recommendation tells you what to change and why. You apply the improvements to your own website." },
+      { heading: "Measure progress on Pro and Agency", body: "Track selected Google keywords weekly by location and device. Connect Search Console for search performance and GA4 for traffic context. Compare observed results with completed actions. Rankings and AI citations are not guaranteed." },
+    ],
     // Home keeps its rich JSON-LD graph in index.html itself; nothing to add.
     jsonLd: [],
   },
@@ -83,7 +88,7 @@ export const ROUTES = [
   {
     path: "/pricing",
     title:
-      "Pricing — AEO Improvement | Free, Pro, Agency plans for AI search optimization",
+      "Pricing | SEO and GEO Plans | AEO Improvement",
     description:
       "Start with a 30-day full-access trial. Then use Free, Starter from $29/month, Pro for measurement and multi-engine visibility, or Agency for client work.",
     ogType: "website",
@@ -432,7 +437,8 @@ export const ROUTES = [
   {
     path: "/free-aeo-audit-tool",
     title: "Free AEO Audit Tool for ChatGPT and AI Search | AEO Improvement",
-    description: "Audit any URL across six AI citation-readiness dimensions, get prioritized evidence-backed fixes, and track each optimization to completion.",
+    description: "Check your page for technical, content, and brand clarity gaps. Get prioritized, source-backed recommendations and track improvements to completion.",
+    h1: "Find the gaps in your site's AI-search readiness",
     ogType: "website",
     modifiedTime: "2026-07-22",
     jsonLd: [breadcrumbLd([{ name: "Home", path: "/" }, { name: "Free AEO audit tool", path: "/free-aeo-audit-tool" }])],
@@ -440,7 +446,7 @@ export const ROUTES = [
   {
     path: "/ai-visibility-checker",
     title: "AI Visibility Checker for ChatGPT, Claude, Gemini and Perplexity",
-    description: "Check whether AI engines can crawl, understand, mention, and cite your site. Run real buyer prompts across four answer engines.",
+    description: "Assess AI-search readiness and test selected buyer questions across supported models. Review brand mentions and available citations in sampled responses.",
     ogType: "website",
     modifiedTime: "2026-07-22",
     jsonLd: [breadcrumbLd([{ name: "Home", path: "/" }, { name: "AI visibility checker", path: "/ai-visibility-checker" }])],
@@ -448,7 +454,7 @@ export const ROUTES = [
   {
     path: "/chatgpt-citation-tracker",
     title: "ChatGPT Citation Tracker and Visibility Monitor | AEO Improvement",
-    description: "Track whether ChatGPT mentions and cites your brand, measure competitor Share of Voice, and monitor citation-readiness changes.",
+    description: "Test buyer questions and compare brand mentions and available citations across saved AI responses. Results vary by prompt, model, and retrieval context.",
     ogType: "website",
     modifiedTime: "2026-07-22",
     jsonLd: [breadcrumbLd([{ name: "Home", path: "/" }, { name: "ChatGPT citation tracker", path: "/chatgpt-citation-tracker" }])],

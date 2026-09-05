@@ -336,14 +336,13 @@ function SiteFooter() {
               <span className="text-lg tracking-tight">AEO Improvement</span>
             </Link>
             <p className="text-sm leading-relaxed mt-4 mb-6 max-w-xs text-gray-400">
-              Audit, simulate, and fix how AI search engines see your site. Built for marketers who ship.
+              Guided SEO and GEO improvements for brands and agencies. Audit your site, choose the next fix, and measure what changes.
             </p>
             <div className="flex items-center gap-2 text-xs text-emerald-400 font-medium">
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
               </span>
-              Live audits running now
+              One workspace for SEO and AI search
             </div>
           </div>
 
