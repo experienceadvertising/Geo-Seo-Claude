@@ -16,8 +16,10 @@
 - Public SEO validation passes for 30 routes.
 - Synthetic personalized email preview inspected in browser. No email was sent.
 - Local headless Chrome end-to-end test passes: off-site completion, note retention after reload, reopening, completed-task exclusion, weekly email generated from saved fixture records, on-site implementation note, and 390px viewport width.
+- Real PostgreSQL integration passes using the unchanged production progress-handler source and auth middleware: unauthenticated rejection, save/read, trimmed notes, upsert, user/domain isolation, cross-user reopen isolation, reopening, invalid ID rejection, and weekly template rendering from persisted rows. Sessions are synthetic and the rate limiter is bypassed in this harness; this does not test login, rate limiting, the full scheduler or email delivery.
+- `scripts/qa-progress-postgres.mjs` uses only an isolated local PostgreSQL server on 127.0.0.1:55439 with user `aeo_test`, database `postgres`, and a fresh empty schema. It does not read deployment credentials.
 - Reproduce with Vite preview on 4173, `QA_AUDIT=1 QA_PAID=1 QA_PORT=4199 node scripts/qa-dashboard-preview.mjs`, then `node --experimental-strip-types scripts/qa-personalized-progress.mjs`. The browser test blocks non-loopback traffic.
 
 ## Release boundary
 
-No merge, deployment, provider lookup, customer email, migration, credential or plan-limit change performed for this release. The existing cadence and opt-out rules remain unchanged. Completion records retain the existing user-and-domain scope. UI save/reopen is verified against local fixtures, not the real API or database. Runtime database integration still needs verification in staging before publishing.
+No merge, deployment, provider lookup, customer email, migration, credential or plan-limit change performed for this release. The existing cadence and opt-out rules remain unchanged. Completion records retain the existing user-and-domain scope. UI save/reopen is verified against local fixtures; actual progress handlers are separately verified with isolated PostgreSQL. Replit-specific deployment wiring, scheduler execution and delivery remain post-release verification items, not proven by these tests. Recommendation: ready for merge and deployment approval, followed by a controlled smoke check.
