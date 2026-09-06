@@ -19,6 +19,9 @@ import { logger } from "./logger";
 import { buildLatestRankSnapshotsQuery } from "./seoTrackingQueries";
 import { sameAuditedPage } from "./auditComparison";
 import type { WorkerJob } from "./workerPlan";
+import { selectPersonalizedAction, nextOffsiteAction } from "./personalizedAction";
+import { OFFSITE_ACTIONS } from "@workspace/recommendations";
+import { summarizeRankMovement } from "./seoProgressSummary";
 
 // Cron-driven sends have no inbound HTTP request to derive a base URL from,
 // so we use the configured FRONTEND_URL (preferred in prod) or fall back to
@@ -257,17 +260,18 @@ async function runWeeklyDigests(userId?: string) {
     const previousAudit = latestAudit ? recentAudits.slice(1).find((audit) => sameAuditedPage(audit.url, latestAudit.url)) : undefined;
     let nextAction: { id: string; title: string; detail: string } | undefined;
     let completedActions = 0;
+    let completedThisWeek: Array<{ title: string; completedAt: string; note?: string | null }> = [];
+    let offsiteAction: ReturnType<typeof nextOffsiteAction>;
     if (latestAudit) {
-      const completed = domain ? await db.select({ recommendationId: recommendationProgressTable.recommendationId })
+      const completed = domain ? await db.select({ recommendationId: recommendationProgressTable.recommendationId, completedAt: recommendationProgressTable.completedAt, note: recommendationProgressTable.implementationNote })
         .from(recommendationProgressTable)
         .where(and(eq(recommendationProgressTable.userId, user.id), eq(recommendationProgressTable.domain, domain))) : [];
       const done = new Set(completed.map((row) => row.recommendationId));
       const currentRecommendations = ((latestAudit.recommendations as any[]) ?? []).filter((item) => item?.id);
       completedActions = currentRecommendations.filter((item) => done.has(item.id)).length;
-      const remaining = currentRecommendations.filter((item) => !done.has(item.id));
-      const priority: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
-      const rec = remaining.sort((a, b) => (priority[a.priority] ?? 4) - (priority[b.priority] ?? 4))[0];
-      if (rec) nextAction = { id: String(rec.id), title: String(rec.title), detail: String(rec.detail) };
+      nextAction = selectPersonalizedAction(currentRecommendations, done);
+      offsiteAction = nextOffsiteAction(done);
+      completedThisWeek = completed.filter(row => row.completedAt >= oneWeekAgo).map(row => ({ title: currentRecommendations.find(item => item.id === row.recommendationId)?.title ?? OFFSITE_ACTIONS.find(item => item.id === row.recommendationId)?.title ?? "Recorded site improvement", completedAt: row.completedAt.toISOString(), note: row.note })).slice(0, 10);
     }
 
     const activeTargets = paidSeoEnabled && domain ? await db
@@ -281,6 +285,7 @@ async function runWeeklyDigests(userId?: string) {
     const latestSnapshotsQuery = buildLatestRankSnapshotsQuery(activeTargets.map((target) => target.id));
     const latestSnapshots = latestSnapshotsQuery ? await db.execute(latestSnapshotsQuery) : { rows: [] as any[] };
     const rankProgress = summarizeRankProgress(activeTargets.length, latestSnapshots.rows as Array<{ position: number | null; collected_at: Date }>);
+    const movementRows = activeTargets.length ? await db.execute(sql`SELECT target_id, position, collected_at FROM (SELECT target_id, position, collected_at, row_number() OVER (PARTITION BY target_id ORDER BY collected_at DESC, id DESC) AS rn FROM seo_rank_snapshots WHERE provider_status = 'success' AND target_id IN (${sql.join(activeTargets.map(target => sql`${target.id}`), sql`, `)})) ranked WHERE rn <= 2 ORDER BY target_id, collected_at DESC`) : { rows: [] };
 
     const activeSites = paidSeoEnabled ? await db
       .select({ lastRunAt: monitoredSitesTable.lastRunAt })
@@ -312,10 +317,13 @@ async function runWeeklyDigests(userId?: string) {
               quickWins: (latestAudit.quickWins as string[]) ?? [],
               nextAction,
               completedActions,
+              completedThisWeek,
+              offsiteAction,
               createdAt: latestAudit.createdAt,
             }
           : undefined,
         tracking: rankProgress,
+        rankMovement: paidSeoEnabled ? summarizeRankMovement(movementRows.rows as any[]) : undefined,
         monitoring: {
           activeSites: activeSites.length,
           waitingForFirstRun: activeSites.filter((site) => !site.lastRunAt).length,

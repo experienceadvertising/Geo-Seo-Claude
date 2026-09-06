@@ -12,7 +12,7 @@ const scenarios = {
   "provider-unavailable": [{ error: "synthetic failure", brandMentioned: false, domainCited: false }],
 };
 for (const [name, answers] of Object.entries(scenarios)) {
-  const email = simulationCompleteEmail("Jamie", "example.com", 0, 46, "https://example.com/preferences", { answers });
+  const email = simulationCompleteEmail("Jamie", "example.com", 0, 46, "https://example.com/preferences", { answers, audit: { url: "https://example.com/services", createdAt: "2026-09-06T12:00:00Z", nextAction: { id: "content-effort-methodology", title: "Show how your service works", detail: "The saved audit found no visible methodology on the services page. Add the steps customers can expect and one documented example." }, offsiteAction: { title: "Align your company profile", steps: "Compare a profile you control with the services and audience described on your website. Correct conflicting facts and record the public URL.", verify: "Reopen the profile and confirm your changes are visible." } } });
   writeFileSync(join(directory, `${name}.html`), email.html);
   writeFileSync(join(directory, `${name}.txt`), `${email.subject}\n\n${email.text}`);
 }

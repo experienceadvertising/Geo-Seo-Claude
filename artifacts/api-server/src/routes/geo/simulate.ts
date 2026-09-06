@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { eq, desc, and, asc } from "drizzle-orm";
-import { db, promptSimulationsTable, auditsTable } from "@workspace/db";
+import { db, promptSimulationsTable, auditsTable, recommendationProgressTable } from "@workspace/db";
+import { selectPersonalizedAction, nextOffsiteAction, sameSite } from "../../lib/personalizedAction";
 import { runPromptSimulation, generatePromptsForBrand, type EngineId, type PromptGenerationContext } from "../../lib/promptSimulator";
 import { requireAuth } from "../../middlewares/auth";
 import { simulateRateLimiter, readRateLimiter } from "../../middlewares/rateLimiters";
@@ -215,8 +216,12 @@ router.post("/geo/simulate", requireAuth, simulateRateLimiter, async (req, res):
       })
       .from(usersTable)
       .where(sql`id = ${req.userId!}`)
-      .then(([u]) => {
+      .then(async ([u]) => {
         if (!u?.email || u.emailOptOut) return;
+        const [emailAudit] = auditId ? await db.select().from(auditsTable).where(and(eq(auditsTable.id, auditId), eq(auditsTable.userId, req.userId!))).limit(1) : [];
+        const matchingAudit = emailAudit && sameSite(emailAudit.url, domain) ? emailAudit : undefined;
+        const progress = matchingAudit ? await db.select({ id: recommendationProgressTable.recommendationId }).from(recommendationProgressTable).where(and(eq(recommendationProgressTable.userId, req.userId!), eq(recommendationProgressTable.domain, domain.replace(/^www\./, "")))) : [];
+        const completed = new Set(progress.map(row => row.id));
         const baseUrl = process.env.FRONTEND_URL || "https://aeoimprovement.com";
         const unsubscribeUrl = `${baseUrl}/api/auth/unsubscribe?token=${u.unsubscribeToken}`;
         return EmailService.sendSimulationComplete(
@@ -226,7 +231,8 @@ router.post("/geo/simulate", requireAuth, simulateRateLimiter, async (req, res):
           summary.overallVisibilityScore ?? 0,
           auditId,
           unsubscribeUrl,
-          { answers: results.flatMap(row => row.engines.map(answer => ({ error: answer.error, brandMentioned: answer.brandMentioned, domainCited: answer.domainCited }))) },
+          { answers: results.flatMap(row => row.engines.map(answer => ({ error: answer.error, brandMentioned: answer.brandMentioned, domainCited: answer.domainCited }))),
+            audit: matchingAudit ? { url: matchingAudit.url, createdAt: matchingAudit.createdAt.toISOString(), nextAction: selectPersonalizedAction(matchingAudit.recommendations, completed), offsiteAction: nextOffsiteAction(completed) } : undefined },
         );
       })
       .catch((err) => req.log.error({ err, userId: req.userId }, "simulation-complete email failed"));

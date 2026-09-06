@@ -5,6 +5,7 @@ import { SEO } from "@/components/seo";
 import { SeoPerformancePanel } from "@/components/seo-performance-panel";
 import { SeoTrackingPanel } from "@/components/seo-tracking-panel";
 import Results from "./results";
+import { OffsiteWork } from "@/components/offsite-work";
 
 export default function WorkspaceSection({ section }: { section: "seo" | "actions" | "ai-visibility" }) {
   const { id } = useParams<{ id: string }>();
@@ -32,7 +33,7 @@ export default function WorkspaceSection({ section }: { section: "seo" | "action
         <nav aria-label="Page workspace" className="flex flex-wrap gap-4 text-sm text-primary">
           <Link href={`/actions/${audit.id}`} className="underline">Action plan</Link><Link href={`/seo/${audit.id}`} className="underline">SEO performance</Link><Link href={`/ai-visibility/${audit.id}`} className="underline">AI visibility</Link><Link href={`/results/${audit.id}`} className="underline">Full audit</Link>
         </nav>
-        {section === "actions" ? <Results key={audit.id} auditId={audit.id} view="actions" /> : section === "seo" ? <>
+        {section === "actions" ? <><Results key={audit.id} auditId={audit.id} view="actions" />{domain && <OffsiteWork key={domain} domain={domain} />}</> : section === "seo" ? <>
           <p className="text-muted-foreground">Track Google rankings, review Search Console traffic, and choose your next SEO improvement. These measurements are separate from AI citations.</p>
           {paid && domain ? <><SeoPerformancePanel key={`performance-${audit.id}`} pageUrl={audit.url} /><SeoTrackingPanel key={`tracking-${audit.id}`} domain={domain} pageUrl={audit.url} /></> : <div className="rounded-lg border p-5"><h2 className="text-lg font-semibold">Unlock connected SEO performance</h2><p className="my-2">Your audit includes SEO recommendations. Pro and Agency add keyword tracking, demand and intent insights, and connected Search Console analysis, within plan limits.</p><Link href="/upgrade?source=seo-workspace" className="text-primary underline">Compare paid plans</Link></div>}
           <Link href="/projects" className="inline-block text-primary underline">Manage sites and Google connections</Link>

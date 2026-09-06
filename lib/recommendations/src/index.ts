@@ -2,6 +2,7 @@ import rawCatalog from "../data/recommendations.json" with { type: "json" };
 import type { Recommendation, SourceType, Severity, Category } from "./types.ts";
 
 export * from "./types.ts";
+export { OFFSITE_ACTIONS } from "./offsite.ts";
 export { METHODOLOGY_VERSION } from "./types.ts";
 
 // ---------------------------------------------------------------------------

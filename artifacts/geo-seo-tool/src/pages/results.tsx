@@ -102,12 +102,13 @@ export default function Results({ view = "audit", auditId }: { view?: "audit" | 
     () => audit?.recommendations?.filter((item) => completedRecommendationIds.has(item.id)).length ?? 0,
     [audit?.recommendations, completedRecommendationIds],
   );
+  const [taskNotes, setTaskNotes] = useState<Record<string, string>>({});
   const updateRecommendation = useMutation({
-    mutationFn: ({ recommendationId, completed }: { recommendationId: string; completed: boolean }) =>
+    mutationFn: ({ recommendationId, completed, implementationNote }: { recommendationId: string; completed: boolean; implementationNote?: string }) =>
       customFetch("/api/geo/recommendation-progress", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ domain, recommendationId, completed }),
+        body: JSON.stringify({ domain, recommendationId, completed, implementationNote }),
       }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: progressKey }),
     onError: () => toast({ title: "Progress not saved", description: "Please try again.", variant: "destructive" }),
@@ -685,7 +686,8 @@ export default function Results({ view = "audit", auditId }: { view?: "audit" | 
                   <li>Review SEO opportunities for subsequent rankings and Search Console movement. A change in performance does not prove this fix caused it.</li>
                 </ol>
                 {recorded && !progressError && <p className="mt-3 text-sm text-emerald-800">You marked this done on {new Date(recorded.completedAt).toLocaleDateString()}. Completion is self-reported, not independently verified.</p>}
-                <Button className="mt-4" variant={done ? "outline" : "default"} disabled={needsRefresh || progressLoading || progressError || updateRecommendation.isPending} onClick={() => updateRecommendation.mutate({ recommendationId: task.id, completed: !done })}>{done ? "Reopen task" : "I published this improvement"}</Button>
+                {!done && <label className="mt-4 block text-sm">Implementation note (optional)<textarea className="mt-2 block w-full rounded border bg-background p-3" maxLength={1000} value={taskNotes[task.id] ?? ""} onChange={event => setTaskNotes(notes => ({ ...notes, [task.id]: event.target.value }))} placeholder="What did you change, and on which page?" /><span className="text-xs text-muted-foreground">Progress is shared across this site's audits. Your note may appear in your weekly email.</span></label>}
+                <Button className="mt-4" variant={done ? "outline" : "default"} disabled={needsRefresh || progressLoading || progressError || updateRecommendation.isPending} onClick={() => updateRecommendation.mutate({ recommendationId: task.id, completed: !done, implementationNote: taskNotes[task.id] })}>{done ? "Reopen task" : "I published this improvement"}</Button>
                 <Link href={`/results/${id}#seo-opportunities`} className="ml-4 inline-block text-sm font-medium text-primary underline">Review SEO progress</Link>
                 {needsRefresh && <p className="mt-2 text-sm">Re-scan this historical audit before recording a change.</p>}
               </section>;
