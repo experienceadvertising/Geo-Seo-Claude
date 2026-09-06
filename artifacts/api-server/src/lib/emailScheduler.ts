@@ -23,6 +23,8 @@ import { selectPersonalizedAction, nextOffsiteAction } from "./personalizedActio
 import { OFFSITE_ACTIONS } from "@workspace/recommendations";
 import { summarizeRankMovement } from "./seoProgressSummary";
 import { PushService } from "./pushService";
+import { aeoInsightTopic } from "./emailTemplates";
+import { weeklyStrategyPush } from "./pushPayload";
 
 // Cron-driven sends have no inbound HTTP request to derive a base URL from,
 // so we use the configured FRONTEND_URL (preferred in prod) or fall back to
@@ -459,7 +461,10 @@ async function runWeeklyInsights(userId?: string) {
     );
 
   const weekIndex = isoWeekOfYear(new Date());
+  const topic = aeoInsightTopic(weekIndex);
   let sent = 0;
+  let pushSent = 0;
+  let pushFailed = 0;
   for (const user of users) {
     if (!user.email) continue;
     const firstName = getFirstName(user);
@@ -470,8 +475,12 @@ async function runWeeklyInsights(userId?: string) {
       unsubUrl(user.unsubscribeToken),
     );
     if (ok) sent++;
+    const push = await PushService.sendToUser(user.id, weeklyStrategyPush(topic, weekIndex))
+      .catch(() => ({ sent: 0, failed: 1 }));
+    pushSent += push.sent;
+    pushFailed += push.failed;
   }
-  logger.info({ sent, weekIndex, total: users.length }, "Weekly insights complete");
+  logger.info({ sent, pushSent, pushFailed, weekIndex, total: users.length }, "Weekly insights complete");
 }
 
 // ── Prompt-simulation follow-up (daily) ───────────────────────────────────────

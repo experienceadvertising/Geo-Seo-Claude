@@ -17,3 +17,23 @@ export function safePushMessage(message: PushMessage): PushMessage {
     tag: message.tag.slice(0, 80),
   };
 }
+
+export function weeklyStrategyPush(topic: { title: string; sourceLabel: string }, weekIndex: number): PushMessage {
+  return safePushMessage({
+    title: "This week's SEO + GEO strategy",
+    body: `${topic.sourceLabel}: ${topic.title}`,
+    url: "/methodology",
+    tag: `weekly-strategy-${weekIndex}`,
+  });
+}
+
+export function materialMonitoringPush(auditId: number, nextTask?: { id: string; title: string }): PushMessage {
+  return safePushMessage({
+    title: "A monitored site changed",
+    body: nextTask?.title ? `Next task: ${nextTask.title}` : "Review the updated audit and choose the next useful improvement.",
+    url: nextTask
+      ? `/actions/${auditId}?task=${encodeURIComponent(nextTask.id)}#recommendations`
+      : `/results/${auditId}`,
+    tag: `score-change-${auditId}`,
+  });
+}

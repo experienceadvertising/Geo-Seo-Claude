@@ -34,7 +34,12 @@ export function BrowserNotifications() {
     setBusy(true); setMessage("");
     try {
       const permission = await Notification.requestPermission();
-      if (permission !== "granted") { setMessage("Notifications were not enabled. You can change this in your browser settings."); return; }
+      if (permission !== "granted") {
+        setMessage(permission === "denied"
+          ? "This browser blocked notifications. Allow notifications for aeoimprovement.com in your browser's site settings, then try again."
+          : "The notification prompt was closed without allowing access. Try again when you are ready.");
+        return;
+      }
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.getSubscription() ?? await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: applicationServerKey(status.publicKey!) as BufferSource });
       await customFetch("/api/notifications/subscription", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(subscription.toJSON()) });
@@ -54,7 +59,7 @@ export function BrowserNotifications() {
   };
 
   return <section className="flex flex-wrap items-center justify-between gap-4 rounded-xl border bg-white p-4" aria-label="Browser notifications">
-    <div className="flex min-w-0 items-start gap-3"><div className="rounded-lg bg-emerald-50 p-2 text-emerald-700">{localSubscription ? <Bell className="h-5 w-5" /> : <BellOff className="h-5 w-5" />}</div><div><h2 className="font-semibold">Next-task notifications</h2><p className="text-sm text-muted-foreground">Get your next personalized task and completed audit updates. Notifications may show a short task title on this device's lock screen, but never page excerpts, scores, or search queries. You can turn this off anytime.</p>{message && <p className="mt-1 text-xs text-slate-600" role="status">{message}</p>}</div></div>
+    <div className="flex min-w-0 items-start gap-3"><div className="rounded-lg bg-emerald-50 p-2 text-emerald-700">{localSubscription ? <Bell className="h-5 w-5" /> : <BellOff className="h-5 w-5" />}</div><div><h2 className="font-semibold">Next-task notifications</h2><p className="text-sm text-muted-foreground">Get important audit and monitoring updates, your next personalized task, and one weekly strategy from a named authority source. Notifications may show a short task or strategy title on this device's lock screen, but never page excerpts, scores, or search queries. You can turn this off anytime.</p>{message && <p className="mt-1 text-xs text-slate-600" role="status">{message}</p>}</div></div>
     <Button variant={localSubscription ? "outline" : "default"} disabled={busy} onClick={localSubscription ? disable : enable}>{busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{localSubscription ? "Turn off on this browser" : "Enable notifications"}</Button>
   </section>;
 }

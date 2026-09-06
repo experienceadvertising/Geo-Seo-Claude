@@ -25,7 +25,7 @@ try {
   assert.equal(await sideTask.locator('xpath=ancestor::a').getAttribute('href'), mainHref);
   await page.getByRole('button', { name: 'Enable notifications' }).click();
   assert.equal(await page.evaluate(() => window.__qaPermissionRequests), 1);
-  await page.getByText('Notifications were not enabled. You can change this in your browser settings.').waitFor();
+  await page.getByText("This browser blocked notifications. Allow notifications for aeoimprovement.com in your browser's site settings, then try again.").waitFor();
   console.log('PASS: dashboard and sidebar use the same task and link; notification permission is requested only after a user click. No subscription or push created.');
 } finally {
   await browser.close();
