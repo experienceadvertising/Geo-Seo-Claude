@@ -21,6 +21,7 @@ import { getUserPlan, PLAN_LIMITS } from "../../lib/planUtils";
 import { consumeQuota, refundQuota, currentYearMonth, markApproachingNotified } from "../../lib/usageLimits";
 import { db as appDb, usersTable } from "@workspace/db";
 import { sql } from "drizzle-orm";
+import { discoverImportantPages } from "../../lib/sitePageDiscovery";
 
 /** Escape LIKE metacharacters (%, _, \) so a user-supplied domain/host is
  * matched literally and can't turn into a wildcard scan. Postgres LIKE treats
@@ -145,6 +146,39 @@ router.post("/geo/recommendation-progress", requireAuth, readRateLimiter, async 
   }
   res.json({ ok: true, completed });
 });
+
+router.get("/geo/site-pages", requireAuth, readRateLimiter, async (req, res): Promise<void> => {
+  const rawUrl = String(req.query.url || "").trim();
+  let publicUrl: URL;
+  try {
+    publicUrl = await assertPublicUrl(rawUrl);
+  } catch {
+    res.status(400).json({ error: "Enter a publicly reachable website URL." });
+    return;
+  }
+  const plan = await getUserPlan(req.userId!);
+  const limit = PLAN_LIMITS[plan].siteDiscoveryPages;
+  try {
+    const result = await discoverImportantPages(publicUrl.toString(), limit);
+    res.json({ ...result, limit, plan, pages: result.pages.map((url) => ({ url, priority: pagePriorityLabel(url) })) });
+  } catch (error) {
+    req.log.warn({ err: error, userId: req.userId, host: publicUrl.hostname }, "Important page discovery failed");
+    res.status(422).json({ error: "We could not read this site's sitemap or homepage links. You can still audit individual page URLs." });
+  }
+});
+
+function pagePriorityLabel(rawUrl: string): string {
+  try {
+    const path = new URL(rawUrl).pathname.toLowerCase();
+    if (path === "/" || path === "") return "Homepage";
+    if (/about|company/.test(path)) return "Brand page";
+    if (/pricing|plans/.test(path)) return "Decision page";
+    if (/product|service|solution|feature|platform/.test(path)) return "Offer page";
+    if (/case-stud|customer|success|research/.test(path)) return "Evidence page";
+    if (/guide|resource|blog|article/.test(path)) return "Content page";
+    return "Important page";
+  } catch { return "Important page"; }
+}
 
 router.post("/geo/analyze", requireAuth, analyzeRateLimiter, async (req, res): Promise<void> => {
   const parsed = AnalyzeUrlBody.safeParse(req.body);

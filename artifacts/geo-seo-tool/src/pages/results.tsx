@@ -12,6 +12,7 @@ import { ScoreBadge } from "@/components/score-badge";
 import { SourceBadge } from "@/components/source-badge";
 import { ImplementationGuide } from "@/components/implementation-guide";
 import { SiteRewrite } from "@/components/site-rewrite";
+import { SiteCoveragePanel } from "@/components/site-coverage-panel";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info } from "lucide-react";
 
@@ -60,6 +61,8 @@ export default function Results({ view = "audit", auditId }: { view?: "audit" | 
   const [showAllRecommendations, setShowAllRecommendations] = useState(false);
   const [showTechnicalDetails, setShowTechnicalDetails] = useState(false);
   const [focusedTaskId, setFocusedTaskId] = useState<string | null>(null);
+  const verificationTaskId = new URLSearchParams(window.location.search).get("verifiedTask");
+  const verificationSourceId = new URLSearchParams(window.location.search).get("verifiedFrom");
 
   const { data: audit, isLoading, isError } = useGetAudit(id, {
     query: {
@@ -260,11 +263,13 @@ export default function Results({ view = "audit", auditId }: { view?: "audit" | 
     ["technical", "structure", "depth", "freshness"].includes(recommendation.category) || recommendation.id.startsWith("content-effort-"),
   );
 
-  const reScanAudit = () => {
+  const reScanAudit = (taskId?: string) => {
     reRun.mutate(
       { data: { url: audit.url } },
       {
-        onSuccess: (result) => setLocation(`/results/${result.id}`),
+        onSuccess: (result) => setLocation(taskId
+          ? `/actions/${result.id}?verifiedFrom=${id}&verifiedTask=${encodeURIComponent(taskId)}#recommendations`
+          : `/results/${result.id}`),
         onError: (err: unknown) => toast({
           title: "Re-scan failed",
           description: apiErrorMessage(err, "Could not re-analyze this URL."),
@@ -272,6 +277,11 @@ export default function Results({ view = "audit", auditId }: { view?: "audit" | 
         }),
       },
     );
+  };
+
+  const copyTaskBrief = async (task: { id: string; title: string; detail: string; impact: string }) => {
+    const brief = `${task.title}\n\nPage: ${audit.url}\n\nWhat the scan found:\n${task.detail}\n\nWhy it matters:\n${task.impact}\n\nDelivery steps:\n1. Review the page evidence and editable draft.\n2. Verify every claim and replace bracketed fields.\n3. Publish the change.\n4. Return to AEO Improvement and run Check my change.\n5. Review later SEO and AI visibility movement without assuming causation.`;
+    await copyToClipboard(brief, `brief-${task.id}`);
   };
 
   let overallColorClass = "text-red-500 border-red-500/20 bg-red-500/5";
@@ -333,7 +343,7 @@ export default function Results({ view = "audit", auditId }: { view?: "audit" | 
               size="sm"
               className="font-mono text-xs gap-2"
               disabled={reRun.isPending}
-              onClick={reScanAudit}
+              onClick={() => reScanAudit()}
               data-testid="button-rerun"
             >
               {reRun.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
@@ -375,9 +385,21 @@ export default function Results({ view = "audit", auditId }: { view?: "audit" | 
                 </p>
               </div>
             </div>
-            <Button size="sm" className="shrink-0" onClick={reScanAudit} disabled={reRun.isPending}>
+            <Button size="sm" className="shrink-0" onClick={() => reScanAudit()} disabled={reRun.isPending}>
               <RefreshCw className="mr-1.5 h-3.5 w-3.5" /> Re-scan now
             </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {verificationTaskId && (
+        <Card className={audit.recommendations?.some((item) => item.id === verificationTaskId) ? "border-amber-300 bg-amber-50" : "border-emerald-300 bg-emerald-50"}>
+          <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="font-semibold">{audit.recommendations?.some((item) => item.id === verificationTaskId) ? "The issue is still detectable" : "The issue was not detected in the new scan"}</p>
+              <p className="mt-1 text-sm text-muted-foreground">This compares the same rule on the same page against a fresh scan{verificationSourceId ? ` from audit ${verificationSourceId}` : ""}. It confirms the page signal, not a ranking or citation result.</p>
+            </div>
+            {audit.recommendations?.some((item) => item.id === verificationTaskId) ? <a href="#recommendations" className="text-sm font-semibold text-primary underline">Review the remaining fix</a> : <Link href={`/results/${id}`} className="text-sm font-semibold text-primary underline">View updated results</Link>}
           </CardContent>
         </Card>
       )}
@@ -425,10 +447,12 @@ export default function Results({ view = "audit", auditId }: { view?: "audit" | 
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">3. Measure</p>
             <p className="mt-1 font-semibold">Confirm what changed</p>
             <p className="mt-1 text-sm text-muted-foreground">{storedPlan === "pro" || storedPlan === "agency" ? "Re-scan this same page after publishing, then review SEO opportunities for keyword results. Keep the same buyer prompts to compare AI visibility over time." : "Re-scan after publishing. Pro and Agency add connected SEO performance and weekly keyword tracking."}</p>
-            <Button variant="link" className="mt-1 h-auto p-0 text-sm" onClick={reScanAudit} disabled={reRun.isPending}>Re-scan this page</Button>
+            <Button variant="link" className="mt-1 h-auto p-0 text-sm" onClick={() => reScanAudit()} disabled={reRun.isPending}>Re-scan this page</Button>
           </div>
         </CardContent>
       </Card>
+
+      {view === "audit" && <SiteCoveragePanel siteUrl={audit.url} history={historyData?.history ?? []} />}
 
       {/* AI Insights Summary */}
       {audit.aiInsights && (
@@ -640,6 +664,17 @@ export default function Results({ view = "audit", auditId }: { view?: "audit" | 
       </Card>
 
       </>}
+      {view === "actions" && verificationTaskId && (
+        <Card className={audit.recommendations?.some((item) => item.id === verificationTaskId) ? "border-amber-300 bg-amber-50" : "border-emerald-300 bg-emerald-50"}>
+          <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="font-semibold">{audit.recommendations?.some((item) => item.id === verificationTaskId) ? "The issue is still detectable" : "The issue was not detected in the new scan"}</p>
+              <p className="mt-1 text-sm text-muted-foreground">This compares the same rule on the same page against a fresh scan{verificationSourceId ? ` from audit ${verificationSourceId}` : ""}. It confirms the page signal, not a ranking or citation result.</p>
+            </div>
+            {audit.recommendations?.some((item) => item.id === verificationTaskId) ? <a href="#recommendations" className="text-sm font-semibold text-primary underline">Review the remaining fix</a> : <Link href={`/results/${id}`} className="text-sm font-semibold text-primary underline">View updated results</Link>}
+          </CardContent>
+        </Card>
+      )}
       {/* Prioritized GEO Recommendations */}
       {audit.recommendations && audit.recommendations.length > 0 && (
         <Card className="shadow-sm border-border mb-6" id="recommendations">
@@ -705,7 +740,11 @@ export default function Results({ view = "audit", auditId }: { view?: "audit" | 
                 </ol>
                 {recorded && !progressError && <p className="mt-3 text-sm text-emerald-800">You marked this done on {new Date(recorded.completedAt).toLocaleDateString()}. Completion is self-reported, not independently verified.</p>}
                 {!done && <label className="mt-4 block text-sm">Implementation note (optional)<textarea className="mt-2 block w-full rounded border bg-background p-3" maxLength={1000} value={taskNotes[task.id] ?? ""} onChange={event => setTaskNotes(notes => ({ ...notes, [task.id]: event.target.value }))} placeholder="What did you change, and on which page?" /><span className="text-xs text-muted-foreground">Progress is shared across this site's audits. Your note may appear in your weekly email.</span></label>}
-                <Button className="mt-4" variant={done ? "outline" : "default"} disabled={needsRefresh || progressLoading || progressError || updateRecommendation.isPending} onClick={() => updateRecommendation.mutate({ recommendationId: task.id, completed: !done, implementationNote: taskNotes[task.id] })}>{done ? "Reopen task" : "I published this improvement"}</Button>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Button variant={done ? "outline" : "default"} disabled={needsRefresh || progressLoading || progressError || updateRecommendation.isPending} onClick={() => updateRecommendation.mutate({ recommendationId: task.id, completed: !done, implementationNote: taskNotes[task.id] })}>{done ? "Reopen task" : "I published this improvement"}</Button>
+                  <Button variant="outline" disabled={needsRefresh || reRun.isPending} onClick={() => reScanAudit(task.id)}>{reRun.isPending ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-1.5 h-4 w-4" />}Check my change</Button>
+                  <Button variant="ghost" onClick={() => copyTaskBrief(task)}>{copiedKey === `brief-${task.id}` ? <Check className="mr-1.5 h-4 w-4" /> : <Copy className="mr-1.5 h-4 w-4" />}{copiedKey === `brief-${task.id}` ? "Brief copied" : "Copy client task brief"}</Button>
+                </div>
                 <Link href={`/results/${id}#seo-opportunities`} className="ml-4 inline-block text-sm font-medium text-primary underline">Review SEO progress</Link>
                 {needsRefresh && <p className="mt-2 text-sm">Re-scan this historical audit before recording a change.</p>}
               </section>;
