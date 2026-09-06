@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { getAuditDeepLinkState } from "./audit-deep-link.ts";
 
 test("recognizes each supported audit sidebar section", () => {
-  for (const targetId of ["recommendations", "seo-opportunities", "technical-breakdown"]) {
+  for (const targetId of ["recommendations", "seo-opportunities", "site-coverage", "technical-breakdown"]) {
     assert.deepEqual(getAuditDeepLinkState("", `#${targetId}`), {
       showTechnicalDetails: false,
       targetId,

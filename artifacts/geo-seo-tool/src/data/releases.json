@@ -5,6 +5,31 @@
   "archiveNote": "Earlier release notes retain their original recorded dates. Descriptions were clarified on September 5, 2026 to remove unsupported performance and visibility claims. Historical offers are not current plan entitlements.",
   "entries": [
     {
+      "slug": "guided-improvement-workbench-and-site-coverage",
+      "isoDate": "2026-09-06",
+      "badge": "New",
+      "title": "A guided content workbench, page coverage, and change checks",
+      "summary": "Audit findings now lead into editable page copy, broader site coverage, and a fresh scan that checks whether the original issue is still detectable.",
+      "audience": "Brands, consultants, and agencies implementing SEO and GEO improvements",
+      "items": [
+        "Personalize suggested copy with verified audience, problem, differentiator, and proof details without asking the app to invent claims.",
+        "Find important pages from a sitemap or homepage links and choose which ones to scan within the account's audit allowance.",
+        "Run Check my change after publishing to compare the same rule on a fresh scan of the same page.",
+        "Copy a client task brief and a DataForSEO search-result gap review for practical delivery work."
+      ],
+      "links": [
+        {
+          "label": "Open your action plan",
+          "href": "/actions"
+        },
+        {
+          "label": "Review current plan limits",
+          "href": "/pricing"
+        }
+      ],
+      "evidence": "Production API and frontend builds, typechecks, and automated tests completed before release. Page discovery does not run a paid rank lookup, and selected page scans use the existing audit allowance."
+    },
+    {
       "slug": "useful-browser-notifications",
       "isoDate": "2026-09-06",
       "badge": "Improvement",

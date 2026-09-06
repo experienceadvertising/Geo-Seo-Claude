@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError, customFetch } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ChevronDown, ChevronUp, PauseCircle, PlayCircle, RefreshCw, SlidersHorizontal } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, Copy, PauseCircle, PlayCircle, RefreshCw, SlidersHorizontal } from "lucide-react";
 import { latestRankDisplay } from "@/lib/rankTrackingDisplay";
 import { collectionMessage, landingPageDiffers } from "@/lib/seoProgress";
 
@@ -76,6 +76,7 @@ function RankHistory({ targetId, open }: { targetId: number; open: boolean }) {
 }
 
 function KeywordContext({ target }: { target: Target }) {
+  const [copied, setCopied] = useState(false);
   const insight = target.insights;
   const stale = insight && Date.now() - Date.parse(insight.collectedAt) >= 30 * 86400000;
   const guidance: Record<string, string> = {
@@ -85,6 +86,13 @@ function KeywordContext({ target }: { target: Target }) {
     navigational: "Make the relevant brand or product page easy to identify and navigate to.",
   };
   const competitors = target.latest?.competitors;
+  const copyGapReview = async () => {
+    if (!competitors?.length) return;
+    const brief = `Search result gap review for: ${target.keyword}\nLocation: ${target.locationName}\nDevice: ${target.device}\nTracked page: ${target.targetUrl || "Not set"}\n\nPages currently ahead:\n${competitors.map((item) => `${item.position}. ${item.title || item.domain}\n${item.url}`).join("\n\n")}\n\nReview each page for:\n1. The search intent it satisfies.\n2. Useful sections or questions your page does not address.\n3. First-party evidence, examples, or methodology it provides.\n4. Important facts it supports with original sources.\n5. A clearer or more useful angle your company can publish without copying.\n\nChoose one verified gap, improve the tracked page, publish, and compare future snapshots. Ranking movement does not prove the change caused it.`;
+    await navigator.clipboard.writeText(brief);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 2000);
+  };
   return <details className="mt-3 rounded-md border p-3 text-xs">
     <summary className="cursor-pointer font-semibold">Keyword insights and search competitors</summary>
     <div className="mt-3 space-y-3">
@@ -96,7 +104,7 @@ function KeywordContext({ target }: { target: Target }) {
         {insight.monthlySearches.length > 0 && <div className="overflow-x-auto"><table className="w-full text-left"><caption className="mb-2 text-left font-semibold">Monthly demand history: look for seasonal patterns, not guaranteed future demand</caption><thead><tr><th className="p-1">Month</th><th className="p-1">Estimated searches</th></tr></thead><tbody>{insight.monthlySearches.map(row => <tr key={`${row.year}-${row.month}`}><td className="p-1">{row.year}-{String(row.month).padStart(2, "0")}</td><td className="p-1">{row.volume === null ? "Unavailable" : row.volume.toLocaleString()}</td></tr>)}</tbody></table></div>}
       </> : <p>No keyword demand data yet. Use “Update keyword insights” above. Missing provider data is not treated as zero searches.</p>}
       <p className="font-semibold">{target.latest?.result_present ? "Who appeared above you?" : "Leading search results to review"}</p>
-      {competitors == null ? <p>Competitor context will be saved with the next successful rank check. Historical snapshots have not been backfilled.</p> : competitors.length ? <><ul className="space-y-2">{competitors.map(item => <li key={item.domain}><a className="text-primary underline break-words" href={item.url} target="_blank" rel="noopener noreferrer">#{item.position} · {item.title || item.domain}</a><span className="block text-muted-foreground">{item.domain}</span></li>)}</ul><p>Compare intent, evidence, and useful details. These are search competitors, not necessarily business competitors. Do not copy their content. Positions use the same location, device, and collection time as your rank snapshot.</p></> : <p>No qualifying results ahead of your page were captured in this snapshot.</p>}
+      {competitors == null ? <p>Competitor context will be saved with the next successful rank check. Historical snapshots have not been backfilled.</p> : competitors.length ? <><ul className="space-y-2">{competitors.map(item => <li key={`${item.position}-${item.url}`}><a className="text-primary underline break-words" href={item.url} target="_blank" rel="noopener noreferrer">#{item.position} · {item.title || item.domain}</a><span className="block text-muted-foreground">{item.domain}</span></li>)}</ul><p>Compare intent, evidence, useful sections, and source quality. These are search competitors, not necessarily business competitors. Do not copy their content. Positions use the same location, device, and collection time as your rank snapshot.</p><Button type="button" variant="outline" size="sm" onClick={copyGapReview}>{copied ? <Check className="mr-1.5 h-3.5 w-3.5" /> : <Copy className="mr-1.5 h-3.5 w-3.5" />}{copied ? "Gap review copied" : "Copy content gap review"}</Button></> : <p>No qualifying results ahead of your page were captured in this snapshot.</p>}
     </div>
   </details>;
 }
