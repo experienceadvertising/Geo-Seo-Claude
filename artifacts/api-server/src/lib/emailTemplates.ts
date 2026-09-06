@@ -143,7 +143,7 @@ export function welcomeEmail(firstName: string, unsubscribeUrl?: string) {
   return guidedEmail(firstName, "Your first step: audit one website", [
     "Welcome to AEO Improvement. Start with one page you want to improve for Google and AI search.",
     "Open your dashboard. If the URL you entered at signup is already running, let that audit finish. Otherwise, enter it and run your first audit. No Google connection or tracking snippet is needed for this step.",
-    "When results are ready, open Top actions and choose one useful improvement. You do not need to tackle the entire report at once.",
+    "When results are ready, open Action plan and choose one useful improvement. You do not need to tackle the entire report at once.",
     "Your guided trial has usage limits. Connected Search Console, GA4, and keyword tracking require Pro or Agency. No card is required for the trial and it does not charge you automatically."
   ], "Open my dashboard", BASE_URL, unsubscribeUrl);
 }
@@ -151,12 +151,12 @@ export function welcomeEmail(firstName: string, unsubscribeUrl?: string) {
 // ── Email 2: Day-3 Tips ──────────────────────────────────────────────────────
 export function welcomeD3Email(firstName: string, hasAudit: boolean, unsubscribeUrl?: string) {
   return guidedEmail(firstName, hasAudit ? "Choose one improvement from your audit" : "Ready for your first website audit?", hasAudit ? [
-    "You have an audit. Your next step is to open Top actions from the dashboard navigation and choose one unfinished recommendation.",
+    "You have an audit. Your next step is to open Action plan from the dashboard navigation and choose one unfinished recommendation.",
     "Read the evidence and instructions, make the change on your website, then mark the task complete. Generated code is a draft: check it against your actual page before publishing.",
     "After that, open Prompt test and try a few questions your buyers would ask. Use the engines and allowance shown in your account."
   ] : [
     "Start by entering one website URL in your dashboard. You do not need to connect Google or install anything first.",
-    "Once the audit finishes, open Top actions. Pick one recommendation and work through its instructions before moving on."
+    "Once the audit finishes, open Action plan. Pick one recommendation and work through its instructions before moving on."
   ], hasAudit ? "Find my next action" : "Run my first audit", BASE_URL, unsubscribeUrl);
 }
 
@@ -166,7 +166,7 @@ export function welcomeD3Email(firstName: string, hasAudit: boolean, unsubscribe
 // "use the good stuff while it's free" nudge that seeds the upgrade decision.
 export function welcomeD7Email(firstName: string, unsubscribeUrl?: string) {
   return guidedEmail(firstName, "What to do next in your SEO + GEO workspace", [
-    "If you have not run an audit yet, start there. If you have, choose one unfinished item under Top actions and implement it on your site.",
+    "If you have not run an audit yet, start there. If you have, choose one unfinished item under Action plan and implement it on your site.",
     "Next, open Prompt test for that audit. Review the suggested questions before running them so they reflect what your buyers actually ask.",
     "You do not need to buy a plan to review your available audit recommendations. When you want connected Google reporting and keyword tracking, compare Pro and Agency on the Plans page.",
     "Your account shows your current trial status and usage limits. There is no automatic charge when the trial ends."
@@ -209,7 +209,7 @@ export function weeklyDigestEmail(data: WeeklyDigestData, unsubscribeUrl?: strin
     try { return new URL(latestAudit.url).hostname.replace(/^www\./, ""); }
     catch { return latestAudit.url; }
   })() : "your site";
-  const actionUrl = latestAudit ? `${BASE_URL}/results/${latestAudit.id}${latestAudit.nextAction?.id ? `?task=${encodeURIComponent(latestAudit.nextAction.id)}` : ""}#recommendations` : BASE_URL;
+  const actionUrl = latestAudit ? `${BASE_URL}/actions/${latestAudit.id}${latestAudit.nextAction?.id ? `?task=${encodeURIComponent(latestAudit.nextAction.id)}` : ""}#recommendations` : `${BASE_URL}/actions`;
   const subject = latestAudit?.nextAction
     ? `Your SEO + GEO task for ${domain}`
     : `Your weekly SEO + GEO update`;
@@ -258,9 +258,9 @@ export function weeklyDigestEmail(data: WeeklyDigestData, unsubscribeUrl?: strin
   ].join("");
 
   const setupText = !paidSeoEnabled || !latestAudit ? "" : !googleMeasurementConnected
-    ? `Next setup step: open Tracking and review your Search Console and GA4 connections: ${BASE_URL}/projects`
+    ? `Next setup step: open Sites and connections and review your Search Console and GA4 connections: ${BASE_URL}/projects`
     : tracking?.activeKeywords === 0
-      ? `Next setup step: choose a keyword, location, and device in SEO opportunities: ${BASE_URL}/results/${latestAudit.id}#seo-opportunities`
+      ? `Next setup step: choose a keyword, location, and device in SEO performance: ${BASE_URL}/seo/${latestAudit.id}`
       : monitoring?.activeSites === 0
         ? `Next setup step: add your site to monitoring: ${BASE_URL}/projects`
         : tracking && tracking.pendingKeywords > 0 ? "Your first rank snapshots are pending. You do not need a manual refresh." : "";
@@ -269,7 +269,7 @@ export function weeklyDigestEmail(data: WeeklyDigestData, unsubscribeUrl?: strin
     : !googleMeasurementConnected
     ? p(`Review your Google connections: <a href="${BASE_URL}/projects" style="color:${BRAND_COLOR};font-weight:600;">connect Search Console and GA4</a> and check which connection still needs attention.`, "padding:12px 14px;background:#fffbeb;border-radius:8px;color:#92400e;font-size:13px;")
     : tracking?.activeKeywords === 0
-      ? p(`Add at least one priority keyword to start weekly DataForSEO snapshots. <a href="${latestAudit ? `${BASE_URL}/results/${latestAudit.id}#seo-opportunities` : `${BASE_URL}/projects`}" style="color:${BRAND_COLOR};font-weight:600;">Choose a keyword</a>.`, "padding:12px 14px;background:#fffbeb;border-radius:8px;color:#92400e;font-size:13px;")
+      ? p(`Add at least one priority keyword to start weekly DataForSEO snapshots. <a href="${latestAudit ? `${BASE_URL}/seo/${latestAudit.id}` : `${BASE_URL}/projects`}" style="color:${BRAND_COLOR};font-weight:600;">Choose a keyword</a>.`, "padding:12px 14px;background:#fffbeb;border-radius:8px;color:#92400e;font-size:13px;")
       : monitoring?.activeSites === 0
         ? p(`Add your site to weekly monitoring so new audits and score changes appear automatically. <a href="${BASE_URL}/projects" style="color:${BRAND_COLOR};font-weight:600;">Turn on monitoring</a>.`, "padding:12px 14px;background:#fffbeb;border-radius:8px;color:#92400e;font-size:13px;")
         : tracking && tracking.pendingKeywords > 0
@@ -280,7 +280,8 @@ export function weeklyDigestEmail(data: WeeklyDigestData, unsubscribeUrl?: strin
     `${h1(`Your weekly SEO + GEO plan`)}
     ${p(`Hi ${esc(firstName) || "there"}, here is the next practical step for ${esc(domain)}, plus the measurement updates behind it.`)}
     ${nextTask}
-    ${paidSeoEnabled && latestAudit ? p(`Measurement check: ${tracking?.rankedKeywords ?? 0} keywords have collected snapshots; ${tracking?.foundKeywords ?? 0} have a numeric ranking. ${tracking?.pendingKeywords ?? 0} await their first collection and ${tracking?.staleKeywords ?? 0} have overdue results. <a href="${BASE_URL}/results/${latestAudit.id}#seo-opportunities">Review collection status and history</a> before deciding what to change.`, "padding:12px 14px;background:#f8fafc;border-radius:8px;color:#475569;font-size:13px;") : ""}
+    ${latestAudit ? p(`Optional off-site step: review one company profile you control for accurate services, audience, and website details. If it is already accurate, prepare one useful expert contribution for a relevant industry publication. This is general guidance, not a confirmed gap. Avoid paid ranking links and fabricated reviews. <a href="${BASE_URL}/recommended-tools#authority-tools-heading">Choose an off-site resource</a>.`) : ""}
+    ${paidSeoEnabled && latestAudit ? p(`Measurement check: ${tracking?.rankedKeywords ?? 0} keywords have collected snapshots; ${tracking?.foundKeywords ?? 0} have a numeric ranking. ${tracking?.pendingKeywords ?? 0} await their first collection and ${tracking?.staleKeywords ?? 0} have overdue results. <a href="${BASE_URL}/seo/${latestAudit.id}">Review collection status and history</a> before deciding what to change.`, "padding:12px 14px;background:#f8fafc;border-radius:8px;color:#475569;font-size:13px;") : ""}
     ${scoreSection}
     ${divider()}
     <div style="margin-bottom:8px;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6b7280;">Your program status</div>
@@ -292,13 +293,14 @@ export function weeklyDigestEmail(data: WeeklyDigestData, unsubscribeUrl?: strin
   );
   const text = `Hi ${firstName || "there"},\n\nYour weekly SEO + GEO plan for ${domain}:\n\n${latestAudit?.nextAction ? `Recommended task: ${latestAudit.nextAction.title}\n${latestAudit.nextAction.detail}\n\nHow to implement:\n${getImplementationGuide(latestAudit.nextAction.id).steps.map((step, i) => `${i + 1}. ${step}`).join("\n")}\nVerify: ${getImplementationGuide(latestAudit.nextAction.id).verify}\nWatch afterward: ${getImplementationGuide(latestAudit.nextAction.id).measure}\nOpen it: ${actionUrl}` : latestAudit ? `Review the remaining recommendations before choosing another task. Review and re-scan: ${BASE_URL}/results/${latestAudit.id}` : `Run your first audit: ${BASE_URL}`}\n\nProgram status:\n- Audits in the last 7 days: ${auditCount}\n- Completed recommendations: ${latestAudit?.completedActions ?? 0}${paidSeoEnabled ? `\n- Active keyword targets: ${tracking?.activeKeywords ?? 0}\n- Keywords with a rank baseline: ${tracking?.rankedKeywords ?? 0}\n- Sites under monitoring: ${monitoring?.activeSites ?? 0}` : ""}\n\n${setupText}\n\nOpen your workspace: ${BASE_URL}`;
   const measurementText = paidSeoEnabled && latestAudit
-    ? `\n\nMeasurement check: ${tracking?.rankedKeywords ?? 0} keywords have collected snapshots; ${tracking?.foundKeywords ?? 0} have numeric rankings. ${tracking?.pendingKeywords ?? 0} await first collection; ${tracking?.staleKeywords ?? 0} have overdue results. Review status before drawing conclusions: ${BASE_URL}/results/${latestAudit.id}#seo-opportunities\nAfter completing a task, publish your change, mark it done, and re-audit the same page. Traffic and ranking changes do not prove causation.`
+    ? `\n\nMeasurement check: ${tracking?.rankedKeywords ?? 0} keywords have collected snapshots; ${tracking?.foundKeywords ?? 0} have numeric rankings. ${tracking?.pendingKeywords ?? 0} await first collection; ${tracking?.staleKeywords ?? 0} have overdue results. Review status before drawing conclusions: ${BASE_URL}/seo/${latestAudit.id}\nAfter completing a task, publish your change, mark it done, and re-audit the same page. Traffic and ranking changes do not prove causation.`
     : "";
   const references = latestAudit?.nextAction ? getImplementationGuide(latestAudit.nextAction.id).sources : [];
   const context = latestAudit?.nextAction ? getImplementationGuide(latestAudit.nextAction.id).context : undefined;
   const referenceText = (context ? `\n\nWhen this applies: ${context}` : "") + (references.length ? `\n\nImplementation references:\n${references.map(source => `${source.title}: ${source.url} (reviewed ${source.reviewed})`).join("\n")}` : "");
   const referenceHtml = (context ? `<p>When this applies: ${esc(context)}</p>` : "") + (references.length ? `<p style="font-size:13px;">Implementation references: ${references.map(source => `<a href="${esc(source.url)}">${esc(source.title)}</a> (reviewed ${esc(source.reviewed)})`).join("; ")}</p>` : "");
-  return { subject, html: html.replace("</body>", `${referenceHtml}</body>`), text: text + measurementText + referenceText };
+  const offSiteText = latestAudit ? `\n\nOptional off-site step: review one company profile you control for accurate services, audience, and website details. If it is already accurate, prepare one useful expert contribution for a relevant industry publication. This is general guidance, not a confirmed gap. Avoid paid ranking links and fabricated reviews. Resources: ${BASE_URL}/recommended-tools#authority-tools-heading` : "";
+  return { subject, html: html.replace("</body>", `${referenceHtml}</body>`), text: text + measurementText + offSiteText + referenceText };
 }
 
 // ── Email: Email Verification (transactional - no unsubscribe) ────────────────
@@ -451,7 +453,7 @@ export function renewalReceiptEmail(
     `${h1("Thanks - your subscription renewed")}
     ${p(`Hi ${firstName || "there"}, your AEO Improvement <strong>${planName}</strong> subscription has renewed. You were charged <strong>${amount}</strong>.`)}
     ${periodLine ? p(periodLine) : ""}
-    ${p("Next, open your dashboard and choose an unfinished item in Top actions. If you have not run an audit, start with one website. Pro and Agency users can configure Google connections in Tracking and keywords in SEO opportunities.")}
+    ${p("Next, open your dashboard and choose an unfinished item in Action plan. If you have not run an audit, start with one website. Pro and Agency users can configure Google connections in Sites and connections and keywords in SEO performance.")}
     <div style="text-align:center;margin:24px 0;">
       ${btn("Open your dashboard →", `${BASE_URL}/`)}
     </div>
@@ -517,11 +519,11 @@ export function monthlyReportEmail(data: MonthlyReportData, unsubscribeUrl?: str
     </div>
 
     ${divider()}
-    ${p("Next: open Tracking, choose a client site, and review its latest Top actions. Assign one improvement for that client. These audit scores are not traffic or ranking measurements.", "color:#9ca3af;font-size:12px;")}`,
+    ${p("Next: open Sites and connections, choose a client site, and review its latest Action plan. Assign one improvement for that client. These audit scores are not traffic or ranking measurements.", "color:#9ca3af;font-size:12px;")}`,
     `Your AEO monthly performance report for ${month} - ${totalAudits} audits, avg score ${Math.round(avgScore)}`,
     unsubscribeUrl,
   );
-  const text = `Monthly AEO Report - ${month}\n\nHi ${firstName || "there"},\n\nTotal audits: ${totalAudits}\nAvg AEO score: ${Math.round(avgScore)}\nBest score: ${Math.round(bestScore)}\n${topUrl ? `Highest audit-score site: ${topUrl}\n` : ""}${quickWins.length > 0 ? `\nTop opportunities:\n${quickWins.slice(0, 5).map(w => `- ${w}`).join("\n")}` : ""}\n\nNext: open Tracking, choose a client site, and review its latest Top actions. Audit scores are not traffic or ranking measurements.\n\nView dashboard: ${BASE_URL}`;
+  const text = `Monthly AEO Report - ${month}\n\nHi ${firstName || "there"},\n\nTotal audits: ${totalAudits}\nAvg AEO score: ${Math.round(avgScore)}\nBest score: ${Math.round(bestScore)}\n${topUrl ? `Highest audit-score site: ${topUrl}\n` : ""}${quickWins.length > 0 ? `\nTop opportunities:\n${quickWins.slice(0, 5).map(w => `- ${w}`).join("\n")}` : ""}\n\nNext: open Sites and connections, choose a client site, and review its latest Action plan. Audit scores are not traffic or ranking measurements.\n\nView dashboard: ${BASE_URL}`;
   return { subject, html, text };
 }
 
@@ -609,7 +611,7 @@ export function firstAuditEmail(
       </div>
     ` : ""}
 
-    ${p("Start with one recommendation under Top actions. Then use a prompt simulation to sample AI responses for relevant buyer questions:")}
+    ${p("Start with one recommendation under Action plan. Then use a prompt simulation to sample AI responses for relevant buyer questions:")}
     <table cellpadding="0" cellspacing="0" width="100%" style="margin:8px 0 24px;">
       ${feature("🔬", "Run a prompt simulation", "Type the queries your buyers actually use and see whether ChatGPT, Claude, Gemini, and Perplexity name you, cite your site, or recommend a competitor instead.")}
       ${feature("📊", "Compare to competitors", "Run audits on 2–3 competitors to find your AEO gaps and see who the engines are citing in your place.")}
@@ -713,41 +715,52 @@ export function simulationReminderEmail(
 // ── Email: Simulation Complete (transactional - fires after every simulation) ─
 // Simulations can take 1-3 minutes. This email lets users close the tab and
 // come back when the results are in rather than watching a spinner.
+export interface SimulationEmailContext {
+  answers: Array<{ error: string | null; brandMentioned: boolean; domainCited: boolean }>;
+}
+
 export function simulationCompleteEmail(
   firstName: string,
   domain: string,
   visibilityScore: number,
   auditId: number | null | undefined,
   unsubscribeUrl?: string,
+  context?: SimulationEmailContext,
 ) {
   const safeDomain = esc(domain);
   const safeFirstName = esc(firstName) || "there";
-  const scoreColor = visibilityScore >= 60 ? "#10b981" : visibilityScore >= 30 ? "#f59e0b" : "#ef4444";
-  const subject = `Your AI visibility simulation for ${domain} is done`;
+  const valid = context?.answers.filter(answer => !answer.error);
+  const failed = context ? context.answers.length - (valid?.length ?? 0) : 0;
+  const mentions = valid?.filter(answer => answer.brandMentioned).length ?? 0;
+  const citations = valid?.filter(answer => answer.domainCited).length ?? 0;
+  const observation = valid?.length
+    ? `${valid.length} successful ${valid.length === 1 ? "answer" : "answers"}: your brand was mentioned in ${mentions} and your domain was cited in ${citations}.${failed ? ` ${failed} ${failed === 1 ? "answer failed and is" : "answers failed and are"} excluded from these counts.` : ""}`
+    : context ? "No usable answers were returned. This run cannot tell us whether your brand was visible. Review the errors before deciding whether to retry."
+    : "Open the individual answers to check brand mentions, citations, and any failed responses before interpreting this run.";
+  const interpretation = valid?.length && mentions === 0 && citations === 0
+    ? "Your brand was not detected in the successful answers to these questions. That is a starting point for investigation, not proof that you are invisible across AI search or that your website is poor."
+    : "This is a sample of answers to your chosen questions, not your Google ranking or a measure of every AI search. Check that the questions match your buyers before changing content.";
+  const actionUrl = auditId ? `${BASE_URL}/actions/${auditId}` : `${BASE_URL}/actions`;
+  const seoUrl = auditId ? `${BASE_URL}/seo/${auditId}` : `${BASE_URL}/seo`;
+  const onSite = "Choose one relevant buyer question from the results. On the page that should answer it, add a clear answer, a real example or documented method, and an internal link from a related page. Check the audit's technical findings first; a blocked or unindexed public page needs attention before content polish. Only change what the evidence supports.";
+  const offSite = "Check one relevant company profile you control against your home and about pages. Correct conflicting brand facts. If those facts are already consistent, choose one industry publication or podcast whose audience fits your expertise and prepare a useful, evidence-backed contribution. Do not buy ranking links, invent reviews, or mass-post promotional comments. This is an optional strategy, not a detected gap.";
+  const followThrough = "Publish one useful change, then open Action plan and record the completed recommendation and an implementation note. Return next week to review progress. Pro and Agency users can compare Search Console and tracked keywords in SEO performance. Repeat the same buyer prompts after meaningful changes and time for discovery, within your allowance, not repeatedly to chase a higher score. Observed changes do not prove causation.";
+  const subject = `Your AI results and next steps for ${domain}`;
   const simulateUrl = auditId ? `${BASE_URL}/simulate/${auditId}` : BASE_URL;
   const html = layout(
-    `${h1(`Simulation complete`)}
-    ${p(`Hi ${safeFirstName}, your AI prompt simulation for <strong>${safeDomain}</strong> finished. Here's your visibility score:`)}
-
-    <table cellpadding="0" cellspacing="0" width="100%" style="margin:20px 0;background:#f9fafb;border-radius:12px;">
-      <tr><td style="padding:24px;text-align:center;">
-        <div style="font-size:52px;font-weight:800;color:${scoreColor};line-height:1;">${Math.round(visibilityScore)}<span style="font-size:24px;color:#9ca3af;">/100</span></div>
-        <div style="font-size:13px;color:#6b7280;margin-top:6px;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;">AI Visibility Score</div>
-      </td></tr>
-    </table>
-
-    ${p("Read the answers and citations for the engines included in this run. Then choose one relevant unfinished recommendation in Top actions.")}
-
-    <div style="text-align:center;margin:28px 0;">
-      ${btn("View simulation results →", simulateUrl)}
-    </div>
-
-    ${divider()}
-    ${p("Read the individual answers first. Then return to Top actions for this audit, choose a relevant unfinished recommendation, and implement it on your site. A simulation is a sample, not a guarantee of wider visibility.", "color:#6b7280;font-size:13px;")}`,
-    `Your AI visibility simulation for ${domain} scored ${Math.round(visibilityScore)}/100 - see the full breakdown.`,
+    `${h1("Your results are ready. Start with one useful change.")}
+    ${p(`Hi ${safeFirstName}, here is what your prompt simulation for <strong>${safeDomain}</strong> found.`)}
+    ${p(esc(observation))}
+    ${p(esc(interpretation))}
+    <div style="text-align:center;margin:24px 0;">${btn("Review answers and choose a page", simulateUrl)}</div>
+    ${p(`<strong>1. On your site</strong><br/>${esc(onSite)} <a href="${actionUrl}">Open your Action plan</a>.`)}
+    ${p(`<strong>2. Off your site</strong><br/>${esc(offSite)} <a href="${BASE_URL}/recommended-tools#authority-tools-heading">Find a resource for the task</a>.`)}
+    ${p(`<strong>3. Record it, then measure</strong><br/>${esc(followThrough)} <a href="${seoUrl}">Open SEO performance</a>.`)}
+    ${p('These are starting strategies, not a diagnosis of why an answer omitted your brand. <a href="https://developers.google.com/search/docs/appearance/ai-features">Google Search guidance</a> and our <a href="' + BASE_URL + '/methodology">methodology</a> explain the evidence and limits.', "color:#6b7280;font-size:13px;")}`,
+    "See what the answers found, choose a page to improve, and plan your next step.",
     unsubscribeUrl,
   );
-  const text = `Hi ${firstName || "there"},\n\nYour AI prompt simulation for ${domain} is done. Visibility score: ${Math.round(visibilityScore)}/100.\n\nView full results: ${simulateUrl}\n\nThe breakdown includes mention rates, citation rates, and per-prompt results across each engine.`;
+  const text = `Hi ${firstName || "there"},\n\nYour AI prompt simulation for ${domain} is ready.\n\n${observation}\n\n${interpretation}\n\nReview answers and choose a page: ${simulateUrl}\n\n1. On your site\n${onSite}\nAction plan: ${actionUrl}\n\n2. Off your site\n${offSite}\nResources: ${BASE_URL}/recommended-tools#authority-tools-heading\n\n3. Record it, then measure\n${followThrough}\nSEO performance: ${seoUrl}\n\nThese are starting strategies, not a diagnosis of why an answer omitted your brand.\nGoogle Search guidance: https://developers.google.com/search/docs/appearance/ai-features\nMethodology: ${BASE_URL}/methodology`;
   return { subject, html, text };
 }
 
@@ -778,7 +791,7 @@ const AEO_INSIGHTS: InsightTopic[] = [
     "title": "Check access before changing content",
     "intro": "Use this as a general check, not a finding that we have confirmed on your website.",
     "body": "<p style=\"font-size:15px;line-height:1.7;color:#374151;\">Review your audit's crawler-access findings. If a public page is blocked, ask your developer to review the specific rule. Keep private areas protected. Permission to crawl does not prove a bot visited or indexed a page.</p>",
-    "pitch": "Open your dashboard, choose the relevant audit, and check Top actions. Apply this suggestion only if it fits your page and the evidence.",
+    "pitch": "Open your dashboard, choose the relevant audit, and check Action plan. Apply this suggestion only if it fits your page and the evidence.",
     "textBody": "Review your audit's crawler-access findings. If a public page is blocked, ask your developer to review the specific rule. Keep private areas protected. Permission to crawl does not prove a bot visited or indexed a page."
   },
   {
@@ -787,7 +800,7 @@ const AEO_INSIGHTS: InsightTopic[] = [
     "title": "Make your company easier to understand",
     "intro": "Use this as a general check, not a finding that we have confirmed on your website.",
     "body": "<p style=\"font-size:15px;line-height:1.7;color:#374151;\">Read your home, about, and product pages together. Do they agree on who you are, what you offer, who it is for, and what makes it different? Fix one conflicting or vague description using facts you can support.</p>",
-    "pitch": "Open your dashboard, choose the relevant audit, and check Top actions. Apply this suggestion only if it fits your page and the evidence.",
+    "pitch": "Open your dashboard, choose the relevant audit, and check Action plan. Apply this suggestion only if it fits your page and the evidence.",
     "textBody": "Read your home, about, and product pages together. Do they agree on who you are, what you offer, who it is for, and what makes it different? Fix one conflicting or vague description using facts you can support."
   },
   {
@@ -796,7 +809,7 @@ const AEO_INSIGHTS: InsightTopic[] = [
     "title": "Answer the buyer's question first",
     "intro": "Use this as a general check, not a finding that we have confirmed on your website.",
     "body": "<p style=\"font-size:15px;line-height:1.7;color:#374151;\">Choose one important page. Put a clear answer to its main question near the beginning, then add examples, limitations, and supporting evidence. Keep lists when they make steps easier to follow.</p>",
-    "pitch": "Open your dashboard, choose the relevant audit, and check Top actions. Apply this suggestion only if it fits your page and the evidence.",
+    "pitch": "Open your dashboard, choose the relevant audit, and check Action plan. Apply this suggestion only if it fits your page and the evidence.",
     "textBody": "Choose one important page. Put a clear answer to its main question near the beginning, then add examples, limitations, and supporting evidence. Keep lists when they make steps easier to follow."
   },
   {
@@ -805,7 +818,7 @@ const AEO_INSIGHTS: InsightTopic[] = [
     "title": "Make the evidence easy to find",
     "intro": "Use this as a general check, not a finding that we have confirmed on your website.",
     "body": "<p style=\"font-size:15px;line-height:1.7;color:#374151;\">Choose one claim on a key page. Add the real example, methodology, source, or testing details that support it. Do not invent experience or add an updated date without a meaningful update.</p>",
-    "pitch": "Open your dashboard, choose the relevant audit, and check Top actions. Apply this suggestion only if it fits your page and the evidence.",
+    "pitch": "Open your dashboard, choose the relevant audit, and check Action plan. Apply this suggestion only if it fits your page and the evidence.",
     "textBody": "Choose one claim on a key page. Add the real example, methodology, source, or testing details that support it. Do not invent experience or add an updated date without a meaningful update."
   },
   {
@@ -814,7 +827,7 @@ const AEO_INSIGHTS: InsightTopic[] = [
     "title": "Check that structured data matches the page",
     "intro": "Use this as a general check, not a finding that we have confirmed on your website.",
     "body": "<p style=\"font-size:15px;line-height:1.7;color:#374151;\">Review the schema findings in your audit. Correct inaccurate markup and make sure it describes visible content. Validate generated code before publishing. Schema is not a guarantee of rankings or AI citations.</p>",
-    "pitch": "Open your dashboard, choose the relevant audit, and check Top actions. Apply this suggestion only if it fits your page and the evidence.",
+    "pitch": "Open your dashboard, choose the relevant audit, and check Action plan. Apply this suggestion only if it fits your page and the evidence.",
     "textBody": "Review the schema findings in your audit. Correct inaccurate markup and make sure it describes visible content. Validate generated code before publishing. Schema is not a guarantee of rankings or AI citations."
   },
   {
@@ -823,7 +836,7 @@ const AEO_INSIGHTS: InsightTopic[] = [
     "title": "Compare results after a real improvement",
     "intro": "Use this as a general check, not a finding that we have confirmed on your website.",
     "body": "<p style=\"font-size:15px;line-height:1.7;color:#374151;\">Record what you changed and when. Re-audit the same page when you are ready, within your allowance. Pro and Agency users can also review connected Google data and tracked keywords. Changes in results do not establish causation.</p>",
-    "pitch": "Open your dashboard, choose the relevant audit, and check Top actions. Apply this suggestion only if it fits your page and the evidence.",
+    "pitch": "Open your dashboard, choose the relevant audit, and check Action plan. Apply this suggestion only if it fits your page and the evidence.",
     "textBody": "Record what you changed and when. Re-audit the same page when you are ready, within your allowance. Pro and Agency users can also review connected Google data and tracked keywords. Changes in results do not establish causation."
   }
 ];
@@ -865,7 +878,7 @@ export function scoreChangedEmail(firstName: string, url: string, previousScore:
   return guidedEmail(firstName, "Your audit score changed: review the findings", [
     `Your latest audit score changed from ${Math.round(previousScore)} to ${Math.round(currentScore)} for ${url}.`,
     "Compare the findings for the same page before deciding what to change. Check crawler access, structured data, and visible content against the previous audit.",
-    topRecommendation ? `Recommendation to review: ${topRecommendation}` : "Open Top actions and choose one relevant unfinished recommendation.",
+    topRecommendation ? `Recommendation to review: ${topRecommendation}` : "Open Action plan and choose one relevant unfinished recommendation.",
     "Record your implementation, then re-audit when ready. A score change is not proof of a ranking change or increased AI citations."
   ], "Review this audit", auditId ? `${BASE_URL}/results/${auditId}#recommendations` : BASE_URL, unsubscribeUrl);
 }
@@ -937,7 +950,7 @@ export function whatYouMissedEmail(firstName: string, url: string, geoScore: num
   return guidedEmail(firstName, "Need more measurement for your next improvement?", [
     "Start with the recommendations already available in your dashboard. You can work on your website before upgrading.",
     "Starter adds more audits and implementation-ready fixes. Pro and Agency add connected Google reporting, selected keyword tracking, and multi-engine prompt simulations within plan limits.",
-    "After upgrading to Pro or Agency, open Tracking to connect Google. Then open SEO opportunities in your audit and choose the keywords, location, and device you want to track.",
+    "After upgrading to Pro or Agency, open Sites and connections to connect Google. Then open SEO opportunities in your audit and choose the keywords, location, and device you want to track.",
     "Upgrading does not automatically run every test or install changes on your website. Review the current plans and allowances before choosing."
   ], "Compare plans", `${BASE_URL}/upgrade?source=what-you-missed`, unsubscribeUrl);
 }

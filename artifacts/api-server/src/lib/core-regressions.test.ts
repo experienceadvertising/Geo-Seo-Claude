@@ -113,9 +113,34 @@ test("educational and score emails distinguish guidance from measured outcomes",
   for (let week = 0; week < 6; week++) {
     const email = aeoInsightsEmail("Test", week);
     assert.doesNotMatch(email.html + email.text + email.subject, /—|highest-ROI|guaranteed lift/);
-    assert.match(email.text, /Top actions/);
+    assert.match(email.text, /Action plan/);
   }
   assert.match(scoreChangedEmail("Test", "https://example.com", 50, 70, null, "42").text, /not proof/);
+});
+test("simulation email explains observed answers and gives on-site and off-site next steps", () => {
+  const email = simulationCompleteEmail("<Evan>", "example.com", 0, 46, "https://example.com/unsubscribe", { answers: [
+    { error: null, brandMentioned: false, domainCited: false },
+    { error: "provider unavailable", brandMentioned: false, domainCited: false },
+  ] });
+  for (const copy of [email.html, email.text]) {
+    assert.match(copy, /1 successful answer/);
+    assert.match(copy, /1 answer failed/);
+    assert.match(copy, /not proof that you are invisible/);
+    assert.match(copy, /On your site/);
+    assert.match(copy, /Off your site/);
+    assert.match(copy, /\/actions\/46/);
+    assert.match(copy, /\/seo\/46/);
+    assert.doesNotMatch(copy, /Top actions|0\/100|provider unavailable|—/);
+  }
+  assert.match(email.html, /&lt;Evan&gt;/);
+  assert.match(email.html, /https:\/\/example.com\/unsubscribe/);
+  const failure = simulationCompleteEmail("Evan", "example.com", 0, null, undefined, { answers: [{ error: "private provider error", brandMentioned: true, domainCited: true }] });
+  assert.match(failure.text, /No usable answers/);
+  assert.doesNotMatch(failure.text, /not detected|private provider error|0\/100/);
+  const positive = simulationCompleteEmail("Evan", "example.com", 100, 46, undefined, { answers: [{ error: null, brandMentioned: true, domainCited: true }] });
+  assert.match(positive.text, /mentioned in 1 and your domain was cited in 1/);
+  assert.doesNotMatch(positive.text, /not detected/);
+  assert.doesNotMatch(simulationCompleteEmail("Evan", "example.com", NaN, null).text, /NaN|undefined|\/null/);
 });
 import { selectStripeCustomerCandidate } from "./billingCustomerSelection.ts";
 import { billingWebhookEvents } from "./stripeWebhookPolicy.ts";
@@ -213,7 +238,9 @@ test("paid weekly digest points to the user's next task and program status", () 
   assert.match(email.text, /Implementation references:/);
   assert.match(email.html, /creating-helpful-content/);
   assert.match(email.text, /reviewed 2026-09-05/);
-  assert.match(email.html, /\/results\/42#recommendations/);
+  assert.match(email.html, /\/actions\/42#recommendations/);
+  assert.match(email.text, /Optional off-site step/);
+  assert.match(email.html, /\/seo\/42/);
   assert.match(email.html, /Add first-party evidence/);
   assert.match(email.html, /Keywords with a rank baseline/);
   assert.match(email.text, /Active keyword targets: 5/);
@@ -239,8 +266,8 @@ test("paid weekly digest escapes recommendation content before rendering HTML", 
   assert.doesNotMatch(email.html, /<script>/);
   assert.match(email.html, /Add &lt;evidence&gt;/);
   assert.match(email.html, /Hi &lt;Jamie&gt;/);
-  assert.ok(email.html.includes("/results/7?task=evidence%26method#recommendations"));
-  assert.ok(email.text.includes("/results/7?task=evidence%26method#recommendations"));
+  assert.ok(email.html.includes("/actions/7?task=evidence%26method#recommendations"));
+  assert.ok(email.text.includes("/actions/7?task=evidence%26method#recommendations"));
 });
 
 test("Starter weekly digest guides audit work without promising connected SEO tracking", () => {

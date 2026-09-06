@@ -40,6 +40,11 @@ export default function WorkspaceSection({ section }: { section: "seo" | "action
           <h2 className="text-xl font-semibold">Test how AI answers buyer questions</h2><p>Use a consistent set of prompts to review brand mentions, citations, and competing recommendations. An audit measures readiness; a prompt test records what the selected AI service returned at that time.</p>
           <Link href={`/simulate/${audit.id}`} className="inline-block rounded-md bg-primary px-4 py-2 text-primary-foreground">Open prompt simulator and saved results</Link>
           <p className="text-sm text-muted-foreground">Start with three focused buyer questions. Review the results, improve one relevant page, and repeat the same prompts later. Individual answers can vary and do not prove a change caused a visibility gain. Plan limits apply.</p>
+          <h3 className="text-lg font-semibold">Turn the results into one useful change</h3>
+          <p><strong>On your site:</strong> Choose the page that should answer a relevant buyer question. Check its technical audit findings, then add a clear answer, a substantiated example, and a helpful internal link if those are missing.</p>
+          <p><strong>Off your site:</strong> Check that a company profile you control agrees with your home and about pages. If it does, consider a useful expert contribution to a relevant industry publication or podcast. Avoid paid ranking links, fabricated reviews, and promotional spam. This is an optional strategy, not a detected gap.</p>
+          <p><strong>Next visit:</strong> Record the recommendation you completed and what changed. Review SEO performance as data accumulates. Repeat the same prompts after meaningful changes and time for discovery, not just to chase a higher score.</p>
+          <div className="flex flex-wrap gap-4 text-sm text-primary"><Link href={`/actions/${audit.id}`} className="underline">Choose and record an action</Link><Link href="/recommended-tools#authority-tools-heading" className="underline">Explore off-site resources</Link><Link href={`/seo/${audit.id}`} className="underline">Review SEO progress</Link></div>
         </div>}
       </>}
     </>}
