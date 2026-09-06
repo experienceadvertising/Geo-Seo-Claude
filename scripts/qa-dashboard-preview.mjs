@@ -55,7 +55,7 @@ createServer(async (req, res) => {
         const action = JSON.parse(body);
         const progress = fixtures[pathname];
         progress.completed = progress.completed.filter(item => item.recommendationId !== action.recommendationId);
-        if (action.completed) progress.completed.push({ recommendationId: action.recommendationId, completedAt: new Date().toISOString() });
+        if (action.completed) progress.completed.push({ recommendationId: action.recommendationId, completedAt: new Date().toISOString(), implementationNote: typeof action.implementationNote === 'string' ? action.implementationNote.trim().slice(0, 1000) : null });
         res.end(JSON.stringify({ ok: true }));
       } catch { res.statusCode = 400; res.end(JSON.stringify({ error: 'Invalid local fixture action' })); }
       return;

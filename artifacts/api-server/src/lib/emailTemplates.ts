@@ -186,9 +186,12 @@ export interface WeeklyDigestData {
     quickWins: string[];
     nextAction?: { id?: string; title: string; detail: string };
     completedActions?: number;
+    completedThisWeek?: Array<{ title: string; completedAt: string; note?: string | null }>;
+    offsiteAction?: { title: string; steps: string; verify: string };
     createdAt: Date;
   };
   auditCount: number;
+  rankMovement?: { improved: number; declined: number; unchanged: number; comparable: number };
   tracking?: {
     activeKeywords: number;
     rankedKeywords: number;
@@ -216,10 +219,15 @@ export function weeklyDigestEmail(data: WeeklyDigestData, unsubscribeUrl?: strin
   const scoreDelta = latestAudit?.previousGeoScore == null
     ? ""
     : Math.round(latestAudit.geoScore) - Math.round(latestAudit.previousGeoScore);
+  const workSummary = latestAudit ? `Work recorded for ${domain} in the last 7 days (self-reported, site-wide):\n${latestAudit.completedThisWeek?.length ? latestAudit.completedThisWeek.map(item => `${item.title} (${item.completedAt.slice(0, 10)})${item.note ? `: ${item.note}` : ""}`).join("\n") : "No completed work recorded. If you made a change, record it in your Action plan."}` : "";
+  const movement = data.rankMovement;
+  const movementSummary = paidSeoEnabled && latestAudit ? movement?.comparable ? `Recent ranking observations: ${movement.improved} improved, ${movement.declined} declined, ${movement.unchanged} unchanged across ${movement.comparable} comparable targets. Each compares a successful numeric snapshot collected in the last 7 days with its previous successful snapshot. Missing and stale results are excluded. This does not prove your changes caused the movement.` : "No recent comparable ranking snapshots yet. Missing rankings are not treated as zero or as no change." : "";
+  const offsiteSummary = latestAudit?.offsiteAction ? `Optional off-site task: ${latestAudit.offsiteAction.title}. ${latestAudit.offsiteAction.steps} Verify: ${latestAudit.offsiteAction.verify} This is suggested work, not a detected gap. Record the outcome in Off-site work in your Action plan.` : latestAudit ? "No new off-site task selected. Review your recorded outcomes before repeating outreach." : "";
   const nextTask = latestAudit?.nextAction
     ? `<div style="margin:22px 0;padding:20px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:10px;">
         <div style="font-size:12px;font-weight:700;color:${BRAND_COLOR};text-transform:uppercase;letter-spacing:0.05em;margin-bottom:7px;">Your recommended task this week</div>
         <div style="font-size:17px;font-weight:700;color:#111827;margin-bottom:7px;">${esc(latestAudit.nextAction.title)}</div>
+        ${p(`Page: ${esc(latestAudit.url)}. Finding saved ${latestAudit.createdAt.toISOString().slice(0, 10)}. Check that it still applies before editing.`)}
         <div style="font-size:14px;color:#4b5563;line-height:1.6;">${esc(latestAudit.nextAction.detail)}</div>
         <div style="margin-top:12px;font-size:14px;line-height:1.6;"><strong>How to implement:</strong><ol>${getImplementationGuide(latestAudit.nextAction.id).steps.map(step => `<li>${esc(step)}</li>`).join("")}</ol><p><strong>Verify:</strong> ${esc(getImplementationGuide(latestAudit.nextAction.id).verify)}</p></div>
         <div style="margin-top:12px;font-size:13px;color:#4b5563;line-height:1.6;">Make the change in your website editor, publish it, and mark the task done. Then re-audit the same page and review subsequent search performance. Marking a task done records your work; it does not verify a ranking improvement.</div>
@@ -280,7 +288,9 @@ export function weeklyDigestEmail(data: WeeklyDigestData, unsubscribeUrl?: strin
     `${h1(`Your weekly SEO + GEO plan`)}
     ${p(`Hi ${esc(firstName) || "there"}, here is the next practical step for ${esc(domain)}, plus the measurement updates behind it.`)}
     ${nextTask}
-    ${latestAudit ? p(`Optional off-site step: review one company profile you control for accurate services, audience, and website details. If it is already accurate, prepare one useful expert contribution for a relevant industry publication. This is general guidance, not a confirmed gap. Avoid paid ranking links and fabricated reviews. <a href="${BASE_URL}/recommended-tools#authority-tools-heading">Choose an off-site resource</a>.`) : ""}
+    ${workSummary ? p(esc(workSummary).replace(/\n/g, "<br/>")) : ""}
+    ${offsiteSummary ? p(esc(offsiteSummary)) : ""}
+    ${movementSummary ? p(esc(movementSummary)) : ""}
     ${paidSeoEnabled && latestAudit ? p(`Measurement check: ${tracking?.rankedKeywords ?? 0} keywords have collected snapshots; ${tracking?.foundKeywords ?? 0} have a numeric ranking. ${tracking?.pendingKeywords ?? 0} await their first collection and ${tracking?.staleKeywords ?? 0} have overdue results. <a href="${BASE_URL}/seo/${latestAudit.id}">Review collection status and history</a> before deciding what to change.`, "padding:12px 14px;background:#f8fafc;border-radius:8px;color:#475569;font-size:13px;") : ""}
     ${scoreSection}
     ${divider()}
@@ -300,7 +310,7 @@ export function weeklyDigestEmail(data: WeeklyDigestData, unsubscribeUrl?: strin
   const referenceText = (context ? `\n\nWhen this applies: ${context}` : "") + (references.length ? `\n\nImplementation references:\n${references.map(source => `${source.title}: ${source.url} (reviewed ${source.reviewed})`).join("\n")}` : "");
   const referenceHtml = (context ? `<p>When this applies: ${esc(context)}</p>` : "") + (references.length ? `<p style="font-size:13px;">Implementation references: ${references.map(source => `<a href="${esc(source.url)}">${esc(source.title)}</a> (reviewed ${esc(source.reviewed)})`).join("; ")}</p>` : "");
   const offSiteText = latestAudit ? `\n\nOptional off-site step: review one company profile you control for accurate services, audience, and website details. If it is already accurate, prepare one useful expert contribution for a relevant industry publication. This is general guidance, not a confirmed gap. Avoid paid ranking links and fabricated reviews. Resources: ${BASE_URL}/recommended-tools#authority-tools-heading` : "";
-  return { subject, html: html.replace("</body>", `${referenceHtml}</body>`), text: text + measurementText + offSiteText + referenceText };
+  return { subject, html: html.replace("</body>", `${referenceHtml}</body>`), text: text + (latestAudit ? `\n\nPage: ${latestAudit.url}. Finding saved ${latestAudit.createdAt.toISOString().slice(0, 10)}. Check that it still applies before editing.` : "") + `\n\n${workSummary}\n\n${offsiteSummary}\n\n${movementSummary}` + measurementText + referenceText };
 }
 
 // ── Email: Email Verification (transactional - no unsubscribe) ────────────────
@@ -717,6 +727,7 @@ export function simulationReminderEmail(
 // come back when the results are in rather than watching a spinner.
 export interface SimulationEmailContext {
   answers: Array<{ error: string | null; brandMentioned: boolean; domainCited: boolean }>;
+  audit?: { url: string; createdAt: string; nextAction?: { id: string; title: string; detail: string }; offsiteAction?: { title: string; steps: string; verify: string } };
 }
 
 export function simulationCompleteEmail(
@@ -740,10 +751,14 @@ export function simulationCompleteEmail(
   const interpretation = valid?.length && mentions === 0 && citations === 0
     ? "Your brand was not detected in the successful answers to these questions. That is a starting point for investigation, not proof that you are invisible across AI search or that your website is poor."
     : "This is a sample of answers to your chosen questions, not your Google ranking or a measure of every AI search. Check that the questions match your buyers before changing content.";
-  const actionUrl = auditId ? `${BASE_URL}/actions/${auditId}` : `${BASE_URL}/actions`;
+  const task = context?.audit?.nextAction;
+  const guide = task ? getImplementationGuide(task.id) : undefined;
+  const actionUrl = (auditId ? `${BASE_URL}/actions/${auditId}` : `${BASE_URL}/actions`) + (task ? `?task=${encodeURIComponent(task.id)}#recommendations` : "");
+  const taskText = task && guide ? `Your next task: ${task.title}\nPage: ${context!.audit!.url}\nAudit recorded: ${context!.audit!.createdAt}\nDetected issue: ${task.detail}\nHow to implement:\n${guide.steps.map((step, index) => `${index + 1}. ${step}`).join("\n")}\nVerify: ${guide.verify}\nCheck the current page before editing; the audit describes its state at collection time.\nOpen this task: ${actionUrl}` : context?.audit ? "There is no remaining catalog-backed task in this audit. Review completed work and re-audit after changes rather than repeating a completed recommendation." : "We could not link a current audit finding to this run. Review the answers and choose an audited page before treating general guidance as a site-specific task.";
+  const taskHtml = task && guide ? `${p(`<strong>Your next task: ${esc(task.title)}</strong>`)}${p(`Page: ${esc(context!.audit!.url)}<br/>Audit recorded: ${esc(context!.audit!.createdAt)}<br/><strong>Detected issue:</strong> ${esc(task.detail)}`)}<ol>${guide.steps.map(step => `<li style="margin-bottom:8px;">${esc(step)}</li>`).join("")}</ol>${p(`<strong>Verify:</strong> ${esc(guide.verify)}`)}${p("Check the current page before editing; the audit describes its state at collection time.")}<div>${btn("Work on this recommendation", actionUrl)}</div>` : p(esc(taskText));
   const seoUrl = auditId ? `${BASE_URL}/seo/${auditId}` : `${BASE_URL}/seo`;
   const onSite = "Choose one relevant buyer question from the results. On the page that should answer it, add a clear answer, a real example or documented method, and an internal link from a related page. Check the audit's technical findings first; a blocked or unindexed public page needs attention before content polish. Only change what the evidence supports.";
-  const offSite = "Check one relevant company profile you control against your home and about pages. Correct conflicting brand facts. If those facts are already consistent, choose one industry publication or podcast whose audience fits your expertise and prepare a useful, evidence-backed contribution. Do not buy ranking links, invent reviews, or mass-post promotional comments. This is an optional strategy, not a detected gap.";
+  const offSite = context?.audit ? (context.audit.offsiteAction ? `${context.audit.offsiteAction.title}: ${context.audit.offsiteAction.steps} Verify: ${context.audit.offsiteAction.verify} This is optional work, not a detected gap. Record it in the Off-site work section of your Action plan.` : "Your off-site checklist is complete. Review the recorded outcomes rather than repeating outreach.") : "Check one relevant company profile you control against your home and about pages. Correct conflicting brand facts. This is optional general guidance, not a detected gap. Do not buy ranking links or fabricate reviews.";
   const followThrough = "Publish one useful change, then open Action plan and record the completed recommendation and an implementation note. Return next week to review progress. Pro and Agency users can compare Search Console and tracked keywords in SEO performance. Repeat the same buyer prompts after meaningful changes and time for discovery, within your allowance, not repeatedly to chase a higher score. Observed changes do not prove causation.";
   const subject = `Your AI results and next steps for ${domain}`;
   const simulateUrl = auditId ? `${BASE_URL}/simulate/${auditId}` : BASE_URL;
@@ -752,8 +767,9 @@ export function simulationCompleteEmail(
     ${p(`Hi ${safeFirstName}, here is what your prompt simulation for <strong>${safeDomain}</strong> found.`)}
     ${p(esc(observation))}
     ${p(esc(interpretation))}
-    <div style="text-align:center;margin:24px 0;">${btn("Review answers and choose a page", simulateUrl)}</div>
-    ${p(`<strong>1. On your site</strong><br/>${esc(onSite)} <a href="${actionUrl}">Open your Action plan</a>.`)}
+    ${p(`<a href="${simulateUrl}">Review the simulation answers</a> to check whether the questions match your buyers.`)}
+    ${taskHtml}
+    ${!task ? p(`<strong>1. On your site</strong><br/>${esc(onSite)} <a href="${actionUrl}">Open your Action plan</a>.`) : ""}
     ${p(`<strong>2. Off your site</strong><br/>${esc(offSite)} <a href="${BASE_URL}/recommended-tools#authority-tools-heading">Find a resource for the task</a>.`)}
     ${p(`<strong>3. Record it, then measure</strong><br/>${esc(followThrough)} <a href="${seoUrl}">Open SEO performance</a>.`)}
     ${p('These are starting strategies, not a diagnosis of why an answer omitted your brand. <a href="https://developers.google.com/search/docs/appearance/ai-features">Google Search guidance</a> and our <a href="' + BASE_URL + '/methodology">methodology</a> explain the evidence and limits.', "color:#6b7280;font-size:13px;")}`,
@@ -761,7 +777,7 @@ export function simulationCompleteEmail(
     unsubscribeUrl,
   );
   const text = `Hi ${firstName || "there"},\n\nYour AI prompt simulation for ${domain} is ready.\n\n${observation}\n\n${interpretation}\n\nReview answers and choose a page: ${simulateUrl}\n\n1. On your site\n${onSite}\nAction plan: ${actionUrl}\n\n2. Off your site\n${offSite}\nResources: ${BASE_URL}/recommended-tools#authority-tools-heading\n\n3. Record it, then measure\n${followThrough}\nSEO performance: ${seoUrl}\n\nThese are starting strategies, not a diagnosis of why an answer omitted your brand.\nGoogle Search guidance: https://developers.google.com/search/docs/appearance/ai-features\nMethodology: ${BASE_URL}/methodology`;
-  return { subject, html, text };
+  return { subject, html, text: text.replace("1. On your site\n" + onSite, taskText + (!task ? "\n\nGeneral on-site check: " + onSite : "")) };
 }
 
 // ── Email: Weekly AEO Insights (free + paid) ─────────────────────────────────

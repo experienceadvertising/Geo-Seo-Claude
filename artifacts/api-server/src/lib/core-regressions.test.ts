@@ -1,5 +1,25 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { selectPersonalizedAction, nextOffsiteAction, sameSite } from "./personalizedAction.ts";
+import { summarizeRankMovement } from "./seoProgressSummary.ts";
+
+test("personalized actions only use unfinished catalog-backed saved findings", () => {
+  const findings = [{ id: "unknown", title: "Ignore", detail: "Unknown" }, { id: "content-effort-curation", title: "Organize services", detail: "No clear sections", priority: "high" }, { id: "content-effort-methodology", title: "Show your method", detail: "Method missing", priority: "medium" }];
+  assert.equal(selectPersonalizedAction(findings, new Set())?.title, "Organize services");
+  assert.equal(selectPersonalizedAction(findings, new Set(["content-effort-curation"]))?.title, "Show your method");
+  assert.equal(selectPersonalizedAction(null, new Set()), undefined);
+  assert.equal(findings[0].id, "unknown");
+  assert.equal(nextOffsiteAction(new Set(["offsite:brand-profile"]))?.id, "offsite:expert-contribution");
+  assert.equal(nextOffsiteAction(new Set(["offsite:brand-profile", "offsite:expert-contribution", "offsite:earned-coverage"])), undefined);
+  assert.equal(sameSite("https://www.example.com/services", "example.com"), true);
+  assert.equal(sameSite("https://other.example.com/", "example.com"), false);
+});
+
+test("weekly ranking movement excludes stale, missing and invalid observations", () => {
+  const now = Date.parse("2026-09-06T12:00:00Z");
+  const pair = (target_id: number, position: number | null, prior: number | null, date = "2026-09-05") => [{ target_id, position, collected_at: date }, { target_id, position: prior, collected_at: "2026-08-20" }];
+  assert.deepEqual(summarizeRankMovement([...pair(1, 3, 8), ...pair(2, 9, 4), ...pair(3, 4, 4), ...pair(4, null, 3), ...pair(5, 2, 3, "2026-08-25"), ...pair(6, NaN, 3), ...pair(7, 0, 3)], now), { improved: 1, declined: 1, unchanged: 1, comparable: 3 });
+});
 import { sameAuditedPage } from "./auditComparison.ts";
 import { competitorContext, freshInsight, insightLimit, parseKeywordInsight, selectInsightTargets } from "./seoKeywordInsights.ts";
 
@@ -85,6 +105,23 @@ import {
   validateCheckoutPrice,
 } from "./billingPolicy.ts";
 import { weeklyDigestEmail } from "./emailTemplates.ts";
+test("personalized email names the saved page, finding and recorded work safely", () => {
+  const nextAction = { id: "content-effort-curation", title: "Organize <services>", detail: "Services have no clear sections" };
+  const audit = { url: "https://example.com/services", createdAt: "2026-09-05T00:00:00Z", nextAction, offsiteAction: nextOffsiteAction(new Set()) };
+  const simulation = simulationCompleteEmail("Jamie", "example.com", 0, 46, undefined, { answers: [{ error: null, brandMentioned: false, domainCited: false }], audit });
+  for (const copy of [simulation.html, simulation.text]) {
+    assert.match(copy, /example.com\/services/);
+    assert.match(copy, /Services have no clear sections/);
+    assert.match(copy, /task=content-effort-curation/);
+    assert.match(copy, /Check the current page/);
+  }
+  assert.match(simulation.html, /Organize &lt;services&gt;/);
+  const weekly = weeklyDigestEmail({ firstName: "Jamie", auditCount: 1, latestAudit: { ...audit, id: 46, createdAt: new Date(audit.createdAt), geoScore: 50, quickWins: [], completedThisWeek: [{ title: "Corrected profile", completedAt: "2026-09-05", note: "Updated <name>" }] }, rankMovement: { comparable: 2, improved: 1, declined: 0, unchanged: 1 } });
+  assert.match(weekly.html, /Updated &lt;name&gt;/);
+  assert.match(weekly.text, /self-reported, site-wide/);
+  assert.match(weekly.text, /1 improved, 0 declined, 1 unchanged/);
+  assert.match(weekly.text, /does not prove/);
+});
 import { welcomeEmail, welcomeD3Email, welcomeD7Email, auditCompleteEmail, simulationCompleteEmail, aeoInsightsEmail, paymentFailedEmail, cardExpiringEmail, scoreChangedEmail } from "./emailTemplates.ts";
 
 test("onboarding gives stage-appropriate actions without full-access promises", () => {
@@ -126,7 +163,7 @@ test("simulation email explains observed answers and gives on-site and off-site 
     assert.match(copy, /1 successful answer/);
     assert.match(copy, /1 answer failed/);
     assert.match(copy, /not proof that you are invisible/);
-    assert.match(copy, /On your site/);
+    assert.match(copy, /general guidance/);
     assert.match(copy, /Off your site/);
     assert.match(copy, /\/actions\/46/);
     assert.match(copy, /\/seo\/46/);
@@ -239,7 +276,7 @@ test("paid weekly digest points to the user's next task and program status", () 
   assert.match(email.html, /creating-helpful-content/);
   assert.match(email.text, /reviewed 2026-09-05/);
   assert.match(email.html, /\/actions\/42#recommendations/);
-  assert.match(email.text, /Optional off-site step/);
+  assert.match(email.text, /No new off-site task selected/);
   assert.match(email.html, /\/seo\/42/);
   assert.match(email.html, /Add first-party evidence/);
   assert.match(email.html, /Keywords with a rank baseline/);
