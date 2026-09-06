@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { selectPersonalizedAction, nextOffsiteAction, sameSite } from "./personalizedAction.ts";
 import { summarizeRankMovement } from "./seoProgressSummary.ts";
-import { safePushMessage, validVapidConfiguration, validVapidSubject } from "./pushPayload.ts";
+import { materialMonitoringPush, safePushMessage, validVapidConfiguration, validVapidSubject, weeklyStrategyPush } from "./pushPayload.ts";
 
 test("browser notification payloads stay brief and cannot navigate off site", () => {
   const safe = safePushMessage({ title: "t".repeat(100), body: "b".repeat(200), url: "/actions/42", tag: "x".repeat(100) });
@@ -17,6 +17,13 @@ test("browser notification payloads stay brief and cannot navigate off site", ()
   assert.equal(validVapidSubject("javascript:alert(1)"), false);
   assert.equal(validVapidConfiguration("public", "private", "mailto:info@aeoimprovement.com"), true);
   assert.equal(validVapidConfiguration("public", "private", "invalid"), false);
+  const strategy = weeklyStrategyPush({ title: "Add first-party evidence", sourceLabel: "Zyppy Signal" }, 36);
+  assert.equal(strategy.url, "/methodology");
+  assert.equal(strategy.tag, "weekly-strategy-36");
+  assert.match(strategy.body, /Zyppy Signal/);
+  const monitoring = materialMonitoringPush(42, { id: "content-effort-original-evidence", title: "Add visible first-party evidence" });
+  assert.equal(monitoring.url, "/actions/42?task=content-effort-original-evidence#recommendations");
+  assert.doesNotMatch(monitoring.title + monitoring.body, /example\.com|score|query/i);
 });
 
 test("personalized actions only use unfinished catalog-backed saved findings", () => {
@@ -138,7 +145,7 @@ test("personalized email names the saved page, finding and recorded work safely"
   assert.match(weekly.text, /1 improved, 0 declined, 1 unchanged/);
   assert.match(weekly.text, /does not prove/);
 });
-import { welcomeEmail, welcomeD3Email, welcomeD7Email, auditCompleteEmail, simulationCompleteEmail, aeoInsightsEmail, paymentFailedEmail, cardExpiringEmail, scoreChangedEmail } from "./emailTemplates.ts";
+import { welcomeEmail, welcomeD3Email, welcomeD7Email, auditCompleteEmail, simulationCompleteEmail, aeoInsightTopic, aeoInsightsEmail, paymentFailedEmail, cardExpiringEmail, scoreChangedEmail } from "./emailTemplates.ts";
 
 test("onboarding gives stage-appropriate actions without full-access promises", () => {
   const first = welcomeEmail("<b>Test</b>", "https://example.com/unsubscribe");
@@ -167,6 +174,8 @@ test("educational and score emails distinguish guidance from measured outcomes",
     const email = aeoInsightsEmail("Test", week);
     assert.doesNotMatch(email.html + email.text + email.subject, /—|highest-ROI|guaranteed lift/);
     assert.match(email.text, /Action plan/);
+    assert.match(email.text, /Source:/);
+    assert.match(aeoInsightTopic(week).sourceUrl, /^https:\/\//);
   }
   assert.match(scoreChangedEmail("Test", "https://example.com", 50, 70, null, "42").text, /not proof/);
 });

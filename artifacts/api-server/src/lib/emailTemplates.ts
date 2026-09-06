@@ -790,7 +790,7 @@ export function simulationCompleteEmail(
 //
 // Topics rotate by ISO week-of-year mod 6 so the same user gets a different
 // tip every week and only sees a repeat after ~6 weeks.
-type InsightTopic = {
+export type InsightTopic = {
   subject: string;
   preheader: string;
   title: string;
@@ -798,44 +798,59 @@ type InsightTopic = {
   body: string; // raw HTML, already escaped where needed
   pitch: string; // contextual soft pitch, plain text (no HTML)
   textBody: string; // plain-text version
+  sourceLabel: string;
+  sourceUrl: string;
+  reviewedAt: string;
 };
 
 const AEO_INSIGHTS: InsightTopic[] = [
   {
-    "subject": "Check access before changing content",
+    "subject": "Check search eligibility before changing content",
     "preheader": "One practical task for your SEO and GEO work this week.",
-    "title": "Check access before changing content",
+    "title": "Check search eligibility before changing content",
     "intro": "Use this as a general check, not a finding that we have confirmed on your website.",
-    "body": "<p style=\"font-size:15px;line-height:1.7;color:#374151;\">Review your audit's crawler-access findings. If a public page is blocked, ask your developer to review the specific rule. Keep private areas protected. Permission to crawl does not prove a bot visited or indexed a page.</p>",
+    "body": "<p style=\"font-size:15px;line-height:1.7;color:#374151;\">Review your audit's indexability, snippet controls, and crawler-access findings. If a public page is blocked, ask your developer to review the specific rule. Keep private areas protected. Permission to crawl does not prove a bot visited, indexed, or cited a page.</p>",
     "pitch": "Open your dashboard, choose the relevant audit, and check Action plan. Apply this suggestion only if it fits your page and the evidence.",
-    "textBody": "Review your audit's crawler-access findings. If a public page is blocked, ask your developer to review the specific rule. Keep private areas protected. Permission to crawl does not prove a bot visited or indexed a page."
+    "textBody": "Review your audit's indexability, snippet controls, and crawler-access findings. If a public page is blocked, ask your developer to review the specific rule. Keep private areas protected. Permission to crawl does not prove a bot visited, indexed, or cited a page.",
+    "sourceLabel": "Google Search Central: AI features and your website",
+    "sourceUrl": "https://developers.google.com/search/docs/appearance/ai-features",
+    "reviewedAt": "September 2026"
   },
   {
-    "subject": "Make your company easier to understand",
+    "subject": "Add first-party evidence to one important page",
     "preheader": "One practical task for your SEO and GEO work this week.",
-    "title": "Make your company easier to understand",
+    "title": "Add first-party evidence to one important page",
     "intro": "Use this as a general check, not a finding that we have confirmed on your website.",
-    "body": "<p style=\"font-size:15px;line-height:1.7;color:#374151;\">Read your home, about, and product pages together. Do they agree on who you are, what you offer, who it is for, and what makes it different? Fix one conflicting or vague description using facts you can support.</p>",
+    "body": "<p style=\"font-size:15px;line-height:1.7;color:#374151;\">Choose one important claim and add evidence your company can substantiate, such as a documented example, tested workflow, screenshot, interview, or original analysis. Do not invent experience, results, or customer proof.</p>",
     "pitch": "Open your dashboard, choose the relevant audit, and check Action plan. Apply this suggestion only if it fits your page and the evidence.",
-    "textBody": "Read your home, about, and product pages together. Do they agree on who you are, what you offer, who it is for, and what makes it different? Fix one conflicting or vague description using facts you can support."
+    "textBody": "Choose one important claim and add evidence your company can substantiate, such as a documented example, tested workflow, screenshot, interview, or original analysis. Do not invent experience, results, or customer proof.",
+    "sourceLabel": "Cyrus Shepard, Zyppy Signal: Content Effort",
+    "sourceUrl": "https://signal.zyppy.com/p/content-effort",
+    "reviewedAt": "September 2026"
   },
   {
-    "subject": "Answer the buyer's question first",
+    "subject": "Answer one relevant fan-out question",
     "preheader": "One practical task for your SEO and GEO work this week.",
-    "title": "Answer the buyer's question first",
+    "title": "Answer one relevant fan-out question",
     "intro": "Use this as a general check, not a finding that we have confirmed on your website.",
-    "body": "<p style=\"font-size:15px;line-height:1.7;color:#374151;\">Choose one important page. Put a clear answer to its main question near the beginning, then add examples, limitations, and supporting evidence. Keep lists when they make steps easier to follow.</p>",
+    "body": "<p style=\"font-size:15px;line-height:1.7;color:#374151;\">Choose a question that is genuinely relevant to a page and that buyers ask before deciding. Add a clear answer under a useful heading, then support it with examples and evidence. Improve the existing page before creating a separate page for every question.</p>",
     "pitch": "Open your dashboard, choose the relevant audit, and check Action plan. Apply this suggestion only if it fits your page and the evidence.",
-    "textBody": "Choose one important page. Put a clear answer to its main question near the beginning, then add examples, limitations, and supporting evidence. Keep lists when they make steps easier to follow."
+    "textBody": "Choose a question that is genuinely relevant to a page and that buyers ask before deciding. Add a clear answer under a useful heading, then support it with examples and evidence. Improve the existing page before creating a separate page for every question.",
+    "sourceLabel": "Cyrus Shepard, Zyppy Signal: SEO Strategies for AI Search",
+    "sourceUrl": "https://signal.zyppy.com/p/seo-strategies-for-ai-search",
+    "reviewedAt": "September 2026"
   },
   {
-    "subject": "Make the evidence easy to find",
+    "subject": "Show how the work was done",
     "preheader": "One practical task for your SEO and GEO work this week.",
-    "title": "Make the evidence easy to find",
+    "title": "Show how the work was done",
     "intro": "Use this as a general check, not a finding that we have confirmed on your website.",
-    "body": "<p style=\"font-size:15px;line-height:1.7;color:#374151;\">Choose one claim on a key page. Add the real example, methodology, source, or testing details that support it. Do not invent experience or add an updated date without a meaningful update.</p>",
+    "body": "<p style=\"font-size:15px;line-height:1.7;color:#374151;\">Add the real methodology, testing details, screenshots, examples, or interview context behind one useful conclusion. Explain limitations and tradeoffs where they matter. This gives readers something more useful than a summary of common facts.</p>",
     "pitch": "Open your dashboard, choose the relevant audit, and check Action plan. Apply this suggestion only if it fits your page and the evidence.",
-    "textBody": "Choose one claim on a key page. Add the real example, methodology, source, or testing details that support it. Do not invent experience or add an updated date without a meaningful update."
+    "textBody": "Add the real methodology, testing details, screenshots, examples, or interview context behind one useful conclusion. Explain limitations and tradeoffs where they matter. This gives readers something more useful than a summary of common facts.",
+    "sourceLabel": "Cyrus Shepard, Zyppy Signal: Content Effort",
+    "sourceUrl": "https://signal.zyppy.com/p/content-effort",
+    "reviewedAt": "September 2026"
   },
   {
     "subject": "Check that structured data matches the page",
@@ -844,31 +859,42 @@ const AEO_INSIGHTS: InsightTopic[] = [
     "intro": "Use this as a general check, not a finding that we have confirmed on your website.",
     "body": "<p style=\"font-size:15px;line-height:1.7;color:#374151;\">Review the schema findings in your audit. Correct inaccurate markup and make sure it describes visible content. Validate generated code before publishing. Schema is not a guarantee of rankings or AI citations.</p>",
     "pitch": "Open your dashboard, choose the relevant audit, and check Action plan. Apply this suggestion only if it fits your page and the evidence.",
-    "textBody": "Review the schema findings in your audit. Correct inaccurate markup and make sure it describes visible content. Validate generated code before publishing. Schema is not a guarantee of rankings or AI citations."
+    "textBody": "Review the schema findings in your audit. Correct inaccurate markup and make sure it describes visible content. Validate generated code before publishing. Schema is not a guarantee of rankings or AI citations.",
+    "sourceLabel": "Google Search Central: Structured data markup",
+    "sourceUrl": "https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data",
+    "reviewedAt": "September 2026"
   },
   {
-    "subject": "Compare results after a real improvement",
+    "subject": "Check CDN and robots controls together",
     "preheader": "One practical task for your SEO and GEO work this week.",
-    "title": "Compare results after a real improvement",
+    "title": "Check CDN and robots controls together",
     "intro": "Use this as a general check, not a finding that we have confirmed on your website.",
-    "body": "<p style=\"font-size:15px;line-height:1.7;color:#374151;\">Record what you changed and when. Re-audit the same page when you are ready, within your allowance. Pro and Agency users can also review connected Google data and tracked keywords. Changes in results do not establish causation.</p>",
+    "body": "<p style=\"font-size:15px;line-height:1.7;color:#374151;\">If an audit reports blocked AI access, compare robots.txt with your CDN, firewall, or bot-management settings. Change only the specific public-page rule you understand, and keep private areas protected. Access does not guarantee indexing or citation.</p>",
     "pitch": "Open your dashboard, choose the relevant audit, and check Action plan. Apply this suggestion only if it fits your page and the evidence.",
-    "textBody": "Record what you changed and when. Re-audit the same page when you are ready, within your allowance. Pro and Agency users can also review connected Google data and tracked keywords. Changes in results do not establish causation."
+    "textBody": "If an audit reports blocked AI access, compare robots.txt with your CDN, firewall, or bot-management settings. Change only the specific public-page rule you understand, and keep private areas protected. Access does not guarantee indexing or citation.",
+    "sourceLabel": "Cyrus Shepard, Zyppy Signal: SEO Strategies for AI Search",
+    "sourceUrl": "https://signal.zyppy.com/p/seo-strategies-for-ai-search",
+    "reviewedAt": "September 2026"
   }
 ];
+
+export function aeoInsightTopic(weekIndex: number): InsightTopic {
+  const idx = ((weekIndex % AEO_INSIGHTS.length) + AEO_INSIGHTS.length) % AEO_INSIGHTS.length;
+  return AEO_INSIGHTS[idx];
+}
 
 export function aeoInsightsEmail(firstName: string, weekIndex: number, unsubscribeUrl?: string) {
   // Pick topic by week-of-year so a user receives a different topic every
   // week and only sees a repeat after the full library cycles. Modulo
   // guards against any negative or out-of-range week index.
-  const idx = ((weekIndex % AEO_INSIGHTS.length) + AEO_INSIGHTS.length) % AEO_INSIGHTS.length;
-  const topic = AEO_INSIGHTS[idx];
+  const topic = aeoInsightTopic(weekIndex);
   const safeFirstName = esc(firstName) || "there";
   const html = layout(
     `${h1(topic.title)}
     ${p(`Hi ${safeFirstName},`)}
     ${p(topic.intro)}
     ${topic.body}
+    ${p(`Source: <a href="${esc(topic.sourceUrl)}" style="color:${BRAND_COLOR};font-weight:600;">${esc(topic.sourceLabel)}</a>. Reviewed ${esc(topic.reviewedAt)}. This is attributed guidance, not a ranking or citation guarantee.`, "color:#6b7280;font-size:13px;")}
     ${divider()}
     <div style="background:#f0fdf4;border:1px solid #a7f3d0;border-radius:8px;padding:16px 20px;margin:0 0 20px;">
       <div style="font-size:12px;font-weight:600;color:${BRAND_COLOR};text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;">Try it on your site</div>
@@ -881,7 +907,7 @@ export function aeoInsightsEmail(firstName: string, weekIndex: number, unsubscri
     topic.preheader,
     unsubscribeUrl,
   );
-  const text = `Hi ${firstName || "there"},\n\n${topic.title}\n\n${topic.textBody}\n\n- Try it on your site: ${topic.pitch}\n\nOpen AEO Improvement: ${BASE_URL}/\n\nReply with what you'd like to read about next week.`;
+  const text = `Hi ${firstName || "there"},\n\n${topic.title}\n\n${topic.textBody}\n\nSource: ${topic.sourceLabel}: ${topic.sourceUrl} (reviewed ${topic.reviewedAt}). This is attributed guidance, not a ranking or citation guarantee.\n\n- Try it on your site: ${topic.pitch}\n\nOpen AEO Improvement: ${BASE_URL}/\n\nReply with what you'd like to read about next week.`;
   return { subject: topic.subject, html, text };
 }
 

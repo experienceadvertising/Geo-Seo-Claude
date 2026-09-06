@@ -5,6 +5,26 @@
   "archiveNote": "Earlier release notes retain their original recorded dates. Descriptions were clarified on September 5, 2026 to remove unsupported performance and visibility claims. Historical offers are not current plan entitlements.",
   "entries": [
     {
+      "slug": "useful-browser-notifications",
+      "isoDate": "2026-09-06",
+      "badge": "Improvement",
+      "title": "Useful browser notifications for tasks, changes, and sourced strategies",
+      "summary": "Users who explicitly enable browser notifications can receive timely product work without exposing sensitive audit details on a lock screen.",
+      "audience": "Users who enable browser notifications in a supported browser",
+      "items": [
+        "Send audit-ready and simulation-ready updates with a link to the relevant result or next task.",
+        "Alert users when scheduled monitoring detects a material score change, without putting the score or website address in the notification.",
+        "Deliver one weekly SEO and GEO strategy credited to Google Search Central, Zyppy Signal, or another named authority source in the maintained strategy library."
+      ],
+      "links": [
+        {
+          "label": "Review the methodology and sources",
+          "href": "/methodology"
+        }
+      ],
+      "evidence": "Notification payload tests, scheduler tests, browser opt-in QA, and privacy-copy review completed before release. Notifications remain opt-in."
+    },
+    {
       "slug": "evidence-led-implementation-guides",
       "isoDate": "2026-09-05",
       "badge": "Improvement",

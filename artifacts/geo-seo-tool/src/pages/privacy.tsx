@@ -20,7 +20,7 @@ const sections = [
       "Provide audits, simulations, recommendations, monitoring, billing, support, and account communications.",
       "Protect accounts, prevent abuse, diagnose failures, and improve product reliability.",
       "Measure which marketing campaigns lead to signups and useful product activity when you grant analytics consent.",
-      "Send audit-ready and next-task browser notifications only after you explicitly enable them on a supported browser. A notification may include a short recommendation title, but not page excerpts, audit scores, or search queries.",
+      "Send browser notifications only after you explicitly enable them on a supported browser. These can include important audit and monitoring updates, a short next-task title, and one weekly strategy credited to a named authority source. They never include page excerpts, audit scores, or search queries.",
       "Comply with legal obligations and enforce our Terms of Service.",
     ],
   },
@@ -59,7 +59,7 @@ const sections = [
       "Choose Essential only in the cookie notice to prevent analytics and advertising tags from loading.",
       "Disconnect Google integrations from the product and manage third-party permissions from the relevant provider.",
       "Use unsubscribe links in marketing emails. Essential service, security, and billing messages may still be sent while your account remains active.",
-      "Turn browser notifications off from the browser where you enabled them. Expired or rejected browser endpoints are removed after the push provider reports that they no longer work.",
+      "Turn browser notifications off from the browser where you enabled them. Scheduled notifications are limited to a weekly task and one weekly authority-source strategy; completed audits, simulations, and material monitoring changes can trigger separate event updates. Expired or rejected browser endpoints are removed after the push provider reports that they no longer work.",
     ],
   },
 ];

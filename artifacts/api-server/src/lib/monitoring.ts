@@ -1,9 +1,12 @@
 import { and, eq, lte, or, isNull, asc } from "drizzle-orm";
-import { db, pool, monitoredSitesTable, usersTable, type MonitoredSite } from "@workspace/db";
+import { db, pool, monitoredSitesTable, recommendationProgressTable, usersTable, type MonitoredSite } from "@workspace/db";
 import { runAndStoreAudit } from "./auditRunner";
 import { getUserPlan, PLAN_LIMITS } from "./planUtils";
 import { EmailService } from "./emailService";
 import { logger } from "./logger";
+import { PushService } from "./pushService";
+import { selectPersonalizedAction } from "./personalizedAction";
+import { materialMonitoringPush } from "./pushPayload";
 
 const log = logger.child({ module: "monitoring" });
 
@@ -89,6 +92,17 @@ export async function runMonitoredSite(site: MonitoredSite): Promise<MonitoredRu
       }
     } catch (err) {
       log.error({ err, siteId: site.id }, "monitor.score-changed email failed");
+    }
+
+    try {
+      const domain = new URL(site.url).hostname.toLowerCase().replace(/^www\./, "");
+      const completedRows = await db.select({ id: recommendationProgressTable.recommendationId })
+        .from(recommendationProgressTable)
+        .where(and(eq(recommendationProgressTable.userId, site.userId), eq(recommendationProgressTable.domain, domain)));
+      const next = selectPersonalizedAction(stored.analysis.recommendations ?? [], new Set(completedRows.map(row => row.id)));
+      await PushService.sendToUser(site.userId, materialMonitoringPush(stored.id, next));
+    } catch (err) {
+      log.warn({ err, siteId: site.id }, "monitor.score-changed browser notification failed");
     }
   }
 
