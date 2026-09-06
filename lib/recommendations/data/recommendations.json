@@ -149,9 +149,9 @@
   },
   {
     "id": "direct-answer-block",
-    "titleTemplate": "Lead with a 40-60 word direct answer",
-    "claim": "Generative engines extract opening statements far more often than buried conclusions, making the first paragraph the highest-leverage location for a direct definitional answer.",
-    "severity": "critical",
+    "titleTemplate": "Give this page a direct opening summary",
+    "claim": "A concise opening summary can help readers and retrieval systems understand the page without requiring a rigid sentence formula.",
+    "severity": "high",
     "category": "answerability",
     "expectedLift": null,
     "sourceType": "practitioner_consensus",
@@ -159,9 +159,10 @@
     "sourceCitation": "Practitioner consensus 2025-2026 (Frase, Profound, Search Engine Land); aligns with classical featured-snippet optimization literature.",
     "verified": false,
     "lastVerifiedAt": null,
-    "lastReviewedAt": "2026-05-04",
-    "expiresAt": "2026-11-04",
-    "updatedAt": "2026-05-04"
+    "lastReviewedAt": "2026-09-06",
+    "expiresAt": "2027-03-06",
+    "updatedAt": "2026-09-06",
+    "notes": "Use this as a reader-first clarity recommendation, not a requirement to begin with a definition or to hit an exact word count."
   },
   {
     "id": "answer-capsules",
