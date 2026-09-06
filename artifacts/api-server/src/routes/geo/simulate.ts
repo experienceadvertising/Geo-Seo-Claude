@@ -226,6 +226,7 @@ router.post("/geo/simulate", requireAuth, simulateRateLimiter, async (req, res):
           summary.overallVisibilityScore ?? 0,
           auditId,
           unsubscribeUrl,
+          { answers: results.flatMap(row => row.engines.map(answer => ({ error: answer.error, brandMentioned: answer.brandMentioned, domainCited: answer.domainCited }))) },
         );
       })
       .catch((err) => req.log.error({ err, userId: req.userId }, "simulation-complete email failed"));

@@ -28,6 +28,7 @@ import {
   referralRewardEmail,
   referralRewardPendingEmail,
   type WeeklyDigestData,
+  type SimulationEmailContext,
   type MonthlyReportData,
 } from "./emailTemplates";
 
@@ -232,8 +233,9 @@ export const EmailService = {
     visibilityScore: number,
     auditId: number | null | undefined,
     unsubscribeUrl?: string,
+    context?: SimulationEmailContext,
   ): Promise<boolean> {
-    const { subject, html, text } = simulationCompleteEmail(firstName, domain, visibilityScore, auditId, unsubscribeUrl);
+    const { subject, html, text } = simulationCompleteEmail(firstName, domain, visibilityScore, auditId, unsubscribeUrl, context);
     return send(email, subject, html, text, "simulation-complete", unsubscribeUrl);
   },
 
