@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { ScoreBadge } from "@/components/score-badge";
 import { SourceBadge } from "@/components/source-badge";
 import { ImplementationGuide } from "@/components/implementation-guide";
+import { SiteRewrite } from "@/components/site-rewrite";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info } from "lucide-react";
 
@@ -39,6 +40,7 @@ import { usePlan } from "@/hooks/usePlan";
 import { UpgradePrompt } from "@/components/upgrade-prompt";
 import { getAuditDeepLinkState } from "@/lib/audit-deep-link";
 import { sameAuditPage } from "@/lib/auditProgress";
+import { friendlyRecommendationCategory, recommendationChannels, recommendationScope } from "@/lib/action-plan";
 
 export default function Results({ view = "audit", auditId }: { view?: "audit" | "actions"; auditId?: number } = {}) {
   const params = useParams<{ id: string }>();
@@ -282,7 +284,11 @@ export default function Results({ view = "audit", auditId }: { view?: "audit" | 
         <title>{view === "actions" ? "Action plan | AEO Improvement" : "Audit results | AEO Improvement"}</title>
         <meta name="robots" content="noindex,nofollow" />
       </Helmet>
-      {view === "actions" && <header><p className="mt-2 text-muted-foreground">SEO and AI-search improvements for {domain}. Choose one task, follow its instructions, then record what you changed.</p><Link href={`/results/${id}`} className="mt-2 inline-block text-primary underline">View the full audit</Link></header>}
+      {view === "actions" && <header className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-4">
+        <p className="font-semibold">Action list for {displayUrl(audit.url)}</p>
+        <p className="mt-1 text-sm text-muted-foreground">These tasks were triggered by the page and site signals saved in this audit. Page findings and shared site controls are labeled separately below.</p>
+        <Link href={`/results/${id}`} className="mt-2 inline-block text-sm font-semibold text-primary underline">Review all scan evidence</Link>
+      </header>}
       {view === "audit" && <>
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 border-b pb-6">
@@ -675,15 +681,27 @@ export default function Results({ view = "audit", auditId }: { view?: "audit" | 
               if (!task) return null;
               const done = completedRecommendationIds.has(task.id);
               const recorded = recommendationProgress?.completed.find((item) => item.recommendationId === task.id);
+              const taskScope = recommendationScope(task.id);
+              const taskChannels = recommendationChannels(task.category, task.id);
               return <section className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50/50 p-5" aria-label="Selected improvement">
                 <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Work on this improvement</p>
                 <h3 className="mt-2 text-lg font-semibold">{task.title}</h3>
-                <p className="mt-2 text-sm">{task.detail}</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <span className="rounded-full border bg-background px-2 py-0.5 text-[11px] font-semibold">{taskScope}</span>
+                  {taskChannels.map((channel) => <span key={channel} className="rounded-full border border-teal-200 bg-teal-50 px-2 py-0.5 text-[11px] font-semibold text-teal-800">{channel}</span>)}
+                </div>
+                <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Target</p>
+                <a href={audit.url} target="_blank" rel="noopener noreferrer" className="mt-1 block break-all text-sm font-medium text-primary underline">{taskScope === "Site control" ? domain : displayUrl(audit.url)}</a>
+                <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-slate-500">What this scan found and what to change</p>
+                <p className="mt-1 text-sm">{task.detail}</p>
+                <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Why it matters</p>
+                <p className="mt-1 text-sm text-muted-foreground">{task.impact}</p>
+                <SiteRewrite recommendation={task} audit={audit} />
+                <ImplementationGuide id={task.id} open />
                 <ol className="mt-4 list-decimal space-y-2 pl-5 text-sm text-muted-foreground">
-                  <li>Open <a href={audit.url} target="_blank" rel="noopener noreferrer" className="text-primary underline">the audited page</a> in your website editor. Make the change above and check it on desktop and mobile.</li>
-                  <li>Publish the change on your website. This tool does not publish website edits for you.</li>
-                  <li>Mark this task done, then re-audit this same URL using the Re-scan button above.</li>
-                  <li>Review SEO opportunities for subsequent rankings and Search Console movement. A change in performance does not prove this fix caused it.</li>
+                  <li>Publish the approved change through your normal website workflow.</li>
+                  <li>Mark this task done and record what changed.</li>
+                  <li>Re-scan this URL, then review SEO and AI-visibility trends without assuming causation.</li>
                 </ol>
                 {recorded && !progressError && <p className="mt-3 text-sm text-emerald-800">You marked this done on {new Date(recorded.completedAt).toLocaleDateString()}. Completion is self-reported, not independently verified.</p>}
                 {!done && <label className="mt-4 block text-sm">Implementation note (optional)<textarea className="mt-2 block w-full rounded border bg-background p-3" maxLength={1000} value={taskNotes[task.id] ?? ""} onChange={event => setTaskNotes(notes => ({ ...notes, [task.id]: event.target.value }))} placeholder="What did you change, and on which page?" /><span className="text-xs text-muted-foreground">Progress is shared across this site's audits. Your note may appear in your weekly email.</span></label>}
@@ -702,7 +720,13 @@ export default function Results({ view = "audit", auditId }: { view?: "audit" | 
             )}
             {(() => {
               const schemaV1 = audit.recommendationsSchemaVersion === "v1";
-              const allRecs = visibleRecommendations(audit.recommendations, completedRecommendationIds, recommendationFilter, showAllRecommendations);
+              const visibleRecs = visibleRecommendations(audit.recommendations, completedRecommendationIds, recommendationFilter, showAllRecommendations);
+              // A deep-linked task already has the full working panel above.
+              // Keep the list focused on what comes next instead of repeating
+              // the same long explanation and rewrite twice.
+              const allRecs = focusedTaskId
+                ? visibleRecs.filter((recommendation) => recommendation.id !== focusedTaskId)
+                : visibleRecs;
               const researchRecs = allRecs.filter(r => r.source?.type === "research" || r.source?.type === "internal_benchmark");
               // Everything that isn't research-backed (practitioner consensus,
               // expert guidance, or untagged) — a positive-list here silently
@@ -717,32 +741,40 @@ export default function Results({ view = "audit", auditId }: { view?: "audit" | 
                   : "bg-slate-100 text-slate-600 border-slate-200";
                 const showBadge = schemaV1 && r.source;
                 const done = completedRecommendationIds.has(r.id);
+                const scope = recommendationScope(r.id);
+                const channels = recommendationChannels(r.category, r.id);
                 return (
-                  <li key={r.id ?? i} className={`flex items-start gap-3 text-sm ${done ? "opacity-65" : ""}`}>
-                    <button
-                      type="button"
-                      className={`mt-0.5 h-5 w-5 shrink-0 rounded border flex items-center justify-center ${done ? "bg-emerald-600 border-emerald-600 text-white" : "border-muted-foreground/40 hover:border-emerald-600"}`}
-                      aria-label={done ? `Mark ${r.title} as not done` : `Mark ${r.title} as done`}
-                      title={done ? "Mark as not done" : "Mark as done"}
-                      disabled={needsRefresh || !r.id || progressLoading || progressError || updateRecommendation.isPending}
-                      onClick={() => updateRecommendation.mutate({ recommendationId: r.id, completed: !done })}
-                    >
-                      {done && <Check className="h-3.5 w-3.5" />}
-                    </button>
-                    <span className={`shrink-0 inline-flex items-center justify-center px-2 py-0.5 rounded border text-[10px] font-mono font-bold uppercase ${pStyle}`}>
-                      {r.priority}
-                    </span>
-                    <div className="flex-1 min-w-0">
+                  <li key={r.id ?? i} className={`rounded-xl border bg-background p-4 text-sm ${done ? "opacity-65" : ""}`}>
+                    <div className="flex items-start gap-3">
+                      <button
+                        type="button"
+                        className={`mt-0.5 h-5 w-5 shrink-0 rounded border flex items-center justify-center ${done ? "bg-emerald-600 border-emerald-600 text-white" : "border-muted-foreground/40 hover:border-emerald-600"}`}
+                        aria-label={done ? `Mark ${r.title} as not done` : `Mark ${r.title} as done`}
+                        title={done ? "Mark as not done" : "Mark as done"}
+                        disabled={needsRefresh || !r.id || progressLoading || progressError || updateRecommendation.isPending}
+                        onClick={() => updateRecommendation.mutate({ recommendationId: r.id, completed: !done })}
+                      >
+                        {done && <Check className="h-3.5 w-3.5" />}
+                      </button>
+                      <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className={`font-semibold text-foreground ${done ? "line-through" : ""}`}>{r.title}</span>
                         {showBadge && r.source && <SourceBadge source={r.source} />}
                       </div>
-                      <div className="text-[11px] text-muted-foreground italic mt-0.5">
-                        {r.category} · {r.impact}
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <span className={`inline-flex items-center justify-center rounded border px-2 py-0.5 text-[10px] font-mono font-bold uppercase ${pStyle}`}>{r.priority}</span>
+                        <span className="rounded-full border px-2 py-0.5 text-[11px] font-medium">{scope}</span>
+                        {channels.map((channel) => <span key={channel} className="rounded-full border border-teal-200 bg-teal-50 px-2 py-0.5 text-[11px] font-semibold text-teal-800">{channel}</span>)}
+                        <span className="rounded-full border px-2 py-0.5 text-[11px] text-muted-foreground">{friendlyRecommendationCategory(r.category)}</span>
                       </div>
-                      <p className="text-sm text-muted-foreground leading-snug mt-1">{r.detail}</p>
+                      <p className="mt-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500">What this scan found and what to change</p>
+                      <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{r.detail}</p>
+                      <p className="mt-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500">Why it matters</p>
+                      <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{r.impact}</p>
+                      <SiteRewrite recommendation={r} audit={audit} />
                       <ImplementationGuide id={r.id} />
                       {r.id && <Link href={`/actions/${id}?task=${encodeURIComponent(r.id)}#recommendations`} className="mt-2 inline-block text-xs font-semibold text-primary hover:underline">{done ? "Review completed task" : "Work through this task"} →</Link>}
+                      </div>
                     </div>
                   </li>
                 );
@@ -750,7 +782,7 @@ export default function Results({ view = "audit", auditId }: { view?: "audit" | 
 
               return (
                 <>
-                  {allRecs.length === 0 && (
+                  {allRecs.length === 0 && !focusedTaskId && (
                     <div className="py-8 text-center text-sm text-muted-foreground">
                       {recommendationFilter === "open" ? "Everything in this audit is complete. Re-scan to find the next opportunities." : "No recommendations in this view."}
                     </div>

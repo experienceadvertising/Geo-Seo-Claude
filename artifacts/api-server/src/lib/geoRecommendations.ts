@@ -105,17 +105,37 @@ const AUTHORITY_DOMAINS = [
 
 const QUESTION_WORD_RE = /^(?:who|what|when|where|why|how|which|is|are|do|does|can|should|will)\b/i;
 
+function isIdentityPageUrl(url: string): boolean {
+  try {
+    const path = new URL(url).pathname.replace(/\/+$/, "") || "/";
+    return path === "/" || /^\/(?:about|company|product|products|solution|solutions|service|services)(?:\/|$)/i.test(path);
+  } catch {
+    return false;
+  }
+}
+
 export function extractContentSignals($: cheerio.CheerioAPI, url: string, brandName: string | null, canonicalWordCount?: number): ContentSignals {
   const bodyText = $("body").text().replace(/\s+/g, " ").trim();
   const localWordCount = bodyText.split(/\s+/).filter(Boolean).length;
   const wordCount = typeof canonicalWordCount === "number" && canonicalWordCount > 0 ? canonicalWordCount : localWordCount;
 
-  // Direct answer opening: first <p> after first heading begins with definition pattern
+  // Direct opening: accept a concise definition, answer, or clear value
+  // proposition. Requiring every useful page to begin with "X is" produced
+  // false positives on homepages and service pages that state the offer in a
+  // headline plus supporting sentence.
   const firstParas = $("p").slice(0, 3).map((_, el) => $(el).text().trim()).get().join(" ");
   const opening = firstParas.split(/\s+/).slice(0, 60).join(" ");
+  const leadHeading = $("h1").first().text().replace(/\s+/g, " ").trim();
+  const leadText = `${leadHeading} ${opening}`.trim();
+  const openingWordCount = opening.split(/\s+/).filter(Boolean).length;
+  const hasClearOfferLead = isIdentityPageUrl(url) &&
+    openingWordCount >= 8 && openingWordCount <= 100 &&
+    /\b(?:agency|consultancy|consulting|platform|software|service|services|tool|company|provider|specialist|experts?)\b/i.test(leadText) &&
+    /\b(?:help|helps|helping|manage|manages|build|builds|provide|provides|offer|offers|specialize|specializes|optimize|improve|grow|scale|connect|reduce|increase)\b/i.test(leadText);
   const hasDirectAnswerOpening =
     /^[A-Z][\w\s,'-]{2,40}\s+(?:is|are|refers? to|means?)\s+(?:a|an|the|\d)/i.test(opening) ||
-    /^(?:The\s+best|The\s+most|To\s+\w+,?\s+(?:you|the))/i.test(opening);
+    /^(?:The\s+best|The\s+most|To\s+\w+,?\s+(?:you|the))/i.test(opening) ||
+    hasClearOfferLead;
 
   // Statistics: percentages, money amounts, large numbers, ratios, dates with "by"
   const statRegex = /\b\d+(?:[.,]\d+)?\s*(?:%|percent|x|×)|\$\s?\d{1,3}(?:[,.]\d{3})*(?:\.\d+)?(?:\s*(?:million|billion|trillion|k|m|b))?|\b\d{1,3}(?:,\d{3})+\b|\b\d+\s+(?:out\s+of|in)\s+\d+\b/gi;
@@ -272,11 +292,7 @@ export function extractContentSignals($: cheerio.CheerioAPI, url: string, brandN
   // description that ties the brand to a category and a customer, problem, or
   // differentiator. This deliberately uses a broad heuristic: it identifies
   // a missing positioning statement, not whether the positioning is persuasive.
-  let isIdentityPage = false;
-  try {
-    const path = new URL(url).pathname.replace(/\/+$/, "") || "/";
-    isIdentityPage = path === "/" || /^\/(?:about|company|product|products|solution|solutions|service|services)(?:\/|$)/i.test(path);
-  } catch { /* invalid URL is handled elsewhere */ }
+  const isIdentityPage = isIdentityPageUrl(url);
   const openingFacts = bodyText.slice(0, 1800);
   const escapedBrand = brandName?.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const statesCategory = escapedBrand
@@ -587,7 +603,7 @@ export function generateGeoRecommendations(ctx: RecommendationContext): GeoRecom
   // === DIRECT ANSWERABILITY ===
   if (!s.hasDirectAnswerOpening) {
     recs.push(composeRec("direct-answer-block", {
-      detail: "The opening doesn't begin with a definition pattern (\"X is...\", \"The best Y for Z is...\"). A concise opening answer gives search and AI systems a clearer summary to retrieve. Rewrite the first paragraph to answer the page's core question immediately.",
+      detail: "The scan did not find a concise opening summary that clearly states this page's main answer, offer, or outcome. Add a useful summary near the start when it helps the reader. The page does not need to follow an artificial \"X is\" sentence formula.",
     }));
   }
 

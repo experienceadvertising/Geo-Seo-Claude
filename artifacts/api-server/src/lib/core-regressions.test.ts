@@ -582,6 +582,17 @@ test("brand-facts detection recognises an audience/problem statement in the open
   assert.equal(signals.hasBrandFactsStatement, true);
 });
 
+test("a clear homepage offer counts as a direct opening without an artificial definition formula", () => {
+  const $ = cheerio.load(`
+    <html><body><main>
+      <h1>Performance marketing that scales</h1>
+      <p>Our agency helps ecommerce brands manage Google and Meta campaigns with practical senior guidance.</p>
+    </main></body></html>
+  `);
+  const signals = extractContentSignals($, "https://acme.com/", "Acme");
+  assert.equal(signals.hasDirectAnswerOpening, true);
+});
+
 test("JSON error handler preserves client-caused statuses and hides internals", () => {
   type Sent = { status: number; body: unknown };
   const run = (err: unknown): Sent => {

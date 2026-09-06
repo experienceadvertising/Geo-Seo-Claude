@@ -348,8 +348,6 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
       // leaked into body-text word counts, filler/keyword-stuffing checks,
       // and the "visible content" excerpt handed to the LLM.
       $("script, style, noscript, template").remove();
-      $page = $;
-
       title = $("title").first().text().trim() || null;
       description =
         $("meta[name='description']").attr("content") ||
@@ -426,6 +424,11 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
         ].filter(Boolean).join(" ").toLowerCase();
         return /cookie|consent|onetrust|trustarc|didomi|privacy[-_ ]?(?:banner|notice|settings|choices)|gdpr|\bcmp\b/.test(marker);
       }).remove();
+
+      // Keep the saved excerpt, headings, and recommendation triggers scoped
+      // to the actual page content. Header, footer, navigation, cookie text,
+      // and other chrome must not become evidence in a user's Action Plan.
+      $page = cheerio.load(`<main>${$contentScope.html() || ""}</main>`);
 
       const contentBlocks: { heading: string | null; content: string }[] = [];
       let currentHeading: string | null = "Introduction";

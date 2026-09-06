@@ -1,8 +1,8 @@
 import { getImplementationGuide } from "../../../../lib/recommendations/src/implementation";
 
-export function ImplementationGuide({ id }: { id?: string }) {
+export function ImplementationGuide({ id, open = false }: { id?: string; open?: boolean }) {
   const guide = getImplementationGuide(id);
-  return <details className="mt-3 rounded-lg border p-3 text-sm">
+  return <details open={open} className="mt-3 rounded-lg border p-3 text-sm">
     <summary className="cursor-pointer font-semibold">How to implement and verify</summary>
     <p className="mt-3"><strong>Who can help:</strong> {guide.owner}</p>
     <ol className="mt-3 list-decimal pl-5 space-y-2">{guide.steps.map(step => <li key={step}>{step}</li>)}</ol>

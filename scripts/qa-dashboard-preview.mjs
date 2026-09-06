@@ -13,7 +13,7 @@ const port = Number(process.env.QA_PORT || 4184);
 const audit = { id: 1, url: 'https://example.com/', geoScore: 54, createdAt: '2026-09-04T12:00:00Z', recommendations: [{ id: 'direct-answer-block', title: 'Answer a relevant buyer question', detail: 'Help visitors choose the right option.', category: 'structure', priority: 'high' }, { id: 'content-effort-methodology', title: 'Show how the service works', detail: 'Add verified methodology details.', category: 'depth', priority: 'medium' }] };
 Object.assign(audit, {
   scores: { citability: 50, brandAuthority: 50, aiCrawlerAccess: 75, technicalSeo: 60, structuredData: 40, platformOptimization: 50 },
-  title: 'Local test page', brandName: 'Example', recommendationsSchemaVersion: 'v1',
+  title: 'Analytics Consulting | Example', description: 'We help growth teams find and fix gaps in their analytics.', brandName: 'Example', recommendationsSchemaVersion: 'v1',
   crawlers: [], platforms: [], citabilityBlocks: [], quickWins: [], technicalIssues: [], schemaTypes: [],
   brandSignals: [], aiInsights: null, wordCount: 500, rawHtmlWordCount: 500,
 });
