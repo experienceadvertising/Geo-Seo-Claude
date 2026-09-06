@@ -83,6 +83,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [fetchUser]);
 
   const signOut = useCallback(async () => {
+    // Stop this device receiving the previous account's tasks after sign-out.
+    // Browser revocation is independent of server cleanup if the network fails.
+    if ("serviceWorker" in navigator) {
+      try {
+        const registration = await navigator.serviceWorker.getRegistration("/push-sw.js");
+        const subscription = await registration?.pushManager.getSubscription();
+        if (subscription) {
+          try { await customFetch("/api/notifications/subscription", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ endpoint: subscription.endpoint }) }); } catch { /* revoked locally below */ }
+          await subscription.unsubscribe();
+        }
+      } catch { /* Sign-out must remain available if the browser API fails. */ }
+    }
     try {
       await customFetch("/api/auth/logout", { method: "POST" });
     } catch { /* ignore */ }

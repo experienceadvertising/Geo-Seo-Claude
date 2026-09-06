@@ -3,6 +3,7 @@ import { sql } from "drizzle-orm";
 
 /** Small app-owned migrations for product tables not managed by Stripe. */
 export async function runProductMigrations(): Promise<void> {
+  await db.execute(sql`ALTER TABLE IF EXISTS scheduled_job_items ADD COLUMN IF NOT EXISTS delivery_outcomes JSONB`);
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS processed_webhook_events (
       event_id TEXT PRIMARY KEY,
@@ -22,10 +23,10 @@ export async function runProductMigrations(): Promise<void> {
       completed_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
   `);
-  await db.execute(sql`
-    CREATE UNIQUE INDEX IF NOT EXISTS recommendation_progress_user_domain_rec_uq
-    ON recommendation_progress (user_id, domain, recommendation_id)
-  `);
+  await db.execute(sql`ALTER TABLE recommendation_progress ADD COLUMN IF NOT EXISTS page_url TEXT NOT NULL DEFAULT ''`);
+  // Keep legacy records and notes. Their page cannot safely be inferred.
+  await db.execute(sql`CREATE UNIQUE INDEX IF NOT EXISTS recommendation_progress_user_page_rec_uq ON recommendation_progress (user_id, domain, page_url, recommendation_id)`);
+  await db.execute(sql`DROP INDEX IF EXISTS recommendation_progress_user_domain_rec_uq`);
   await db.execute(sql`
     CREATE INDEX IF NOT EXISTS recommendation_progress_user_domain_idx
     ON recommendation_progress (user_id, domain)
@@ -80,4 +81,7 @@ export async function runProductMigrations(): Promise<void> {
   `);
   await db.execute(sql`CREATE UNIQUE INDEX IF NOT EXISTS push_subscriptions_endpoint_uq ON push_subscriptions (endpoint)`);
   await db.execute(sql`CREATE INDEX IF NOT EXISTS push_subscriptions_user_idx ON push_subscriptions (user_id)`);
+  await db.execute(sql`ALTER TABLE push_subscriptions ADD COLUMN IF NOT EXISTS tasks_enabled BOOLEAN NOT NULL DEFAULT TRUE`);
+  await db.execute(sql`ALTER TABLE push_subscriptions ADD COLUMN IF NOT EXISTS monitoring_enabled BOOLEAN NOT NULL DEFAULT TRUE`);
+  await db.execute(sql`ALTER TABLE push_subscriptions ADD COLUMN IF NOT EXISTS strategies_enabled BOOLEAN NOT NULL DEFAULT TRUE`);
 }

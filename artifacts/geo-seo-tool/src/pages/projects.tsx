@@ -320,6 +320,8 @@ export default function ProjectsPage() {
   });
 
   const sites = data?.sites ?? [];
+  const pageIdentity = (raw: string) => { try { const u = new URL(raw); return `${u.protocol}//${u.hostname.replace(/^www\./, "")}${u.pathname.replace(/\/+$/, "")}${u.search}`; } catch { return raw; } };
+  const possibleDuplicates = sites.filter((site, index) => sites.findIndex(other => pageIdentity(other.url) === pageIdentity(site.url)) !== index);
   const limit = data?.limit ?? 0;
   const dailyLimit = data?.dailyLimit ?? 0;
   const dailyUsed = sites.filter((site) => site.frequency === "daily").length;
@@ -343,9 +345,10 @@ export default function ProjectsPage() {
         <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
           <Bell className="h-6 w-6 text-emerald-600" /> Sites and tracking
         </h1>
+        {possibleDuplicates.length > 0 && <p role="status" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm">Some monitored entries appear to be www/non-www versions of the same page. Review their schedules and keep the entry you need. Nothing has been removed and audit history is preserved.</p>}
         <p className="text-muted-foreground text-sm max-w-2xl">
           Monitor the sites and search performance that matter. Scheduled audits, crawler activity, and Google data
-          stay together here. Open an audit result to add keywords and review DataForSEO ranking history.
+          stay together here. Open SEO performance in the sidebar to add keywords and review DataForSEO ranking history.
         </p>
       </div>
 

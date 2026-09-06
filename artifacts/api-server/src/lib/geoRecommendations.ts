@@ -565,10 +565,9 @@ export function generateGeoRecommendations(ctx: RecommendationContext): GeoRecom
   }
 
   if (s.currentYearStatCount === 0 && s.statisticCount > 0) {
-    const yr = new Date().getFullYear();
     recs.push(composeRec("current-year-stats", {
-      title: `Cite ${yr - 1}/${yr} statistics`,
-      detail: `Statistics exist on the page but none are tied to ${yr - 1} or ${yr}. AI engines (especially Perplexity & Google AI Overviews) heavily favor recent data — replace older figures with current-year numbers and cite their source.`,
+      title: "Review time-sensitive facts and sources",
+      detail: "The scan did not detect recent dates beside statistics. Check whether those figures are still accurate and relevant. Replace outdated information with reliable sources, but keep older evidence when it remains useful. A newer date alone does not establish quality or improve rankings.",
     }));
   }
 

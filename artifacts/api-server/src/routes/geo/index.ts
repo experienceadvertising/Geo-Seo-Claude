@@ -22,6 +22,8 @@ import { consumeQuota, refundQuota, currentYearMonth, markApproachingNotified } 
 import { db as appDb, usersTable } from "@workspace/db";
 import { sql } from "drizzle-orm";
 import { discoverImportantPages } from "../../lib/sitePageDiscovery";
+import { readRecommendationProgress } from "../../lib/recommendationProgress";
+import { recommendationPageKey, sharedRecommendation, currentRecommendationCopy } from "@workspace/recommendations";
 
 /** Escape LIKE metacharacters (%, _, \) so a user-supplied domain/host is
  * matched literally and can't turn into a wildcard scan. Postgres LIKE treats
@@ -107,15 +109,11 @@ function normalizeDomain(raw: string): string | null {
 router.get("/geo/recommendation-progress", requireAuth, readRateLimiter, async (req, res): Promise<void> => {
   const domain = normalizeDomain(String(req.query.domain || ""));
   if (!domain) { res.status(400).json({ error: "Valid domain required" }); return; }
-  const rows = await db.select({
-    recommendationId: recommendationProgressTable.recommendationId,
-    completedAt: recommendationProgressTable.completedAt,
-    implementationNote: recommendationProgressTable.implementationNote,
-  }).from(recommendationProgressTable).where(and(
-    eq(recommendationProgressTable.userId, req.userId!),
-    eq(recommendationProgressTable.domain, domain),
-  ));
-  res.json({ domain, completed: rows.map((row) => ({ ...row, completedAt: row.completedAt.toISOString() })) });
+  const pageUrl = String(req.query.pageUrl || "");
+  if (pageUrl && normalizeDomain(pageUrl) !== domain) { res.status(400).json({ error: "Page must belong to this site" }); return; }
+  const rows = await readRecommendationProgress(req.userId!, domain, pageUrl);
+  const legacy = pageUrl ? await db.select({ recommendationId: recommendationProgressTable.recommendationId, implementationNote: recommendationProgressTable.implementationNote, completedAt: recommendationProgressTable.completedAt }).from(recommendationProgressTable).where(and(eq(recommendationProgressTable.userId, req.userId!), eq(recommendationProgressTable.domain, domain), eq(recommendationProgressTable.pageUrl, ""))) : [];
+  res.json({ domain, completed: rows.map((row) => ({ recommendationId: row.recommendationId, implementationNote: row.implementationNote, completedAt: row.completedAt.toISOString() })), legacy: legacy.filter(row => !sharedRecommendation(row.recommendationId)).map(row => ({ ...row, completedAt: row.completedAt.toISOString() })) });
 });
 
 router.post("/geo/recommendation-progress", requireAuth, readRateLimiter, async (req, res): Promise<void> => {
@@ -129,18 +127,25 @@ router.post("/geo/recommendation-progress", requireAuth, readRateLimiter, async 
     res.status(400).json({ error: "Valid domain and recommendation ID required" });
     return;
   }
+  let pageUrl = "";
+  if (!sharedRecommendation(recommendationId)) {
+    try { pageUrl = recommendationPageKey(String(req.body?.pageUrl || "")); }
+    catch { res.status(400).json({ error: "The audited page URL is required to save this task" }); return; }
+    if (normalizeDomain(pageUrl) !== domain) { res.status(400).json({ error: "Page must belong to this site" }); return; }
+  }
   if (completed) {
     await db.insert(recommendationProgressTable).values({
-      userId: req.userId!, domain, recommendationId,
+      userId: req.userId!, domain, pageUrl, recommendationId,
       implementationNote,
     }).onConflictDoUpdate({
-      target: [recommendationProgressTable.userId, recommendationProgressTable.domain, recommendationProgressTable.recommendationId],
+      target: [recommendationProgressTable.userId, recommendationProgressTable.domain, recommendationProgressTable.pageUrl, recommendationProgressTable.recommendationId],
       set: { completedAt: new Date(), implementationNote },
     });
   } else {
     await db.delete(recommendationProgressTable).where(and(
       eq(recommendationProgressTable.userId, req.userId!),
       eq(recommendationProgressTable.domain, domain),
+      eq(recommendationProgressTable.pageUrl, pageUrl),
       eq(recommendationProgressTable.recommendationId, recommendationId),
     ));
   }
@@ -462,9 +467,8 @@ Hard rules:
 
     Promise.resolve().then(async () => {
       const domain = normalizeDomain(url);
-      const completedRows = domain ? await db.select({ id: recommendationProgressTable.recommendationId }).from(recommendationProgressTable)
-        .where(and(eq(recommendationProgressTable.userId, req.userId!), eq(recommendationProgressTable.domain, domain))) : [];
-      const next = selectPersonalizedAction<any>(analysis.recommendations, new Set(completedRows.map(row => row.id)));
+      const completedRows = domain ? await readRecommendationProgress(req.userId!, domain, url) : [];
+      const next = selectPersonalizedAction<any>(analysis.recommendations, new Set(completedRows.map(row => row.recommendationId)));
       const destination = next ? `/actions/${audit.id}?task=${encodeURIComponent(next.id)}#recommendations` : `/results/${audit.id}`;
       await PushService.sendToUser(req.userId!, { title: "Your website audit is ready", body: next?.title ?? "Review your updated SEO and GEO results.", url: destination, tag: `audit-${audit.id}` });
     }).catch(() => req.log.warn("audit browser notification failed"));
@@ -778,6 +782,7 @@ router.get("/geo/audits/:id", requireAuth, readRateLimiter, async (req, res): Pr
 
   res.json({
     ...audit,
+    recommendations: Array.isArray(audit.recommendations) ? audit.recommendations.map(currentRecommendationCopy) : audit.recommendations,
     createdAt: audit.createdAt.toISOString(),
     recommendationsSchemaVersion: hasV1Source ? RECOMMENDATIONS_SCHEMA_VERSION : null,
     methodologyVersion: METHODOLOGY_VERSION,

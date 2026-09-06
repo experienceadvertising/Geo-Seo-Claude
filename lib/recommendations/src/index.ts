@@ -3,6 +3,7 @@ import type { Recommendation, SourceType, Severity, Category } from "./types.ts"
 
 export * from "./types.ts";
 export { OFFSITE_ACTIONS } from "./offsite.ts";
+export { sharedRecommendation, recommendationPageKey, progressApplies } from "./progressScope.ts";
 export { METHODOLOGY_VERSION } from "./types.ts";
 
 // ---------------------------------------------------------------------------
@@ -199,6 +200,11 @@ export type SavedRecommendation = {
   detail: string;
 };
 
+/** Correct retired wording at presentation time without rewriting audit evidence. */
+export function currentRecommendationCopy<T extends SavedRecommendation>(item: T): T {
+  return item?.id === "current-year-stats" ? { ...item, priority: "medium", impact: getRecommendation("current-year-stats")?.claim, expectedLift: null, title: "Review time-sensitive facts and sources", detail: "The scan did not detect recent dates beside statistics. Check whether those figures are still accurate and relevant. Replace outdated information with reliable sources, but keep older evidence when it remains useful. A newer date alone does not establish quality or improve rankings." } : item;
+}
+
 /**
  * Select the highest-priority unfinished saved finding that still maps to the
  * reviewed recommendation catalog. Shared by the app and email jobs so users
@@ -211,6 +217,7 @@ export function selectPersonalizedAction<T extends SavedRecommendation>(
   if (!Array.isArray(recommendations)) return undefined;
   const priority: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
   return recommendations
+    .map(item => item && typeof item === "object" ? currentRecommendationCopy(item) : item)
     .filter((item): item is T & { id: string } => Boolean(
       item && typeof item === "object"
       && typeof item.id === "string"
