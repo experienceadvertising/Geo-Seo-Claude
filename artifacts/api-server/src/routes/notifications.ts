@@ -16,6 +16,30 @@ router.get("/notifications/status", requireAuth, readRateLimiter, async (req, re
   res.json({ configured, subscribed: Boolean(subscription), publicKey: configured ? process.env.VAPID_PUBLIC_KEY : null });
 });
 
+// The endpoint stays in the request body, never in access-log query strings.
+router.post("/notifications/status", requireAuth, readRateLimiter, async (req, res) => {
+  const configured = validVapidConfiguration(process.env.VAPID_PUBLIC_KEY, process.env.VAPID_PRIVATE_KEY, process.env.VAPID_SUBJECT);
+  const endpoint = typeof req.body?.endpoint === "string" ? req.body.endpoint : "";
+  const [subscription] = endpoint ? await db.select({
+    tasksEnabled: pushSubscriptionsTable.tasksEnabled,
+    monitoringEnabled: pushSubscriptionsTable.monitoringEnabled,
+    strategiesEnabled: pushSubscriptionsTable.strategiesEnabled,
+    lastError: pushSubscriptionsTable.lastError,
+  }).from(pushSubscriptionsTable).where(and(eq(pushSubscriptionsTable.userId, req.userId!), eq(pushSubscriptionsTable.endpoint, endpoint))).limit(1) : [];
+  res.json({ configured, subscribed: Boolean(subscription), publicKey: configured ? process.env.VAPID_PUBLIC_KEY : null, preferences: subscription ?? null });
+});
+
+router.patch("/notifications/preferences", requireAuth, readRateLimiter, async (req, res) => {
+  const { endpoint, tasksEnabled, monitoringEnabled, strategiesEnabled } = req.body ?? {};
+  if (typeof endpoint !== "string" || [tasksEnabled, monitoringEnabled, strategiesEnabled].some(value => typeof value !== "boolean")) {
+    res.status(400).json({ error: "Invalid notification preferences" }); return;
+  }
+  const changed = await db.update(pushSubscriptionsTable).set({ tasksEnabled, monitoringEnabled, strategiesEnabled, updatedAt: new Date() })
+    .where(and(eq(pushSubscriptionsTable.userId, req.userId!), eq(pushSubscriptionsTable.endpoint, endpoint))).returning({ id: pushSubscriptionsTable.id });
+  if (!changed.length) { res.status(409).json({ error: "Enable notifications for this account first" }); return; }
+  res.json({ ok: true });
+});
+
 router.post("/notifications/subscription", requireAuth, readRateLimiter, async (req, res) => {
   if (!validVapidConfiguration(process.env.VAPID_PUBLIC_KEY, process.env.VAPID_PRIVATE_KEY, process.env.VAPID_SUBJECT)) {
     res.status(503).json({ error: "Browser notifications are not configured yet" }); return;

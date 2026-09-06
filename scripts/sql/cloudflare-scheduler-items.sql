@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS scheduled_job_items (
   expires_at timestamptz NOT NULL,
   started_at timestamptz,
   finished_at timestamptz,
+  delivery_outcomes jsonb,
   UNIQUE (job, slot, subject_id)
 );
 CREATE INDEX IF NOT EXISTS scheduled_job_items_pending ON scheduled_job_items (status, id);

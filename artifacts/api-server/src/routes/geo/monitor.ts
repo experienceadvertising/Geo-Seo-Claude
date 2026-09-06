@@ -1,4 +1,5 @@
 import { Router, type IRouter } from "express";
+import { recommendationPageKey } from "@workspace/recommendations";
 import { and, desc, eq } from "drizzle-orm";
 import { db, monitoredSitesTable } from "@workspace/db";
 import { requireAuth } from "../../middlewares/auth";
@@ -67,8 +68,8 @@ router.post("/geo/monitored-sites", requireAuth, readRateLimiter, async (req, re
     res.status(403).json({ error: `Your ${plan} plan can monitor up to ${cap} sites. Remove one or upgrade to add more.`, upgradeRequired: plan !== "agency", plan, limit: cap });
     return;
   }
-  if (existing.some((e) => e.url === url)) {
-    res.status(409).json({ error: "That site is already being monitored." });
+  if (existing.some((e) => { try { return recommendationPageKey(e.url) === recommendationPageKey(url); } catch { return e.url === url; } })) {
+    res.status(409).json({ error: "This page, or its www/non-www equivalent, is already monitored. Review the existing entry in Sites and tracking before adding another." });
     return;
   }
   if (frequency === "daily") {

@@ -23,7 +23,7 @@ const fixtures = {
   '/api/admin/me': { isAdmin: false },
   '/api/geo/audits': returning ? [audit] : [],
   '/api/geo/audits/1': audit,
-  '/api/geo/monitored-sites': { sites: paid ? [{ id: 1, active: true, lastRunAt: null }] : [] },
+  '/api/geo/monitored-sites': { sites: paid ? [{ id: 1, url: 'https://example.com/', label: 'Example', active: true, frequency: 'weekly', lastRunAt: null }] : [] },
   '/api/integrations/google/status': { connected: paid, searchConsoleGranted: paid, propertyId: paid ? 'fixture-property' : null },
   '/api/seo/keywords': { providerConfigured: true, limits: { activeKeywords: 25 }, targets: paid ? [{ id: 1, keyword: 'example service', locationName: 'United States', device: 'desktop', active: true, latest: null }, { id: 2, keyword: 'example agency', locationName: 'United States', device: 'mobile', active: true, latest: { position: 12, result_present: true, collected_at: '2026-08-01' } }] : [] },
   '/api/seo/overview': { limits: { activeKeywords: 25, manualRefreshes: 10 }, usage: { activeKeywords: paid ? 2 : 0, manualRefreshes: 0 } },
@@ -62,7 +62,7 @@ createServer(async (req, res) => {
       } catch { res.statusCode = 400; res.end(JSON.stringify({ error: 'Invalid local fixture action' })); }
       return;
     }
-    const data = req.method === 'GET' ? fixtures[pathname] : undefined;
+    const data = req.method === 'GET' || (req.method === 'POST' && pathname === '/api/notifications/status') ? fixtures[pathname] : undefined;
     res.statusCode = data ? 200 : 503;
     res.end(JSON.stringify(data ?? { error: 'Local preview: this action is not connected. No changes were made.' }));
     return;

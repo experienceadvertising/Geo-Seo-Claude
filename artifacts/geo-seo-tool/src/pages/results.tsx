@@ -92,10 +92,10 @@ export default function Results({ view = "audit", auditId }: { view?: "audit" | 
     try { return new URL(audit.url).hostname.replace(/^www\./, ""); } catch { return null; }
   }, [audit?.url]);
 
-  const progressKey = ["recommendation-progress", domain];
-  const { data: recommendationProgress, isLoading: progressLoading, isError: progressError } = useQuery<{ completed: Array<{ recommendationId: string; completedAt: string }> }>({
+  const progressKey = ["recommendation-progress", domain, audit?.url];
+  const { data: recommendationProgress, isLoading: progressLoading, isError: progressError } = useQuery<{ completed: Array<{ recommendationId: string; completedAt: string }>; legacy?: Array<{ recommendationId: string; completedAt: string; implementationNote?: string | null }> }>({
     queryKey: progressKey,
-    queryFn: () => customFetch(`/api/geo/recommendation-progress?domain=${encodeURIComponent(domain!)}`),
+    queryFn: () => customFetch(`/api/geo/recommendation-progress?domain=${encodeURIComponent(domain!)}&pageUrl=${encodeURIComponent(audit!.url)}`),
     enabled: !!domain,
     retry: false,
   });
@@ -113,9 +113,9 @@ export default function Results({ view = "audit", auditId }: { view?: "audit" | 
       customFetch("/api/geo/recommendation-progress", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ domain, recommendationId, completed, implementationNote }),
+        body: JSON.stringify({ domain, pageUrl: audit?.url, recommendationId, completed, implementationNote }),
       }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: progressKey }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["recommendation-progress", domain] }),
     onError: () => toast({ title: "Progress not saved", description: "Please try again.", variant: "destructive" }),
   });
 
@@ -739,7 +739,8 @@ export default function Results({ view = "audit", auditId }: { view?: "audit" | 
                   <li>Re-scan this URL, then review SEO and AI-visibility trends without assuming causation.</li>
                 </ol>
                 {recorded && !progressError && <p className="mt-3 text-sm text-emerald-800">You marked this done on {new Date(recorded.completedAt).toLocaleDateString()}. Completion is self-reported, not independently verified.</p>}
-                {!done && <label className="mt-4 block text-sm">Implementation note (optional)<textarea className="mt-2 block w-full rounded border bg-background p-3" maxLength={1000} value={taskNotes[task.id] ?? ""} onChange={event => setTaskNotes(notes => ({ ...notes, [task.id]: event.target.value }))} placeholder="What did you change, and on which page?" /><span className="text-xs text-muted-foreground">Progress is shared across this site's audits. Your note may appear in your weekly email.</span></label>}
+                {recommendationProgress?.legacy?.filter(row => row.recommendationId === task.id).map(row => <details key={row.recommendationId} className="mt-3 text-sm"><summary className="cursor-pointer">Earlier completion note, page not recorded</summary><p>Recorded {new Date(row.completedAt).toLocaleDateString()}. This older record did not identify a page, so it does not mark this page complete.</p>{row.implementationNote && <p>{row.implementationNote}</p>}</details>)}
+                {!done && <label className="mt-4 block text-sm">Implementation note (optional)<textarea className="mt-2 block w-full rounded border bg-background p-3" maxLength={1000} value={taskNotes[task.id] ?? ""} onChange={event => setTaskNotes(notes => ({ ...notes, [task.id]: event.target.value }))} placeholder="What did you change on this page?" /><span className="text-xs text-muted-foreground">Page findings are saved for this URL. Shared site files and off-site work remain site-wide. Your note may appear in your weekly email.</span></label>}
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Button variant={done ? "outline" : "default"} disabled={needsRefresh || progressLoading || progressError || updateRecommendation.isPending} onClick={() => updateRecommendation.mutate({ recommendationId: task.id, completed: !done, implementationNote: taskNotes[task.id] })}>{done ? "Reopen task" : "I published this improvement"}</Button>
                   <Button variant="outline" disabled={needsRefresh || reRun.isPending} onClick={() => reScanAudit(task.id)}>{reRun.isPending ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-1.5 h-4 w-4" />}Check my change</Button>

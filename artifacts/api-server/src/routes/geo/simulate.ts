@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
-import { eq, desc, and, asc } from "drizzle-orm";
-import { db, promptSimulationsTable, auditsTable, recommendationProgressTable } from "@workspace/db";
+import { eq, desc, and, asc, or } from "drizzle-orm";
+import { db, promptSimulationsTable, auditsTable } from "@workspace/db";
+import { readRecommendationProgress } from "../../lib/recommendationProgress";
 import { selectPersonalizedAction, nextOffsiteAction, sameSite } from "../../lib/personalizedAction";
 import { runPromptSimulation, generatePromptsForBrand, type EngineId, type PromptGenerationContext } from "../../lib/promptSimulator";
 import { requireAuth } from "../../middlewares/auth";
@@ -221,8 +222,8 @@ router.post("/geo/simulate", requireAuth, simulateRateLimiter, async (req, res):
         if (!u?.email || u.emailOptOut) return;
         const [emailAudit] = auditId ? await db.select().from(auditsTable).where(and(eq(auditsTable.id, auditId), eq(auditsTable.userId, req.userId!))).limit(1) : [];
         const matchingAudit = emailAudit && sameSite(emailAudit.url, domain) ? emailAudit : undefined;
-        const progress = matchingAudit ? await db.select({ id: recommendationProgressTable.recommendationId }).from(recommendationProgressTable).where(and(eq(recommendationProgressTable.userId, req.userId!), eq(recommendationProgressTable.domain, domain.replace(/^www\./, "")))) : [];
-        const completed = new Set(progress.map(row => row.id));
+        const progress = matchingAudit ? await readRecommendationProgress(req.userId!, domain.replace(/^www\./, ""), matchingAudit.url) : [];
+        const completed = new Set(progress.map(row => row.recommendationId));
         const baseUrl = process.env.FRONTEND_URL || "https://aeoimprovement.com";
         const unsubscribeUrl = `${baseUrl}/api/auth/unsubscribe?token=${u.unsubscribeToken}`;
         return EmailService.sendSimulationComplete(
@@ -241,8 +242,8 @@ router.post("/geo/simulate", requireAuth, simulateRateLimiter, async (req, res):
     Promise.resolve().then(async () => {
       const [pushAudit] = auditId ? await db.select().from(auditsTable).where(and(eq(auditsTable.id, auditId), eq(auditsTable.userId, req.userId!))).limit(1) : [];
       const matchingAudit = pushAudit && sameSite(pushAudit.url, domain) ? pushAudit : undefined;
-      const progress = matchingAudit ? await db.select({ id: recommendationProgressTable.recommendationId }).from(recommendationProgressTable).where(and(eq(recommendationProgressTable.userId, req.userId!), eq(recommendationProgressTable.domain, domain.replace(/^www\./, "")))) : [];
-      const next = matchingAudit ? selectPersonalizedAction(matchingAudit.recommendations, new Set(progress.map(row => row.id))) : undefined;
+      const progress = matchingAudit ? await readRecommendationProgress(req.userId!, domain.replace(/^www\./, ""), matchingAudit.url) : [];
+      const next = matchingAudit ? selectPersonalizedAction(matchingAudit.recommendations, new Set(progress.map(row => row.recommendationId))) : undefined;
       await PushService.sendToUser(req.userId!, { title: "Your AI visibility results are ready", body: next?.title ? `Next task: ${next.title}` : "Review the answers and choose one useful improvement.", url: next && auditId ? `/actions/${auditId}?task=${encodeURIComponent(next.id)}#recommendations` : auditId ? `/simulate/${auditId}` : "/", tag: `simulation-${saved.id}` });
     }).catch(() => req.log.warn("simulation browser notification failed"));
 
@@ -273,7 +274,9 @@ router.get("/geo/audits/:auditId/simulation/latest", requireAuth, readRateLimite
     res.status(400).json({ error: "Invalid auditId" });
     return;
   }
-  const [sim] = await db
+  const [audit] = await db.select().from(auditsTable).where(and(eq(auditsTable.id, auditId), eq(auditsTable.userId, req.userId!))).limit(1);
+  if (!audit) { res.status(404).json({ error: "Audit not found" }); return; }
+  let [sim] = await db
     .select()
     .from(promptSimulationsTable)
     .where(and(
@@ -284,11 +287,17 @@ router.get("/geo/audits/:auditId/simulation/latest", requireAuth, readRateLimite
     .orderBy(desc(promptSimulationsTable.id))
     .limit(1);
   if (!sim) {
-    res.status(404).json({ error: "No simulation found for this audit" });
-    return;
+    const domain = new URL(audit.url).hostname.toLowerCase().replace(/^www\./, "");
+    const saved = await db.select().from(promptSimulationsTable).where(and(
+      eq(promptSimulationsTable.userId, req.userId!), eq(promptSimulationsTable.status, "complete"),
+      or(eq(promptSimulationsTable.domain, domain), eq(promptSimulationsTable.domain, `www.${domain}`)),
+    )).orderBy(desc(promptSimulationsTable.id)).limit(1);
+    sim = saved[0];
+    if (!sim) { res.status(404).json({ error: "No saved simulation found for this site" }); return; }
   }
   res.json({
     ...sim,
+    fromEarlierAudit: sim.auditId !== auditId,
     createdAt: sim.createdAt.toISOString(),
   });
 });

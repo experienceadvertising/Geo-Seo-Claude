@@ -204,6 +204,7 @@ export interface WeeklyDigestData {
     waitingForFirstRun: number;
   };
   googleMeasurementConnected?: boolean;
+  clientSummaries?: Array<{ auditId: number; url: string; nextTask?: { id: string; title: string }; activeKeywords: number; collectedKeywords: number; staleKeywords: number }>;
 }
 
 export function weeklyDigestEmail(data: WeeklyDigestData, unsubscribeUrl?: string) {
@@ -213,13 +214,16 @@ export function weeklyDigestEmail(data: WeeklyDigestData, unsubscribeUrl?: strin
     catch { return latestAudit.url; }
   })() : "your site";
   const actionUrl = latestAudit ? `${BASE_URL}/actions/${latestAudit.id}${latestAudit.nextAction?.id ? `?task=${encodeURIComponent(latestAudit.nextAction.id)}` : ""}#recommendations` : `${BASE_URL}/actions`;
+  const clients = data.clientSummaries ?? [];
+  const clientText = clients.length > 1 ? `Your site overview:\n` + clients.slice(0, 10).map(client => `${client.url}: ${client.nextTask?.title ?? "Review completed work and audit results"}. ${client.activeKeywords} targets, ${client.collectedKeywords} collected, ${client.staleKeywords} overdue. ${BASE_URL}/actions/${client.auditId}${client.nextTask ? `?task=${encodeURIComponent(client.nextTask.id)}` : ""}`).join("\n\n") + (clients.length > 10 ? `\nSee all sites: ${BASE_URL}/projects` : "") : "";
+  const clientHtml = clientText ? `${p("<strong>Your client and site overview</strong>")}${clients.slice(0, 10).map(client => p(`<strong>${esc(client.url)}</strong><br/>${esc(client.nextTask?.title ?? "Review completed work and audit results")}<br/>${client.activeKeywords} targets, ${client.collectedKeywords} collected, ${client.staleKeywords} overdue. <a href="${BASE_URL}/actions/${client.auditId}${client.nextTask ? `?task=${encodeURIComponent(client.nextTask.id)}` : ""}">Open this site's task</a>`)).join("")}${clients.length > 10 ? p(`<a href="${BASE_URL}/projects">View additional sites</a>`) : ""}` : "";
   const subject = latestAudit?.nextAction
     ? `Your SEO + GEO task for ${domain}`
     : `Your weekly SEO + GEO update`;
   const scoreDelta = latestAudit?.previousGeoScore == null
     ? ""
     : Math.round(latestAudit.geoScore) - Math.round(latestAudit.previousGeoScore);
-  const workSummary = latestAudit ? `Work recorded for ${domain} in the last 7 days (self-reported, site-wide):\n${latestAudit.completedThisWeek?.length ? latestAudit.completedThisWeek.map(item => `${item.title} (${item.completedAt.slice(0, 10)})${item.note ? `: ${item.note}` : ""}`).join("\n") : "No completed work recorded. If you made a change, record it in your Action plan."}` : "";
+  const workSummary = latestAudit ? `Work recorded for ${domain} in the last 7 days (self-reported, this page and shared site work):\n${latestAudit.completedThisWeek?.length ? latestAudit.completedThisWeek.map(item => `${item.title} (${item.completedAt.slice(0, 10)})${item.note ? `: ${item.note}` : ""}`).join("\n") : "No completed work recorded. If you made a change, record it in your Action plan."}` : "";
   const movement = data.rankMovement;
   const movementSummary = paidSeoEnabled && latestAudit ? movement?.comparable ? `Recent ranking observations: ${movement.improved} improved, ${movement.declined} declined, ${movement.unchanged} unchanged across ${movement.comparable} comparable targets. Each compares a successful numeric snapshot collected in the last 7 days with its previous successful snapshot. Missing and stale results are excluded. This does not prove your changes caused the movement.` : "No recent comparable ranking snapshots yet. Missing rankings are not treated as zero or as no change." : "";
   const offsiteSummary = latestAudit?.offsiteAction ? `Optional off-site task: ${latestAudit.offsiteAction.title}. ${latestAudit.offsiteAction.steps} Verify: ${latestAudit.offsiteAction.verify} This is suggested work, not a detected gap. Record the outcome in Off-site work in your Action plan.` : latestAudit ? "No new off-site task selected. Review your recorded outcomes before repeating outreach." : "";
@@ -229,9 +233,9 @@ export function weeklyDigestEmail(data: WeeklyDigestData, unsubscribeUrl?: strin
         <div style="font-size:17px;font-weight:700;color:#111827;margin-bottom:7px;">${esc(latestAudit.nextAction.title)}</div>
         ${p(`Page: ${esc(latestAudit.url)}. Finding saved ${latestAudit.createdAt.toISOString().slice(0, 10)}. Check that it still applies before editing.`)}
         <div style="font-size:14px;color:#4b5563;line-height:1.6;">${esc(latestAudit.nextAction.detail)}</div>
-        <div style="margin-top:12px;font-size:14px;line-height:1.6;"><strong>How to implement:</strong><ol>${getImplementationGuide(latestAudit.nextAction.id).steps.map(step => `<li>${esc(step)}</li>`).join("")}</ol><p><strong>Verify:</strong> ${esc(getImplementationGuide(latestAudit.nextAction.id).verify)}</p></div>
-        <div style="margin-top:12px;font-size:13px;color:#4b5563;line-height:1.6;">Make the change in your website editor, publish it, and mark the task done. Then re-audit the same page and review subsequent search performance. Marking a task done records your work; it does not verify a ranking improvement.</div>
         <div style="margin-top:14px;">${btn("Open this task", actionUrl)}</div>
+        <div style="margin-top:12px;font-size:14px;line-height:1.6;"><strong>Start here:</strong> ${esc(getImplementationGuide(latestAudit.nextAction.id).steps[0])}</div>
+        <div style="margin-top:10px;font-size:13px;color:#4b5563;line-height:1.6;">Your Action Plan includes the remaining steps, draft and verification checklist. Publish your edit, record it, then re-audit this page. A completed task is not proof of a ranking improvement.</div>
       </div>`
     : latestAudit
       ? `<div style="margin:22px 0;padding:20px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:10px;">
@@ -288,15 +292,15 @@ export function weeklyDigestEmail(data: WeeklyDigestData, unsubscribeUrl?: strin
     `${h1(`Your weekly SEO + GEO plan`)}
     ${p(`Hi ${esc(firstName) || "there"}, here is the next practical step for ${esc(domain)}, plus the measurement updates behind it.`)}
     ${nextTask}
-    ${workSummary ? p(esc(workSummary).replace(/\n/g, "<br/>")) : ""}
-    ${offsiteSummary ? p(esc(offsiteSummary)) : ""}
+    ${clientHtml}
+    ${latestAudit?.completedThisWeek?.[0] ? p(`Most recent recorded change: ${esc(latestAudit.completedThisWeek[0].title)}${latestAudit.completedThisWeek[0].note ? `: ${esc(latestAudit.completedThisWeek[0].note.slice(0, 160))}` : ""}`, "font-size:13px;color:#6b7280;") : ""}
+    ${latestAudit ? p(`${latestAudit.completedThisWeek?.length ?? 0} improvements recorded this week for this page and shared site work. <a href="${actionUrl}">Review your notes</a>. Completion is self-reported.`, "font-size:13px;color:#6b7280;") : ""}
+    ${latestAudit ? p(`Optional work and implementation references are available in your <a href="${actionUrl}">Action Plan</a>. Focus on the main task first.`) : ""}
     ${movementSummary ? p(esc(movementSummary)) : ""}
     ${paidSeoEnabled && latestAudit ? p(`Measurement check: ${tracking?.rankedKeywords ?? 0} keywords have collected snapshots; ${tracking?.foundKeywords ?? 0} have a numeric ranking. ${tracking?.pendingKeywords ?? 0} await their first collection and ${tracking?.staleKeywords ?? 0} have overdue results. <a href="${BASE_URL}/seo/${latestAudit.id}">Review collection status and history</a> before deciding what to change.`, "padding:12px 14px;background:#f8fafc;border-radius:8px;color:#475569;font-size:13px;") : ""}
-    ${scoreSection}
-    ${divider()}
-    <div style="margin-bottom:8px;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6b7280;">Your program status</div>
-    <table cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">${statusRows}</table>
+    ${paidSeoEnabled ? p(`Monitoring: ${monitoring?.activeSites ?? 0} active sites; ${monitoring?.waitingForFirstRun ?? 0} awaiting a first run. <a href="${BASE_URL}/projects">Review site setup</a>.`, "font-size:13px;color:#6b7280;") : ""}
     ${setupReminder}
+    ${paidSeoEnabled && latestAudit ? p(`Google access and a selected GA4 property do not confirm data for every client. Choose the matching Search Console property in <a href="${BASE_URL}/seo/${latestAudit.id}">SEO performance</a>, check GA4 separately in Tracking, and review the displayed reporting dates.`, "font-size:13px;color:#6b7280;") : ""}
     <div style="text-align:center;margin-top:26px;">${btn("Open my SEO + GEO workspace", BASE_URL)}</div>`,
     latestAudit?.nextAction ? `Your next task: ${esc(latestAudit.nextAction.title)}` : `Your weekly SEO and GEO program update`,
     unsubscribeUrl,
@@ -310,7 +314,7 @@ export function weeklyDigestEmail(data: WeeklyDigestData, unsubscribeUrl?: strin
   const referenceText = (context ? `\n\nWhen this applies: ${context}` : "") + (references.length ? `\n\nImplementation references:\n${references.map(source => `${source.title}: ${source.url} (reviewed ${source.reviewed})`).join("\n")}` : "");
   const referenceHtml = (context ? `<p>When this applies: ${esc(context)}</p>` : "") + (references.length ? `<p style="font-size:13px;">Implementation references: ${references.map(source => `<a href="${esc(source.url)}">${esc(source.title)}</a> (reviewed ${esc(source.reviewed)})`).join("; ")}</p>` : "");
   const offSiteText = latestAudit ? `\n\nOptional off-site step: review one company profile you control for accurate services, audience, and website details. If it is already accurate, prepare one useful expert contribution for a relevant industry publication. This is general guidance, not a confirmed gap. Avoid paid ranking links and fabricated reviews. Resources: ${BASE_URL}/recommended-tools#authority-tools-heading` : "";
-  return { subject, html: html.replace("</body>", `${referenceHtml}</body>`), text: text + (latestAudit ? `\n\nPage: ${latestAudit.url}. Finding saved ${latestAudit.createdAt.toISOString().slice(0, 10)}. Check that it still applies before editing.` : "") + `\n\n${workSummary}\n\n${offsiteSummary}\n\n${movementSummary}` + measurementText + referenceText };
+  return { subject, html, text: text + (latestAudit ? `\n\nPage: ${latestAudit.url}. Finding saved ${latestAudit.createdAt.toISOString().slice(0, 10)}. Check that it still applies before editing.` : "") + `\n\n${clientText}\n\n${workSummary}\n\n${movementSummary}` + measurementText + `\n\nOptional off-site work and source references: ${actionUrl}` };
 }
 
 // ── Email: Email Verification (transactional - no unsubscribe) ────────────────
@@ -791,6 +795,8 @@ export function simulationCompleteEmail(
 // Topics rotate by ISO week-of-year mod 6 so the same user gets a different
 // tip every week and only sees a repeat after ~6 weeks.
 export type InsightTopic = {
+  guidePath?: string;
+  recommendationIds?: string[];
   subject: string;
   preheader: string;
   title: string;
@@ -880,14 +886,23 @@ const AEO_INSIGHTS: InsightTopic[] = [
 
 export function aeoInsightTopic(weekIndex: number): InsightTopic {
   const idx = ((weekIndex % AEO_INSIGHTS.length) + AEO_INSIGHTS.length) % AEO_INSIGHTS.length;
-  return AEO_INSIGHTS[idx];
+  const guidance = [
+    { guidePath: "/create-content-ai-can-cite", recommendationIds: ["unblock-crawlers", "nosnippet-directive"] },
+    { guidePath: "/show-first-party-experience-seo", recommendationIds: ["first-party-data", "content-effort-original-evidence"] },
+    { guidePath: "/create-content-ai-can-cite", recommendationIds: ["direct-answer-block", "question-headings", "add-faq"] },
+    { guidePath: "/document-expertise-methodology", recommendationIds: ["content-effort-methodology", "first-party-data"] },
+    { guidePath: "/content-audit-original-research-checklist", recommendationIds: ["org-schema", "article-schema", "faq-schema"] },
+    { guidePath: "/create-content-ai-can-cite", recommendationIds: ["unblock-crawlers", "review-infrastructure-bot-controls"] },
+  ];
+  return { ...AEO_INSIGHTS[idx], ...guidance[idx] };
 }
 
-export function aeoInsightsEmail(firstName: string, weekIndex: number, unsubscribeUrl?: string) {
+export function aeoInsightsEmail(firstName: string, weekIndex: number, unsubscribeUrl?: string, task?: { url: string; title: string; pageUrl: string }) {
   // Pick topic by week-of-year so a user receives a different topic every
   // week and only sees a repeat after the full library cycles. Modulo
   // guards against any negative or out-of-range week index.
   const topic = aeoInsightTopic(weekIndex);
+  const destination = task?.url ?? `${BASE_URL}${topic.guidePath}`;
   const safeFirstName = esc(firstName) || "there";
   const html = layout(
     `${h1(topic.title)}
@@ -901,14 +916,15 @@ export function aeoInsightsEmail(firstName: string, weekIndex: number, unsubscri
       <div style="font-size:14px;color:#374151;line-height:1.6;">${esc(topic.pitch)}</div>
     </div>
     <div style="text-align:center;margin:24px 0;">
-      ${btn("Open AEO Improvement →", `${BASE_URL}/`)}
+      ${task ? p(`For ${esc(task.pageUrl)}: ${esc(task.title)}. This saved finding should be checked against the current page before editing.`) : p("Evergreen strategy reminder from our reviewed library. Apply it only if it fits your site; this is not a newly discovered issue.")}
+      ${btn(task ? "Open my relevant task" : "Read the implementation guide", destination)}
     </div>
     ${p("Reply with what you'd like to read about next week - we curate these from real questions.", "color:#6b7280;font-size:13px;")}`,
     topic.preheader,
     unsubscribeUrl,
   );
   const text = `Hi ${firstName || "there"},\n\n${topic.title}\n\n${topic.textBody}\n\nSource: ${topic.sourceLabel}: ${topic.sourceUrl} (reviewed ${topic.reviewedAt}). This is attributed guidance, not a ranking or citation guarantee.\n\n- Try it on your site: ${topic.pitch}\n\nOpen AEO Improvement: ${BASE_URL}/\n\nReply with what you'd like to read about next week.`;
-  return { subject: topic.subject, html, text };
+  return { subject: topic.subject, html, text: text + `\n\nEvergreen strategy reminder. ${task ? `For ${task.pageUrl}: ${task.title}. Check the current page first.` : "Apply only if relevant to your site."}\n${destination}` };
 }
 
 // ── Email: Score Changed (re-audit triggered, ±5 pts) ────────────────────────

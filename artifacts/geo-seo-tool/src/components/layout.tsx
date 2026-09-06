@@ -201,8 +201,8 @@ function AuditResultsNav({ mobile = false }: { mobile?: boolean }) {
   let domain = audit?.url ?? "";
   try { domain = new URL(domain).hostname.replace(/^www\./, ""); } catch { /* keep stored URL */ }
   const { data: progress, isError: progressError, isLoading: progressLoading } = useQuery<{ completed: Array<{ recommendationId: string }> }>({
-    queryKey: ["recommendation-progress", domain],
-    queryFn: () => customFetch(`/api/geo/recommendation-progress?domain=${encodeURIComponent(domain)}`),
+    queryKey: ["recommendation-progress", domain, audit?.url],
+    queryFn: () => customFetch(`/api/geo/recommendation-progress?domain=${encodeURIComponent(domain)}&pageUrl=${encodeURIComponent(audit!.url)}`),
     enabled: !!domain && !!auditDetails?.recommendations?.length,
     staleTime: 30_000,
     retry: false,

@@ -14,18 +14,29 @@ try {
   });
   const page = await context.newPage();
   await page.goto(base);
-  await page.getByRole('heading', { name: 'Next-task notifications' }).waitFor();
+  await page.getByText('Browser updates: off for this account', { exact: true }).waitFor();
   assert.equal(await page.evaluate(() => window.__qaPermissionRequests), 0);
-  const mainTask = page.getByLabel('Your next improvement');
+  const mainTask = page.getByLabel('Your next three improvements');
   await mainTask.getByText('Answer a relevant buyer question', { exact: true }).waitFor();
-  const mainHref = await mainTask.getByRole('link', { name: /Work on this improvement/ }).getAttribute('href');
+  const mainHref = await mainTask.getByRole('link', { name: /Start this improvement/ }).getAttribute('href');
   assert.equal(mainHref, '/actions/1?task=direct-answer-block#recommendations');
   const sideTask = page.getByLabel('Latest audit results').getByText('Answer a relevant buyer question', { exact: true });
   await sideTask.waitFor();
   assert.equal(await sideTask.locator('xpath=ancestor::a').getAttribute('href'), mainHref);
-  await page.getByRole('button', { name: 'Enable notifications' }).click();
+  await page.getByText('Browser updates: off for this account', { exact: true }).click();
+  await page.getByRole('button', { name: 'Enable for this account' }).click();
   assert.equal(await page.evaluate(() => window.__qaPermissionRequests), 1);
   await page.getByText("This browser blocked notifications. Allow notifications for aeoimprovement.com in your browser's site settings, then try again.").waitFor();
+  if (process.env.QA_ARTIFACT_DIR) {
+    const essentialOnly = page.getByRole('button', { name: 'Essential only', exact: true });
+    if (await essentialOnly.isVisible()) await essentialOnly.click();
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.screenshot({ path: `${process.env.QA_ARTIFACT_DIR}/desktop-dashboard.png`, fullPage: true });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.screenshot({ path: `${process.env.QA_ARTIFACT_DIR}/mobile-dashboard.png`, fullPage: true });
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
+  }
   console.log('PASS: dashboard and sidebar use the same task and link; notification permission is requested only after a user click. No subscription or push created.');
 } finally {
   await browser.close();

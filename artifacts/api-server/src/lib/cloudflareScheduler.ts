@@ -30,11 +30,16 @@ export async function runCloudflareSchedulerStep(): Promise<{ status: "completed
           FROM monitored_sites WHERE active = true AND (next_run_at IS NULL OR next_run_at <= now())
           ON CONFLICT (job, slot, subject_id) DO NOTHING`);
       } else {
-        if (!process.env.POSTMARK_API_TOKEN) continue;
+        const supportsPush = item.job === "weekly-digest" || item.job === "weekly-insights";
+        if (!process.env.POSTMARK_API_TOKEN && !supportsPush) continue;
         await client.query(`INSERT INTO scheduled_job_items (job, slot, subject_id, expires_at)
           SELECT $1, $2, id, now() + interval '2 days' FROM users
-          WHERE email_verified = true AND email_opt_out = false AND email IS NOT NULL
-          ON CONFLICT (job, slot, subject_id) DO NOTHING`, [item.job, item.slot]);
+          WHERE email_verified = true AND email IS NOT NULL
+          AND ((email_opt_out = false AND $3::boolean) OR ($4::boolean AND EXISTS (
+            SELECT 1 FROM push_subscriptions p WHERE p.user_id = users.id
+              AND CASE WHEN $1 = 'weekly-insights' THEN p.strategies_enabled ELSE p.tasks_enabled END
+          )))
+          ON CONFLICT (job, slot, subject_id) DO NOTHING`, [item.job, item.slot, Boolean(process.env.POSTMARK_API_TOKEN), supportsPush]);
       }
     }
     const claimed = await client.query<{ id: string; job: WorkerJob; slot: string; subject_id: string }>(`UPDATE scheduled_job_items SET status='running', started_at=now()
@@ -61,7 +66,9 @@ export async function runCloudflareSchedulerStep(): Promise<{ status: "completed
         // A manual check may have advanced this site while its queue item waited.
         if (site?.active && (!site.nextRunAt || site.nextRunAt <= new Date())) await runMonitoredSite(site);
       } else {
-        await runScheduledEmailForUser(item.job, item.subject_id);
+        await runScheduledEmailForUser(item.job, item.subject_id, async outcomes => {
+          await client.query("UPDATE scheduled_job_items SET delivery_outcomes=$2::jsonb WHERE id=$1", [item.id, JSON.stringify(outcomes)]);
+        });
       }
       await client.query("UPDATE scheduled_job_items SET status='completed', finished_at=now() WHERE id=$1", [item.id]);
       return { status: "completed", more: true };

@@ -1,15 +1,16 @@
 import cron from "node-cron";
+import { readRecommendationProgress } from "./recommendationProgress";
+import { withDeliveryAudit, recordDelivery, type DeliveryOutcome } from "./deliveryAudit";
 import {
   db,
   pool,
   usersTable,
   auditsTable,
-  recommendationProgressTable,
   seoKeywordTargetsTable,
   monitoredSitesTable,
   googleConnectionsTable,
 } from "@workspace/db";
-import { sql, and, isNotNull, eq, gte, lte, desc, count } from "drizzle-orm";
+import { sql, and, isNotNull, eq, gte, lte, desc, count, inArray } from "drizzle-orm";
 import { getUserPlan, getStoredPlan, trialEndFor } from "./planUtils";
 import { EmailService } from "./emailService";
 import { runDueMonitoredSites } from "./monitoring";
@@ -233,7 +234,6 @@ async function runWeeklyDigests(userId?: string) {
     .from(usersTable)
     .where(and(
       userId ? eq(usersTable.id, userId) : undefined,
-      eq(usersTable.emailOptOut, false),
       eq(usersTable.emailVerified, true),
       isNotNull(usersTable.email),
     ));
@@ -258,6 +258,29 @@ async function runWeeklyDigests(userId?: string) {
       .limit(10);
 
     const latestAudit = recentAudits[0];
+    const managedSites = paidSeoEnabled ? await db.select({ url: monitoredSitesTable.url }).from(monitoredSitesTable).where(and(eq(monitoredSitesTable.userId, user.id), eq(monitoredSitesTable.active, true))) : [];
+    const managedTargets = paidSeoEnabled ? await db.select({ domain: seoKeywordTargetsTable.domain }).from(seoKeywordTargetsTable).where(and(eq(seoKeywordTargetsTable.userId, user.id), eq(seoKeywordTargetsTable.active, true))) : [];
+    const managedDomains = new Set(managedTargets.map(target => target.domain));
+    for (const site of [...managedSites, ...(latestAudit ? [latestAudit] : [])]) {
+      try { managedDomains.add(new URL(site.url).hostname.toLowerCase().replace(/^www\./, "")); } catch { /* Invalid historical URLs are not clients. */ }
+    }
+    // Latest audit per client domain, independent of how often another client
+    // has been scanned. Each task retains its own audited page scope.
+    const clientDomain = sql`regexp_replace(lower(split_part(${auditsTable.url}, '/', 3)), '^www[.]', '')`;
+    const clientAudits = paidSeoEnabled && managedDomains.size ? await db.selectDistinctOn([clientDomain]).from(auditsTable)
+      .where(and(eq(auditsTable.userId, user.id), inArray(clientDomain, [...managedDomains]))).orderBy(clientDomain, desc(auditsTable.createdAt), desc(auditsTable.id)).limit(11) : [];
+    const clientSummaries = [];
+    for (const client of clientAudits) {
+      let host: string;
+      try { host = new URL(client.url).hostname.toLowerCase().replace(/^www\./, ""); } catch { continue; }
+      const done = await readRecommendationProgress(user.id, host, client.url);
+      const task = selectPersonalizedAction(client.recommendations, new Set(done.map(row => row.recommendationId)));
+      const targets = await db.select({ id: seoKeywordTargetsTable.id }).from(seoKeywordTargetsTable).where(and(eq(seoKeywordTargetsTable.userId, user.id), eq(seoKeywordTargetsTable.domain, host), eq(seoKeywordTargetsTable.active, true)));
+      const query = buildLatestRankSnapshotsQuery(targets.map(target => target.id));
+      const snapshots = query ? await db.execute(query) : { rows: [] };
+      const progress = summarizeRankProgress(targets.length, snapshots.rows as Array<{ position: number | null; collected_at: Date }>);
+      clientSummaries.push({ auditId: client.id, url: client.url, nextTask: task ? { id: task.id, title: task.title } : undefined, activeKeywords: targets.length, collectedKeywords: progress.rankedKeywords, staleKeywords: progress.staleKeywords ?? 0 });
+    }
     const firstName = getFirstName(user);
     const domain = latestAudit ? (() => { try { return new URL(latestAudit.url).hostname.toLowerCase().replace(/^www\./, ""); } catch { return ""; } })() : "";
     const previousAudit = latestAudit ? recentAudits.slice(1).find((audit) => sameAuditedPage(audit.url, latestAudit.url)) : undefined;
@@ -266,9 +289,7 @@ async function runWeeklyDigests(userId?: string) {
     let completedThisWeek: Array<{ title: string; completedAt: string; note?: string | null }> = [];
     let offsiteAction: ReturnType<typeof nextOffsiteAction>;
     if (latestAudit) {
-      const completed = domain ? await db.select({ recommendationId: recommendationProgressTable.recommendationId, completedAt: recommendationProgressTable.completedAt, note: recommendationProgressTable.implementationNote })
-        .from(recommendationProgressTable)
-        .where(and(eq(recommendationProgressTable.userId, user.id), eq(recommendationProgressTable.domain, domain))) : [];
+      const completed = domain ? (await readRecommendationProgress(user.id, domain, latestAudit.url)).map(row => ({ ...row, note: row.implementationNote })) : [];
       const done = new Set(completed.map((row) => row.recommendationId));
       const currentRecommendations = ((latestAudit.recommendations as any[]) ?? []).filter((item) => item?.id);
       completedActions = currentRecommendations.filter((item) => done.has(item.id)).length;
@@ -304,12 +325,14 @@ async function runWeeklyDigests(userId?: string) {
       googleConnection?.ga4PropertyId && /webmasters/i.test(googleConnection.scope ?? ""),
     );
 
-    const ok = await EmailService.sendWeeklyDigest(
+    if (!user.emailOptOut && !process.env.POSTMARK_API_TOKEN) recordDelivery("email", "failed");
+    const ok = !user.emailOptOut && Boolean(process.env.POSTMARK_API_TOKEN) && await EmailService.sendWeeklyDigest(
       user.email,
       {
         firstName,
         planName: plan === "agency" ? "Agency" : plan === "pro" ? "Pro" : "Starter",
         paidSeoEnabled,
+        clientSummaries,
         auditCount: Number(weekAuditCount?.total ?? 0),
         latestAudit: latestAudit
           ? {
@@ -342,7 +365,7 @@ async function runWeeklyDigests(userId?: string) {
         body: nextAction.title,
         url: `/actions/${latestAudit.id}?task=${encodeURIComponent(nextAction.id)}#recommendations`,
         tag: `weekly-task-${latestAudit.id}`,
-      }).catch(() => logger.warn("Weekly browser notification failed"));
+      });
     }
 
     if (ok) {
@@ -453,7 +476,6 @@ async function runWeeklyInsights(userId?: string) {
     .where(
       and(
         userId ? eq(usersTable.id, userId) : undefined,
-        eq(usersTable.emailOptOut, false),
         eq(usersTable.emailVerified, true),
         isNotNull(usersTable.email),
         lte(usersTable.createdAt, eightDaysAgo),
@@ -468,15 +490,25 @@ async function runWeeklyInsights(userId?: string) {
   for (const user of users) {
     if (!user.email) continue;
     const firstName = getFirstName(user);
-    const ok = await EmailService.sendWeeklyInsights(
+    const [audit] = await db.select().from(auditsTable).where(eq(auditsTable.userId, user.id)).orderBy(desc(auditsTable.id)).limit(1);
+    let strategyTask: { title: string; url: string; pageUrl: string } | undefined;
+    if (audit) {
+      const host = new URL(audit.url).hostname.toLowerCase().replace(/^www\./, "");
+      const progress = await readRecommendationProgress(user.id, host, audit.url);
+      const eligible = (Array.isArray(audit.recommendations) ? audit.recommendations : []).filter(item => item && topic.recommendationIds?.includes(item.id));
+      const task = selectPersonalizedAction(eligible, new Set(progress.map(row => row.recommendationId)));
+      if (task) strategyTask = { title: task.title, pageUrl: audit.url, url: `/actions/${audit.id}?task=${encodeURIComponent(task.id)}#recommendations` };
+    }
+    if (!user.emailOptOut && !process.env.POSTMARK_API_TOKEN) recordDelivery("email", "failed");
+    const ok = !user.emailOptOut && Boolean(process.env.POSTMARK_API_TOKEN) && await EmailService.sendWeeklyInsights(
       user.email,
       firstName,
       weekIndex,
       unsubUrl(user.unsubscribeToken),
+      strategyTask ? { ...strategyTask, url: `${process.env.FRONTEND_URL || "https://aeoimprovement.com"}${strategyTask.url}` } : undefined,
     );
     if (ok) sent++;
-    const push = await PushService.sendToUser(user.id, weeklyStrategyPush(topic, weekIndex))
-      .catch(() => ({ sent: 0, failed: 1 }));
+    const push = await PushService.sendToUser(user.id, weeklyStrategyPush(topic, weekIndex, strategyTask));
     pushSent += push.sent;
     pushFailed += push.failed;
   }
@@ -637,11 +669,11 @@ export async function runExternalScheduledJob(job: WorkerJob): Promise<void> {
 }
 
 /** One recipient per authenticated HTTP job; all normal eligibility checks stay in place. */
-export async function runScheduledEmailForUser(job: Exclude<WorkerJob, "ranks" | "monitoring">, userId: string): Promise<void> {
+export async function runScheduledEmailForUser(job: Exclude<WorkerJob, "ranks" | "monitoring">, userId: string, report?: (outcomes: DeliveryOutcome[]) => Promise<void>): Promise<void> {
   const jobs = {
     welcome: runWelcomeSeries, trial: runTrialLifecycle,
     "simulation-followup": runSimulationFollowUps, "weekly-digest": runWeeklyDigests,
     "monthly-report": runMonthlyReports, "weekly-insights": runWeeklyInsights,
   };
-  await jobs[job](userId);
+  await withDeliveryAudit(() => jobs[job](userId), async outcomes => { logger.info({ job, outcomes }, "Scheduled notification channel outcomes"); await report?.(outcomes); });
 }
