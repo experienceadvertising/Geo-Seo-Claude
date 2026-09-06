@@ -201,7 +201,8 @@ function SearchConsoleOpportunityCard({
           ) : opportunities.isError ? (
             <p className="text-sm text-muted-foreground">Couldn't load Search Console query data for this page.</p>
           ) : opportunities.data?.opportunities?.length ? (
-            <div className="space-y-2">
+            <details className="space-y-2">
+              <summary className="cursor-pointer text-sm font-medium">Optional: browse existing search queries</summary>
               <p className="text-xs text-muted-foreground">
                 Finalized Google web-search data from {opportunities.data.startDate} to {opportunities.data.endDate}. Select a seed query, then generate the fan-out cluster.
               </p>
@@ -230,7 +231,7 @@ function SearchConsoleOpportunityCard({
                   );
                 })}
               </div>
-            </div>
+            </details>
           ) : (
             <p className="text-sm text-muted-foreground">
               No eligible queries were found for this exact audited URL in the last 90 days. Your Google connection is still active. Try a page with organic visits, confirm the matching property, or generate buyer queries below.
@@ -552,6 +553,11 @@ export default function SimulatePage() {
   }, [run.isSuccess]);
   const result = (run.data as any) || (latest.data as any);
   const showingHistorical = !run.data && !!latest.data;
+  React.useEffect(() => {
+    if (!latest.data || promptsText) return;
+    const saved = (latest.data as any).prompts;
+    if (Array.isArray(saved)) setPromptsText(saved.filter((value: unknown) => typeof value === "string").slice(0, maxPrompts).join("\n"));
+  }, [latest.data]);
 
   // Share of Voice trend — derived from this domain's past simulations (Pro).
   // Refetches after each run so a freshly-completed simulation extends the line.
@@ -908,7 +914,7 @@ export default function SimulatePage() {
             <div className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-900 p-3 text-sm">
               Showing your most recent simulation
               {result.createdAt ? <> from {new Date(result.createdAt).toLocaleString()}</> : null}.
-              Run a new one above to refresh the data.
+              {result.auditId !== auditId ? " This is a saved run for this site from an earlier audit, not a new measurement." : ""} Review the saved answers before choosing whether to run again.
             </div>
           )}
           {/* Summary */}

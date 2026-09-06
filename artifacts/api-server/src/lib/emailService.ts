@@ -1,5 +1,6 @@
 import * as postmark from "postmark";
 import { logger } from "./logger";
+import { recordDelivery } from "./deliveryAudit";
 import {
   welcomeEmail,
   welcomeD3Email,
@@ -58,8 +59,9 @@ async function send(
   unsubscribeUrl?: string,
 ): Promise<boolean> {
   const client = getClient();
-  if (!client) return false;
+  if (!client) { recordDelivery("email", "failed"); return false; }
   if (!to || !to.includes("@")) {
+    recordDelivery("email", "failed");
     logger.warn({ to, tag }, "Skipping email — invalid address");
     return false;
   }
@@ -85,8 +87,10 @@ async function send(
       Headers: headers,
     });
     logger.info({ to, tag }, "Email sent");
+    recordDelivery("email", "accepted");
     return true;
   } catch (err: any) {
+    recordDelivery("email", "uncertain");
     logger.error({ err: err?.message, to, tag }, "Email send failed");
     return false;
   }
@@ -249,8 +253,9 @@ export const EmailService = {
     firstName: string,
     weekIndex: number,
     unsubscribeUrl?: string,
+    task?: { url: string; title: string; pageUrl: string },
   ): Promise<boolean> {
-    const { subject, html, text } = aeoInsightsEmail(firstName, weekIndex, unsubscribeUrl);
+    const { subject, html, text } = aeoInsightsEmail(firstName, weekIndex, unsubscribeUrl, task);
     return send(email, subject, html, text, "aeo-insights", unsubscribeUrl);
   },
 

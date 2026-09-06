@@ -101,9 +101,9 @@
     },
     {
       "id": "current-year-stats",
-      "titleTemplate": "Cite {prevYear}/{currentYear} statistics",
-      "claim": "Generative engines preferentially cite content with recent dated statistics, treating recency markers as a freshness signal independent of the page's own publish date.",
-      "severity": "high",
+      "titleTemplate": "Review time-sensitive facts and sources",
+      "claim": "Check whether time-sensitive figures remain accurate and relevant. Replace outdated evidence when needed, but retain useful older sources. A recent date alone does not establish quality or a ranking benefit.",
+      "severity": "medium",
       "category": "freshness",
       "expectedLift": null,
       "sourceType": "practitioner_consensus",

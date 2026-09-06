@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { bigserial, check, index, pgTable, primaryKey, text, timestamp, unique } from "drizzle-orm/pg-core";
+import { bigserial, check, index, pgTable, primaryKey, text, timestamp, unique, jsonb } from "drizzle-orm/pg-core";
 
 /** Operational job metadata only. No queries, page content or secret values. */
 export const scheduledJobItemsTable = pgTable("scheduled_job_items", {
@@ -8,6 +8,7 @@ export const scheduledJobItemsTable = pgTable("scheduled_job_items", {
   slot: text("slot").notNull(),
   subjectId: text("subject_id").notNull(),
   status: text("status").notNull().default("pending"),
+  deliveryOutcomes: jsonb("delivery_outcomes").$type<Array<{ channel: "email" | "push"; outcome: "accepted" | "failed" | "uncertain" | "expired" }>>(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   startedAt: timestamp("started_at", { withTimezone: true }),

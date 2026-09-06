@@ -141,7 +141,7 @@ test("personalized email names the saved page, finding and recorded work safely"
   assert.match(simulation.html, /Organize &lt;services&gt;/);
   const weekly = weeklyDigestEmail({ firstName: "Jamie", auditCount: 1, latestAudit: { ...audit, id: 46, createdAt: new Date(audit.createdAt), geoScore: 50, quickWins: [], completedThisWeek: [{ title: "Corrected profile", completedAt: "2026-09-05", note: "Updated <name>" }] }, rankMovement: { comparable: 2, improved: 1, declined: 0, unchanged: 1 } });
   assert.match(weekly.html, /Updated &lt;name&gt;/);
-  assert.match(weekly.text, /self-reported, site-wide/);
+  assert.match(weekly.text, /self-reported, this page and shared site work/);
   assert.match(weekly.text, /1 improved, 0 declined, 1 unchanged/);
   assert.match(weekly.text, /does not prove/);
 });
@@ -296,15 +296,13 @@ test("paid weekly digest points to the user's next task and program status", () 
   });
 
   assert.equal(email.subject, "Your SEO + GEO task for example.com");
-  assert.match(email.html, /Implementation references:/);
-  assert.match(email.text, /Implementation references:/);
-  assert.match(email.html, /creating-helpful-content/);
-  assert.match(email.text, /reviewed 2026-09-05/);
+  assert.match(email.html, /Optional work and implementation references/);
+  assert.match(email.text, /Optional off-site work and source references:/);
   assert.match(email.html, /\/actions\/42#recommendations/);
-  assert.match(email.text, /No new off-site task selected/);
+  assert.match(email.text, /Optional off-site work/);
   assert.match(email.html, /\/seo\/42/);
   assert.match(email.html, /Add first-party evidence/);
-  assert.match(email.html, /Keywords with a rank baseline/);
+  assert.match(email.html, /keywords have collected snapshots/);
   assert.match(email.text, /Active keyword targets: 5/);
   assert.match(email.text, /1 await first collection/);
   assert.match(email.text, /Traffic and ranking changes do not prove causation/);

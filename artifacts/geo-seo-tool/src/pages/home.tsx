@@ -1059,8 +1059,8 @@ function SignedInDashboard() {
     },
   });
   const recommendationProgress = useQuery<{ completed: Array<{ recommendationId: string }> }>({
-    queryKey: ["recommendation-progress", latestDomain],
-    queryFn: () => customFetch(`/api/geo/recommendation-progress?domain=${encodeURIComponent(latestDomain!)}`),
+    queryKey: ["recommendation-progress", latestDomain, latestAudit?.url],
+    queryFn: () => customFetch(`/api/geo/recommendation-progress?domain=${encodeURIComponent(latestDomain!)}&pageUrl=${encodeURIComponent(latestAudit!.url)}`),
     enabled: Boolean(latestDomain && latestAuditDetails?.recommendations?.length),
     staleTime: 30_000,
     retry: false,
@@ -1177,8 +1177,6 @@ function SignedInDashboard() {
 
   return (
     <div className="flex-1 w-full max-w-4xl mx-auto px-4 md:px-8 py-10 md:py-14 space-y-10">
-      <DashboardWalkthrough auditId={latestAudit?.id} paid={hasPaidPlan} />
-      <BrowserNotifications />
       {hasAudit && <Card className="border-emerald-200" aria-label="Your next three improvements">
         <CardHeader>
           <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700">Your next three improvements</p>
@@ -1197,6 +1195,8 @@ function SignedInDashboard() {
           <p className="mt-3 text-xs text-muted-foreground">Change your website → mark the task done → re-audit → review measured progress. Connecting Google is optional and does not block your fixes.</p>
         </CardContent>}
       </Card>}
+      <DashboardWalkthrough auditId={latestAudit?.id} paid={hasPaidPlan} />
+      <BrowserNotifications />
       {programStateLoading ? (
         <Card className="overflow-hidden border-emerald-500/20" aria-label="Loading your SEO and GEO program">
           <div className="h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500" />
@@ -1211,17 +1211,17 @@ function SignedInDashboard() {
           <div className="h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500" />
           <CardHeader className="pb-4">
             <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700">This week's plan</p>
-            <CardTitle className="text-2xl md:text-3xl">Make one improvement, then measure it</CardTitle>
-            <CardDescription className="max-w-2xl text-sm leading-relaxed">Your tracking is configured. Check the latest collection status in SEO opportunities, make one unfinished improvement, then re-audit the same page. Changes in rankings and traffic are observations, not proof that a particular fix caused them.</CardDescription>
+            <CardTitle className="text-2xl md:text-3xl">Your measurement status</CardTitle>
+            <CardDescription className="max-w-2xl text-sm leading-relaxed">Check what has actually been collected before drawing conclusions. Google access, keyword setup and completed collections are separate steps. Ranking and traffic changes do not prove a particular fix caused them.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-3 sm:grid-cols-3">
-              <Link href={`/results/${latestAudit!.id}`} className="rounded-lg border bg-white p-3 hover:border-emerald-300 hover:bg-emerald-50/30">
+              <Link href={`/actions/${latestAudit!.id}`} className="rounded-lg border bg-white p-3 hover:border-emerald-300 hover:bg-emerald-50/30">
                 <p className="text-xs text-muted-foreground">Latest audit</p>
                 <p className="mt-1 font-semibold">{Math.round(latestAudit!.geoScore)}/100</p>
                 <p className="mt-1 text-xs font-medium text-emerald-700">Review action plan</p>
               </Link>
-              <Link href={`/results/${latestAudit!.id}#seo-opportunities`} className="rounded-lg border bg-white p-3 hover:border-emerald-300 hover:bg-emerald-50/30">
+              <Link href={`/seo/${latestAudit!.id}`} className="rounded-lg border bg-white p-3 hover:border-emerald-300 hover:bg-emerald-50/30">
                 <p className="text-xs text-muted-foreground">Rank tracking</p>
                 <p className="mt-1 font-semibold">{activeKeywordCount} active keyword{activeKeywordCount === 1 ? "" : "s"}</p>
                 <p className="mt-1 text-xs text-muted-foreground">{baselineCount} collected · {activeKeywordCount - baselineCount} awaiting baseline · {overdueCount} overdue</p>
@@ -1320,7 +1320,7 @@ function SignedInDashboard() {
                 <p className="text-sm text-muted-foreground">Add Search Console and GA4 so recommendations use real queries, clicks, rankings, and AI referral traffic.</p>
                 <div className="mt-3">
                   {googleConnected ? (
-                    <p className="text-xs font-semibold text-emerald-700">Search Console is connected. Check GA4 separately in Tracking.</p>
+                    <div className="space-y-1 text-xs"><p>Search Console: access granted. Choose a matching site property in SEO performance.</p><p>GA4: a property is selected for this account. Confirm that it covers this site in Tracking.</p><p>Rank tracking: {activeKeywordCount} active targets. Check collection dates in SEO performance.</p><Link href={latestAudit ? `/seo/${latestAudit.id}` : "/seo"} className="font-semibold underline">Verify this site's data</Link></div>
                   ) : hasPaidPlan ? (
                     <Link href="/projects"><Button size="sm" variant="outline">Connect Google</Button></Link>
                   ) : (
