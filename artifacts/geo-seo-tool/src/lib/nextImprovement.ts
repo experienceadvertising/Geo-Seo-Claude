@@ -19,3 +19,21 @@ export function nextImprovement<T extends Recommendation>(
 export function improvementLink(auditId: number, recommendationId?: string): string {
   return `/actions/${auditId}${recommendationId ? `?task=${encodeURIComponent(recommendationId)}` : ""}#recommendations`;
 }
+
+/** Use the same selection policy as the action plan and emails, excluding each pick. */
+export function nextThreeImprovements<T extends Recommendation>(
+  recommendations: T[] | undefined,
+  completed: ReadonlySet<string>,
+  status: "loading" | "error" | "ready",
+) {
+  const first = nextImprovement(recommendations, completed, status);
+  const tasks: T[] = [];
+  const excluded = new Set(completed);
+  let task = first.task;
+  while (task?.id && tasks.length < 3) {
+    tasks.push(task);
+    excluded.add(task.id);
+    task = nextImprovement(recommendations, excluded, status).task;
+  }
+  return { state: first.state, tasks };
+}

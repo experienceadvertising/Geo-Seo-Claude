@@ -1,6 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { nextImprovement, improvementLink } from "./nextImprovement.ts";
+import { nextImprovement, nextThreeImprovements, improvementLink } from "./nextImprovement.ts";
+
+test("three suggestions exclude completed and duplicate IDs, and fail closed on unread progress", () => {
+  const items = [...recs, recs[2]];
+  assert.deepEqual(nextThreeImprovements(items, new Set(), "ready").tasks.map(r => r.id), ["direct-answer-block", "content-effort-methodology", "trim-filler"]);
+  assert.equal(nextThreeImprovements(items, new Set(["direct-answer-block"]), "ready").tasks.length, 2);
+  assert.deepEqual(nextThreeImprovements(items, new Set(), "error").tasks, []);
+});
 
 const recs = [
   { id: "trim-filler", title: "Low", detail: "Example", priority: "low" },
