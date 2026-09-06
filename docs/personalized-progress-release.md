@@ -15,7 +15,9 @@
 - Root typecheck and production build pass.
 - Public SEO validation passes for 30 routes.
 - Synthetic personalized email preview inspected in browser. No email was sent.
+- Local headless Chrome end-to-end test passes: off-site completion, note retention after reload, reopening, completed-task exclusion, weekly email generated from saved fixture records, on-site implementation note, and 390px viewport width.
+- Reproduce with Vite preview on 4173, `QA_AUDIT=1 QA_PAID=1 QA_PORT=4199 node scripts/qa-dashboard-preview.mjs`, then `node --experimental-strip-types scripts/qa-personalized-progress.mjs`. The browser test blocks non-loopback traffic.
 
 ## Release boundary
 
-No merge, deployment, provider lookup, customer email, migration, credential or plan-limit change performed for this release. The existing cadence and opt-out rules remain unchanged. Completion records retain the existing user-and-domain scope. Runtime database and full off-site UI save/reopen testing are still needed in staging before publishing.
+No merge, deployment, provider lookup, customer email, migration, credential or plan-limit change performed for this release. The existing cadence and opt-out rules remain unchanged. Completion records retain the existing user-and-domain scope. UI save/reopen is verified against local fixtures, not the real API or database. Runtime database integration still needs verification in staging before publishing.
