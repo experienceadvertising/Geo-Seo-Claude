@@ -21,6 +21,7 @@ import { CHANGELOG } from "@/data/changelog";
 import { trackEvent, trackGoogleAdsConversion } from "@/lib/analytics";
 import { SEO } from "@/components/seo";
 import { DashboardWalkthrough } from "@/components/dashboard-walkthrough";
+import { BrowserNotifications } from "@/components/browser-notifications";
 import { readBrowserStorage, writeBrowserStorage, removeBrowserStorage } from "@/lib/browser-storage";
 
 function MarketStats() {
@@ -1176,6 +1177,7 @@ function SignedInDashboard() {
   return (
     <div className="flex-1 w-full max-w-4xl mx-auto px-4 md:px-8 py-10 md:py-14 space-y-10">
       <DashboardWalkthrough auditId={latestAudit?.id} paid={hasPaidPlan} />
+      <BrowserNotifications />
       {hasAudit && <Card className="border-emerald-200" aria-label="Your next improvement">
         <CardHeader>
           <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700">Your next improvement</p>

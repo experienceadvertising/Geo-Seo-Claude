@@ -2,6 +2,22 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { selectPersonalizedAction, nextOffsiteAction, sameSite } from "./personalizedAction.ts";
 import { summarizeRankMovement } from "./seoProgressSummary.ts";
+import { safePushMessage, validVapidConfiguration, validVapidSubject } from "./pushPayload.ts";
+
+test("browser notification payloads stay brief and cannot navigate off site", () => {
+  const safe = safePushMessage({ title: "t".repeat(100), body: "b".repeat(200), url: "/actions/42", tag: "x".repeat(100) });
+  assert.equal(safe.title.length, 80);
+  assert.equal(safe.body.length, 180);
+  assert.equal(safe.tag.length, 80);
+  assert.equal(safe.url, "/actions/42");
+  assert.equal(safePushMessage({ ...safe, url: "//example.com" }).url, "/");
+  assert.equal(safePushMessage({ ...safe, url: "https://example.com" }).url, "/");
+  assert.equal(validVapidSubject("mailto:info@aeoimprovement.com"), true);
+  assert.equal(validVapidSubject("https://aeoimprovement.com"), true);
+  assert.equal(validVapidSubject("javascript:alert(1)"), false);
+  assert.equal(validVapidConfiguration("public", "private", "mailto:info@aeoimprovement.com"), true);
+  assert.equal(validVapidConfiguration("public", "private", "invalid"), false);
+});
 
 test("personalized actions only use unfinished catalog-backed saved findings", () => {
   const findings = [{ id: "unknown", title: "Ignore", detail: "Unknown" }, { id: "content-effort-curation", title: "Organize services", detail: "No clear sections", priority: "high" }, { id: "content-effort-methodology", title: "Show your method", detail: "Method missing", priority: "medium" }];

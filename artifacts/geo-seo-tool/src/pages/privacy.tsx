@@ -11,6 +11,7 @@ const sections = [
       "Billing status and transaction references provided by Stripe. AEO Improvement does not receive or store your full payment card number.",
       "Google account connection details and the read-only Analytics or Search Console data you ask the product to retrieve.",
       "Basic security, diagnostic, and product-usage information. Advertising and analytics identifiers are collected only after you accept analytics cookies.",
+      "If you enable browser notifications, the browser provides a push endpoint and encryption keys that we store with your account so we can deliver the updates you requested.",
     ],
   },
   {
@@ -19,6 +20,7 @@ const sections = [
       "Provide audits, simulations, recommendations, monitoring, billing, support, and account communications.",
       "Protect accounts, prevent abuse, diagnose failures, and improve product reliability.",
       "Measure which marketing campaigns lead to signups and useful product activity when you grant analytics consent.",
+      "Send audit-ready and next-task browser notifications only after you explicitly enable them on a supported browser. A notification may include a short recommendation title, but not page excerpts, audit scores, or search queries.",
       "Comply with legal obligations and enforce our Terms of Service.",
     ],
   },
@@ -57,6 +59,7 @@ const sections = [
       "Choose Essential only in the cookie notice to prevent analytics and advertising tags from loading.",
       "Disconnect Google integrations from the product and manage third-party permissions from the relevant provider.",
       "Use unsubscribe links in marketing emails. Essential service, security, and billing messages may still be sent while your account remains active.",
+      "Turn browser notifications off from the browser where you enabled them. Expired or rejected browser endpoints are removed after the push provider reports that they no longer work.",
     ],
   },
 ];
@@ -70,7 +73,7 @@ export default function PrivacyPage() {
         path="/privacy"
       />
       <div className="space-y-3 border-b pb-8">
-        <p className="text-sm font-semibold text-emerald-700">Updated September 4, 2026</p>
+        <p className="text-sm font-semibold text-emerald-700">Updated September 6, 2026</p>
         <h1 className="text-4xl font-bold tracking-tight">Privacy Policy</h1>
         <p className="text-muted-foreground">
           This policy explains what AEO Improvement collects and how that information is used.

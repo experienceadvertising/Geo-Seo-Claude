@@ -36,7 +36,8 @@
     "pino-http": "^10",
     "playwright-core": "^1.59.1",
     "postmark": "^4.0.7",
-    "svix": "^1.92.2"
+    "svix": "^1.92.2",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@types/bcryptjs": "^3.0.0",
@@ -48,6 +49,7 @@
     "@types/node": "catalog:",
     "@types/node-cron": "^3.0.11",
     "@types/pdfkit": "^0.17.6",
+    "@types/web-push": "^3.6.4",
     "esbuild": "^0.27.3",
     "esbuild-plugin-pino": "^2.3.3",
     "pino-pretty": "^13",

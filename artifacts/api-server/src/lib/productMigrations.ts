@@ -71,4 +71,13 @@ export async function runProductMigrations(): Promise<void> {
     )
   `);
   await db.execute(sql`CREATE INDEX IF NOT EXISTS seo_rank_tasks_target_status_idx ON seo_rank_tasks (target_id, status)`);
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS push_subscriptions (
+      id SERIAL PRIMARY KEY, user_id TEXT NOT NULL, endpoint TEXT NOT NULL,
+      p256dh TEXT NOT NULL, auth TEXT NOT NULL, last_error TEXT,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(), updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `);
+  await db.execute(sql`CREATE UNIQUE INDEX IF NOT EXISTS push_subscriptions_endpoint_uq ON push_subscriptions (endpoint)`);
+  await db.execute(sql`CREATE INDEX IF NOT EXISTS push_subscriptions_user_idx ON push_subscriptions (user_id)`);
 }

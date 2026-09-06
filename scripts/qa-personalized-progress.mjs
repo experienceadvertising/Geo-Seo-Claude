@@ -9,7 +9,7 @@ try {
   const context = await browser.newContext();
   await context.route('**/*', route => ['localhost', '127.0.0.1'].includes(new URL(route.request().url()).hostname) ? route.continue() : route.abort());
   const page = await context.newPage();
-  await page.goto('http://localhost:4199/actions/1?task=add-faq#recommendations');
+  await page.goto('http://localhost:4199/actions/1?task=direct-answer-block#recommendations');
   await page.getByRole('heading', { name: 'Off-site work for example.com' }).waitFor();
   const task = page.locator('#offsite-work > div').filter({ has: page.getByRole('heading', { name: 'Align one company profile with your website', exact: true }) });
   await task.getByRole('textbox').fill('Corrected services at https://example.com/profile');

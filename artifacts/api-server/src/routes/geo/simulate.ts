@@ -10,6 +10,7 @@ import { consumeQuota, refundQuota, currentYearMonth, markApproachingNotified } 
 import { sql } from "drizzle-orm";
 import { db as appDb, usersTable } from "@workspace/db";
 import { EmailService } from "../../lib/emailService";
+import { PushService } from "../../lib/pushService";
 
 const router: IRouter = Router();
 
@@ -236,6 +237,14 @@ router.post("/geo/simulate", requireAuth, simulateRateLimiter, async (req, res):
         );
       })
       .catch((err) => req.log.error({ err, userId: req.userId }, "simulation-complete email failed"));
+
+    Promise.resolve().then(async () => {
+      const [pushAudit] = auditId ? await db.select().from(auditsTable).where(and(eq(auditsTable.id, auditId), eq(auditsTable.userId, req.userId!))).limit(1) : [];
+      const matchingAudit = pushAudit && sameSite(pushAudit.url, domain) ? pushAudit : undefined;
+      const progress = matchingAudit ? await db.select({ id: recommendationProgressTable.recommendationId }).from(recommendationProgressTable).where(and(eq(recommendationProgressTable.userId, req.userId!), eq(recommendationProgressTable.domain, domain.replace(/^www\./, "")))) : [];
+      const next = matchingAudit ? selectPersonalizedAction(matchingAudit.recommendations, new Set(progress.map(row => row.id))) : undefined;
+      await PushService.sendToUser(req.userId!, { title: "Your AI visibility results are ready", body: next?.title ? `Next task: ${next.title}` : "Review the answers and choose one useful improvement.", url: next && auditId ? `/actions/${auditId}?task=${encodeURIComponent(next.id)}#recommendations` : auditId ? `/simulate/${auditId}` : "/", tag: `simulation-${saved.id}` });
+    }).catch(() => req.log.warn("simulation browser notification failed"));
 
     res.json({
       id: saved.id,

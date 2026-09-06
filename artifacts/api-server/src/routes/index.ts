@@ -11,6 +11,7 @@ import crawlerPixelRouter from "./crawlerPixel";
 import googleRouter from "./google";
 import telemetryRouter from "./telemetry";
 import seoRouter from "./seo";
+import notificationsRouter from "./notifications";
 
 const router: IRouter = Router();
 
@@ -26,5 +27,6 @@ router.use(crawlerPixelRouter);
 router.use(googleRouter);
 router.use(telemetryRouter);
 router.use(seoRouter);
+router.use(notificationsRouter);
 
 export default router;

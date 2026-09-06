@@ -192,6 +192,36 @@ export function getRecommendation(id: string): Recommendation | undefined {
   return CATALOG.byId.get(id);
 }
 
+export type SavedRecommendation = {
+  id?: string;
+  priority?: string;
+  title: string;
+  detail: string;
+};
+
+/**
+ * Select the highest-priority unfinished saved finding that still maps to the
+ * reviewed recommendation catalog. Shared by the app and email jobs so users
+ * see the same next task everywhere.
+ */
+export function selectPersonalizedAction<T extends SavedRecommendation>(
+  recommendations: unknown,
+  completed: ReadonlySet<string>,
+): (T & { id: string }) | undefined {
+  if (!Array.isArray(recommendations)) return undefined;
+  const priority: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
+  return recommendations
+    .filter((item): item is T & { id: string } => Boolean(
+      item && typeof item === "object"
+      && typeof item.id === "string"
+      && getRecommendation(item.id)
+      && !completed.has(item.id)
+      && typeof item.title === "string"
+      && typeof item.detail === "string",
+    ))
+    .sort((a, b) => (priority[a.priority ?? ""] ?? 4) - (priority[b.priority ?? ""] ?? 4))[0];
+}
+
 /** Get all recommendations, including retired ones (for legacy report rendering). */
 export function getAllRecommendationsIncludingRetired(): readonly Recommendation[] {
   return CATALOG.all;
