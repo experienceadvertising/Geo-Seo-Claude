@@ -9,7 +9,8 @@ import {
 import { analyzeUrl } from "../../lib/geoAnalyzer";
 import { generateAuditPdf } from "../../lib/pdfReport";
 import { anthropic } from "@workspace/integrations-anthropic-ai";
-import { RECOMMENDATIONS_SCHEMA_VERSION, METHODOLOGY_VERSION } from "@workspace/recommendations";
+import { RECOMMENDATIONS_SCHEMA_VERSION, METHODOLOGY_VERSION, selectPersonalizedAction } from "@workspace/recommendations";
+import { PushService } from "../../lib/pushService";
 import simulateRouter from "./simulate";
 import monitorRouter from "./monitor";
 import crawlerRouter from "./crawler";
@@ -424,6 +425,15 @@ Hard rules:
       brandSignals: analysis.brandSignals,
       recommendations: analysis.recommendations,
     }).returning();
+
+    Promise.resolve().then(async () => {
+      const domain = normalizeDomain(url);
+      const completedRows = domain ? await db.select({ id: recommendationProgressTable.recommendationId }).from(recommendationProgressTable)
+        .where(and(eq(recommendationProgressTable.userId, req.userId!), eq(recommendationProgressTable.domain, domain))) : [];
+      const next = selectPersonalizedAction<any>(analysis.recommendations, new Set(completedRows.map(row => row.id)));
+      const destination = next ? `/actions/${audit.id}?task=${encodeURIComponent(next.id)}#recommendations` : `/results/${audit.id}`;
+      await PushService.sendToUser(req.userId!, { title: "Your website audit is ready", body: next?.title ?? "Review your updated SEO and GEO results.", url: destination, tag: `audit-${audit.id}` });
+    }).catch(() => req.log.warn("audit browser notification failed"));
 
     // Quota was already reserved up-front by consumeQuota — nothing to do
     // here on the success path. Reservation is only refunded if we throw

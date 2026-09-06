@@ -22,6 +22,7 @@ import type { WorkerJob } from "./workerPlan";
 import { selectPersonalizedAction, nextOffsiteAction } from "./personalizedAction";
 import { OFFSITE_ACTIONS } from "@workspace/recommendations";
 import { summarizeRankMovement } from "./seoProgressSummary";
+import { PushService } from "./pushService";
 
 // Cron-driven sends have no inbound HTTP request to derive a base URL from,
 // so we use the configured FRONTEND_URL (preferred in prod) or fall back to
@@ -332,6 +333,15 @@ async function runWeeklyDigests(userId?: string) {
       },
       unsubUrl(user.unsubscribeToken),
     );
+
+    if (latestAudit && nextAction) {
+      await PushService.sendToUser(user.id, {
+        title: "Your SEO + GEO task this week",
+        body: nextAction.title,
+        url: `/actions/${latestAudit.id}?task=${encodeURIComponent(nextAction.id)}#recommendations`,
+        tag: `weekly-task-${latestAudit.id}`,
+      }).catch(() => logger.warn("Weekly browser notification failed"));
+    }
 
     if (ok) {
       await db

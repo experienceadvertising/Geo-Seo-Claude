@@ -7,9 +7,10 @@ import { createServer } from 'node:http';
 const returning = process.env.QA_AUDIT === '1';
 const paid = process.env.QA_PAID === '1';
 const signedOut = process.env.QA_SIGNED_OUT === '1';
+const pushConfigured = process.env.QA_PUSH === '1';
 const previewOrigin = process.env.QA_PREVIEW_ORIGIN || 'http://127.0.0.1:4173';
 const port = Number(process.env.QA_PORT || 4184);
-const audit = { id: 1, url: 'https://example.com/', geoScore: 54, createdAt: '2026-09-04T12:00:00Z', recommendations: [{ id: 'add-faq', title: 'Answer a relevant buyer question', detail: 'Help visitors choose the right option.', category: 'structure', priority: 'high' }, { id: 'increase-depth', title: 'Improve useful page detail', detail: 'Add verified details.', category: 'depth', priority: 'medium' }] };
+const audit = { id: 1, url: 'https://example.com/', geoScore: 54, createdAt: '2026-09-04T12:00:00Z', recommendations: [{ id: 'direct-answer-block', title: 'Answer a relevant buyer question', detail: 'Help visitors choose the right option.', category: 'structure', priority: 'high' }, { id: 'content-effort-methodology', title: 'Show how the service works', detail: 'Add verified methodology details.', category: 'depth', priority: 'medium' }] };
 Object.assign(audit, {
   scores: { citability: 50, brandAuthority: 50, aiCrawlerAccess: 75, technicalSeo: 60, structuredData: 40, platformOptimization: 50 },
   title: 'Local test page', brandName: 'Example', recommendationsSchemaVersion: 'v1',
@@ -27,6 +28,7 @@ const fixtures = {
   '/api/seo/keywords': { providerConfigured: true, limits: { activeKeywords: 25 }, targets: paid ? [{ id: 1, keyword: 'example service', locationName: 'United States', device: 'desktop', active: true, latest: null }, { id: 2, keyword: 'example agency', locationName: 'United States', device: 'mobile', active: true, latest: { position: 12, result_present: true, collected_at: '2026-08-01' } }] : [] },
   '/api/seo/overview': { limits: { activeKeywords: 25, manualRefreshes: 10 }, usage: { activeKeywords: paid ? 2 : 0, manualRefreshes: 0 } },
   '/api/geo/recommendation-progress': { completed: [] },
+  '/api/notifications/status': { configured: pushConfigured, subscribed: false, publicKey: pushConfigured ? 'BCZAdummyPublicVapidKeyForLocalPermissionCheckOnly' : null },
 };
 
 if (paid) {
