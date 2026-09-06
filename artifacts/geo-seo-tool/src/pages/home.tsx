@@ -1,6 +1,7 @@
 import React from "react";
 import { sameAuditPage } from "@/lib/auditProgress";
-import { nextImprovement, improvementLink } from "@/lib/nextImprovement";
+import { nextThreeImprovements, improvementLink } from "@/lib/nextImprovement";
+import { getImplementationGuide } from "@workspace/recommendations";
 import { Link, useLocation } from "wouter";
 import { Search, Loader2, ArrowRight, BarChart3, TrendingUp, TrendingDown, Minus, Zap, Shield, Lock, Sparkles, CheckCircle2, BookOpen, Lightbulb, ExternalLink, Globe, FileCode, Building2, Bot, Activity, LineChart, Radar, Bell, Megaphone } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -1151,10 +1152,10 @@ function SignedInDashboard() {
   const confirmedSteps = [hasAudit, googleConnected, rankTrackingActive, monitoringActive];
   const confirmedCount = confirmedSteps.filter(Boolean).length;
   const completedRecommendationIds = new Set((recommendationProgress.data?.completed ?? []).map((item) => item.recommendationId));
-  const nextTask = nextImprovement(latestAuditDetails?.recommendations, completedRecommendationIds,
+  const nextTask = nextThreeImprovements(latestAuditDetails?.recommendations, completedRecommendationIds,
     detailsError || recommendationProgress.isError ? "error"
       : detailsLoading || (Boolean(latestAuditDetails?.recommendations?.length) && recommendationProgress.isLoading) ? "loading" : "ready");
-  const nextRecommendation = nextTask.task;
+  const nextRecommendation = nextTask.tasks[0];
   const activeKeywordCount = seoKeywords.data?.targets?.filter((target) => target.active).length ?? 0;
   const baselineCount = seoKeywords.data?.targets?.filter((target) => target.active && target.latest).length ?? 0;
   const overdueCount = seoKeywords.data?.targets?.filter((target) => target.active && target.latest && Date.now() - Date.parse(target.latest.collected_at) > 8 * 86400000).length ?? 0;
@@ -1178,14 +1179,21 @@ function SignedInDashboard() {
     <div className="flex-1 w-full max-w-4xl mx-auto px-4 md:px-8 py-10 md:py-14 space-y-10">
       <DashboardWalkthrough auditId={latestAudit?.id} paid={hasPaidPlan} />
       <BrowserNotifications />
-      {hasAudit && <Card className="border-emerald-200" aria-label="Your next improvement">
+      {hasAudit && <Card className="border-emerald-200" aria-label="Your next three improvements">
         <CardHeader>
-          <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700">Your next improvement</p>
-          <CardTitle>{nextTask.state === "loading" ? "Finding your next task…" : nextTask.state === "error" ? "Your action plan could not be loaded" : nextRecommendation?.title ?? (nextTask.state === "complete" ? "Your recorded tasks are complete" : "Review your page and build an action plan")}</CardTitle>
-          <CardDescription>{nextRecommendation?.detail ?? (nextTask.state === "complete" ? "These are changes you marked done, not verified results. Re-audit the same page after publishing, then review any changes in search performance." : nextTask.state === "error" ? "We have not changed your saved progress. Open your audit to try again." : nextTask.state === "loading" ? "Checking your audit and saved progress." : "Open your audit and re-scan if it does not contain current recommendations.")}</CardDescription>
+          <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700">Your next three improvements</p>
+          <CardTitle>{nextTask.state === "loading" ? "Finding your next tasks…" : nextTask.state === "error" ? "Your action plan could not be loaded" : nextRecommendation ? "Start with one useful change" : (nextTask.state === "complete" ? "Your recorded tasks are complete" : "Review your page and build an action plan")}</CardTitle>
+          <CardDescription>{nextRecommendation ? `Prioritized from the audit of ${latestAuditDetails?.url ?? latestAudit?.url}. Completed tasks drop out as you make progress.` : (nextTask.state === "complete" ? "Re-audit the same page after publishing to verify your recorded changes, then review search performance." : nextTask.state === "error" ? "We could not read your saved progress. Open your audit to try again." : nextTask.state === "loading" ? "Checking your audit and saved progress." : "Open your audit and re-scan if it does not contain current recommendations.")}</CardDescription>
         </CardHeader>
         {nextTask.state !== "loading" && <CardContent>
-          <Link href={improvementLink(latestAudit!.id, nextRecommendation?.id)}><Button>{nextRecommendation ? "Work on this improvement" : "Review my audit"}<ArrowRight className="ml-2 h-4 w-4" /></Button></Link>
+          {nextTask.tasks.length > 0 ? <ol className="space-y-4">
+            {nextTask.tasks.map((task, index) => <li key={task.id} className="rounded-lg border p-4 space-y-3">
+              <div className="flex items-start gap-3"><span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-sm font-semibold text-emerald-800" aria-hidden="true">{index + 1}</span><h3 className="font-semibold">{task.title}</h3></div>
+              <p className="text-sm text-muted-foreground">{task.detail}</p>
+              <details className="text-sm"><summary className="cursor-pointer font-medium">How to check the improvement</summary><p className="mt-2 text-muted-foreground">{getImplementationGuide(task.id).verify}</p></details>
+              <Link href={improvementLink(latestAudit!.id, task.id)}><Button variant={index === 0 ? "default" : "outline"} size="sm">{index === 0 ? "Start this improvement" : "View steps and draft"}<ArrowRight className="ml-2 h-4 w-4" /></Button></Link>
+            </li>)}
+          </ol> : <Link href={improvementLink(latestAudit!.id)}><Button>Review my audit<ArrowRight className="ml-2 h-4 w-4" /></Button></Link>}
           <p className="mt-3 text-xs text-muted-foreground">Change your website → mark the task done → re-audit → review measured progress. Connecting Google is optional and does not block your fixes.</p>
         </CardContent>}
       </Card>}
