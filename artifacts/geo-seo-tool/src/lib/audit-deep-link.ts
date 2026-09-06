@@ -1,6 +1,7 @@
 const AUDIT_SECTION_IDS = new Set([
   "recommendations",
   "seo-opportunities",
+  "site-coverage",
   "technical-breakdown",
 ]);
 

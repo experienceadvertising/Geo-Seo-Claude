@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { nextImprovement } from "@/lib/nextImprovement";
 import { Link, useLocation } from "wouter";
-import { Sparkles, LogOut, Shield, Menu, LayoutDashboard, FolderKanban, CreditCard, BookOpen, CircleHelp, CheckCircle2, Search, SlidersHorizontal, MessageSquareText, Library } from "lucide-react";
+import { Sparkles, LogOut, Shield, Menu, LayoutDashboard, FolderKanban, CreditCard, BookOpen, CircleHelp, CheckCircle2, Search, ScanSearch, SlidersHorizontal, MessageSquareText, Library } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { customFetch, getGetAuditQueryKey, getListAuditsQueryKey, useGetAudit, useListAudits } from "@workspace/api-client-react";
@@ -214,6 +214,7 @@ function AuditResultsNav({ mobile = false }: { mobile?: boolean }) {
 
   const links = [
     { label: "Full audit", href: `/results/${audit.id}`, icon: LayoutDashboard },
+    { label: "Important page coverage", href: `/results/${audit.id}#site-coverage`, icon: ScanSearch },
     { label: "Technical details", href: `/results/${audit.id}?details=1#technical-breakdown`, icon: SlidersHorizontal },
   ];
 

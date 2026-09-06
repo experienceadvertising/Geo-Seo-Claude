@@ -111,6 +111,7 @@ export const PLAN_LIMITS = {
     sentimentAnalysis: false,
     seoKeywordTargets: 0,
     manualRankRefreshes: 0,
+    siteDiscoveryPages: 3,
   },
   // Starter is deliberately an activation tier, not a discounted Pro plan.
   // It offers more room to implement the guided SEO + GEO workflow, while
@@ -130,6 +131,7 @@ export const PLAN_LIMITS = {
     sentimentAnalysis: false,
     seoKeywordTargets: 0,
     manualRankRefreshes: 0,
+    siteDiscoveryPages: 5,
   },
   pro: {
     simulationPrompts: 25,
@@ -149,6 +151,7 @@ export const PLAN_LIMITS = {
     sentimentAnalysis: true,
     seoKeywordTargets: 25,
     manualRankRefreshes: 10,
+    siteDiscoveryPages: 8,
   },
   agency: {
     // Agency is priced for a deliberate client portfolio, not unlimited
@@ -168,5 +171,6 @@ export const PLAN_LIMITS = {
     sentimentAnalysis: true,
     seoKeywordTargets: 100,
     manualRankRefreshes: 50,
+    siteDiscoveryPages: 15,
   },
 } satisfies Record<Plan, object>;
