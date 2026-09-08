@@ -162,7 +162,7 @@ export function siteRewriteSuggestion(
   if (["content-effort-original-evidence", "content-effort-methodology", "content-effort-perspective", "add-proprietary-data"].includes(id)) {
     return {
       label: "First-party evidence block",
-      draft: `How we evaluated ${topic}\n\nMethod: [What you reviewed, tested, measured, or observed]\nScope: [Sample, time period, pages, customers, or campaigns included]\nWhat we found: [Specific verified finding]\nTradeoff or limitation: [What the evidence does not prove]\nPractical takeaway: [How the reader should use this finding]`,
+      draft: `Evidence from ${brand}\n\nMethod: [What you reviewed, tested, measured, or observed]\nScope: [Sample, time period, pages, customers, or campaigns included]\nWhat we found: [Specific verified finding]\nTradeoff or limitation: [What the evidence does not prove]\nPractical takeaway: [How the reader should use this finding]`,
       groundedIn,
       reviewNote,
     };
