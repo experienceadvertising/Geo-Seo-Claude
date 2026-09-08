@@ -11,6 +11,7 @@ import { customFetch } from "@workspace/api-client-react";
 import { apiErrorMessage } from "@/lib/api-error";
 import { getNextPath, nextQuerySuffix } from "@/lib/next-path";
 import { trackEvent, trackGoogleAdsConversion } from "@/lib/analytics";
+import { readBrowserStorage } from "@/lib/browser-storage";
 
 export default function SignUpPage() {
   const [firstName, setFirstName] = useState("");
@@ -58,7 +59,7 @@ export default function SignUpPage() {
     try {
       await customFetch("/api/auth/register", {
         method: "POST",
-        body: JSON.stringify({ firstName, email, password, referralCode }),
+        body: JSON.stringify({ firstName, email, password, referralCode, onboardingUrl: readBrowserStorage("pendingAuditUrl") }),
       });
       trackEvent("sign_up_complete");
       trackGoogleAdsConversion("signup");

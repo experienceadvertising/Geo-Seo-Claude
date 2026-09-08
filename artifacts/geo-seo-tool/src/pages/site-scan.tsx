@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { SiteTaskQueue } from "@/components/site-task-queue";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { customFetch } from "@workspace/api-client-react";
 import { Link } from "wouter";
@@ -17,6 +18,11 @@ export default function SiteScan() {
   const [error, setError] = useState("");
   const [competitor, setCompetitor] = useState("");
   const [comparisonId, setComparisonId] = useState("");
+  const history = useQuery({ queryKey: ["audit-history"], queryFn: () => customFetch<{ id: number; url: string }[]>("/api/geo/audits") });
+  const savedSites = [...new Set((history.data || []).map(page => { try { return new URL(page.url).origin; } catch { return ""; } }).filter(Boolean))];
+  useEffect(() => {
+    if (!site && savedSites.length) { setSite(savedSites[0]); setInput(savedSites[0]); }
+  }, [history.data]);
   const plan = useQuery({ queryKey: ["site-plan", site], queryFn: () => customFetch<Plan>(`/api/geo/site-plan?url=${encodeURIComponent(site)}`), enabled: Boolean(site) });
   const scanCompetitor = useMutation({
     mutationFn: () => customFetch<{ id: number }>("/api/geo/analyze", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: competitor, siteScan: true }) }),
@@ -25,8 +31,9 @@ export default function SiteScan() {
   const reference = plan.data?.competitorPages.find(p => String(p.id) === comparisonId);
   return <div className="mx-auto max-w-5xl space-y-6 px-4 py-8">
     <SEO title="Site scan | AEO Improvement" description="Choose important pages, review site-specific improvements and follow progress." path="/site-scan" index={false} />
-    <h1 className="text-3xl font-bold">Find your site's next improvements</h1>
+    <h1 className="text-3xl font-bold">{new URLSearchParams(window.location.search).get("first") === "1" ? "Your first audit is ready" : "Find your site's next improvements"}</h1>
     <p className="text-muted-foreground">Start with your homepage, then choose the pages that explain your offers, experience and expertise. Your saved findings stay available while you expand coverage.</p>
+    {savedSites.length > 0 && <label className="block text-sm">Saved website<select className="block w-full max-w-lg rounded border p-2" value={savedSites.includes(site) ? site : ""} onChange={e => { if (e.target.value) { setSite(e.target.value); setInput(e.target.value); setComparisonId(""); } }}><option value="">Choose a saved website</option>{savedSites.map(url => <option key={url} value={url}>{url}</option>)}</select></label>}
     <form className="flex flex-wrap gap-2" onSubmit={e => { e.preventDefault(); try { const u = new URL(input.includes("://") ? input : `https://${input}`); if (!/^https?:$/.test(u.protocol) || u.username || u.password) throw new Error(); setSite(u.toString()); setComparisonId(""); setError(""); } catch { setError("Enter a public website URL."); } }}>
       <Input aria-label="Your website URL" value={input} onChange={e => setInput(e.target.value)} placeholder="https://yourcompany.com" className="max-w-lg" required />
       <Button>Choose this site</Button>
@@ -35,19 +42,13 @@ export default function SiteScan() {
     {plan.isLoading && <p role="status">Loading saved page findings...</p>}
     {plan.isError && <p role="alert">Could not load this site plan. <button className="underline" onClick={() => plan.refetch()}>Try again</button></p>}
     {plan.data && <>
-      <SiteCoveragePanel key={site} siteUrl={site} history={plan.data.pages} allowRescan={plan.data.paid} />
       {!plan.data.paid && <p className="text-sm">Start with the included page discovery and your existing audit allowance. <Link href="/upgrade" className="underline">Upgrade for rescanning here, ranking context and competitor comparisons.</Link></p>}
-      <section className="space-y-3">
-        <h2 className="text-xl font-bold">Your next three page improvements</h2>
-        <p className="text-sm text-muted-foreground">Based on saved scans, not a full-site crawl. Blocking issues come first. Fresh tracked rankings in positions 4–20 help order otherwise similar opportunities. Ranking movement does not prove causation.</p>
-        {plan.data.pages.filter(p => p.next).slice(0, 3).map(p => <article key={p.id} className="rounded-xl border p-4 space-y-2">
-          <p className="text-xs break-all">{p.url} · Scanned {new Date(p.createdAt).toLocaleDateString()}</p>
-          <h3 className="font-semibold">{p.next!.title}</h3><p className="text-sm">{p.next!.detail}</p>
-          {p.rankings.map((r, i) => <p key={i} className="text-sm">{r.keyword}: {r.position === null ? "No recorded position" : `#${r.position}`} · {r.location}, {r.device} · {r.collectedAt ? new Date(r.collectedAt).toLocaleDateString() : "Awaiting collection"}{r.stale ? " (stale or unavailable, not used for priority)" : ""}{r.resultUrl && <span className="block break-all">Ranking URL: {r.resultUrl}</span>}</p>)}
-          <Link className="inline-block font-semibold text-primary underline" href={`/actions/${p.id}?task=${encodeURIComponent(p.next!.id)}#recommendations`}>Open steps and suggested edit</Link>
-        </article>)}
-        {!plan.data.pages.length && <p>No saved scans for this site yet. Choose pages above to build your plan.</p>}
-      </section>
+      <SiteTaskQueue site={site} />
+      <details className="rounded-xl border p-4" open={!plan.data.pages.length}>
+        <summary className="cursor-pointer font-semibold">Next: scan more important pages</summary>
+        <p className="my-3 text-sm text-muted-foreground">You can make your first improvement before scanning more pages. Expand coverage when you are ready.</p>
+        <SiteCoveragePanel key={site} siteUrl={site} history={plan.data.pages} allowRescan={plan.data.paid} />
+      </details>
       <section className="space-y-3"><h2 className="text-xl font-bold">Page progress</h2>
         <p className="text-sm">Showing up to {plan.data.pageLimit} recently audited pages from your latest 500 audits. Complete tasks in the action plan, then rescan the same URL. Scores measure audit signals, not rankings.</p>
         {plan.data.pages.map(p => <div key={p.id} className="rounded-lg border p-3 flex flex-wrap justify-between gap-2"><span className="break-all">{p.url}<span className="block text-sm">Readiness {Math.round(p.geoScore)}{p.previousScore !== null ? `, previously ${Math.round(p.previousScore)}` : ", first saved baseline"} · {p.completedCount} recorded tasks</span></span><span className="flex gap-3"><Link className="underline" href={`/actions/${p.id}`}>Actions</Link><Link className="underline" href={`/seo/${p.id}`}>SEO trends</Link></span></div>)}

@@ -6,6 +6,7 @@ import { SeoPerformancePanel } from "@/components/seo-performance-panel";
 import { SeoTrackingPanel } from "@/components/seo-tracking-panel";
 import Results from "./results";
 import { OffsiteWork } from "@/components/offsite-work";
+import { SiteTaskQueue } from "@/components/site-task-queue";
 import { uniqueAuditedPageCount } from "@/lib/action-plan";
 
 export default function WorkspaceSection({ section }: { section: "seo" | "actions" | "ai-visibility" }) {
@@ -38,6 +39,7 @@ export default function WorkspaceSection({ section }: { section: "seo" | "action
           <Link href={`/actions/${audit.id}`} className="underline">Action plan</Link><Link href={`/seo/${audit.id}`} className="underline">SEO performance</Link><Link href={`/ai-visibility/${audit.id}`} className="underline">AI visibility</Link><Link href={`/results/${audit.id}`} className="underline">Full audit</Link>
         </nav>
         {section === "actions" ? <>
+          {!id && <SiteTaskQueue site={new URL(audit.url).origin} />}
           <section className="overflow-hidden rounded-xl border bg-card shadow-sm" aria-labelledby="action-plan-scan-heading">
             <div className="border-b bg-muted/30 p-5">
               <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Specific to this website</p>

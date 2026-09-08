@@ -9,6 +9,7 @@ import { logger } from "../lib/logger";
 import { requireAuth } from "../middlewares/auth";
 import { TRIAL_LENGTH_DAYS } from "../lib/planUtils";
 import { revokeUserSessions } from "../lib/sessionRevocation";
+import { onboardingUrl } from "../lib/onboardingUrl";
 import {
   loginRateLimiter,
   registerRateLimiter,
@@ -172,6 +173,7 @@ router.post("/auth/register", registerRateLimiter, async (req, res): Promise<voi
     id: userId,
     email: normalizedEmail,
     firstName: firstName?.trim() || null,
+    onboardingUrl: onboardingUrl(body.onboardingUrl),
     passwordHash,
     emailVerified: false,
     verificationToken: hashToken(verToken),

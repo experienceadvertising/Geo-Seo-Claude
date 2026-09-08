@@ -4,6 +4,7 @@ export const usersTable = pgTable("users", {
   id: text("id").primaryKey(),
   email: text("email"),
   firstName: text("first_name"),
+  onboardingUrl: text("onboarding_url"),
   passwordHash: text("password_hash"),
   emailVerified: boolean("email_verified").default(false).notNull(),
   verificationToken: text("verification_token"),
