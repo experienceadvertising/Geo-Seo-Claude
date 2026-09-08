@@ -16,6 +16,7 @@ const NotFound = lazy(() => import("@/pages/not-found"));
 const Results = lazy(() => import("@/pages/results"));
 const Simulate = lazy(() => import("@/pages/simulate"));
 const Projects = lazy(() => import("@/pages/projects"));
+const SiteScan = lazy(() => import("@/pages/site-scan"));
 const Admin = lazy(() => import("@/pages/admin"));
 const Pricing = lazy(() => import("@/pages/pricing"));
 const Upgrade = lazy(() => import("@/pages/upgrade"));
@@ -87,6 +88,7 @@ function AppRoutes() {
         <Route path="/projects">
           <RequireAuth><Projects /></RequireAuth>
         </Route>
+        <Route path="/site-scan"><RequireAuth><SiteScan /></RequireAuth></Route>
         {["seo", "actions", "ai-visibility"].map(section => (
           <Route key={section} path={`/${section}/:id?`}>
             <RequireAuth><WorkspaceSection section={section as "seo" | "actions" | "ai-visibility"} /></RequireAuth>

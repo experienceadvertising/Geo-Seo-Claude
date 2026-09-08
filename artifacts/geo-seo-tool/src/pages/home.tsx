@@ -1120,7 +1120,7 @@ function SignedInDashboard() {
           writeBrowserStorage("aeo.activationConverted", "true");
           trackGoogleAdsConversion("activation");
         }
-        setLocation(`/results/${data.id}`);
+        setLocation(source === "post_signup_landing" || !audits?.length ? `/site-scan?url=${encodeURIComponent(normalized)}` : `/results/${data.id}`);
       },
       onError: (err: unknown) => {
         toast({

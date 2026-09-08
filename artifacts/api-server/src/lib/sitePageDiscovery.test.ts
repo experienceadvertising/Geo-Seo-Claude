@@ -2,6 +2,11 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { pagePriority, selectImportantPages } from "./sitePageSelection.ts";
 
+test("discovery rejects credentials and ports and preserves case-sensitive paths", () => {
+  const pages = selectImportantPages(["https://user:pass@example.com/private", "https://example.com:8443/admin", "/Offer", "/offer"], "https://example.com/", 5);
+  assert.deepEqual(pages, ["https://example.com/", "https://example.com/offer", "https://example.com/Offer"].sort((a,b) => pagePriority(b) - pagePriority(a) || a.localeCompare(b)));
+});
+
 test("prioritizes commercial and brand pages over general content", () => {
   assert.ok(pagePriority("https://example.com/pricing") > pagePriority("https://example.com/blog/post"));
   assert.ok(pagePriority("https://example.com/about") > pagePriority("https://example.com/random"));

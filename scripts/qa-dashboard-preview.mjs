@@ -18,6 +18,8 @@ Object.assign(audit, {
   brandSignals: [], aiInsights: null, wordCount: 500, rawHtmlWordCount: 500,
 });
 const fixtures = {
+  '/api/geo/site-plan': { paid, pageLimit: 3, pages: [{ ...audit, previousScore: 50, completedCount: 0, next: audit.recommendations[0], rankings: paid ? [{keyword: 'analytics consultant', location: 'United States', device: 'desktop', position: 12, collectedAt: '2026-09-07', stale: false}] : [] }], competitorPages: paid ? [{...audit, id: 2, url: 'https://competitor.example/services', title: 'Analytics services', description: 'Competitor description', wordCount: 700}] : [] },
+  '/api/geo/site-pages': { pages: [{url: 'https://example.com/', priority: 'Homepage'}, {url: 'https://example.com/about', priority: 'Brand page'}], source: 'sitemap', limit: 3, plan: paid ? 'pro' : 'free' },
   '/api/auth/me': { id: 'local-test', email: 'tester@example.com', firstName: 'Test', plan: 'free', emailVerified: true },
   '/api/me': { userId: 'local-test', plan: 'pro', storedPlan: paid ? 'pro' : 'free', trial: { active: !paid, endsAt: '2026-10-04T12:00:00Z' } },
   '/api/admin/me': { isAdmin: false },
