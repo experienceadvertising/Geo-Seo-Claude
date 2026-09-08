@@ -79,10 +79,10 @@ export function BrowserNotifications() {
     } catch { setMessage("Preferences were not saved. Please try again."); }
     finally { setBusy(false); }
   };
-  return <details className="rounded-xl border bg-white p-4" aria-label="Browser notifications">
-    <summary className="cursor-pointer font-semibold">Browser updates: {enabled ? "on for this account" : "off for this account"}</summary>
+  return <details id="browser-notifications" className="rounded-xl border bg-white p-4" aria-label="Browser notifications">
+    <summary className="cursor-pointer font-semibold">{enabled ? "Browser updates: on for this account" : "Get reminders for your next improvement"}</summary>
     <div className="mt-3 space-y-3">
-      <p className="text-sm text-muted-foreground">Choose which updates bring you back to your work. Short task titles can appear on your lock screen. Page excerpts, scores and search queries are not included.</p>
+      <p className="text-sm text-muted-foreground">Enable browser notifications for your next task, important monitoring changes and weekly strategy reminders. No extension or download is needed. Choose the updates you want and turn them off here anytime. Short task titles can appear on your lock screen. Page excerpts, scores and search queries are not included.</p>
       {localSubscription && !enabled && <p className="text-sm">This browser's saved subscription is not active for this account. Enable it here to reconnect.</p>}
       {enabled && status.preferences && <fieldset className="space-y-2" disabled={busy}><legend className="text-sm font-medium">Send me</legend>{([ ["tasksEnabled", "Audit results and my next task"], ["monitoringEnabled", "Important monitoring changes"], ["strategiesEnabled", "Weekly strategy reminders"] ] as const).map(([key, label]) => <label key={key} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={status.preferences![key]} onChange={event => savePreferences({ ...status.preferences!, [key]: event.target.checked })} />{label}</label>)}</fieldset>}
       {status.preferences?.lastError && <p className="text-sm">The last delivery attempt failed. Your tasks remain available in the dashboard.</p>}

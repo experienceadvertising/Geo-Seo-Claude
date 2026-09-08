@@ -540,7 +540,7 @@ Hard rules:
         const topRecommendationText = topRec ? `${topRec.title}: ${topRec.detail}` : null;
         const baseUrl = process.env.FRONTEND_URL || "https://aeoimprovement.com";
         const unsubscribeUrl = `${baseUrl}/api/auth/unsubscribe?token=${u.unsubscribeToken}`;
-        EmailService.sendFirstAudit(u.email, u.firstName || "", url, analysis.geoScore, String(audit.id), topRecommendationText, unsubscribeUrl)
+        EmailService.sendFirstAudit(u.email, u.firstName || "", url, analysis.geoScore, String(audit.id), topRecommendationText, unsubscribeUrl, topRec?.id)
           .catch((err) => req.log.error({ err, userId: req.userId }, "first-audit email failed"));
         return true; // genuinely first audit — skip score-changed
       })

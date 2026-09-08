@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { customFetch } from "@workspace/api-client-react";
+import { customFetch, useListAudits } from "@workspace/api-client-react";
 import { apiErrorMessage } from "@/lib/api-error";
 import { monitoringAccessLabel } from "@/lib/planDisplay";
 import {
@@ -252,6 +252,13 @@ export default function ProjectsPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [url, setUrl] = useState("");
+  const { data: savedAudits } = useListAudits();
+  const prefillAttempted = useRef(false);
+  useEffect(() => {
+    if (prefillAttempted.current || !savedAudits) return;
+    prefillAttempted.current = true;
+    setUrl(current => current || savedAudits[0]?.url || "");
+  }, [savedAudits]);
   const [label, setLabel] = useState("");
   const [frequency, setFrequency] = useState<Frequency>("weekly");
 
