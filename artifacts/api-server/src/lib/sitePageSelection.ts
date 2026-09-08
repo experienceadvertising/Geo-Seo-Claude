@@ -21,6 +21,7 @@ export function selectImportantPages(urls: string[], siteUrl: string, limit: num
   for (const raw of [siteUrl, ...urls]) {
     try {
       const parsed = new URL(raw, site);
+      if (parsed.username || parsed.password || parsed.port !== site.port) continue;
       if (parsed.protocol !== "http:" && parsed.protocol !== "https:") continue;
       if (parsed.hostname.toLowerCase().replace(/^www\./, "") !== host) continue;
       parsed.hash = "";
@@ -29,7 +30,7 @@ export function selectImportantPages(urls: string[], siteUrl: string, limit: num
       parsed.protocol = site.protocol;
       parsed.pathname = parsed.pathname.replace(/\/{2,}/g, "/").replace(/\/+$/, "") || "/";
       if (SKIP_PATH.test(parsed.pathname) || FILE_PATH.test(parsed.pathname)) continue;
-      const key = `${parsed.hostname}${parsed.pathname}`.toLowerCase();
+      const key = `${parsed.hostname}${parsed.pathname}`;
       if (!normalized.has(key)) normalized.set(key, parsed.toString());
     } catch { /* Ignore malformed URLs found in sitemaps or page markup. */ }
   }

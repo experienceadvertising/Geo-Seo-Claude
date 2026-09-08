@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { customFetch } from "@workspace/api-client-react";
 import { CheckCircle2, Compass, ExternalLink, Loader2, ScanSearch } from "lucide-react";
 import { Link } from "wouter";
+import { recommendationPageKey } from "@workspace/recommendations";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -13,8 +14,7 @@ type ScanResult = { url: string; id?: number; error?: string };
 
 function pageKey(raw: string): string {
   try {
-    const url = new URL(raw);
-    return `${url.hostname.replace(/^www\./, "").toLowerCase()}${url.pathname.replace(/\/+$/, "") || "/"}`;
+    return recommendationPageKey(raw);
   } catch { return raw; }
 }
 
@@ -25,7 +25,7 @@ function displayPage(raw: string): string {
   } catch { return raw; }
 }
 
-export function SiteCoveragePanel({ siteUrl, history }: { siteUrl: string; history: AuditHistoryItem[] }) {
+export function SiteCoveragePanel({ siteUrl, history, allowRescan = false }: { siteUrl: string; history: AuditHistoryItem[]; allowRescan?: boolean }) {
   const queryClient = useQueryClient();
   const [pages, setPages] = useState<DiscoveredPage[]>([]);
   const [source, setSource] = useState<DiscoveryResponse["source"] | null>(null);
@@ -49,7 +49,7 @@ export function SiteCoveragePanel({ siteUrl, history }: { siteUrl: string; histo
   });
 
   const scanSelected = async () => {
-    const queue = pages.filter((page) => selected.has(page.url) && !auditedByPage.has(pageKey(page.url)));
+    const queue = pages.filter((page) => selected.has(page.url) && (allowRescan || !auditedByPage.has(pageKey(page.url))));
     if (!queue.length) return;
     setScanResults([]);
     setScanProgress({ current: 0, total: queue.length });
@@ -61,11 +61,13 @@ export function SiteCoveragePanel({ siteUrl, history }: { siteUrl: string; histo
         const audit = await customFetch<{ id: number }>("/api/geo/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url: page.url }),
+          body: JSON.stringify({ url: page.url, siteScan: true }),
         });
         completed.push({ url: page.url, id: audit.id });
       } catch (error) {
         completed.push({ url: page.url, error: error instanceof Error ? error.message : "Scan failed" });
+        setScanResults([...completed]);
+        break; // Do not burn through a queue after a quota, access or fetch failure.
       }
       setScanResults([...completed]);
     }
@@ -73,10 +75,11 @@ export function SiteCoveragePanel({ siteUrl, history }: { siteUrl: string; histo
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["audit-history"] }),
       queryClient.invalidateQueries({ queryKey: ["/api/geo/audits"] }),
+      queryClient.invalidateQueries({ queryKey: ["site-plan"] }),
     ]);
   };
 
-  const pendingSelected = pages.filter((page) => selected.has(page.url) && !auditedByPage.has(pageKey(page.url))).length;
+  const pendingSelected = pages.filter((page) => selected.has(page.url) && (allowRescan || !auditedByPage.has(pageKey(page.url)))).length;
 
   return (
     <Card className="border-cyan-200" id="site-coverage">
@@ -92,11 +95,12 @@ export function SiteCoveragePanel({ siteUrl, history }: { siteUrl: string; histo
           </Button>
         )}
         {discover.error && <p role="alert" className="text-sm text-destructive">{discover.error instanceof Error ? discover.error.message : "Important pages could not be loaded."}</p>}
+        {discover.isSuccess && !pages.length && <p role="status" className="text-sm">No eligible public pages were found. Check your URL and crawl rules.</p>}
         {pages.length > 0 && (
           <>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-xs text-muted-foreground">Found from the site's {source === "sitemap" ? "sitemap" : "homepage links"}. Select only pages you want to spend an audit on.</p>
-              <Button size="sm" variant="ghost" onClick={() => discover.mutate()} disabled={discover.isPending}>Refresh page list</Button>
+              <Button size="sm" variant="ghost" onClick={() => discover.mutate()} disabled={discover.isPending || Boolean(scanProgress)}>Refresh page list</Button>
             </div>
             <ul className="divide-y rounded-lg border">
               {pages.map((page) => {
@@ -107,8 +111,8 @@ export function SiteCoveragePanel({ siteUrl, history }: { siteUrl: string; histo
                     <input
                       type="checkbox"
                       className="mt-1 h-4 w-4"
-                      checked={Boolean(prior) || checked}
-                      disabled={Boolean(prior) || Boolean(scanProgress)}
+                      checked={checked}
+                      disabled={(!allowRescan && Boolean(prior)) || Boolean(scanProgress)}
                       onChange={() => setSelected((current) => {
                         const next = new Set(current);
                         if (next.has(page.url)) next.delete(page.url); else next.add(page.url);
@@ -126,7 +130,7 @@ export function SiteCoveragePanel({ siteUrl, history }: { siteUrl: string; histo
               })}
             </ul>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-xs text-muted-foreground">Each selected page uses one audit from your monthly allowance. Failed site fetches are refunded.</p>
+              <p className="text-xs text-muted-foreground">Each selected page uses one audit from your monthly allowance. Keep this page open while scanning. The batch stops on an error; completed audits remain saved.</p>
               <Button onClick={scanSelected} disabled={!pendingSelected || Boolean(scanProgress)}>
                 {scanProgress ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ScanSearch className="mr-2 h-4 w-4" />}
                 {scanProgress ? `Scanning ${scanProgress.current} of ${scanProgress.total}` : `Scan ${pendingSelected} selected page${pendingSelected === 1 ? "" : "s"}`}
@@ -138,7 +142,7 @@ export function SiteCoveragePanel({ siteUrl, history }: { siteUrl: string; histo
           <div className="rounded-lg border bg-muted/20 p-3">
             <p className="text-sm font-semibold">Page scan results</p>
             <ul className="mt-2 space-y-2 text-sm">
-              {scanResults.map((result) => <li key={result.url} className="flex items-center justify-between gap-3"><span className="truncate">{displayPage(result.url)}</span>{result.id ? <Link href={`/actions/${result.id}`} className="font-semibold text-primary underline">Open action plan</Link> : <span className="text-xs text-destructive">Could not scan</span>}</li>)}
+              {scanResults.map((result) => <li key={result.url} className="flex flex-wrap items-center justify-between gap-3"><span className="truncate">{displayPage(result.url)}</span>{result.id ? <Link href={`/actions/${result.id}`} className="font-semibold text-primary underline">Open action plan</Link> : <span role="alert" className="text-xs text-destructive">{result.error}</span>}</li>)}
             </ul>
           </div>
         )}
