@@ -102,13 +102,13 @@ export const EmailService = {
     return send(email, subject, html, text, "welcome", unsubscribeUrl);
   },
 
-  async sendWelcomeD3(email: string, firstName: string, hasAudit: boolean, unsubscribeUrl?: string): Promise<boolean> {
-    const { subject, html, text } = welcomeD3Email(firstName, hasAudit, unsubscribeUrl);
+  async sendWelcomeD3(email: string, firstName: string, hasAudit: boolean, unsubscribeUrl?: string, progress?: import("./emailTemplates").WelcomeProgress): Promise<boolean> {
+    const { subject, html, text } = welcomeD3Email(firstName, hasAudit, unsubscribeUrl, progress);
     return send(email, subject, html, text, "welcome-d3", unsubscribeUrl);
   },
 
-  async sendWelcomeD7(email: string, firstName: string, unsubscribeUrl?: string): Promise<boolean> {
-    const { subject, html, text } = welcomeD7Email(firstName, unsubscribeUrl);
+  async sendWelcomeD7(email: string, firstName: string, unsubscribeUrl?: string, progress?: import("./emailTemplates").WelcomeProgress): Promise<boolean> {
+    const { subject, html, text } = welcomeD7Email(firstName, unsubscribeUrl, progress);
     return send(email, subject, html, text, "welcome-d7", unsubscribeUrl);
   },
 
@@ -195,8 +195,9 @@ export const EmailService = {
     auditId: string | null | undefined,
     topRecommendation: string | null,
     unsubscribeUrl?: string,
+    recommendationId?: string,
   ): Promise<boolean> {
-    const { subject, html, text } = firstAuditEmail(firstName, url, geoScore, auditId, topRecommendation, unsubscribeUrl);
+    const { subject, html, text } = firstAuditEmail(firstName, url, geoScore, auditId, topRecommendation, unsubscribeUrl, recommendationId);
     return send(email, subject, html, text, "first-audit", unsubscribeUrl);
   },
 

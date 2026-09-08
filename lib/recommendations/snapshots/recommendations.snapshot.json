@@ -135,7 +135,7 @@
     },
     {
       "id": "add-authoritative-citations",
-      "titleTemplate": "Add 2-5 outbound links to authoritative sources",
+      "titleTemplate": "Support relevant claims with credible sources",
       "claim": "Adding outbound citations to credible sources (Cite Sources) is identified by KDD 2024 as one of the top-performing content optimizations for AI-engine visibility, with effect size dependent on the page's current SERP position.",
       "severity": "medium",
       "category": "authority",

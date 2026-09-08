@@ -1280,7 +1280,7 @@ function SignedInDashboard() {
                     </Button>
                   </form>
                 ) : (
-                  <Link href={`/results/${latestAudit!.id}`}>
+                  <Link href={`/actions/${latestAudit!.id}${nextRecommendation ? `?task=${encodeURIComponent(nextRecommendation.id)}#recommendations` : ""}`}>
                     <Button size="sm" variant="outline">Open my action plan <ArrowRight className="ml-1 h-4 w-4" /></Button>
                   </Link>
                 )}
@@ -1297,7 +1297,7 @@ function SignedInDashboard() {
             <div className="border-t pt-4">
               <p className="font-semibold">3. Make one practical improvement</p>
               <p className="text-sm text-muted-foreground">{nextRecommendation?.title ?? "Open your top actions and choose one unfinished recommendation."} Follow the instructions on your website, then mark it complete. Re-scan after publishing to check the change.</p>
-              {hasAudit && <Link href={`/results/${latestAudit!.id}#recommendations`}><Button size="sm" variant="outline" className="mt-3">Open my top actions</Button></Link>}
+              {hasAudit && <Link href={`/actions/${latestAudit!.id}${nextRecommendation ? `?task=${encodeURIComponent(nextRecommendation.id)}#recommendations` : ""}`}><Button size="sm" variant="outline" className="mt-3">Work on my next improvement</Button></Link>}
             </div>
           </div>}
 

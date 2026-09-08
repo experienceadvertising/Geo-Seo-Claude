@@ -3,7 +3,30 @@ import assert from "node:assert/strict";
 import { progressApplies, recommendationPageKey, currentRecommendationCopy, selectPersonalizedAction } from "@workspace/recommendations";
 import { withDeliveryAudit, recordDelivery } from "./deliveryAudit.ts";
 import { pushCategoryEnabled, weeklyStrategyPush } from "./pushPayload.ts";
-import { weeklyDigestEmail, aeoInsightTopic, aeoInsightsEmail } from "./emailTemplates.ts";
+import { weeklyDigestEmail, aeoInsightTopic, aeoInsightsEmail, firstAuditEmail, welcomeD3Email, welcomeD7Email } from "./emailTemplates.ts";
+
+test("welcome followups reflect unfinished tasks, no audit, and completed actions", () => {
+  const progress = { auditId: 51, url: "https://example.com/services", task: { id: "evidence", title: "Add evidence", detail: "Use a real example." } };
+  for (const mail of [welcomeD3Email("Test", true, undefined, progress), welcomeD7Email("Test", undefined, progress)]) {
+    assert.ok(mail.text.includes("Use a real example."));
+    assert.ok(mail.text.includes("/actions/51?task=evidence#recommendations"));
+    assert.ok(!mail.text.includes("If you have not run"));
+  }
+  assert.ok(welcomeD7Email("Test").text.includes("Start by entering"));
+  assert.ok(welcomeD7Email("Test", undefined, { ...progress, task: undefined }).text.includes("no remaining recommendations"));
+});
+
+test("first audit email links to the specific task with consistent safe guidance", () => {
+  const mail = firstAuditEmail("Test", "https://example.com/services", 54, "51", "Add <real> evidence", undefined, "original-evidence");
+  for (const body of [mail.html, mail.text]) {
+    assert.ok(body.includes("/actions/51?task=original-evidence#recommendations"));
+    assert.ok(body.includes("No extension or download is needed"));
+    assert.ok(body.includes("not your Google ranking"));
+    assert.ok(!body.includes("Compare to competitors"));
+  }
+  assert.ok(mail.html.includes("&lt;real&gt;"));
+  assert.ok(firstAuditEmail("Test", "https://example.com", 54, null, null).text.includes("/actions"));
+});
 
 test("page completion does not suppress another page or guess legacy scope", () => {
   const row = { recommendationId: "direct-answer-block", pageUrl: "https://www.example.com/services/" };

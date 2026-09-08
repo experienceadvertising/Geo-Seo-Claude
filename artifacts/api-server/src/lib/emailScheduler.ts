@@ -72,6 +72,14 @@ function getFirstName(user: { firstName?: string | null; email?: string | null }
 }
 
 // ── Welcome series (runs daily at 9:00 AM UTC) ───────────────────────────────
+async function welcomeProgress(userId: string) {
+  const [audit] = await db.select().from(auditsTable).where(eq(auditsTable.userId, userId)).orderBy(desc(auditsTable.createdAt)).limit(1);
+  if (!audit) return undefined;
+  const domain = new URL(audit.url).hostname.toLowerCase().replace(/^www\./, "");
+  const completed = await readRecommendationProgress(userId, domain, audit.url);
+  return { auditId: audit.id, url: audit.url, task: selectPersonalizedAction((audit.recommendations as any[]) ?? [], new Set(completed.map(row => row.recommendationId))) };
+}
+
 async function runWelcomeSeries(userId?: string) {
   logger.info("Email scheduler: running welcome series check");
 
@@ -99,7 +107,8 @@ async function runWelcomeSeries(userId?: string) {
       !user.welcomeD3SentAt &&
       new Date(user.welcomeEmailSentAt) <= daysAgo(3)
     ) {
-      const ok = await EmailService.sendWelcomeD3(user.email, firstName, !!user.firstAuditAt, unsubUrl(user.unsubscribeToken));
+      const progress = await welcomeProgress(user.id);
+      const ok = await EmailService.sendWelcomeD3(user.email, firstName, Boolean(progress), unsubUrl(user.unsubscribeToken), progress);
       if (ok) {
         await db
           .update(usersTable)
@@ -129,7 +138,7 @@ async function runWelcomeSeries(userId?: string) {
         continue;
       }
 
-      const ok = await EmailService.sendWelcomeD7(user.email, firstName, unsubUrl(user.unsubscribeToken));
+      const ok = await EmailService.sendWelcomeD7(user.email, firstName, unsubUrl(user.unsubscribeToken), await welcomeProgress(user.id));
       if (ok) {
         await db
           .update(usersTable)

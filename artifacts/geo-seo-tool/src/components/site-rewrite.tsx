@@ -21,16 +21,16 @@ type Props = {
 
 export function SiteRewrite({ recommendation, audit }: Props) {
   const { user } = useAuth();
-  const suggestion = siteRewriteSuggestion(recommendation, audit);
   const [copied, setCopied] = useState(false);
   const [showWorkbench, setShowWorkbench] = useState(false);
   const storageKey = `aeo-rewrite:${user?.id ?? "unconfirmed"}:${audit.url}:${recommendation.id ?? recommendation.category}`;
-  const [facts, setFacts] = useState({ audience: "", problem: "", differentiator: "", proof: "" });
+  const [facts, setFacts] = useState({ brand: "", audience: "", problem: "", differentiator: "", proof: "" });
+  const suggestion = siteRewriteSuggestion(recommendation, { ...audit, brandName: facts.brand?.trim() || "[Your company name]" });
   const [draft, setDraft] = useState("");
 
   const personalizedDraft = useMemo(() => {
     if (!suggestion) return "";
-    const brand = audit.brandName?.trim() || audit.title?.split(/[|\-]/)[0]?.trim() || "This company";
+    const brand = facts.brand?.trim() || "[Your company name]";
     const supplied = Object.values(facts).some((value) => value.trim());
     if (!supplied) return suggestion.draft;
     const audience = facts.audience.trim() || "[specific customer]";
@@ -47,12 +47,12 @@ export function SiteRewrite({ recommendation, audit }: Props) {
     if (!suggestion) return;
     try {
       const saved = JSON.parse(window.localStorage.getItem(storageKey) || "null");
-      if (saved?.facts) setFacts(saved.facts);
+      if (saved?.facts) setFacts({ brand: "", audience: "", problem: "", differentiator: "", proof: "", ...saved.facts });
       setDraft(typeof saved?.draft === "string" ? saved.draft : suggestion.draft);
     } catch {
       setDraft(suggestion.draft);
     }
-  }, [storageKey, suggestion?.draft]);
+  }, [storageKey]);
 
   useEffect(() => {
     if (!suggestion || !draft) return;
@@ -93,17 +93,19 @@ export function SiteRewrite({ recommendation, audit }: Props) {
         value={draft}
         onChange={(event) => setDraft(event.target.value)}
       />
+      <p className="mt-2 text-sm text-blue-900">Before copying, confirm your company name under Personalize with brand facts. A page title is not always the brand name.</p>
       <div className="mt-2 flex flex-wrap gap-2">
         <Button type="button" variant="outline" size="sm" className="bg-white" onClick={() => setShowWorkbench((value) => !value)} aria-expanded={showWorkbench}>
           <WandSparkles className="mr-1.5 h-3.5 w-3.5" /> {showWorkbench ? "Hide brand facts" : "Personalize with brand facts"}
         </Button>
-        <Button type="button" variant="ghost" size="sm" onClick={() => { setFacts({ audience: "", problem: "", differentiator: "", proof: "" }); setDraft(suggestion.draft); }}>
+        <Button type="button" variant="ghost" size="sm" onClick={() => { setDraft(suggestion.draft); }}>
           <RotateCcw className="mr-1.5 h-3.5 w-3.5" /> Reset draft
         </Button>
       </div>
       {showWorkbench && (
         <div className="mt-3 grid gap-3 rounded-md border border-blue-200 bg-white p-3 sm:grid-cols-2">
           {([
+            ["brand", "Confirm your company name", "Use your actual company name, not the page title"],
             ["audience", "Who is this page for?", "Example: marketing leaders at ecommerce brands"],
             ["problem", "What outcome or problem matters?", "Example: reduce wasted paid media spend"],
             ["differentiator", "What can you verify is different?", "Example: senior-led audits using first-party account data"],

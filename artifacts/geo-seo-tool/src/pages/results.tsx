@@ -768,7 +768,7 @@ export default function Results({ view = "audit", auditId }: { view?: "audit" | 
               // Keep the list focused on what comes next instead of repeating
               // the same long explanation and rewrite twice.
               const allRecs = focusedTaskId
-                ? visibleRecs.filter((recommendation) => recommendation.id !== focusedTaskId)
+                ? (showAllRecommendations ? visibleRecs.filter((recommendation) => recommendation.id !== focusedTaskId) : [])
                 : visibleRecs;
               const researchRecs = allRecs.filter(r => r.source?.type === "research" || r.source?.type === "internal_benchmark");
               // Everything that isn't research-backed (practitioner consensus,
