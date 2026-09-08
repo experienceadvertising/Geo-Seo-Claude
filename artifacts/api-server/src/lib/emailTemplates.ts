@@ -149,14 +149,31 @@ export function welcomeEmail(firstName: string, unsubscribeUrl?: string) {
 }
 
 // ── Email 2: Day-3 Tips ──────────────────────────────────────────────────────
-export function welcomeD3Email(firstName: string, hasAudit: boolean, unsubscribeUrl?: string) {
+export interface WelcomeProgress {
+  auditId: number;
+  url: string;
+  task?: { id: string; title: string; detail: string };
+}
+
+function welcomeProgressEmail(firstName: string, progress: WelcomeProgress, unsubscribeUrl?: string) {
+  const task = progress.task;
+  return guidedEmail(firstName, task ? `Your next step: ${task.title}` : "Review the improvements you recorded", [
+    task ? `For ${progress.url}, your next unfinished recommendation is: ${task.title}. ${task.detail}` : `There are no remaining recommendations in the saved audit for ${progress.url}. Review your recorded changes and re-audit that page within your allowance when you are ready to check the signals.`,
+    task ? "Open this task to review the evidence and instructions. Adapt any draft to your real business, publish the change on your website, then record it as complete. No need to tackle the whole report today." : "A completed task is your record of work, not proof of better rankings. Compare later measurements without assuming the change caused them.",
+    "For optional task reminders, enable Browser notifications on your dashboard. No extension or download is needed."
+  ], task ? "Work on this improvement" : "Review my action plan", `${BASE_URL}/actions/${progress.auditId}${task ? `?task=${encodeURIComponent(task.id)}#recommendations` : ""}`, unsubscribeUrl);
+}
+
+export function welcomeD3Email(firstName: string, hasAudit: boolean, unsubscribeUrl?: string, progress?: WelcomeProgress) {
+  if (progress) return welcomeProgressEmail(firstName, progress, unsubscribeUrl);
   return guidedEmail(firstName, hasAudit ? "Choose one improvement from your audit" : "Ready for your first website audit?", hasAudit ? [
     "You have an audit. Your next step is to open Action plan from the dashboard navigation and choose one unfinished recommendation.",
     "Read the evidence and instructions, make the change on your website, then mark the task complete. Generated code is a draft: check it against your actual page before publishing.",
     "After that, open Prompt test and try a few questions your buyers would ask. Use the engines and allowance shown in your account."
   ] : [
     "Start by entering one website URL in your dashboard. You do not need to connect Google or install anything first.",
-    "Once the audit finishes, open Action plan. Pick one recommendation and work through its instructions before moving on."
+    "Once the audit finishes, open Action plan. Pick one recommendation and work through its instructions before moving on.",
+    "There is no automatic charge when your trial ends. Your dashboard shows your current allowance."
   ], hasAudit ? "Find my next action" : "Run my first audit", BASE_URL, unsubscribeUrl);
 }
 
@@ -164,13 +181,9 @@ export function welcomeD3Email(firstName: string, hasAudit: boolean, unsubscribe
 // Recipients are one week into their full-access trial (paid users
 // are excluded by the scheduler), so this is NOT an upgrade pitch - it's a
 // "use the good stuff while it's free" nudge that seeds the upgrade decision.
-export function welcomeD7Email(firstName: string, unsubscribeUrl?: string) {
-  return guidedEmail(firstName, "What to do next in your SEO + GEO workspace", [
-    "If you have not run an audit yet, start there. If you have, choose one unfinished item under Action plan and implement it on your site.",
-    "Next, open Prompt test for that audit. Review the suggested questions before running them so they reflect what your buyers actually ask.",
-    "You do not need to buy a plan to review your available audit recommendations. When you want connected Google reporting and keyword tracking, compare Pro and Agency on the Plans page.",
-    "Your account shows your current trial status and usage limits. There is no automatic charge when the trial ends."
-  ], "Continue in my dashboard", BASE_URL, unsubscribeUrl);
+export function welcomeD7Email(firstName: string, unsubscribeUrl?: string, progress?: WelcomeProgress) {
+  if (progress) return welcomeProgressEmail(firstName, progress, unsubscribeUrl);
+  return welcomeD3Email(firstName, false, unsubscribeUrl);
 }
 
 // ── Email 4: Weekly Digest (Pro+) ────────────────────────────────────────────
@@ -595,54 +608,19 @@ export function firstAuditEmail(
   auditId: string | null | undefined,
   topRecommendation: string | null,
   unsubscribeUrl?: string,
+  recommendationId?: string,
 ) {
   const hostname = (() => { try { return new URL(url).hostname; } catch { return url; } })();
-  const safeHostname = esc(hostname);
-  const safeFirstName = esc(firstName) || "there";
-  const safeTopRec = esc(topRecommendation);
-  const scoreColor = geoScore >= 75 ? "#10b981" : geoScore >= 50 ? "#f59e0b" : "#ef4444";
-  const scoreVerdict = geoScore >= 75 ? "the audit found stronger readiness signals" : geoScore >= 50 ? "you've got a solid foundation with clear room to grow" : "there's significant upside available";
-  // Subject is plain text (Postmark handles encoding) but URL/host segment
-  // is bounded to hostname only above to avoid header-injection surface.
-  const subject = `Your SEO + GEO audit is ready: ${hostname} scored ${Math.round(geoScore)}/100`;
-  const html = layout(
-    `${h1(`Your first audit is done 🎉`)}
-    ${p(`Hi ${safeFirstName}, you just ran a SEO + GEO audit on <strong>${safeHostname}</strong>. Here is the headline:`)}
-
-    <table cellpadding="0" cellspacing="0" width="100%" style="margin:20px 0;background:#f9fafb;border-radius:12px;">
-      <tr><td style="padding:24px;text-align:center;">
-        <div style="font-size:48px;font-weight:800;color:${scoreColor};line-height:1;">${Math.round(geoScore)}<span style="font-size:24px;color:#9ca3af;">/100</span></div>
-        <div style="font-size:13px;color:#6b7280;margin-top:6px;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;">AEO Score</div>
-      </td></tr>
-    </table>
-
-    ${p(`At ${Math.round(geoScore)}/100, ${scoreVerdict}.`)}
-
-    ${safeTopRec ? `
-      <div style="margin:20px 0;padding:18px 20px;background:#ecfdf5;border-left:4px solid ${BRAND_COLOR};border-radius:6px;">
-        <div style="font-size:12px;font-weight:600;color:${BRAND_COLOR};text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;">Top opportunity</div>
-        <div style="font-size:14px;color:#374151;line-height:1.6;">${safeTopRec}</div>
-      </div>
-    ` : ""}
-
-    ${p("Start with one recommendation under Action plan. Then use a prompt simulation to sample AI responses for relevant buyer questions:")}
-    <table cellpadding="0" cellspacing="0" width="100%" style="margin:8px 0 24px;">
-      ${feature("🔬", "Run a prompt simulation", "Type the queries your buyers actually use and see whether ChatGPT, Claude, Gemini, and Perplexity name you, cite your site, or recommend a competitor instead.")}
-      ${feature("📊", "Compare to competitors", "Run audits on 2–3 competitors to find your AEO gaps and see who the engines are citing in your place.")}
-      ${feature("🛠", "Generate fixes", "Starter includes implementation-ready fixes. Pro adds Search Console, rank tracking, and ongoing measurement for the pages you improve.")}
-    </table>
-
-    <div style="text-align:center;margin:24px 0;">
-      ${btn("Choose my first improvement", auditId ? `${BASE_URL}/results/${auditId}#recommendations` : BASE_URL)}
-    </div>
-
-    ${divider()}
-    ${p("Need more room to act? Starter is $29/month for one site, 15 audits, 5 simulations, and the Fix Generator. Pro adds ongoing SEO and GEO measurement.", "color:#6b7280;font-size:13px;")}`,
-    `Your SEO + GEO audit on ${hostname} scored ${Math.round(geoScore)}/100. Here is what to do next.`,
-    unsubscribeUrl,
-  );
-  const text = `Hi ${firstName || "there"},\n\nYou just ran a SEO + GEO audit on ${hostname}. Score: ${Math.round(geoScore)}/100. ${scoreVerdict}.\n\n${topRecommendation ? `Top opportunity: ${topRecommendation}\n\n` : ""}Next steps:\n- Run a prompt simulation to see how AI engines answer about your brand\n- Review the SEO and content recommendations alongside AI visibility gaps\n- Starter includes implementation-ready fixes; Pro adds Search Console and rank tracking\n\nOpen your audit: ${auditId ? `${BASE_URL}/results/${auditId}` : BASE_URL}`;
-  return { subject, html, text };
+  const actionUrl = auditId
+    ? `${BASE_URL}/actions/${encodeURIComponent(auditId)}${recommendationId ? `?task=${encodeURIComponent(recommendationId)}#recommendations` : ""}`
+    : `${BASE_URL}/actions`;
+  return guidedEmail(firstName, `Your next improvement for ${hostname}`, [
+    `Your audit of ${url} is ready. Your AEO readiness score is ${Math.round(geoScore)}/100. This is an audit signal, not your Google ranking or a measurement of how often AI mentions you.`,
+    topRecommendation ? `Start here: ${topRecommendation}` : "Open your action plan and choose one unfinished improvement. You do not need to work through the whole report today.",
+    "Open the task below to review the finding and editable guidance for this page. Check the facts, adapt the draft to your business, and publish the change on your own website. The app does not change your website for you.",
+    "After publishing, record what changed and mark the task complete. Re-audit the same page within your allowance to check the signals. Later ranking or traffic movement does not prove that this edit caused it.",
+    "Want a reminder? Open Browser notifications on your dashboard to enable next-task and important-update notifications. No extension or download is needed. Notifications are optional and you can turn them off anytime."
+  ], "Work on my next improvement", actionUrl, unsubscribeUrl);
 }
 
 // ── Email: Audit Complete (transactional - fires on every non-first audit) ────

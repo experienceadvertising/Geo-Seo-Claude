@@ -579,7 +579,7 @@ export function generateGeoRecommendations(ctx: RecommendationContext): GeoRecom
 
   if (s.authoritativeCitationCount < 2) {
     recs.push(composeRec("add-authoritative-citations", {
-      detail: `Only ${s.authoritativeCitationCount} link(s) to authoritative domains (.gov, .edu, established publications). Content that performs across ChatGPT, Claude, and Perplexity carries 2-5 outbound links to third-party authoritative sources per article — this is now the 2026 baseline.`,
+      detail: `This scan recognized ${s.authoritativeCitationCount} link(s) to selected source domains. Review claims a reader may want to verify and link to the relevant original evidence where useful. The detector can miss credible sources. There is no required link count, and adding links does not guarantee rankings or AI citations.`,
       priority: s.authoritativeCitationCount === 0 ? "high" : "medium",
     }));
   }

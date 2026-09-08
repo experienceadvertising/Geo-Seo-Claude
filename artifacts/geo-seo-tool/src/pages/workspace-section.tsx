@@ -11,6 +11,7 @@ import { uniqueAuditedPageCount } from "@/lib/action-plan";
 
 export default function WorkspaceSection({ section }: { section: "seo" | "actions" | "ai-visibility" }) {
   const { id } = useParams<{ id: string }>();
+  const focusedTask = new URLSearchParams(window.location.search).has("task");
   const [, navigate] = useLocation();
   const { storedPlan } = usePlan();
   const { data: audits, isLoading, isError } = useListAudits({ limit: 100 }, { query: { queryKey: getListAuditsQueryKey({ limit: 100 }), retry: false } });
@@ -40,7 +41,7 @@ export default function WorkspaceSection({ section }: { section: "seo" | "action
         </nav>
         {section === "actions" ? <>
           {!id && <SiteTaskQueue site={new URL(audit.url).origin} />}
-          <section className="overflow-hidden rounded-xl border bg-card shadow-sm" aria-labelledby="action-plan-scan-heading">
+          {!focusedTask && <section className="overflow-hidden rounded-xl border bg-card shadow-sm" aria-labelledby="action-plan-scan-heading">
             <div className="border-b bg-muted/30 p-5">
               <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Specific to this website</p>
               <h2 id="action-plan-scan-heading" className="mt-1 text-xl font-semibold">Plan built from the scan of {audit.url}</h2>
@@ -67,9 +68,9 @@ export default function WorkspaceSection({ section }: { section: "seo" | "action
               </p>
               <Link href="/#baseline-url" className="mt-3 inline-block font-semibold text-primary underline">Scan another important page</Link>
             </div>
-          </section>
+          </section>}
           <Results key={audit.id} auditId={audit.id} view="actions" />
-          {domain && <OffsiteWork key={domain} domain={domain} />}
+          {domain && !focusedTask && <OffsiteWork key={domain} domain={domain} />}
         </> : section === "seo" ? <>
           <p className="text-muted-foreground">Track Google rankings, review Search Console traffic, and choose your next SEO improvement. These measurements are separate from AI citations.</p>
           {paid && domain ? <><SeoPerformancePanel key={`performance-${audit.id}`} pageUrl={audit.url} /><SeoTrackingPanel key={`tracking-${audit.id}`} domain={domain} pageUrl={audit.url} /></> : <div className="rounded-lg border p-5"><h2 className="text-lg font-semibold">Unlock connected SEO performance</h2><p className="my-2">Your audit includes SEO recommendations. Pro and Agency add keyword tracking, demand and intent insights, and connected Search Console analysis, within plan limits.</p><Link href="/upgrade?source=seo-workspace" className="text-primary underline">Compare paid plans</Link></div>}
