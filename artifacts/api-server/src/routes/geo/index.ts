@@ -1,6 +1,10 @@
 import { Router, type IRouter } from "express";
 import { eq, desc, and, like, gte } from "drizzle-orm";
-import { db, auditsTable, recommendationProgressTable } from "@workspace/db";
+import { db, auditsTable, recommendationProgressTable, seoKeywordTargetsTable } from "@workspace/db";
+import { buildLatestRankSnapshotsQuery } from "../../lib/seoTrackingQueries";
+import { isPaidSeoPlan } from "../../lib/seoAccess";
+import { sitePlanPriority } from "../../lib/sitePlanPriority";
+import { getStoredPlan } from "../../lib/planUtils";
 import {
   AnalyzeUrlBody,
   ListAuditsQueryParams,
@@ -16,7 +20,8 @@ import monitorRouter from "./monitor";
 import crawlerRouter from "./crawler";
 import { requireAuth } from "../../middlewares/auth";
 import { analyzeRateLimiter, readRateLimiter } from "../../middlewares/rateLimiters";
-import { assertPublicUrl, SsrfError } from "../../lib/safeFetch";
+import { assertPublicUrl, safeFetch, SsrfError } from "../../lib/safeFetch";
+import { isAllowedByRobots, parseRobotsTxt } from "../../lib/robotsPolicy";
 import { getUserPlan, PLAN_LIMITS } from "../../lib/planUtils";
 import { consumeQuota, refundQuota, currentYearMonth, markApproachingNotified } from "../../lib/usageLimits";
 import { db as appDb, usersTable } from "@workspace/db";
@@ -172,6 +177,37 @@ router.get("/geo/site-pages", requireAuth, readRateLimiter, async (req, res): Pr
   }
 });
 
+// Read-only aggregation: ownership is applied before any page or rank data is returned.
+router.get("/geo/site-plan", requireAuth, readRateLimiter, async (req, res): Promise<void> => {
+  const domain = normalizeDomain(String(req.query.url || ""));
+  if (!domain) { res.status(400).json({ error: "A valid site URL is required" }); return; }
+  const plan = await getStoredPlan(req.userId!);
+  const paid = isPaidSeoPlan(plan);
+  const history = await db.select({ id: auditsTable.id, url: auditsTable.url, title: auditsTable.title, description: auditsTable.description, geoScore: auditsTable.geoScore, createdAt: auditsTable.createdAt, recommendations: auditsTable.recommendations, schemaTypes: auditsTable.schemaTypes, wordCount: auditsTable.wordCount }).from(auditsTable).where(eq(auditsTable.userId, req.userId!)).orderBy(desc(auditsTable.createdAt)).limit(500);
+  const grouped = new Map<string, typeof history>();
+  for (const row of history) {
+    if (normalizeDomain(row.url) !== domain) continue;
+    const key = recommendationPageKey(row.url);
+    grouped.set(key, [...(grouped.get(key) || []), row]);
+  }
+  const targets = paid ? await db.select().from(seoKeywordTargetsTable).where(and(eq(seoKeywordTargetsTable.userId, req.userId!), eq(seoKeywordTargetsTable.domain, domain), eq(seoKeywordTargetsTable.active, true))) : [];
+  const rankQuery = buildLatestRankSnapshotsQuery(targets.map(t => t.id));
+  const rankRows = rankQuery ? (await db.execute(rankQuery)).rows as any[] : [];
+  const pages = await Promise.all([...grouped.values()].slice(0, PLAN_LIMITS[plan].siteDiscoveryPages).map(async rows => {
+    const page = rows[0];
+    const completed = await readRecommendationProgress(req.userId!, domain, page.url);
+    const next = selectPersonalizedAction(page.recommendations, new Set(completed.map(r => r.recommendationId)));
+    const rankings = targets.filter(t => t.targetUrl && recommendationPageKey(t.targetUrl) === recommendationPageKey(page.url)).map(t => {
+      const snapshot = rankRows.find(r => Number(r.target_id) === t.id);
+      return { keyword: t.keyword, location: t.locationName, device: t.device, position: snapshot?.position ?? null, collectedAt: snapshot?.collected_at ?? null, resultUrl: snapshot?.result_url ?? null, providerStatus: snapshot?.provider_status ?? "awaiting", stale: snapshot?.provider_status !== "success" || !snapshot?.collected_at || Date.now() - new Date(snapshot.collected_at).getTime() > 8 * 86400000 };
+    });
+    return { ...page, recommendations: undefined, next, rankings, previousScore: rows[1]?.geoScore ?? null, completedCount: completed.length };
+  }));
+  // Blocking findings always come before rank opportunities. A rank is context, not causation.
+  pages.sort((a, b) => sitePlanPriority(b) - sitePlanPriority(a));
+  res.json({ pages, paid, historyLimit: 500, pageLimit: PLAN_LIMITS[plan].siteDiscoveryPages, competitorPages: paid ? history.filter(r => normalizeDomain(r.url) !== domain).slice(0, 30).map(({ recommendations, ...row }) => row) : [] });
+});
+
 function pagePriorityLabel(rawUrl: string): string {
   try {
     const path = new URL(rawUrl).pathname.toLowerCase();
@@ -193,6 +229,19 @@ router.post("/geo/analyze", requireAuth, analyzeRateLimiter, async (req, res): P
   }
 
   const { url } = parsed.data;
+
+  if (req.body?.siteScan === true) {
+    try {
+      const page = await assertPublicUrl(url);
+      const robots = await safeFetch(`${page.origin}/robots.txt`, { timeoutMs: 8000, maxBytes: 512000 });
+      if (robots.status !== 404 && !robots.ok) throw new Error("Robots unavailable");
+      if (robots.ok && !isAllowedByRobots(parseRobotsTxt(await robots.text()), "aeoimprovement", `${page.pathname}${page.search}`)) {
+        res.status(422).json({ error: "This page is excluded by the site's crawl rules. No audit was charged." }); return;
+      }
+    } catch {
+      res.status(422).json({ error: "Could not safely confirm this page's crawl permissions. No audit was charged." }); return;
+    }
+  }
 
   try {
     await assertPublicUrl(url);

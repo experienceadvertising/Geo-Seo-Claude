@@ -146,6 +146,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 const APP_NAV = [
   { label: "Dashboard", href: "/", icon: LayoutDashboard },
   { label: "Action plan", compactLabel: "Actions", href: "/actions", icon: CheckCircle2 },
+  { label: "Site scan", compactLabel: "Scan", href: "/site-scan", icon: Search },
   { label: "SEO performance", compactLabel: "SEO", href: "/seo", icon: Search },
   { label: "AI visibility (AEO/GEO)", compactLabel: "AI visibility", href: "/ai-visibility", icon: MessageSquareText },
   { label: "Sites & connections", compactLabel: "Sites", href: "/projects", icon: FolderKanban },
