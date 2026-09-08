@@ -3,6 +3,7 @@ import { sql } from "drizzle-orm";
 
 /** Small app-owned migrations for product tables not managed by Stripe. */
 export async function runProductMigrations(): Promise<void> {
+  await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS onboarding_url TEXT`);
   await db.execute(sql`ALTER TABLE IF EXISTS scheduled_job_items ADD COLUMN IF NOT EXISTS delivery_outcomes JSONB`);
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS processed_webhook_events (

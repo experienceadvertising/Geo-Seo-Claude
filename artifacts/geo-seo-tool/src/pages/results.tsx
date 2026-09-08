@@ -115,7 +115,10 @@ export default function Results({ view = "audit", auditId }: { view?: "audit" | 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ domain, pageUrl: audit?.url, recommendationId, completed, implementationNote }),
       }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["recommendation-progress", domain] }),
+    onSuccess: () => Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["recommendation-progress", domain] }),
+      queryClient.invalidateQueries({ queryKey: ["site-plan"] }),
+    ]),
     onError: () => toast({ title: "Progress not saved", description: "Please try again.", variant: "destructive" }),
   });
 

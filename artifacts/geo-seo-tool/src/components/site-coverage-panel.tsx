@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { customFetch } from "@workspace/api-client-react";
 import { CheckCircle2, Compass, ExternalLink, Loader2, ScanSearch } from "lucide-react";
 import { Link } from "wouter";
 import { recommendationPageKey } from "@workspace/recommendations";
+import { apiErrorMessage } from "@/lib/api-error";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -27,6 +28,8 @@ function displayPage(raw: string): string {
 
 export function SiteCoveragePanel({ siteUrl, history, allowRescan = false }: { siteUrl: string; history: AuditHistoryItem[]; allowRescan?: boolean }) {
   const queryClient = useQueryClient();
+  const allowance = useQuery({ queryKey: ["scan-allowance"], queryFn: () => customFetch<{ usage: { audits: { remaining: number } } }>("/api/me") });
+  const remaining = allowance.data?.usage?.audits?.remaining;
   const [pages, setPages] = useState<DiscoveredPage[]>([]);
   const [source, setSource] = useState<DiscoveryResponse["source"] | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -44,13 +47,16 @@ export function SiteCoveragePanel({ siteUrl, history, allowRescan = false }: { s
       setPages(data.pages);
       setSource(data.source);
       setScanResults([]);
-      setSelected(new Set(data.pages.filter((page) => !auditedByPage.has(pageKey(page.url))).slice(0, 3).map((page) => page.url)));
+      setSelected(new Set(data.pages.filter((page) => !auditedByPage.has(pageKey(page.url))).slice(0, Math.min(3, remaining ?? 0)).map((page) => page.url)));
     },
   });
 
   const scanSelected = async () => {
     const queue = pages.filter((page) => selected.has(page.url) && (allowRescan || !auditedByPage.has(pageKey(page.url))));
     if (!queue.length) return;
+    const fresh = await allowance.refetch();
+    const available = fresh.data?.usage?.audits?.remaining;
+    if (fresh.isError || available === undefined || queue.length > available) return;
     setScanResults([]);
     setScanProgress({ current: 0, total: queue.length });
     const completed: ScanResult[] = [];
@@ -65,7 +71,7 @@ export function SiteCoveragePanel({ siteUrl, history, allowRescan = false }: { s
         });
         completed.push({ url: page.url, id: audit.id });
       } catch (error) {
-        completed.push({ url: page.url, error: error instanceof Error ? error.message : "Scan failed" });
+        completed.push({ url: page.url, error: apiErrorMessage(error, "We could not scan this page. Your completed scans are saved. Check your allowance and try again.") });
         setScanResults([...completed]);
         break; // Do not burn through a queue after a quota, access or fetch failure.
       }
@@ -76,6 +82,7 @@ export function SiteCoveragePanel({ siteUrl, history, allowRescan = false }: { s
       queryClient.invalidateQueries({ queryKey: ["audit-history"] }),
       queryClient.invalidateQueries({ queryKey: ["/api/geo/audits"] }),
       queryClient.invalidateQueries({ queryKey: ["site-plan"] }),
+      queryClient.invalidateQueries({ queryKey: ["scan-allowance"] }),
     ]);
   };
 
@@ -88,6 +95,9 @@ export function SiteCoveragePanel({ siteUrl, history, allowRescan = false }: { s
         <CardDescription>Find the pages that explain your brand, offers, proof, and pricing. Scan them together so your plan is based on more than the homepage.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        <p role="status" className="text-sm">{remaining === undefined ? "Checking your scan allowance..." : `${remaining} page scans remaining this month. Each selected page uses one scan.`}</p>
+        {allowance.isError && <p role="alert">We could not check your allowance. <button className="underline" onClick={() => allowance.refetch()}>Try again</button></p>}
+        {remaining === 0 && <p className="text-sm">You can still work on your saved improvements. <Link href="/upgrade" className="underline">Compare plans for more scans</Link>.</p>}
         {!pages.length && (
           <Button variant="outline" onClick={() => discover.mutate()} disabled={discover.isPending}>
             {discover.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ScanSearch className="mr-2 h-4 w-4" />}
@@ -112,7 +122,7 @@ export function SiteCoveragePanel({ siteUrl, history, allowRescan = false }: { s
                       type="checkbox"
                       className="mt-1 h-4 w-4"
                       checked={checked}
-                      disabled={(!allowRescan && Boolean(prior)) || Boolean(scanProgress)}
+                      disabled={(!allowRescan && Boolean(prior)) || Boolean(scanProgress) || (!checked && (remaining === undefined || selected.size >= remaining))}
                       onChange={() => setSelected((current) => {
                         const next = new Set(current);
                         if (next.has(page.url)) next.delete(page.url); else next.add(page.url);
@@ -131,7 +141,8 @@ export function SiteCoveragePanel({ siteUrl, history, allowRescan = false }: { s
             </ul>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-xs text-muted-foreground">Each selected page uses one audit from your monthly allowance. Keep this page open while scanning. The batch stops on an error; completed audits remain saved.</p>
-              <Button onClick={scanSelected} disabled={!pendingSelected || Boolean(scanProgress)}>
+              {remaining !== undefined && pendingSelected > remaining && <p role="alert">Select fewer pages to fit your remaining allowance.</p>}
+              <Button onClick={scanSelected} disabled={!pendingSelected || Boolean(scanProgress) || allowance.isFetching || allowance.isError || remaining === undefined || pendingSelected > remaining}>
                 {scanProgress ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ScanSearch className="mr-2 h-4 w-4" />}
                 {scanProgress ? `Scanning ${scanProgress.current} of ${scanProgress.total}` : `Scan ${pendingSelected} selected page${pendingSelected === 1 ? "" : "s"}`}
               </Button>
