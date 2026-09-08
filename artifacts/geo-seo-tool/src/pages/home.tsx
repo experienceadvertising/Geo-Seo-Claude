@@ -1,4 +1,5 @@
 import React from "react";
+import { SiteTaskQueue } from "@/components/site-task-queue";
 import { sameAuditPage } from "@/lib/auditProgress";
 import { nextThreeImprovements, improvementLink } from "@/lib/nextImprovement";
 import { getImplementationGuide } from "@workspace/recommendations";
@@ -1008,6 +1009,11 @@ function SignedInDashboard() {
   const { toast } = useToast();
   const { user } = useAuth();
   const firstName = user?.firstName;
+  const onboarding = useQuery({ queryKey: ["onboarding", user?.id], queryFn: () => customFetch<{ onboardingUrl?: string | null }>("/api/me"), enabled: Boolean(user) });
+  React.useEffect(() => {
+    // On another device, restore the URL without silently consuming another audit.
+    if (!pendingAuditUrl.current && onboarding.data?.onboardingUrl) setUrl(current => current || onboarding.data!.onboardingUrl!);
+  }, [onboarding.data]);
 
   const { data: audits, isLoading: auditsLoading, isError: auditsError, refetch: refetchAudits } = useListAudits();
   const analyzeUrl = useAnalyzeUrl();
@@ -1120,7 +1126,7 @@ function SignedInDashboard() {
           writeBrowserStorage("aeo.activationConverted", "true");
           trackGoogleAdsConversion("activation");
         }
-        setLocation(source === "post_signup_landing" || !audits?.length ? `/site-scan?url=${encodeURIComponent(normalized)}` : `/results/${data.id}`);
+        setLocation(source === "post_signup_landing" || !audits?.length ? `/site-scan?first=1&url=${encodeURIComponent(normalized)}` : `/results/${data.id}`);
       },
       onError: (err: unknown) => {
         toast({
@@ -1177,24 +1183,7 @@ function SignedInDashboard() {
 
   return (
     <div className="flex-1 w-full max-w-4xl mx-auto px-4 md:px-8 py-10 md:py-14 space-y-10">
-      {hasAudit && <Card className="border-emerald-200" aria-label="Your next three improvements">
-        <CardHeader>
-          <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700">Your next three improvements</p>
-          <CardTitle>{nextTask.state === "loading" ? "Finding your next tasks…" : nextTask.state === "error" ? "Your action plan could not be loaded" : nextRecommendation ? "Start with one useful change" : (nextTask.state === "complete" ? "Your recorded tasks are complete" : "Review your page and build an action plan")}</CardTitle>
-          <CardDescription>{nextRecommendation ? `Prioritized from the audit of ${latestAuditDetails?.url ?? latestAudit?.url}. Completed tasks drop out as you make progress.` : (nextTask.state === "complete" ? "Re-audit the same page after publishing to verify your recorded changes, then review search performance." : nextTask.state === "error" ? "We could not read your saved progress. Open your audit to try again." : nextTask.state === "loading" ? "Checking your audit and saved progress." : "Open your audit and re-scan if it does not contain current recommendations.")}</CardDescription>
-        </CardHeader>
-        {nextTask.state !== "loading" && <CardContent>
-          {nextTask.tasks.length > 0 ? <ol className="space-y-4">
-            {nextTask.tasks.map((task, index) => <li key={task.id} className="rounded-lg border p-4 space-y-3">
-              <div className="flex items-start gap-3"><span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-sm font-semibold text-emerald-800" aria-hidden="true">{index + 1}</span><h3 className="font-semibold">{task.title}</h3></div>
-              <p className="text-sm text-muted-foreground">{task.detail}</p>
-              <details className="text-sm"><summary className="cursor-pointer font-medium">How to check the improvement</summary><p className="mt-2 text-muted-foreground">{getImplementationGuide(task.id).verify}</p></details>
-              <Link href={improvementLink(latestAudit!.id, task.id)}><Button variant={index === 0 ? "default" : "outline"} size="sm">{index === 0 ? "Start this improvement" : "View steps and draft"}<ArrowRight className="ml-2 h-4 w-4" /></Button></Link>
-            </li>)}
-          </ol> : <Link href={improvementLink(latestAudit!.id)}><Button>Review my audit<ArrowRight className="ml-2 h-4 w-4" /></Button></Link>}
-          <p className="mt-3 text-xs text-muted-foreground">Change your website → mark the task done → re-audit → review measured progress. Connecting Google is optional and does not block your fixes.</p>
-        </CardContent>}
-      </Card>}
+      {hasAudit && latestAudit && <SiteTaskQueue site={new URL(latestAudit.url).origin} />}
       <DashboardWalkthrough auditId={latestAudit?.id} paid={hasPaidPlan} />
       <BrowserNotifications />
       {programStateLoading ? (

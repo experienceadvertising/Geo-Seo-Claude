@@ -8,17 +8,19 @@ try {
   page.setDefaultTimeout(10000);
   let scans = 0;
   await page.route('**/*', route => ['localhost','127.0.0.1'].includes(new URL(route.request().url()).hostname) ? route.continue() : route.abort());
+  await page.route('**/api/me', route => route.fulfill({json:{storedPlan:'pro',plan:'pro',trial:{active:false},usage:{audits:{remaining:2}}}}));
   await page.route('**/api/geo/analyze', route => { scans++; assert.equal(route.request().postDataJSON().siteScan, true); return route.fulfill({status: 429, contentType: 'application/json', body: JSON.stringify({error: 'Fixture quota reached'})}); });
   await page.goto('http://localhost:4211/site-scan?url=https%3A%2F%2Fexample.com%2F', {waitUntil: 'domcontentloaded', timeout: 15000});
   console.log('Page loaded');
-  await page.getByRole('heading',{name: 'Your next three page improvements'}).waitFor();
+  await page.getByRole('heading',{name: 'Start with one useful improvement'}).waitFor();
   assert.equal(scans, 0);
+  await page.getByText('Next: scan more important pages', {exact:true}).click();
   await page.getByRole('button',{name: 'Find important pages'}).click();
   await page.getByLabel('Select Homepage for scanning').check();
   await page.getByRole('button',{name: 'Scan 2 selected pages'}).click();
   await page.getByRole('alert').getByText(/Fixture quota reached/).waitFor();
   assert.equal(scans, 1, 'batch stops after first failure');
-  await page.getByRole('combobox').selectOption('2');
+  await page.getByLabel('Compare a saved competitor page').selectOption('2');
   await page.getByText(/More words are not automatically better/).waitFor();
   await page.setViewportSize({width:390,height:844});
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
@@ -27,13 +29,23 @@ try {
   await page.reload({waitUntil:'domcontentloaded'});
   await page.getByText('Upgrade for rescanning here, ranking context and competitor comparisons.').waitFor();
   assert.equal(await page.getByRole('heading',{name:'Learn from a competitor page'}).count(), 0);
+  await page.getByText('Next: scan more important pages', {exact:true}).click();
   await page.getByRole('button',{name:'Find important pages'}).click();
   assert.equal(await page.getByLabel('Select Homepage for scanning').isDisabled(), true);
   assert.equal(scans, 1, 'reload and free selection do not start scans');
   await page.route('**/api/geo/analyze', route => { scans++; return route.fulfill({json:{id:1,url:'https://example.com/',geoScore:54}}); });
   await page.addInitScript(() => localStorage.setItem('pendingAuditUrl', 'https://example.com/'));
   await page.goto('http://localhost:4211/', {waitUntil:'domcontentloaded'});
-  await page.waitForURL(/site-scan\?url=/);
+  await page.waitForURL(/site-scan\?first=1&url=/);
   assert.equal(scans, 2, 'signup URL runs once, then opens page selection');
+  // A different browser receives account-backed context, without another automatic scan.
+  const freshPage = await browser.newPage();
+  await freshPage.route('**/*', route => ['localhost','127.0.0.1'].includes(new URL(route.request().url()).hostname) ? route.continue() : route.abort());
+  await freshPage.route('**/api/me', route => route.fulfill({json:{storedPlan:'free',plan:'pro',trial:{active:true},onboardingUrl:'https://example.com/services',usage:{audits:{remaining:2}}}}));
+  await freshPage.route('**/api/geo/analyze', () => { throw new Error('Cross-device recovery must not start a second scan'); });
+  await freshPage.goto('http://localhost:4212/');
+  await freshPage.getByLabel('Website URL to audit').waitFor();
+  await freshPage.waitForFunction(() => document.querySelector('#baseline-url')?.value === 'https://example.com/services');
+  await freshPage.close();
   console.log('PASS: site scan paid fixture, explicit scans only, failure stops queue, competitor comparison and mobile width. No external calls.');
 } catch (error) { console.error((await page.locator('body').innerText()).slice(0, 1800)); throw error; } finally { await browser.close(); }
