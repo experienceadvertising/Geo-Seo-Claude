@@ -888,11 +888,11 @@ export default function SimulatePage() {
               )}
             </Button>
             {!run.isPending && !runDisabledReason && (
-              <p className="text-sm text-muted-foreground">This will run {prompts.length * selectedEngines.length} live search{prompts.length * selectedEngines.length === 1 ? "" : "es"} and may take 1–3 minutes.</p>
+              <p className="text-sm text-muted-foreground">This will request {prompts.length * selectedEngines.length} AI answers and may take 1–3 minutes. Engines may use web search when available.</p>
             )}
             {run.isPending && (
               <p className="text-sm text-muted-foreground">
-                This may take 1–3 minutes. Each engine performs a live web search.
+                This may take 1–3 minutes. Engines may answer with or without web sources.
               </p>
             )}
             {!run.isPending && runDisabledReason && (
@@ -995,7 +995,8 @@ export default function SimulatePage() {
 
               {result.summary.topCompetitors.length > 0 && (
                 <div className="mt-6 pt-6 border-t">
-                  <div className="text-sm font-medium mb-2">Most-mentioned brands across responses</div>
+                  <div className="text-sm font-medium mb-2">Detected names and phrases across responses</div>
+                  <p className="text-xs text-muted-foreground mb-2">Review these against the answers. Automatically extracted phrases are not verified competitors or brands.</p>
                   <div className="flex flex-wrap gap-2">
                     {result.summary.topCompetitors.map((c: any) => (
                       <Badge key={c.name} variant="secondary">
@@ -1112,11 +1113,10 @@ export default function SimulatePage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Network className="h-5 w-5 text-violet-600 dark:text-violet-400" />
-                  Fan-out Topic Map
+                  Topics from cited pages
                 </CardTitle>
                 <CardDescription>
-                  Topics inferred from what AI engines actually cited across your prompts — the sub-query cluster they searched when building their answers.
-                  These are the adjacent topics your content needs to rank for to maximize citations.
+                  Topics inferred from cited URL paths, not a record of the engines' search queries. Review the source pages and your audience's needs before choosing a topic to cover.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -1136,7 +1136,7 @@ export default function SimulatePage() {
                   ))}
                 </div>
                 <p className="text-xs text-muted-foreground mt-4 italic">
-                  Topics are extracted from cited URL paths — no extra AI calls. High-frequency topics appear bolder. Create content or pages targeting these sub-queries to expand your coverage across the fan-out cluster.
+                  No extra AI calls are used. Repeated URL topics can suggest areas to investigate, but do not prove demand, relevance, or a ranking opportunity.
                 </p>
               </CardContent>
             </Card>
