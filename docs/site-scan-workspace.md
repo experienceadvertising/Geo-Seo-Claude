@@ -24,6 +24,8 @@ After release, evaluate page-selection completion, number of users completing th
 
 ## Validation status
 
-Implementation is local on `codex/site-scan-workspace`. Workspace typecheck, existing API/frontend suites, five focused selection/priority checks and production builds passed during implementation. Browser fixture did not reach its initial heading; a subsequent browser launch stalled and the in-app preview also timed out attaching. UI validation is not complete and this is not published. Re-run production builds after final crawl-policy edits before release. No paid provider calls, real customer scans or notifications were triggered.
+Implementation is on `codex/site-scan-workspace`. Final workspace typecheck, API/frontend suites, focused selection/priority checks and both production builds passed. The browser fixture now passes paid and free states, explicit scan confirmation, stop-on-first-error, competitor comparison, mobile width and signup-URL redirect into page selection. The initial preview timeout is resolved. No paid provider calls, real customer scans or notifications were triggered. This is not yet published; verify deployed navigation, account isolation and an authorized scan after release.
+
+No database migration or billing configuration change is required. Roll back the application release if authenticated navigation or existing audit creation fails; no new persisted schema needs reversal.
 
 Competitor comparison v1 is deliberately limited to saved page titles, description presence and word counts, with guidance to inspect intent and evidence. It is not an automated content-gap or competitor-strategy analysis. Existing SEO links expose ongoing keyword history; the workspace does not collect new ranking baselines automatically.
