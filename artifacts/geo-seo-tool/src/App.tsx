@@ -42,6 +42,7 @@ const PrivacyPage = lazy(() => import("@/pages/privacy"));
 const TermsPage = lazy(() => import("@/pages/terms"));
 const GoogleDataUsePage = lazy(() => import("@/pages/google-data-use"));
 const ContentEffortGuide = lazy(() => import("@/pages/content-effort-guide"));
+const StrategyGuides = lazy(() => import("@/pages/strategy-guides"));
 const SeoSolutionPage = lazy(() => import("@/pages/seo-solution-page"));
 const RecommendedTools = lazy(() => import("@/pages/recommended-tools"));
 const WorkspaceSection = lazy(() => import("@/pages/workspace-section"));
@@ -129,6 +130,8 @@ function AppRoutes() {
         <Route path="/ai-citation-readiness-benchmark" component={Benchmark} />
         <Route path="/changelog" component={Changelog} />
         <Route path="/content-effort-for-seo-and-ai-search" component={ContentEffortGuide} />
+        <Route path="/seo-geo-priorities-2026" component={StrategyGuides} />
+        <Route path="/improve-service-pages-for-ai-search" component={StrategyGuides} />
         <Route path="/show-first-party-experience-seo" component={ContentEffortGuide} />
         <Route path="/seo-content-quality-vs-filler" component={ContentEffortGuide} />
         <Route path="/create-content-ai-can-cite" component={ContentEffortGuide} />

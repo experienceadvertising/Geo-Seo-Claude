@@ -11,6 +11,8 @@
 // drives the static HTML written to disk for non-JS crawlers.
 
 import { releases, changelogSchema } from "./changelog-content.mjs";
+import { readFileSync } from "node:fs";
+const strategyGuides = JSON.parse(readFileSync(new URL("../src/data/strategy-guides.json", import.meta.url), "utf8"));
 const SITE = "https://aeoimprovement.com";
 
 const PUBLISHER = {
@@ -143,7 +145,7 @@ export const ROUTES = [
       "How AEO Improvement scores a URL: the six pillars, where each recommendation comes from (Princeton/IIT Delhi GEO research, internal benchmarks, practitioner consensus), and exactly which claims we will and won't make.",
     ogType: "article",
     publishedTime: "2026-05-05",
-    modifiedTime: "2026-07-22",
+    modifiedTime: "2026-09-17",
     authorName: AUTHOR.name,
     jsonLd: [
       articleLd({
@@ -152,7 +154,7 @@ export const ROUTES = [
         description:
           "How AEO Improvement scores a URL: the six pillars, where each recommendation comes from, and exactly which claims we will and won't make.",
         datePublished: "2026-05-05",
-        dateModified: "2026-07-22",
+        dateModified: "2026-09-17",
       }),
       breadcrumbLd([
         { name: "Home", path: "/" },
@@ -521,6 +523,35 @@ export const ROUTES = [
   ].map(([path, title, description]) => ({
     path, title: `${title} | AEO Improvement`, description, ogType: "article", publishedTime: "2026-08-17", modifiedTime: "2026-08-17", authorName: AUTHOR.name,
     jsonLd: [articleLd({ path, title, description, datePublished: "2026-08-17", dateModified: "2026-08-17" }), breadcrumbLd([{ name: "Home", path: "/" }, { name: "Resources", path: "/content-effort-for-seo-and-ai-search" }, { name: title, path }])],
+  })),
+  ...strategyGuides.map((guide) => ({
+    path: guide.path,
+    title: `${guide.title} | AEO Improvement`,
+    h1: guide.title,
+    description: guide.description,
+    ogType: "article",
+    publishedTime: guide.published,
+    modifiedTime: guide.published,
+    authorName: "AEO Improvement",
+    strategyGuide: guide,
+    jsonLd: [
+      {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        headline: guide.title,
+        description: guide.description,
+        datePublished: guide.published,
+        dateModified: guide.published,
+        author: { "@type": "Organization", name: "AEO Improvement" },
+        publisher: PUBLISHER,
+        mainEntityOfPage: { "@type": "WebPage", "@id": `${SITE}${guide.path}` },
+      },
+      breadcrumbLd([
+        { name: "Home", path: "/" },
+        ...(guide.path === "/seo-geo-priorities-2026" ? [] : [{ name: "SEO and GEO priorities", path: "/seo-geo-priorities-2026" }]),
+        { name: guide.title, path: guide.path },
+      ]),
+    ],
   })),
 ];
 
