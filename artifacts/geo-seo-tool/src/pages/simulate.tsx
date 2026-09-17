@@ -1,4 +1,6 @@
 import React, { useState, useMemo } from "react";
+import { AiMeasurementGuide } from "@/components/ai-measurement-guide";
+import { appendWithinLimit } from "@/lib/merchant-prompts";
 import { useParams, Link } from "wouter";
 import {
   useGetAudit,
@@ -623,7 +625,7 @@ export default function SimulatePage() {
         </Link>
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">AI Prompt Simulation</h1>
         <p className="text-muted-foreground mt-1 text-sm sm:text-base">
-          Find out if AI engines name you when buyers search for what you sell
+          Test whether selected AI engines mention you in answers to your chosen questions
           {audit && <> · <span className="font-medium text-foreground">{domain}</span></>}
         </p>
       </div>
@@ -638,7 +640,7 @@ export default function SimulatePage() {
             </div>
             <div>
               <p className="text-sm font-semibold">Am I being named?</p>
-              <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">When a buyer asks who solves their problem, does each engine mention your brand or only competitors?</p>
+              <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">Does each successful answer in this test mention your brand? This is not a sample of real buyer conversations.</p>
             </div>
           </div>
           <div className="flex gap-3">
@@ -647,7 +649,7 @@ export default function SimulatePage() {
             </div>
             <div>
               <p className="text-sm font-semibold">Am I being cited?</p>
-              <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">Citation = a source link to your domain. It drives traffic and signals to the engine that your site is authoritative.</p>
+              <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">A citation is a source link to your domain in a sampled answer. It does not prove a real shopper saw or clicked that link.</p>
             </div>
           </div>
           <div className="flex gap-3">
@@ -656,18 +658,20 @@ export default function SimulatePage() {
             </div>
             <div>
               <p className="text-sm font-semibold">Who's getting the mentions I'm not?</p>
-              <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">See which competitors each engine recommends instead, so you know exactly who to close the gap on.</p>
+              <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">Review other names in the sampled answers. Confirm they are relevant competitors before acting.</p>
             </div>
           </div>
         </div>
       </div>
+
+      <AiMeasurementGuide available={Math.max(0, maxPrompts - prompts.length)} onAdd={items => setPromptsText(current => appendWithinLimit(current, items, maxPrompts))} />
 
       {/* Configuration card */}
       <Card>
         <CardHeader>
           <CardTitle>Configure simulation</CardTitle>
           <CardDescription>
-            Write the prompts your buyers actually type: category questions, comparison searches, "best X for Y" queries. Run them across AI engines and see where you stand.
+            Start with questions supported by customer feedback or relevant performance data. Generated suggestions are hypotheses, not verified customer queries. Review them before running a test.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

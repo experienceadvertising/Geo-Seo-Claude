@@ -1,4 +1,4 @@
-import { getImplementationGuide } from "@workspace/recommendations";
+import { getImplementationGuide, AI_MEASUREMENT } from "@workspace/recommendations";
 const BASE_URL = process.env.FRONTEND_URL || "https://aeoimprovement.com";
 const BRAND_COLOR = "#10b981";
 
@@ -749,6 +749,7 @@ export function simulationCompleteEmail(
     ${p(`Hi ${safeFirstName}, here is what your prompt simulation for <strong>${safeDomain}</strong> found.`)}
     ${p(esc(observation))}
     ${p(esc(interpretation))}
+    ${p(`${esc(AI_MEASUREMENT.email)} <a href="${BASE_URL}/methodology#ai-measurement">How to use observed data with simulations</a>.`)}
     ${p(`<a href="${simulateUrl}">Review the simulation answers</a> to check whether the questions match your buyers.`)}
     ${taskHtml}
     ${!task ? p(`<strong>1. On your site</strong><br/>${esc(onSite)} <a href="${actionUrl}">Open your Action plan</a>.`) : ""}
@@ -759,7 +760,7 @@ export function simulationCompleteEmail(
     unsubscribeUrl,
   );
   const text = `Hi ${firstName || "there"},\n\nYour AI prompt simulation for ${domain} is ready.\n\n${observation}\n\n${interpretation}\n\nReview answers and choose a page: ${simulateUrl}\n\n1. On your site\n${onSite}\nAction plan: ${actionUrl}\n\n2. Off your site\n${offSite}\nResources: ${BASE_URL}/recommended-tools#authority-tools-heading\n\n3. Record it, then measure\n${followThrough}\nSEO performance: ${seoUrl}\n\nThese are starting strategies, not a diagnosis of why an answer omitted your brand.\nGoogle Search guidance: https://developers.google.com/search/docs/appearance/ai-features\nMethodology: ${BASE_URL}/methodology`;
-  return { subject, html, text: text.replace("1. On your site\n" + onSite, taskText + (!task ? "\n\nGeneral on-site check: " + onSite : "")) };
+  return { subject, html, text: text.replace("1. On your site\n" + onSite, taskText + (!task ? "\n\nGeneral on-site check: " + onSite : "")) + `\n\n${AI_MEASUREMENT.email}\nMeasurement guidance: ${BASE_URL}/methodology#ai-measurement` };
 }
 
 // ── Email: Weekly AEO Insights (free + paid) ─────────────────────────────────

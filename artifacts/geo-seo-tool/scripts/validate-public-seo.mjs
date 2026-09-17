@@ -21,6 +21,12 @@ for (const route of ROUTES) {
   }
 }
 const home = readFileSync(new URL('../dist/public/index.html', import.meta.url), 'utf8');
+const methodology = readFileSync(new URL('../dist/public/methodology', import.meta.url), 'utf8');
+assert.ok(methodology.includes('id="ai-measurement"'));
+assert.ok(methodology.includes('Synthetic prompts are test questions'));
+assert.ok(methodology.includes('does not connect to or import'));
+assert.ok(methodology.includes('17200695'));
+assert.ok(methodology.includes('2026-09-17'));
 const changelog = readFileSync(new URL('../dist/public/changelog', import.meta.url), 'utf8');
 for (const entry of releases.entries) {
   assert.ok(changelog.includes('id="' + entry.slug + '"'), "Release anchor in initial HTML: " + entry.slug);

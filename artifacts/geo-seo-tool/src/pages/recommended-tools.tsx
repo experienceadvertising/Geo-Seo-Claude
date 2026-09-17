@@ -3,6 +3,7 @@ import { AuthoritySignalsCard } from "@/components/authority-signals-card";
 import { SEO } from "@/components/seo";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
+import { AI_MEASUREMENT } from "@workspace/recommendations";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 const REFERENCE_RESOURCES = [
@@ -28,6 +29,7 @@ const REFERENCE_RESOURCES = [
 
 const TOOL_GROUPS = [
   { id: "measure", title: "Measure performance", tools: [
+    { name: "Merchant Center AI performance insights", cost: "Eligible Merchant Center accounts", href: AI_MEASUREMENT.sourceUrl, when: "You sell products and want observed Google AI shopping data to help choose what to improve and which questions to test.", first: `${AI_MEASUREMENT.merchant} ${AI_MEASUREMENT.integration}` },
     { name: "Google Search Console", cost: "Free Google tool", href: "https://search.google.com/search-console", when: "Check whether Google has indexed your page or investigate changes in search traffic.", first: "Verify your property, then inspect the exact page URL. The direct Google tool is free; connected analysis in AEO Improvement requires a paid plan." },
     { name: "Bing Webmaster Tools", cost: "Free", href: "https://www.bing.com/webmasters/", when: "Review Bing indexing and citation activity in supported Microsoft AI experiences.", first: "Verify your site, review indexing, and open AI Performance when available. This does not measure every AI platform." },
   ] },

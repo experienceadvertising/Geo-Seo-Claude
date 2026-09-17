@@ -1,0 +1,11 @@
+{
+  "reviewedAt": "2026-09-17",
+  "sourceUrl": "https://support.google.com/merchants/answer/17200695?hl=en",
+  "sourceLabel": "Google Merchant Center: AI performance insights",
+  "simulation": "Synthetic prompts are test questions, not a feed of real customer conversations. Results depend on the questions, model, retrieval settings, location and timing. Even a question informed by customer data remains a simulation when we run it here.",
+  "merchant": "Retailers: Merchant Center provides observed Google shopping insights for AI Mode and AI Overviews. Open Analytics > Products > AI performance. Availability covers English queries in Australia, Canada, India, New Zealand and the US. The report covers organic AI traffic, not paid ads, ChatGPT or Alexa.",
+  "limits": "Keep the category, country, period and competitor context with your observations. A zero share of voice can reflect insufficient impressions; a dash means no impression data. A 100% share can reflect missing competitors, not market dominance. Data has a reporting lag. Do not compare this metric directly with our simulated mention rate.",
+  "workflow": "Choose one relevant observed term, attribute or intent. Check the matching product page and feed for a genuine information gap. Correct only facts you can substantiate. Use that observation to draft test questions, not to claim those exact questions were asked. Record the change and compare the same report filters later; movement alone does not prove your edit caused it.",
+  "integration": "Manual workflow: AEO Improvement does not connect to or import this Merchant Center report. Search Console and GA4 connections do not grant access to it.",
+  "email": "Choose test questions using evidence, not guesswork: customer questions, relevant Search Console terms or, for retailers with access, Merchant Center AI performance insights. These are different evidence sources. Synthetic answers are not real-user visibility measurements. Our Merchant Center workflow is manual, not an integration."
+}

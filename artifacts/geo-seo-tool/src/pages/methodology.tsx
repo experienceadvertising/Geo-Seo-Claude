@@ -1,4 +1,5 @@
 import React from "react";
+import { AiMeasurementGuide } from "@/components/ai-measurement-guide";
 import { Link } from "wouter";
 import { ArrowLeft, BookOpen, BarChart3, Users, BadgeCheck, RefreshCw } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -7,9 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { SEO, breadcrumbJsonLd } from "@/components/seo";
 import { AUTHOR_PERSON_LD, PRIMARY_AUTHOR, PUBLISHER_ORG } from "@/data/author";
 
-const PAGE_TITLE = "Methodology — How the AEO Improvement audit score works";
+const PAGE_TITLE = "Methodology: SEO audits, AI simulations and observed performance";
 const PAGE_DESC =
-  "How AEO Improvement scores a URL: the six pillars, where each recommendation comes from (Princeton/IIT Delhi GEO research, internal benchmarks, practitioner consensus), and exactly which claims we will and won't make.";
+  "Understand AEO Improvement's audit scores, synthetic prompt limits, and how retailers can use Google Merchant Center AI performance insights to inform tests.";
 
 const articleJsonLd = {
   "@context": "https://schema.org",
@@ -17,7 +18,7 @@ const articleJsonLd = {
   headline: PAGE_TITLE,
   description: PAGE_DESC,
   datePublished: "2026-05-05",
-  dateModified: "2026-05-05",
+  dateModified: "2026-09-17",
   author: AUTHOR_PERSON_LD,
   publisher: PUBLISHER_ORG,
   mainEntityOfPage: { "@type": "WebPage", "@id": "https://aeoimprovement.com/methodology" },
@@ -52,7 +53,7 @@ export default function Methodology() {
         path="/methodology"
         ogType="article"
         publishedTime="2026-05-05"
-        modifiedTime="2026-07-22"
+        modifiedTime="2026-09-17"
         authorName={PRIMARY_AUTHOR.name}
         jsonLd={[articleJsonLd, methodologyBreadcrumb]}
       />
@@ -63,17 +64,20 @@ export default function Methodology() {
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Methodology</h1>
           <Badge variant="outline" className="font-mono text-xs gap-1">
-            <RefreshCw className="h-3 w-3" /> v2026.07
+            <RefreshCw className="h-3 w-3" /> Guidance updated September 2026
           </Badge>
         </div>
         <p className="mt-2 text-sm text-muted-foreground">
-          By <a href={PRIMARY_AUTHOR.url} rel="author" className="text-emerald-700 hover:underline font-medium">{PRIMARY_AUTHOR.name}</a>, {PRIMARY_AUTHOR.jobTitle} · Last reviewed July 22, 2026
+          By <a href={PRIMARY_AUTHOR.url} rel="author" className="text-emerald-700 hover:underline font-medium">{PRIMARY_AUTHOR.name}</a>, {PRIMARY_AUTHOR.jobTitle} · Measurement guidance reviewed September 17, 2026
         </p>
         <p className="mt-2 text-muted-foreground">
           How AEO Improvement turns a URL into a prioritized list of recommendations,
           and where each claim comes from.
         </p>
       </div>
+
+      <AiMeasurementGuide />
+      <p className="text-sm text-muted-foreground">This measurement guidance does not change audit scoring. Use platform reports for their stated coverage, analytics for recorded visits and conversions, and simulations for controlled questions. None is a complete view of every AI surface. <Link href="/free-aeo-audit-tool" className="underline">Start with an audit of the page you want to improve.</Link></p>
 
       <Card>
         <CardHeader><CardTitle>From a finding to an implemented improvement</CardTitle></CardHeader>
