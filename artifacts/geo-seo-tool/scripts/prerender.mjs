@@ -26,6 +26,7 @@ import { brotliCompress, gzip, constants as zlibConstants } from "node:zlib";
 import { ROUTES, SITE_ORIGIN } from "./seo-manifest.mjs";
 import { bootHead, bootStatus } from "./boot-shell.mjs";
 import { releases, renderReleaseNotes } from "./changelog-content.mjs";
+import measurement from "../../../lib/recommendations/data/ai-measurement.json" with { type: "json" };
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DIST = resolve(__dirname, "..", "dist", "public");
@@ -124,6 +125,9 @@ function buildHeadInjection(route) {
 }
 
 function buildStaticContent(route) {
+  if (route.path === "/methodology") {
+    return `<main data-static-route="/methodology" style="max-width:900px;margin:auto;padding:48px 24px;font-family:system-ui,sans-serif;line-height:1.65"><h1>Methodology</h1><p>${escapeHtmlText(route.description)}</p><section id="ai-measurement"><h2>Real performance data and prompt simulations answer different questions</h2>${[measurement.simulation, measurement.merchant, measurement.limits, measurement.workflow, measurement.integration].map(text => `<p>${escapeHtmlText(text)}</p>`).join("")}<p><a href="${escapeHtmlAttr(measurement.sourceUrl)}">${escapeHtmlText(measurement.sourceLabel)}</a>. Reviewed ${measurement.reviewedAt}.</p></section><p>Audit readiness is not measured AI visibility. This guidance does not change audit scoring. Observed movement does not establish causation.</p><a href="/free-aeo-audit-tool">Audit the page you want to improve</a></main>`;
+  }
   if (route.path === "/changelog") {
     return `<main data-static-route="/changelog" style="max-width:900px;margin:auto;padding:48px 24px;font-family:system-ui,sans-serif;line-height:1.65"><h1>${escapeHtmlText(releases.heading)}</h1><p>${escapeHtmlText(releases.description)}</p><p>Latest release: ${releases.entries[0].isoDate}</p><p>${escapeHtmlText(releases.archiveNote)}</p>${renderReleaseNotes()}<p><a href="/sign-up">Start your guided trial</a> · <a href="/pricing">Compare current plans</a></p></main>`;
   }

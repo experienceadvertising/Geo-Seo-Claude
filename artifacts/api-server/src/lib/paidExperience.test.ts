@@ -3,7 +3,16 @@ import assert from "node:assert/strict";
 import { progressApplies, recommendationPageKey, currentRecommendationCopy, selectPersonalizedAction } from "@workspace/recommendations";
 import { withDeliveryAudit, recordDelivery } from "./deliveryAudit.ts";
 import { pushCategoryEnabled, weeklyStrategyPush } from "./pushPayload.ts";
-import { weeklyDigestEmail, aeoInsightTopic, aeoInsightsEmail, firstAuditEmail, welcomeD3Email, welcomeD7Email } from "./emailTemplates.ts";
+import { weeklyDigestEmail, aeoInsightTopic, aeoInsightsEmail, firstAuditEmail, welcomeD3Email, welcomeD7Email, simulationCompleteEmail } from "./emailTemplates.ts";
+
+test("simulation emails distinguish synthetic tests and manual merchant evidence in both formats", () => {
+  const mail = simulationCompleteEmail("Test", "example.com", 0, 51);
+  for (const body of [mail.html, mail.text]) {
+    assert.ok(body.includes("Synthetic answers are not real-user visibility measurements"));
+    assert.ok(body.includes("manual, not an integration"));
+    assert.ok(body.includes("/methodology#ai-measurement"));
+  }
+});
 
 test("welcome followups reflect unfinished tasks, no audit, and completed actions", () => {
   const progress = { auditId: 51, url: "https://example.com/services", task: { id: "evidence", title: "Add evidence", detail: "Use a real example." } };

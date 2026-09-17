@@ -1,4 +1,5 @@
 import rawCatalog from "../data/recommendations.json" with { type: "json" };
+export { default as AI_MEASUREMENT } from "../data/ai-measurement.json" with { type: "json" };
 import type { Recommendation, SourceType, Severity, Category } from "./types.ts";
 
 export * from "./types.ts";

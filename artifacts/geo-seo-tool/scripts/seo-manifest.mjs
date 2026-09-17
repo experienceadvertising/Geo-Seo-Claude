@@ -138,21 +138,21 @@ export const ROUTES = [
   },
   {
     path: "/methodology",
-    title: "Methodology — How the AEO Improvement audit score works",
+    title: "Methodology: SEO audits, AI simulations and observed performance",
     description:
-      "How AEO Improvement scores a URL: the six pillars, where each recommendation comes from (Princeton/IIT Delhi GEO research, internal benchmarks, practitioner consensus), and exactly which claims we will and won't make.",
+      "Understand AEO Improvement's audit scores, synthetic prompt limits, and how retailers can use Google Merchant Center AI performance insights to inform tests.",
     ogType: "article",
     publishedTime: "2026-05-05",
-    modifiedTime: "2026-07-22",
+    modifiedTime: "2026-09-17",
     authorName: AUTHOR.name,
     jsonLd: [
       articleLd({
         path: "/methodology",
-        title: "Methodology — How the AEO Improvement audit score works",
+        title: "Methodology: SEO audits, AI simulations and observed performance",
         description:
           "How AEO Improvement scores a URL: the six pillars, where each recommendation comes from, and exactly which claims we will and won't make.",
         datePublished: "2026-05-05",
-        dateModified: "2026-07-22",
+        dateModified: "2026-09-17",
       }),
       breadcrumbLd([
         { name: "Home", path: "/" },
