@@ -51,6 +51,7 @@ interface CrawlerActivity {
 }
 
 const QUERY_KEY = ["geo", "monitored-sites"];
+const GOOGLE_CONNECT_URL = "/api/integrations/google/connect?returnTo=%2Fprojects";
 
 function fmtDate(iso: string | null): string {
   if (!iso) return "—";
@@ -147,15 +148,20 @@ function GoogleAnalyticsSection() {
   return (
     <Card>
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <CardTitle className="text-base flex items-center gap-2"><LineChartIcon className="h-4 w-4 text-emerald-600" /> AI referral traffic (Google Analytics)</CardTitle>
             <CardDescription>Real sessions AI answer engines sent to your site, showing the payoff from citations.</CardDescription>
           </div>
           {connected && (
-            <Button size="sm" variant="ghost" onClick={() => disconnect.mutate()} disabled={disconnect.isPending} className="text-muted-foreground">
-              Disconnect
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button size="sm" variant="outline" onClick={() => { window.location.href = GOOGLE_CONNECT_URL; }}>
+                Reconnect Google
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => disconnect.mutate()} disabled={disconnect.isPending} className="text-muted-foreground">
+                Disconnect
+              </Button>
+            </div>
           )}
         </div>
       </CardHeader>
@@ -172,14 +178,12 @@ function GoogleAnalyticsSection() {
           <div className="rounded-md border border-amber-300 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/30">
             <p className="text-sm font-medium">Reconnect to add Search Console</p>
             <p className="text-xs text-muted-foreground mt-1">Your current connection only includes Analytics. Search Console access is read-only and powers ranking opportunity suggestions.</p>
-            <Button size="sm" variant="outline" className="mt-2" onClick={() => { window.location.href = "/api/integrations/google/connect"; }}>
-              Reconnect Google
-            </Button>
+            <p className="text-xs text-muted-foreground mt-2">Use Reconnect Google above to grant the missing permission without disconnecting first.</p>
           </div>
         )}
         {!connected ? (
           <div className="flex items-center gap-3">
-            <Button onClick={() => { window.location.href = "/api/integrations/google/connect"; }}>
+            <Button onClick={() => { window.location.href = GOOGLE_CONNECT_URL; }}>
               <Link2 className="h-4 w-4 mr-1.5" /> Connect Google
             </Button>
             <span className="text-xs text-muted-foreground">Read-only Analytics and Search Console access.</span>
