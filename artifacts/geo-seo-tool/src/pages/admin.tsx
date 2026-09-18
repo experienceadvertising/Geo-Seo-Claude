@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { customFetch } from "@workspace/api-client-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,6 +34,11 @@ interface AdminUsersResponse {
   audits24h: number;
   audits7d: number;
   users: AdminUser[];
+}
+
+interface CampaignStatus {
+  audience: { campaign: string; eligible: number };
+  delivery: { status: { status: string; total: number }[] };
 }
 
 function StatCard({ icon: Icon, label, value, hint }: {
@@ -74,11 +79,56 @@ function displayName(u: AdminUser): string {
 }
 
 export default function Admin() {
+  const [postalAddress, setPostalAddress] = useState("");
+  const [permissionConfirmed, setPermissionConfirmed] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sendMessage, setSendMessage] = useState("");
   const query = useQuery<AdminUsersResponse>({
     queryKey: ["admin", "users"],
     queryFn: () => customFetch<AdminUsersResponse>("/api/admin/users"),
     retry: false,
   });
+  const campaignQuery = useQuery<CampaignStatus>({
+    queryKey: ["admin", "strategy-newsletter"],
+    queryFn: () => customFetch<CampaignStatus>("/api/admin/strategy-newsletter"),
+    retry: false,
+  });
+
+  async function sendCampaignTest() {
+    if (sending) return;
+    setSending(true);
+    setSendMessage("");
+    try {
+      await customFetch("/api/admin/strategy-newsletter/test", {
+        method: "POST",
+        body: JSON.stringify({ postalAddress }),
+      });
+      setSendMessage("Postmark accepted one test for your admin email. Check the inbox, links, and unsubscribe footer before sending a batch.");
+      await campaignQuery.refetch();
+    } catch {
+      setSendMessage("The test was not confirmed. Check the account's eligibility and Postmark before trying again.");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  async function sendCampaignBatch() {
+    if (!permissionConfirmed || sending) return;
+    setSending(true);
+    setSendMessage("");
+    try {
+      const result = await customFetch<{ accepted: number; remaining: number; uncertain: number }>(
+        "/api/admin/strategy-newsletter/send-batch",
+        { method: "POST", body: JSON.stringify({ campaignId: campaignQuery.data?.audience.campaign, postalAddress }) },
+      );
+      setSendMessage(`Postmark accepted ${result.accepted} messages in this batch. ${result.remaining} eligible accounts remain. Acceptance does not confirm inbox delivery.`);
+      await campaignQuery.refetch();
+    } catch {
+      setSendMessage("The batch stopped. Check Postmark and the delivery ledger before trying again.");
+    } finally {
+      setSending(false);
+    }
+  }
 
   if (query.isLoading) {
     return (
@@ -125,6 +175,56 @@ export default function Admin() {
         <StatCard icon={Clock} label="Audits (24h)" value={data.audits24h} />
         <StatCard icon={Clock} label="Audits (7d)" value={data.audits7d} />
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>September SEO + AI-search field note</CardTitle>
+          <CardDescription>One-time newsletter for verified accounts that have not opted out. Sends at most five messages per batch and records each attempt to prevent duplicates.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {campaignQuery.isLoading && <p className="text-sm text-muted-foreground">Checking the live audience...</p>}
+          {campaignQuery.isError && <p className="text-sm text-destructive">Campaign status is unavailable. No messages can be sent from this page.</p>}
+          {campaignQuery.data && (
+            <>
+              <p className="text-sm">
+                <strong>{campaignQuery.data.audience.eligible}</strong> currently eligible ·{" "}
+                <strong>{campaignQuery.data.delivery.status.find((item) => item.status === "accepted")?.total ?? 0}</strong> accepted by Postmark
+              </p>
+              <p className="text-xs text-muted-foreground">Read the email and both linked guides before sending. The source links credit Zyppy Signal and Google. A provider acceptance is not proof of delivery.</p>
+              <label className="block text-sm font-medium" htmlFor="campaign-postal-address">Business postal address in the email footer</label>
+              <input
+                id="campaign-postal-address"
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={postalAddress}
+                onChange={(event) => setPostalAddress(event.target.value)}
+                placeholder="Street, city, state, ZIP"
+                maxLength={180}
+              />
+              <label className="flex items-start gap-2 text-sm">
+                <input type="checkbox" checked={permissionConfirmed} onChange={(event) => setPermissionConfirmed(event.target.checked)} className="mt-1" />
+                <span>I confirm this audience may receive promotional SEO and AI-search email, and the postal address is valid.</span>
+              </label>
+              <button
+                type="button"
+                onClick={sendCampaignTest}
+                disabled={sending || postalAddress.trim().length < 10}
+                className="rounded-md border border-emerald-700 px-4 py-2 text-sm font-semibold text-emerald-800 disabled:opacity-50"
+              >
+                Send one test to my admin email
+              </button>{" "}
+              <button
+                type="button"
+                onClick={sendCampaignBatch}
+                disabled={sending || !permissionConfirmed || postalAddress.trim().length < 10 || campaignQuery.data.delivery.status.some((item) => item.status === "sending" || item.status === "uncertain")}
+                className="rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                {sending ? "Sending batch..." : "Send next five eligible emails"}
+              </button>
+              {sendMessage && <p role="status" className="text-sm">{sendMessage}</p>}
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
