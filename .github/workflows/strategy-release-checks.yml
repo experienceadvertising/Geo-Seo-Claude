@@ -1,0 +1,32 @@
+name: Strategy release checks
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/geo-seo-tool/**"
+      - "artifacts/api-server/**"
+      - "lib/**"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/strategy-release-checks.yml"
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run typecheck
+      - run: pnpm --filter @workspace/geo-seo-tool run test
+      - run: pnpm --filter @workspace/api-server run test
+      - run: node --test artifacts/api-server/scripts/strategy-newsletter.test.mjs
+      - run: pnpm --filter @workspace/geo-seo-tool run build
+      - run: node artifacts/geo-seo-tool/scripts/validate-public-seo.mjs

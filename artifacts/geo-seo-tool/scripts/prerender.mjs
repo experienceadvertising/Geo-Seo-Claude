@@ -124,6 +124,19 @@ function buildHeadInjection(route) {
 }
 
 function buildStaticContent(route) {
+  if (route.strategyGuide) {
+    const guide = route.strategyGuide;
+    const sections = guide.sections.map((section) => `<section style="margin-top:36px"><h2>${escapeHtmlText(section.heading)}</h2>${section.paragraphs.map((paragraph) => `<p>${escapeHtmlText(paragraph)}</p>`).join("")}</section>`).join("\n");
+    const sources = guide.sources.map((source) => `<li><a href="${escapeHtmlAttr(source.url)}">${escapeHtmlText(source.label)}</a></li>`).join("");
+    const related = guide.related.map((path) => `<li><a href="${escapeHtmlAttr(path)}">${escapeHtmlText(path.replace(/^\//, "").replace(/-/g, " "))}</a></li>`).join("");
+    return `<main data-static-route="${escapeHtmlAttr(guide.path)}" style="max-width:800px;margin:auto;padding:48px 24px;font-family:system-ui,sans-serif;line-height:1.7;color:#0f172a">
+      <p>SEO + GEO field guide</p><h1>${escapeHtmlText(guide.title)}</h1><p>${escapeHtmlText(guide.intro)}</p><p>Published September 17, 2026 · By the AEO Improvement editorial team</p>
+      ${sections}
+      <section style="margin-top:40px"><h2>Put this to work on one page</h2><p>Run a baseline audit, choose one relevant SEO or GEO action, and record what you changed. You decide what to publish on your site.</p><a href="/free-aeo-audit-tool">Start a free website audit</a></section>
+      <section style="margin-top:40px"><h2>Sources and credit</h2><p>Expert surveys and correlations are not confirmed ranking factors or promises of results.</p><ul>${sources}</ul></section>
+      <nav aria-label="Related guides" style="margin-top:40px"><h2>Keep going</h2><ul>${related}</ul></nav>
+    </main>`;
+  }
   if (route.path === "/changelog") {
     return `<main data-static-route="/changelog" style="max-width:900px;margin:auto;padding:48px 24px;font-family:system-ui,sans-serif;line-height:1.65"><h1>${escapeHtmlText(releases.heading)}</h1><p>${escapeHtmlText(releases.description)}</p><p>Latest release: ${releases.entries[0].isoDate}</p><p>${escapeHtmlText(releases.archiveNote)}</p>${renderReleaseNotes()}<p><a href="/sign-up">Start your guided trial</a> · <a href="/pricing">Compare current plans</a></p></main>`;
   }
