@@ -59,8 +59,15 @@ async function checkGuidesLive() {
 
 async function run() {
   const action = process.argv[2] ?? "--dry-run";
-  if (!["--dry-run", "--test-to", "--send", "--status"].includes(action)) {
-    throw new Error("Usage: node scripts/strategy-newsletter.mjs [--dry-run|--test-to address|--send|--status]");
+  if (!["--dry-run", "--check-stream", "--test-to", "--send", "--status"].includes(action)) {
+    throw new Error("Usage: node scripts/strategy-newsletter.mjs [--dry-run|--check-stream|--test-to address|--send|--status]");
+  }
+  if (action === "--check-stream") {
+    const token = process.env.POSTMARK_API_TOKEN;
+    if (!token) throw new Error("POSTMARK_API_TOKEN is required.");
+    const stream = await broadcastStream(token);
+    console.log(JSON.stringify({ campaign: CAMPAIGN_ID, broadcastStreamReady: true, stream }));
+    return;
   }
   if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required.");
   const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL, max: 2 });
