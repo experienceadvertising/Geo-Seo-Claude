@@ -28,5 +28,6 @@ jobs:
       - run: pnpm --filter @workspace/geo-seo-tool run test
       - run: pnpm --filter @workspace/api-server run test
       - run: node --test artifacts/api-server/scripts/strategy-newsletter.test.mjs
+      - run: pnpm --filter @workspace/api-server run build
       - run: pnpm --filter @workspace/geo-seo-tool run build
       - run: node artifacts/geo-seo-tool/scripts/validate-public-seo.mjs

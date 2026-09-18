@@ -13,6 +13,11 @@ test("strategy newsletter credits sources, includes working destinations, and es
   assert.match(message.html, /improve-service-pages-for-ai-search/);
   assert.match(message.html, /pm:unsubscribe/);
   assert.match(message.html, /123 Example St/);
+  assert.match(message.html, /A PRACTICAL FIELD NOTE/);
+  assert.match(message.html, /Check the facts beyond your site/);
+  assert.match(message.text, /bought links and made-up reviews are not a shortcut/);
+  assert.match(message.html, /Use the step-by-step guide/);
+  assert.doesNotMatch(message.html + message.text, /—/);
   assert.doesNotMatch(message.html, /guarantees a ranking or AI citation(?!\.)/);
 });
 
