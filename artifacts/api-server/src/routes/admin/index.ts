@@ -1,14 +1,60 @@
 import { Router, type IRouter } from "express";
-import { sql, desc } from "drizzle-orm";
+import { sql, desc, eq } from "drizzle-orm";
 import { db, auditsTable, usersTable } from "@workspace/db";
 import { requireAuth } from "../../middlewares/auth";
 import { requireAdmin, isAdminRequest } from "../../middlewares/admin";
 import { readRateLimiter } from "../../middlewares/rateLimiters";
+import { CAMPAIGN_ID, runNewsletter } from "../../../scripts/strategy-newsletter.mjs";
 
 const router: IRouter = Router();
 
 router.get("/admin/me", requireAuth, readRateLimiter, async (req, res): Promise<void> => {
   res.json({ isAdmin: await isAdminRequest(req) });
+});
+
+router.get("/admin/strategy-newsletter", requireAuth, requireAdmin, readRateLimiter, async (_req, res): Promise<void> => {
+  try {
+    const [audience, delivery] = await Promise.all([runNewsletter("--dry-run"), runNewsletter("--status")]);
+    res.json({ audience, delivery });
+  } catch {
+    res.status(503).json({ error: "Campaign status is temporarily unavailable." });
+  }
+});
+
+router.post("/admin/strategy-newsletter/test", requireAuth, requireAdmin, async (req, res): Promise<void> => {
+  const postalAddress = req.body?.postalAddress;
+  if (typeof postalAddress !== "string" || postalAddress.length < 10 ||
+      postalAddress.length > 180 || /[\r\n]/.test(postalAddress)) {
+    res.status(400).json({ error: "Provide a valid postal address for the email footer." });
+    return;
+  }
+  try {
+    const [user] = await db.select({ email: usersTable.email }).from(usersTable).where(eq(usersTable.id, req.userId!));
+    if (!user?.email) {
+      res.status(400).json({ error: "This admin account has no eligible email address." });
+      return;
+    }
+    const result = await runNewsletter("--test-to", { testTo: user.email, postalAddress: postalAddress.trim() });
+    res.json(result);
+  } catch {
+    res.status(503).json({ error: "Test send was not confirmed. Check Postmark before retrying." });
+  }
+});
+
+router.post("/admin/strategy-newsletter/send-batch", requireAuth, requireAdmin, async (req, res): Promise<void> => {
+  const campaignId = req.body?.campaignId;
+  const postalAddress = req.body?.postalAddress;
+  if (campaignId !== CAMPAIGN_ID || typeof postalAddress !== "string" ||
+      postalAddress.length < 10 || postalAddress.length > 180 || /[\r\n]/.test(postalAddress)) {
+    res.status(400).json({ error: "Confirm this campaign and provide a valid postal address." });
+    return;
+  }
+  try {
+    const result = await runNewsletter("--send", { limit: 5, postalAddress: postalAddress.trim() });
+    res.json(result);
+  } catch {
+    res.status(503).json({ error: "Campaign batch stopped. Check the delivery ledger and Postmark before retrying." });
+  }
 });
 
 router.get("/admin/users", requireAuth, requireAdmin, readRateLimiter, async (req, res): Promise<void> => {
