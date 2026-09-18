@@ -393,6 +393,8 @@ function SiteFooter() {
                 { label: "What is AEO?", href: "/what-is-answer-engine-optimization" },
                 { label: "Rank in ChatGPT", href: "/how-to-rank-in-chatgpt" },
                 { label: "Appear in AI Search", href: "/how-to-appear-in-ai-search" },
+                { label: "SEO and GEO priorities", href: "/seo-geo-priorities-2026" },
+                { label: "Improve service pages", href: "/improve-service-pages-for-ai-search" },
                 { label: "Best AEO Tools", href: "/best-aeo-tools" },
                 { label: "Best GEO Tools", href: "/best-geo-optimization-tools" },
                 { label: "AEO Software", href: "/aeo-software" },

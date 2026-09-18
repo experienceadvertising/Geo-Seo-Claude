@@ -1,0 +1,109 @@
+[
+  {
+    "path": "/seo-geo-priorities-2026",
+    "title": "SEO and GEO Priorities: What to Fix First",
+    "description": "A practical order for improving Google search and AI-search visibility, using crawl access, buyer intent, original evidence, and measured progress.",
+    "intro": "If you are trying to improve both Google rankings and AI-search visibility, you do not need two unrelated content plans. Start with the page a buyer already needs, make sure search systems can access it, then give people a better answer than a generic summary. Here is an order you can actually use.",
+    "published": "2026-09-17",
+    "sections": [
+      {
+        "heading": "1. Choose one real page and one real question",
+        "paragraphs": [
+          "Pick a service, product, or comparison page that matters to your business. Write down the decision a visitor is trying to make. If you have Search Console connected, use the page's existing queries and impressions to distinguish observed demand from a topic you are only guessing about. A prompt simulator can suggest buyer questions, but its prompts are samples, not a record of what customers actually asked an AI assistant.",
+          "For a performance marketing agency, the useful question might be: Who manages the campaigns, what platforms are covered, and how will performance be measured? That is more useful than trying to repeat 'best marketing agency' throughout the page."
+        ]
+      },
+      {
+        "heading": "2. Check whether the page is eligible to be found",
+        "paragraphs": [
+          "Confirm that the page returns successfully, is not blocked by robots.txt or a firewall, has the intended canonical URL, and is eligible for a search snippet. Check the text that appears in the initial HTML or rendered page, not only what you can see after signing in. Then inspect the URL in Search Console when you control the property.",
+          "Google says a supporting link in AI Overviews or AI Mode must be indexed and eligible for a Search snippet. Google also says there are no extra technical requirements or special AI markup for those features. Passing these checks creates eligibility, not a promise of indexing, rankings, or citations."
+        ]
+      },
+      {
+        "heading": "3. Answer the buyer before adding more words",
+        "paragraphs": [
+          "Put a plain answer near the top: what the offer is, who it serves, the main constraint, and the next step. Use headings that match the decisions buyers make. Remove introductions that delay the answer and sections that restate common advice without helping someone choose.",
+          "Cyrus Shepard's Zyppy Signal work on Content Effort is a useful lens here: a page shows effort through visible curation, original information, evidence of how work was done, helpful placement, and informed judgment. That is expert guidance, not a confirmed Google scoring formula."
+        ]
+      },
+      {
+        "heading": "4. Add evidence a reader can inspect",
+        "paragraphs": [
+          "Show a real process, a worked example, a product constraint, a screenshot you own, a documented test, or a first-party observation. Explain when the example applies and where it does not. Do not invent a statistic, imply a client result without permission, or put a fresh date on old analysis without reviewing it.",
+          "Zyppy Signal's September 2026 survey of more than 130 experts rated crawl eligibility, question-answer fit, specific facts, and first-party information highly for Google AI visibility. These are practitioners' beliefs about what matters, not a disclosure of Google's ranking systems."
+        ]
+      },
+      {
+        "heading": "5. Make the next useful page easy to reach",
+        "paragraphs": [
+          "Link the page to a relevant pricing explanation, methodology, example, or comparison. A link should help the reader continue the task, not exist to hit an anchor-text quota. If a related question serves the same visitor decision, improve the existing page first. Create a separate guide only when the intent is different and you have something genuinely useful to add.",
+          "Off your site, keep core brand facts consistent in profiles you control and seek legitimate mentions where your audience already learns. Do not buy endorsements or create fake reviews to make a brand look established."
+        ]
+      },
+      {
+        "heading": "6. Record the change, then watch the right signals",
+        "paragraphs": [
+          "Write down the page, change date, and what you expected to improve. Search Console can show page and query clicks, impressions, CTR, and average position. Controlled keyword tracking can show movement for a chosen location and device. AI prompt tests can show what happened in that sample. Keep these separate because they measure different things.",
+          "A ranking or citation change after an edit is an observation, not proof the edit caused it. Check the page again, compare a sensible time window, and keep making useful changes."
+        ]
+      }
+    ],
+    "sources": [
+      { "label": "Cyrus Shepard, Zyppy Signal: Google AI Ranking Factors expert survey", "url": "https://signal.zyppy.com/p/google-ai-ranking-factors" },
+      { "label": "Cyrus Shepard, Zyppy Signal: Content Effort", "url": "https://signal.zyppy.com/p/content-effort" },
+      { "label": "Google Search Central: AI features and your website", "url": "https://developers.google.com/search/docs/appearance/ai-features" }
+    ],
+    "related": ["/improve-service-pages-for-ai-search", "/content-effort-for-seo-and-ai-search", "/methodology"]
+  },
+  {
+    "path": "/improve-service-pages-for-ai-search",
+    "title": "Improve Service Pages for SEO and AI Search",
+    "description": "Turn a vague service page into a useful buyer resource with clear positioning, specific evidence, relevant internal links, and a practical measurement plan.",
+    "intro": "A service page can be technically sound and still leave visitors guessing. The same vague copy also gives search and AI systems little to work with. This walkthrough shows how to revise an existing page before you commission another generic blog post.",
+    "published": "2026-09-17",
+    "sections": [
+      {
+        "heading": "Start with the decision the page should support",
+        "paragraphs": [
+          "Choose one service page and list the questions a qualified prospect asks before contacting you: What do you actually do? Who is it for? What is included? What is not? What does the process look like? What will it cost or how is pricing determined? Use sales and support questions when you have them. If Search Console shows queries for this exact page, use those as another input, not as a script for keyword repetition.",
+          "A page that targets everyone usually helps no one decide. A clear first paragraph should identify the service, audience, outcome you work toward, and a truthful distinction. You do not need a single slogan repeated on every page, but the facts should stay consistent across your site and profiles."
+        ]
+      },
+      {
+        "heading": "Replace a vague opening with a usable answer",
+        "paragraphs": [
+          "Here is a fictional before-and-after example. Before: 'We deliver innovative growth solutions for ambitious brands.' After: 'We manage Google and Meta campaigns for online stores that need senior oversight of spend, conversion tracking, and landing-page tests. We begin with an account review, then agree on priorities before changing campaigns.' The second version gives a buyer concrete things to confirm. Use only details that are true for your business.",
+          "Put that answer before the long background story. Follow it with the actual scope of work, prerequisites, timeline or process, and a clear way to start. If price varies, explain the inputs to a quote rather than pretending the cost is fixed."
+        ]
+      },
+      {
+        "heading": "Show the work behind the offer",
+        "paragraphs": [
+          "Describe how you diagnose the problem, the decisions you make, and the limits of your service. One annotated example, real screenshot, sample deliverable, or properly permitted case study can be more useful than several paragraphs of adjectives. State what was observed and what remains uncertain. Do not claim the tool, page, or provider can verify that a business truly did the underlying work just because it describes a method.",
+          "This is our application of Cyrus Shepard's public Content Effort framework. His point is about useful evidence visible on the finished page, not word count or a guaranteed ranking gain."
+        ]
+      },
+      {
+        "heading": "Support the main answer without scattering it",
+        "paragraphs": [
+          "Add sections for the few follow-up questions that change a buying decision. A separate comparison page may make sense if people need to choose between two approaches. A methods page may make sense if the process is complex. Link those pages from the service page with descriptive wording. Do not split every question into a thin page just to create more URLs.",
+          "Keep the visible page and any structured data consistent. Google says its AI Search features use the same SEO foundations and do not require a special AI file or schema. If a page is blocked, cannot be indexed, or hides the answer behind a script, fix that before refining copy."
+        ]
+      },
+      {
+        "heading": "Check the result as a customer would",
+        "paragraphs": [
+          "Read the revised page on a phone. Can you tell who the service is for in a few seconds? Can you find scope, proof, limitations, and the next action? Click the inquiry flow and confirm it works. Then record the publication date and recheck crawl access.",
+          "Use Search Console to watch the page's queries and clicks over time. If you track a few target keywords, compare the same location and device week to week. Prompt simulations can reveal wording to investigate, but they are not actual AI-user demand data. Treat later movement as evidence to investigate, not proof that one rewrite caused it."
+        ]
+      }
+    ],
+    "sources": [
+      { "label": "Cyrus Shepard, Zyppy Signal: Content Effort", "url": "https://signal.zyppy.com/p/content-effort" },
+      { "label": "Cyrus Shepard, Zyppy Signal: SEO Strategies for AI Search", "url": "https://signal.zyppy.com/p/seo-strategies-for-ai-search" },
+      { "label": "Google Search Central: AI features and your website", "url": "https://developers.google.com/search/docs/appearance/ai-features" }
+    ],
+    "related": ["/seo-geo-priorities-2026", "/show-first-party-experience-seo", "/methodology"]
+  }
+]

@@ -17,7 +17,7 @@ const articleJsonLd = {
   headline: PAGE_TITLE,
   description: PAGE_DESC,
   datePublished: "2026-05-05",
-  dateModified: "2026-05-05",
+  dateModified: "2026-09-17",
   author: AUTHOR_PERSON_LD,
   publisher: PUBLISHER_ORG,
   mainEntityOfPage: { "@type": "WebPage", "@id": "https://aeoimprovement.com/methodology" },
@@ -34,6 +34,13 @@ const articleJsonLd = {
       author: "Cyrus Shepard",
       publisher: "Zyppy Signal",
       url: "https://signal.zyppy.com/p/seo-strategies-for-ai-search",
+    },
+    {
+      "@type": "Article",
+      name: "Google AI Ranking Factors expert survey",
+      author: "Cyrus Shepard",
+      publisher: "Zyppy Signal",
+      url: "https://signal.zyppy.com/p/google-ai-ranking-factors",
     },
   ],
 };
@@ -52,7 +59,7 @@ export default function Methodology() {
         path="/methodology"
         ogType="article"
         publishedTime="2026-05-05"
-        modifiedTime="2026-07-22"
+        modifiedTime="2026-09-17"
         authorName={PRIMARY_AUTHOR.name}
         jsonLd={[articleJsonLd, methodologyBreadcrumb]}
       />
@@ -63,11 +70,11 @@ export default function Methodology() {
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Methodology</h1>
           <Badge variant="outline" className="font-mono text-xs gap-1">
-            <RefreshCw className="h-3 w-3" /> v2026.07
+            <RefreshCw className="h-3 w-3" /> v2026.09
           </Badge>
         </div>
         <p className="mt-2 text-sm text-muted-foreground">
-          By <a href={PRIMARY_AUTHOR.url} rel="author" className="text-emerald-700 hover:underline font-medium">{PRIMARY_AUTHOR.name}</a>, {PRIMARY_AUTHOR.jobTitle} · Last reviewed July 22, 2026
+          By <a href={PRIMARY_AUTHOR.url} rel="author" className="text-emerald-700 hover:underline font-medium">{PRIMARY_AUTHOR.name}</a>, {PRIMARY_AUTHOR.jobTitle} · Last reviewed September 17, 2026
         </p>
         <p className="mt-2 text-muted-foreground">
           How AEO Improvement turns a URL into a prioritized list of recommendations,
@@ -83,7 +90,7 @@ export default function Methodology() {
           <p>We assess visible page signals. We cannot establish whether underlying testing really happened, whether every AI system sees a page, or whether a later ranking change was caused by your edit. Generated code and examples need review before use.</p>
           <p><strong>Is a 2024 source too old?</strong> Not automatically. The KDD 2024 GEO paper is foundational research in its own experimental setting. Its results do not establish expected gains on today's production models. Current platform documentation governs platform-specific advice; newer evidence can qualify or replace older recommendations.</p>
           <p>For Google AI Overviews and AI Mode, <a className="underline" href="https://developers.google.com/search/docs/appearance/ai-features">Google's guidance</a> emphasizes established SEO practices and states that no special AI markup is required. We do not treat an optional file or a schema type as a citation guarantee.</p>
-          <p className="text-muted-foreground">Implementation guidance reviewed September 5, 2026. Scoring weights are unchanged by this documentation update.</p>
+          <p className="text-muted-foreground">Editorial sources reviewed September 17, 2026. Scoring weights are unchanged by this documentation update.</p>
         </CardContent>
       </Card>
 
@@ -111,6 +118,7 @@ export default function Methodology() {
       <Card>
         <CardHeader><CardTitle className="text-base">July 2026 methodology change log</CardTitle></CardHeader>
         <CardContent className="text-sm leading-relaxed space-y-2">
+          <p><strong>September 2026 editorial update:</strong> added <a className="underline" href="https://signal.zyppy.com/p/google-ai-ranking-factors">Cyrus Shepard's Zyppy Signal expert survey</a> as attributed practitioner input. It describes expert opinion, not a validated Google ranking formula, and did not change audit weights. See our <Link className="underline" href="/seo-geo-priorities-2026">SEO and GEO priorities guide</Link> for a practical application.</p>
           <p><strong>Freshness moved to the front:</strong> visible last-updated dates and genuinely refreshed evidence are prioritized before optional files.</p>
           <p><strong>Crawler roles were separated:</strong> search-index and live-fetch bots now determine citation access; training bots are reported as an IP choice.</p>
           <p><strong>llms.txt was downgraded:</strong> it remains available as an optional content map but no longer appears as a headline fix.</p>
@@ -200,6 +208,7 @@ export default function Methodology() {
               <a className="text-emerald-700 underline" href="https://signal.zyppy.com/p/seo-strategies-for-ai-search" target="_blank" rel="noreferrer">SEO Strategies for AI Search</a>
               {" "}by <strong>Cyrus Shepard</strong>, Zyppy Signal. Expert guidance on search eligibility, useful content, and brand clarity. This editorial framework is not a measurement of Google's ranking weights.
             </li>
+            <li><a className="text-emerald-700 underline" href="https://signal.zyppy.com/p/google-ai-ranking-factors" target="_blank" rel="noreferrer">Google AI Ranking Factors expert survey</a> by Cyrus Shepard, Zyppy Signal (September 16, 2026). Use the surveyed experts' priorities to frame questions, not as measured algorithm weights or guaranteed results.</li>
             <li><a className="text-emerald-700 underline" href="https://dl.acm.org/doi/10.1145/3637528.3671900" target="_blank" rel="noreferrer">GEO: Generative Engine Optimization</a> — Aggarwal, Murahari et al. (Princeton / IIT Delhi, KDD 2024). The academic foundation for our research-tagged recommendations around quotation addition and statistics with sources.</li>
             <li><a className="text-emerald-700 underline" href="https://platform.openai.com/docs/bots" target="_blank" rel="noreferrer">OpenAI crawler documentation</a> for OAI-SearchBot, ChatGPT-User, and GPTBot roles.</li>
             <li><a className="text-emerald-700 underline" href="https://developers.google.com/search/docs/crawling-indexing/robots/intro" target="_blank" rel="noreferrer">Google robots.txt documentation</a> and <a className="text-emerald-700 underline" href="https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data" target="_blank" rel="noreferrer">structured data guidance</a>.</li>
