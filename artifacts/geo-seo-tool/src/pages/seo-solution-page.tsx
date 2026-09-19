@@ -102,7 +102,7 @@ export default function SeoSolutionPage({ variant }: { variant: Variant }) {
             <Button size="lg" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setLocation("/sign-up")}>Start the 30-day guided trial <ArrowRight className="ml-2 h-4 w-4" /></Button>
             <Link href="/pricing" className="text-sm font-medium text-white underline underline-offset-4 hover:text-emerald-200">See plans and limits</Link>
           </div>
-          <p className="mt-3 text-xs text-slate-400">No card required. Nothing is charged automatically.</p>
+          <p className="mt-3 text-sm text-slate-300">No card or automatic charge. After the trial, stay free or choose Starter from $29/month. <Link href="/changelog" className="underline hover:text-white">See how the tool keeps improving.</Link></p>
         </div>
       </section>
       <main className="mx-auto max-w-5xl px-5 py-14 md:py-18">

@@ -5,11 +5,8 @@
 // claims (e.g. "X% slower", "Y% less accurate"). Where we don't know
 // something, we either omit it or hedge ("does not prominently advertise").
 //
-// Verified from competitor public sites (research conducted 2026-05-03):
-// - Otterly.AI:  pricing not published; Mention Rate + sentiment focus
-// - AthenaHQ:    $95/mo self-serve; 7 engines; visibility + competitor intel
-// - Profound:    enterprise / contact sales; 5 engines; attribution focus
-// - Brandlight:  enterprise / contact sales; 4 engines; bias + influence focus
+// Competitor pricing and features change. Recheck each vendor's public site
+// before publishing an exact comparison or price advantage.
 
 export interface CompetitorMeta {
   slug: string;
@@ -55,10 +52,10 @@ export const OUR_FACTS = {
   proAudits: "100 audits / month",
   proSims: "30 simulations / month, 25 prompts each",
   engines: "ChatGPT, Claude, Gemini, Perplexity (4 engines)",
-  fixGenerator: "Auto-drafts FAQPage and Organization JSON-LD plus citation-bot robots.txt entries",
+  fixGenerator: "Drafts Organization and WebSite JSON-LD plus crawler-rule guidance for review",
   citationGap: "Side-by-side competitor citation gap table",
   history: "1-year audit + simulation history (Pro), 2 years (Agency)",
-  signup: "Self-serve sign-up, instant access, no demo required",
+  signup: "Self-serve sign-up, no demo required",
 };
 
 export const COMPETITORS: CompetitorMeta[] = [
@@ -69,20 +66,20 @@ export const COMPETITORS: CompetitorMeta[] = [
     title: "AEO Improvement vs Otterly.AI: Which AI Search Visibility Tool Is Right for You? (2026)",
     description: "Compare AEO Improvement and Otterly.AI side by side. Pricing, AI engines monitored, automated fixes, and which tool is the better fit for marketers, agencies, and in-house SEO teams.",
     oneLiner: "Otterly.AI positions itself primarily as an AI search mention-rate and sentiment monitoring tool — surfacing how often your brand appears in AI responses and the tone of those mentions.",
-    pricingNote: "Pricing is not prominently published on Otterly's marketing pages — you'll typically need to start a trial or talk to them to see plans.",
-    theirEngines: ["ChatGPT", "Perplexity", "Other generative engines"],
+    pricingNote: "Otterly publishes a Lite plan at $29/month, plus higher tiers. Check otterly.ai/pricing for current terms and add-ons.",
+    theirEngines: ["ChatGPT", "Google AI Overviews", "Perplexity", "Microsoft Copilot"],
     theirStrengths: [
       "Mention rate tracking — what % of target prompts return your brand",
       "Sentiment analysis on the way AI describes your brand",
-      "Real-time visibility dashboards",
+      "Daily prompt tracking",
     ],
     theirGaps: [
       "Does not prominently advertise an automated JSON-LD generator",
       "No publicly advertised competitor citation gap table",
-      "Pricing requires a trial or sales conversation to confirm",
+      "Claude, Gemini, and Google AI Mode are listed as add-ons",
     ],
     whenToPickThem: "You want a pure monitoring dashboard and primarily care about how AI engines describe your brand qualitatively (sentiment + mention frequency).",
-    whenToPickUs: "You want monitoring AND actionable, deployable JSON-LD and crawler fixes with a prioritized recommendation list — without a sales call to find out what it costs.",
+    whenToPickUs: "You want a guided page audit, draft fixes to review, buyer-question tests, and a 30-day trial with no card.",
   },
   {
     slug: "athenahq",
@@ -91,7 +88,7 @@ export const COMPETITORS: CompetitorMeta[] = [
     title: "AEO Improvement vs AthenaHQ: Pricing, Features & Honest Comparison (2026)",
     description: "Compare AEO Improvement and AthenaHQ side by side. Plan pricing, AI engines tracked, optimization features, and a buyer's guide to picking the right AI search visibility tool.",
     oneLiner: "AthenaHQ is a brand visibility intelligence platform focused on tracking how your brand and competitors appear across a broad set of AI engines, with competitor monitoring and AI crawling features.",
-    pricingNote: "AthenaHQ publishes a self-serve plan at $95 / month (recently discounted from $295), with a 17% annual discount and a free 10-minute audit.",
+    pricingNote: "AthenaHQ publishes plan details at athenahq.ai/plans. Check its current price and credit limits before comparing costs.",
     theirEngines: ["ChatGPT", "Claude", "Gemini", "Perplexity", "Google AI Overviews", "Copilot", "Grok"],
     theirStrengths: [
       "Broadest published engine coverage — 7 AI engines including Copilot and Grok",
@@ -102,10 +99,10 @@ export const COMPETITORS: CompetitorMeta[] = [
     theirGaps: [
       "Does not prominently advertise a one-click JSON-LD auto-generator",
       "No publicly advertised competitor citation gap table as a standalone module",
-      "Self-serve plan starts at $95 / month — higher than our $79 Pro tier",
+      "Plan credits and add-ons should be checked against current needs",
     ],
-    whenToPickThem: "You specifically need to monitor across Grok or Copilot in addition to the major engines, and you're comfortable at the $95+/mo price point for the broader engine net.",
-    whenToPickUs: "You want self-serve coverage across ChatGPT, Claude, Gemini, and Perplexity, a technical Fix Generator focused on schema and citation-bot access, and a $79 starting price.",
+    whenToPickThem: "You need its broader advertised engine coverage or agent workflow. Confirm the current plan and credits directly with AthenaHQ.",
+    whenToPickUs: "You want four supported engines on Pro, a guided audit, and transparent plans starting at $29/month for Starter.",
   },
   {
     slug: "profound",
@@ -114,7 +111,7 @@ export const COMPETITORS: CompetitorMeta[] = [
     title: "AEO Improvement vs Profound: Self-Serve AEO vs Enterprise Sales Cycle (2026)",
     description: "Compare AEO Improvement and Profound. Pricing transparency, AI engines tracked, optimization vs attribution focus, and which tool fits self-serve marketers vs enterprise teams.",
     oneLiner: "Profound is an enterprise-focused AI search analytics platform centered on attribution and zero-click impact analysis — understanding how AI answer engines affect your traffic and which sources they cite.",
-    pricingNote: "Profound does not publish pricing — their CTAs route to 'Get a Demo' or 'Contact Sales,' which signals an enterprise-grade contract motion.",
+    pricingNote: "Profound publishes a Starter plan from $99/month billed yearly and a Growth plan from $399/month billed yearly, plus custom Enterprise. Check tryprofound.com/pricing for current terms.",
     theirEngines: ["ChatGPT", "Claude", "Gemini", "Perplexity", "Google AI Overviews"],
     theirStrengths: [
       "Strong attribution and source-tracking analytics",
@@ -123,12 +120,12 @@ export const COMPETITORS: CompetitorMeta[] = [
       "Enterprise-grade onboarding and account management",
     ],
     theirGaps: [
-      "No published pricing — requires a sales conversation to evaluate",
+      "Plan features and prompt limits vary by tier",
       "Does not prominently advertise an automated JSON-LD generator",
       "Attribution-first framing means less emphasis on 'fix this on your site' workflows",
     ],
-    whenToPickThem: "You're an enterprise team with a six-figure budget who needs deep attribution data tied into a broader analytics stack and is willing to navigate a sales cycle.",
-    whenToPickUs: "You want to start optimizing today — sign up, run an audit, and walk away with deployable schema and a prioritized fix list — without scheduling a demo.",
+    whenToPickThem: "You need Profound's larger prompt dataset, agents, or enterprise controls and its current plan fits your budget.",
+    whenToPickUs: "You want a guided audit and improvement list, a no-card trial, and paid plans starting at $29/month.",
   },
   {
     slug: "brandlight",
@@ -137,7 +134,7 @@ export const COMPETITORS: CompetitorMeta[] = [
     title: "AEO Improvement vs Brandlight: Self-Serve AEO Tool vs Enterprise AI Brand Platform (2026)",
     description: "Compare AEO Improvement and Brandlight side by side. Pricing models, AI engine coverage, optimization workflows, and which tool fits your team's stage and budget.",
     oneLiner: "Brandlight is an enterprise AI brand intelligence platform focused on bias detection, source influence scoring, and helping large brands shape the narrative AI tools tell about them.",
-    pricingNote: "Brandlight does not publish pricing — CTAs are 'Contact Sales' / 'Partner With Us.' They recently raised a $30M Series A, signaling their target customer is large brands and enterprises.",
+    pricingNote: "Brandlight's main site directs visitors to a demo or partnership discussion. Ask Brandlight for a current quote and scope.",
     theirEngines: ["ChatGPT", "Gemini", "Perplexity", "Google AI Overviews"],
     theirStrengths: [
       "'Bias Score' to detect AI favoritism or negativity toward your brand",
@@ -151,7 +148,7 @@ export const COMPETITORS: CompetitorMeta[] = [
       "Smaller monitored engine set (4) than AthenaHQ (7) — same core engines as us",
     ],
     whenToPickThem: "You're a global enterprise brand worried about AI bias and reputation, and you have budget for a platform plus narrative-shaping advisory.",
-    whenToPickUs: "You want a self-serve tool with four major engines, automated technical fixes, transparent pricing starting at $79/mo, and the option to start free.",
+    whenToPickUs: "You want a self-serve audit and four supported engines on Pro, with a no-card trial and paid plans from $29/month.",
   },
 ];
 
@@ -197,7 +194,7 @@ export const SHARED_ROWS: SharedRow[] = [
   },
   {
     feature: "Starting paid price",
-    us: "$79 / month (Pro)",
+    us: "$29 / month (Starter); $79 / month (Pro)",
     theirAnswers: {
       otterly: "Not published",
       athenahq: "$95 / month",
@@ -219,7 +216,7 @@ export const SHARED_ROWS: SharedRow[] = [
   },
   {
     feature: "Deployable schema generator",
-    us: "FAQPage and Organization JSON-LD, copy-paste ready",
+    us: "Draft Organization and WebSite JSON-LD for review",
     theirAnswers: {
       otterly: "Not advertised on their site",
       athenahq: "Not advertised on their site",
@@ -229,8 +226,8 @@ export const SHARED_ROWS: SharedRow[] = [
     advantage: { otterly: "us", athenahq: "us", profound: "us", brandlight: "us" },
   },
   {
-    feature: "Auto-generated FAQPage JSON-LD + Organization schema",
-    us: "Yes — copy-paste output for your <head>",
+    feature: "Generated schema reviewed before publishing",
+    us: "Organization and WebSite drafts; review before use",
     theirAnswers: {
       otterly: "Not advertised on their site",
       athenahq: "Not advertised on their site",
@@ -267,8 +264,8 @@ export const SHARED_ROWS: SharedRow[] = [
     theirAnswers: {
       otterly: "Not specified publicly",
       athenahq: "Not specified publicly",
-      profound: "Enterprise — typically full retention",
-      brandlight: "Enterprise — typically full retention",
+      profound: "Check current plan",
+      brandlight: "Check current plan",
     },
     advantage: { otterly: "us", athenahq: "us", profound: "neutral", brandlight: "neutral" },
   },

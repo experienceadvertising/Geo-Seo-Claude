@@ -259,7 +259,7 @@ function ShareOfVoiceCard({ data }: { data: SovResponse }) {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            Run this simulation again over the coming weeks — once there are at least two runs for this domain,
+            Run this simulation again over the coming weeks, once there are at least two runs for this domain,
             we'll chart whether you're gaining or losing share of voice against the brands AI engines recommend.
           </p>
         </CardContent>
@@ -369,17 +369,17 @@ function assessPageCoverage(query: string, audit: any): {
 }
 
 /**
- * Client-side error sanitizer — mirrors the server's sanitizeError logic so
+ * Client-side error sanitizer, mirrors the server's sanitizeError logic so
  * that simulation results stored before the server fix was deployed also show
  * a human-readable message instead of raw JSON blobs.
  */
 function friendlyEngineError(raw: string | null): string {
-  if (!raw) return "An unexpected error occurred — try again";
-  if (/timed?\s*out/i.test(raw)) return "Request timed out — the engine took too long to respond";
-  if (/rate.?limit|429|RATELIMIT|too many requests/i.test(raw)) return "Rate limit reached — try again in a few minutes";
-  if (/401|unauthorized|invalid.?key|authentication failed/i.test(raw)) return "Authentication error — service configuration issue";
-  if (/503|502|504|service\s+unavailable|bad\s+gateway/i.test(raw)) return "Service temporarily unavailable — try again later";
-  if (/ECONNREFUSED|ENOTFOUND|fetch\s+failed|network\s+error/i.test(raw)) return "Network error — could not reach the engine";
+  if (!raw) return "An unexpected error occurred, try again";
+  if (/timed?\s*out/i.test(raw)) return "Request timed out, the engine took too long to respond";
+  if (/rate.?limit|429|RATELIMIT|too many requests/i.test(raw)) return "Rate limit reached, try again in a few minutes";
+  if (/401|unauthorized|invalid.?key|authentication failed/i.test(raw)) return "Authentication error, service configuration issue";
+  if (/503|502|504|service\s+unavailable|bad\s+gateway/i.test(raw)) return "Service temporarily unavailable, try again later";
+  if (/ECONNREFUSED|ENOTFOUND|fetch\s+failed|network\s+error/i.test(raw)) return "Network error, could not reach the engine";
   // Strip JSON blobs and credential strings from anything that fell through
   const cleaned = raw
     .replace(/\{[^}]*\}/g, "")
@@ -388,7 +388,7 @@ function friendlyEngineError(raw: string | null): string {
     .replace(/\s{2,}/g, " ")
     .trim()
     .slice(0, 120);
-  return cleaned || "An unexpected error occurred — try again";
+  return cleaned || "An unexpected error occurred, try again";
 }
 
 function SentimentBadge({ sentiment }: { sentiment: string | null }) {
@@ -444,7 +444,7 @@ export default function SimulatePage() {
 
   // Clamp engine selection to what the plan actually allows. The default
   // selects all 4 engines; for a plan limited to fewer, locked engines can't
-  // be toggled but would stay silently selected — submitting engines the
+  // be toggled but would stay silently selected, submitting engines the
   // server will reject or ignore and inflating the "Running (N queries)"
   // count the user sees.
   const allowedKey = allowedEngines.join(",");
@@ -497,7 +497,7 @@ export default function SimulatePage() {
       if (generated.length === 0) throw new Error("No prompts returned");
       setPromptsText(generated.join("\n"));
     } catch {
-      // Surfaced to the user via suggest.isError below — swallow here so a
+      // Surfaced to the user via suggest.isError below, swallow here so a
       // failed suggestion doesn't become an unhandled promise rejection.
     }
   };
@@ -515,7 +515,7 @@ export default function SimulatePage() {
         },
       });
     } catch {
-      // Error is surfaced via run.isError / run.error — swallow here so
+      // Error is surfaced via run.isError / run.error, swallow here so
       // the Vite dev overlay doesn't pop up for expected API errors (403, 429, etc.)
     }
   };
@@ -559,7 +559,7 @@ export default function SimulatePage() {
     if (Array.isArray(saved)) setPromptsText(saved.filter((value: unknown) => typeof value === "string").slice(0, maxPrompts).join("\n"));
   }, [latest.data]);
 
-  // Share of Voice trend — derived from this domain's past simulations (Pro).
+  // Share of Voice trend, derived from this domain's past simulations (Pro).
   // Refetches after each run so a freshly-completed simulation extends the line.
   const sov = useQuery<SovResponse>({
     queryKey: ["geo", "share-of-voice", domain, run.isSuccess],
@@ -568,7 +568,7 @@ export default function SimulatePage() {
     retry: false,
   });
 
-  // Citation Gap: computed entirely from existing citedUrls in results — no extra API calls
+  // Citation Gap: computed entirely from existing citedUrls in results, no extra API calls
   const citationGap = useMemo(() => {
     if (!result?.results || activeCompetitorDomains.length === 0) return null;
 
@@ -614,7 +614,7 @@ export default function SimulatePage() {
   return (
     <div className="container max-w-6xl px-4 sm:px-6 py-6 sm:py-8 space-y-6">
       <Helmet>
-        <title>Prompt simulation — AEO Improvement</title>
+        <title>Prompt simulation, AEO Improvement</title>
         <meta name="robots" content="noindex,nofollow" />
       </Helmet>
       <div>
@@ -656,7 +656,7 @@ export default function SimulatePage() {
             </div>
             <div>
               <p className="text-sm font-semibold">Who's getting the mentions I'm not?</p>
-              <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">See which competitors each engine recommends instead, so you know exactly who to close the gap on.</p>
+              <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">Compare brands mentioned in these sampled answers, then decide which gaps are worth investigating.</p>
             </div>
           </div>
         </div>
@@ -867,7 +867,7 @@ export default function SimulatePage() {
             ) : (
               <UpgradePrompt
                 feature="Competitor Tracking"
-                description="Track up to 3 competitor domains and see exactly how often AI engines cite them versus your site, per prompt and per engine."
+                description="Compare up to 3 competitor domains in the prompts you test. Results are samples and can change between runs."
                 requiredPlan="pro"
                 compact
               />
@@ -1009,7 +1009,7 @@ export default function SimulatePage() {
             </CardContent>
           </Card>
 
-          {/* Share of Voice trend (Pro) — derived from this domain's run history */}
+          {/* Share of Voice trend (Pro), derived from this domain's run history */}
           {isPro && sov.data && sov.data.runs > 0 && <ShareOfVoiceCard data={sov.data} />}
 
           {/* Citation Gap */}
