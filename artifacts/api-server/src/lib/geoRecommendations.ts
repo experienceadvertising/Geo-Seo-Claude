@@ -195,7 +195,7 @@ export function extractContentSignals($: cheerio.CheerioAPI, url: string, brandN
     }
   });
 
-  // Answer capsules: short (40-60 word) <p> immediately following an h2/h3
+  // Answer-capsule heuristic: a short <p> immediately following an h2/h3
   let answerCapsuleCount = 0;
   $("h2,h3").each((_, h) => {
     const next = $(h).next("p");
@@ -608,7 +608,7 @@ export function generateGeoRecommendations(ctx: RecommendationContext): GeoRecom
 
   if (s.answerCapsuleCount < 2 && s.totalHeadings >= 3) {
     recs.push(composeRec("answer-capsules", {
-      detail: `Detected ${s.answerCapsuleCount} answer capsule(s). After every major H2, consider a 40-60 word self-contained answer that states the conclusion before elaboration. These blocks are easier to retrieve and are worth validating in prompt simulations.`,
+      detail: `Detected ${s.answerCapsuleCount} answer capsule(s). For headings that answer a real reader question, consider a concise self-contained answer before elaboration. This count is a rough scanner signal, not a required word count or a rule for every H2.`,
       priority: s.answerCapsuleCount === 0 ? "high" : "medium",
     }));
   }
