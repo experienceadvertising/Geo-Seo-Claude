@@ -253,12 +253,12 @@ function SignedOutLanding() {
                 <Sparkles className="h-3 w-3" /> SEO + GEO, with a clear next step
               </div>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.05]">
-                Turn SEO and AI-search insights into your next improvement.
+                Make your next SEO and AI search improvement count.
               </h1>
               <p className="text-lg md:text-xl text-muted-foreground max-w-[560px]">
-                Find what is holding your website back, know what to fix first, and track what changes.
-                AEO Improvement brings SEO audits, GEO recommendations, AI prompt testing, and keyword
-                tracking into one guided workspace for brands and agencies.
+                See what your site needs, get a clear next step, and check your progress in one place.
+                AEO Improvement brings audits, practical fixes, buyer question tests, and tracking together.
+                Start with a 30-day trial with no card, then stay free or choose a plan from $29 a month.
               </p>
 
               <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm text-foreground/80 max-w-md">
@@ -268,7 +268,7 @@ function SignedOutLanding() {
                   "Buyer-question tests across AI models",
                   "Suggested fixes you can review and apply",
                   "Weekly keyword tracking on Pro and Agency",
-                  "30-day guided trial, no card",
+                  "30-day trial, then free or from $29/month",
                 ].map(item => (
                   <li key={item} className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-shrink-0" />
@@ -315,6 +315,16 @@ function SignedOutLanding() {
 
       <div className="w-full max-w-5xl mx-auto px-4 md:px-8 py-12 md:py-20 space-y-16">
         <MarketStats />
+
+        <section className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-6 md:p-8">
+          <p className="text-xs font-semibold uppercase tracking-widest text-emerald-700">More value as the tool grows</p>
+          <h2 className="mt-2 text-2xl md:text-3xl font-bold">A practical tool at a price you can start with.</h2>
+          <p className="mt-3 max-w-3xl text-muted-foreground">Try the full core audit workflow for 30 days with no card. After that, keep using the free plan or choose Starter from $29 a month. We keep refining the recommendations, improving the workflow, and showing you what changed.</p>
+          <div className="mt-4 flex flex-wrap gap-4 text-sm font-semibold">
+            <Link href="/pricing" className="text-emerald-700 hover:underline">See plans and limits</Link>
+            <Link href="/changelog" className="text-emerald-700 hover:underline">See recent improvements</Link>
+          </div>
+        </section>
 
         <section aria-labelledby="guided-growth" className="rounded-2xl border bg-card p-6 md:p-8">
           <h2 id="guided-growth" className="text-2xl md:text-3xl font-bold">Less guesswork. One useful improvement at a time.</h2>
@@ -563,15 +573,15 @@ function AnalysisProgress({ stage }: { stage?: number }) {
   );
 }
 
-// "Your AEO Journey" surface — the first thing a returning user sees on the
+// "Your AEO Journey" surface, the first thing a returning user sees on the
 // dashboard once they have ≥1 audit. It does three jobs:
 //   (1) Reflects current state: latest score + delta vs the prior audit on
 //       the same domain, so the dashboard *itself* tells a progression
 //       story instead of being just a launcher form.
-//   (2) Renders a tiny inline sparkline of the last 5 audits — gives a felt
+//   (2) Renders a tiny inline sparkline of the last 5 audits, gives a felt
 //       sense of trajectory without requiring users to open results pages.
 //   (3) For free users, embeds a compact "What Pro unlocks for YOUR site"
-//       row showing three locked previews tied to their actual data — much
+//       row showing three locked previews tied to their actual data, much
 //       higher-conversion than abstract feature lists on /pricing.
 // Canonicalize a stored audit URL for *display* only (does not mutate history):
 // lowercase the host, drop the protocol, a leading "www.", and a trailing slash
@@ -597,7 +607,7 @@ function AeoJourneyCard({ audits }: { audits: Array<{ id: number; url: string; g
 
   // /api/geo/audits returns geoScore as the DB-stored real value, which is
   // already on a 0-100 scale (the analyzer does Math.round of the weighted
-  // sub-scores before insert). Display directly — no *100.
+  // sub-scores before insert). Display directly, no *100.
   const currScore = Math.round(latest.geoScore);
   const priorScore = prior ? Math.round(prior.geoScore) : null;
   const delta = priorScore != null ? currScore - priorScore : null;
@@ -678,7 +688,7 @@ function AeoJourneyCard({ audits }: { audits: Array<{ id: number; url: string; g
             Three locked-state tiles tied to features the user has already
             seen referenced (multi-engine simulation, Fix Generator,
             competitor citation gaps). Each tile communicates the value
-            specifically — not as an abstract feature list. */}
+            specifically, not as an abstract feature list. */}
         {isFree && (
           <div className="pt-4 border-t border-emerald-500/10">
             <div className="text-xs uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
@@ -690,7 +700,7 @@ function AeoJourneyCard({ audits }: { audits: Array<{ id: number; url: string; g
                   <div className="text-xs font-semibold mb-1 flex items-center gap-1.5">
                     <Sparkles className="h-3 w-3 text-emerald-600" /> All 4 engines
                   </div>
-                  <div className="text-xs text-muted-foreground leading-snug">Gemini answers 40% of Google searches with AI now. Find out if it names you.</div>
+                  <div className="text-xs text-muted-foreground leading-snug">Test a buyer question and see whether Gemini mentions your brand in that sample.</div>
                 </div>
               </Link>
               <Link href="/pricing">
@@ -698,7 +708,7 @@ function AeoJourneyCard({ audits }: { audits: Array<{ id: number; url: string; g
                   <div className="text-xs font-semibold mb-1 flex items-center gap-1.5">
                     <Zap className="h-3 w-3 text-emerald-600" /> Fix Generator
                   </div>
-                  <div className="text-xs text-muted-foreground leading-snug">Auto-draft JSON-LD and citation-bot robots.txt rules. Copy and ship.</div>
+      <div className="text-xs text-muted-foreground leading-snug">Review draft JSON-LD and crawler guidance before publishing.</div>
                 </div>
               </Link>
               <Link href="/pricing">
@@ -718,7 +728,7 @@ function AeoJourneyCard({ audits }: { audits: Array<{ id: number; url: string; g
 }
 
 // Curated set of practitioner AEO/GEO tips. Each one is a qualitative,
-// widely-accepted strategy — NO invented numbers, NO fabricated stats. The
+// widely-accepted strategy, NO invented numbers, NO fabricated stats. The
 // library is intentionally small (one tip per day-of-year rotation) so each
 // surface is sharp and re-reading is fine. If you add or reorder entries,
 // the rotation index is stable per-day, so users see the same tip across
@@ -727,27 +737,27 @@ const AEO_TIPS: Array<{ icon: string; title: string; body: string }> = [
   {
     icon: "🤖",
     title: "Verify AI crawlers can reach you",
-    body: "GPTBot, ClaudeBot, PerplexityBot, and Google-Extended each obey robots.txt. A single overly-broad Disallow can hide your whole site from AI search. View your robots.txt and explicitly Allow these user-agents on the paths that matter.",
+    body: "Check Googlebot for Google AI search features, OAI-SearchBot for ChatGPT search, and the current search bots for Claude and Perplexity. Training bots have different roles. Review robots.txt and your CDN rules before changing access.",
   },
   {
     icon: "📄",
     title: "Keep llms.txt optional",
-    body: "Crawler-log evidence shows llms.txt is rarely requested and no major answer engine treats it as a citation gate. Spend effort on fresh, server-visible content, citation-path bot access, and clear entity schema first.",
+    body: "Google does not require an AI text file for AI Overviews or AI Mode. Keep llms.txt optional and focus first on useful pages, crawl access, and clear links.",
   },
   {
     icon: "❓",
-    title: "Add FAQPage JSON-LD to high-intent pages",
-    body: "AI answer engines lift FAQ markup directly into responses. Pick your top product or pricing page, write 5–8 questions in your customers' actual phrasing, and wrap them in FAQPage schema. The format is dead simple and the leverage is large.",
+    title: "Answer the questions buyers actually ask",
+    body: "Add clear, useful answers to important pages. Only add FAQPage markup when the questions are visible and the page meets current feature policies. Markup is not an AI citation shortcut.",
   },
   {
     icon: "📝",
     title: "Lead with the answer, not the build-up",
-    body: "AI engines extract paragraphs that resolve a question in 2–3 sentences. Audit your top pages: does the first paragraph after each H2 directly answer the heading? If it sets up context first, rewrite it to lead with the answer.",
+    body: "Read your top page as a customer would. Does the opening answer the question clearly? Give the answer first, then include the context and evidence needed to act. There is no required word count.",
   },
   {
     icon: "🏷️",
     title: "Disambiguate your brand entity",
-    body: "If your brand name is a common word (or shares a name with anything else), AI engines may confuse you with someone else. Add Organization JSON-LD with sameAs links to your Wikipedia, LinkedIn, Crunchbase, and X profiles to anchor the entity.",
+    body: "If your name overlaps with another company, state plainly who you are and what you do. Keep the same facts on your site and real company profiles. Link only to profiles you actually own.",
   },
   {
     icon: "📌",
@@ -757,37 +767,37 @@ const AEO_TIPS: Array<{ icon: string; title: string; body: string }> = [
   {
     icon: "⚡",
     title: "Make sure your content survives without JS",
-    body: "Most AI crawlers do not execute JavaScript reliably. Right-click → View Source on your top page. If the body is mostly empty divs, your content is invisible to AI. Server-side render or pre-render at least the first viewport's content.",
+    body: "Check the initial HTML and rendered page for the main answer and links. Google can render JavaScript, so an empty source view alone does not prove the page is invisible. Test the actual result before changing your site architecture.",
   },
   {
     icon: "🔗",
-    title: "Earn citations from sources LLMs already trust",
-    body: "AI engines weight sources their training data already knows. A mention on Wikipedia, a respected industry trade publication, or a well-cited research paper does more for AI visibility than ten link-farm backlinks ever will.",
+    title: "Earn relevant independent coverage",
+    body: "Share original, checkable information that useful publications may cite. A relevant mention can help customers discover and assess you, but it does not guarantee an AI recommendation.",
   },
   {
     icon: "📰",
     title: "Keep your About page boring and factual",
-    body: "AI engines pull company facts from About pages: founders, founding year, HQ location, headcount range, what you do. Make them findable in plain text on a single page, not buried in a video or an interactive timeline.",
+    body: "Help readers verify who runs the business, what it does, and how to contact it. Keep facts current and visible in text, with video or graphics as useful additions.",
   },
   {
     icon: "🎯",
     title: "Optimize for attribution, not just traffic",
-    body: "If an AI overview quotes your data without naming your brand, you've been mined, not cited. Use clear entity markup, FAQPage schema, and quotable summaries so LLMs attribute the insight to you rather than summarizing it anonymously.",
+    body: "Publish original information with a clear source, date, method, and company name. Then check how people find it and whether it leads to qualified traffic. Attribution in AI answers is never guaranteed.",
   },
   {
     icon: "🔓",
     title: "Don't gate the research AI needs to cite you",
-    body: "A white paper behind a form wall earns nothing from AI discovery. If you have original data or research, publish a crawlable version. AI credits whoever it can read, not whoever wrote the original.",
+    body: "If you want research discovered, publish an accessible summary with methods and limits. A gated report can still serve interested buyers, while the public page stands on its own.",
   },
   {
     icon: "🤝",
     title: "Treat robots.txt as a strategic decision",
-    body: "OAI-SearchBot powers real-time ChatGPT citations. GPTBot feeds model training data. They are different bots with different consequences. Most sites have never made a deliberate choice about which to allow. Make one.",
+    body: "OpenAI lists OAI-SearchBot for search and GPTBot for model training. Decide which access fits your site, check the current provider documentation, and test the resulting robots.txt rules.",
   },
   {
     icon: "💬",
-    title: "Build presence where LLMs were trained",
-    body: "LLMs are trained heavily on Reddit, Wikipedia, and YouTube. Your absence from those platforms is not neutral. It creates a gap that competitors or critics will fill. Earned presence in these communities shapes what AI says about you before any crawler visits your site.",
+    title: "Join useful conversations",
+    body: "Answer real questions where your buyers spend time. Firsthand examples and helpful replies can build trust with people. Do not treat community posts as a guaranteed way to influence an AI model.",
   },
 ];
 
@@ -810,25 +820,25 @@ const TRUSTED_RESOURCES: Array<{ source: string; title: string; description: str
   },
   {
     source: "Anthropic",
-    title: "ClaudeBot & web search",
-    description: "Anthropic's docs on how Claude reaches the open web and which user-agents to allow.",
-    url: "https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/web-search-tool",
+    title: "Claude search and retrieval bots",
+    description: "Anthropic's crawler roles for search, user retrieval, and model development.",
+    url: "https://support.claude.com/en/articles/8896518-does-anthropic-crawl-data-from-the-web-and-how-can-site-owners-block-the-crawler",
   },
   {
     source: "Schema.org",
     title: "Full vocabulary reference",
-    description: "Authoritative source for every schema type AI engines parse — FAQPage, Organization, Product, HowTo, and more.",
+    description: "Vocabulary reference for structured data types. Check provider policies before expecting a search feature.",
     url: "https://schema.org/docs/schemas.html",
   },
   {
     source: "Search Engine Land",
     title: "AI visibility starts before search ends with citations",
-    description: "How entity signals, community presence, and original data determine who AI systems cite — and why adding more content is rarely the first fix.",
+    description: "How entity signals, community presence, and original data determine who AI systems cite, and why adding more content is rarely the first fix.",
     url: "https://searchengineland.com/ai-visibility-starts-before-search-ends-with-citations-476308",
   },
   {
     source: "Aleyda Solis",
-    title: "LearningSEO — AI search resources",
+    title: "LearningSEO, AI search resources",
     description: "Curated, vendor-neutral reading list maintained by one of SEO's most respected practitioners.",
     url: "https://www.learningseo.io/",
   },
@@ -839,17 +849,17 @@ const TRUSTED_RESOURCES: Array<{ source: string; title: string; description: str
 // a checklist they can come back to between re-audits. All actions are
 // concrete and verifiable on the user's own site.
 const QUICK_WINS: string[] = [
-  "Open your robots.txt and confirm it doesn't block GPTBot, ClaudeBot, PerplexityBot, or Google-Extended.",
-  "View Source on your homepage. Your value prop and key claims should appear in the raw HTML, not after a JS render.",
-  "Add FAQPage JSON-LD to your single highest-traffic page first. Validate with Google's Rich Results Test.",
-  "Treat llms.txt as an optional content map after citation-critical work is complete.",
-  "Add Organization schema with sameAs links to your Wikipedia, LinkedIn, Crunchbase, and X profiles.",
-  "Check whether your best original data or research is behind a form or paywall. AI credits whoever it can read, not whoever wrote it. Publish a crawlable version.",
-  "Search your brand name on Reddit and Wikipedia right now. LLM training data draws heavily from both. A gap there is a gap in how AI describes you.",
+  "Check Googlebot and the search crawlers relevant to your customers in robots.txt and CDN rules.",
+  "Check that your main answer and links appear in the rendered page. Use Search Console for Google's view.",
+  "Answer one buyer question clearly on a page that already matters to your business.",
+  "Keep llms.txt optional. Google does not require it for AI Overviews or AI Mode.",
+  "Keep your company facts and genuine profile links accurate on your site.",
+  "Publish an accessible summary of original research with its method and limitations.",
+  "Test a real buyer question in AI systems and record the date, prompt, and cited URLs.",
 ];
 
 // Companion learning surface to the journey card. The dashboard, even for
-// users with audit history, is too utilitarian on its own — this section
+// users with audit history, is too utilitarian on its own, this section
 // gives them something to read, do, and click into between audits, and
 // gives empty-state users an actual reason to return tomorrow.
 function DashboardLearningHub() {
@@ -862,7 +872,7 @@ function DashboardLearningHub() {
 
   return (
     <div className="space-y-6">
-      {/* Daily tip — single, focused, scannable. The icon + title alone
+      {/* Daily tip, single, focused, scannable. The icon + title alone
           should communicate the actionable takeaway in <2 seconds. */}
       <Card className="border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 to-transparent">
         <CardHeader className="pb-3">
@@ -880,7 +890,7 @@ function DashboardLearningHub() {
         </CardContent>
       </Card>
 
-      {/* Trusted resources — externally credible and stable. We deliberately
+      {/* Trusted resources, externally credible and stable. We deliberately
           surface SOURCE first, then title, so users recognise the publisher
           (Google, OpenAI, Anthropic) before deciding to click. */}
       <div className="space-y-3">
@@ -915,13 +925,13 @@ function DashboardLearningHub() {
         </div>
       </div>
 
-      {/* Authority signals — off-site moves that AI engines weight heavily
+      {/* Authority signals, off-site moves that AI engines weight heavily
           (Linkby paid placements, HARO, podcasts, Wikipedia, Reddit, YouTube).
           Lives in the hub because these are evergreen recommendations,
           not audit-derived. */}
       <AuthoritySignalsCard />
 
-      {/* Quick wins checklist — concrete, ungated by an audit. Every item
+      {/* Quick wins checklist, concrete, ungated by an audit. Every item
           is something a competent operator can do today on their own site. */}
       <Card>
         <CardHeader className="pb-3">

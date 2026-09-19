@@ -27,7 +27,7 @@ import { COMPETITORS, SHARED_ROWS, getCompetitor, OUR_FACTS } from "@/data/compe
  * - Indexable canonical at /vs/<slug>
  * - JSON-LD: ComparisonTable (FAQPage flavor) + BreadcrumbList
  * - Internal links to /upgrade with source param for attribution
- * - Honest framing — we surface things competitors do BETTER too, which
+ * - Honest framing, we surface things competitors do BETTER too, which
  *   builds trust and gets us more clicks from informed buyers (and
  *   massively reduces legal risk vs claiming "X is worse").
  */
@@ -40,8 +40,14 @@ export default function VsComparison() {
   if (!c) return <NotFound />;
 
   const upgradeHref = `/upgrade?source=vs-${c.slug}`;
+  const vendorPricingUrl: Record<string, string> = {
+    otterly: "https://otterly.ai/pricing",
+    athenahq: "https://athenahq.ai/plans",
+    profound: "https://www.tryprofound.com/pricing",
+    brandlight: "https://www.brandlight.ai/",
+  };
 
-  // FAQPage schema — Google will sometimes show these as expandable rich
+  // FAQPage schema, Google will sometimes show these as expandable rich
   // results in SERP, which dramatically lifts CTR for comparison queries.
   const faqJsonLd = {
     "@context": "https://schema.org",
@@ -52,7 +58,7 @@ export default function VsComparison() {
         name: `How does AEO Improvement compare to ${c.name}?`,
         acceptedAnswer: {
           "@type": "Answer",
-          text: `${c.oneLiner} AEO Improvement adds an automated Fix Generator for JSON-LD and citation-bot robots.txt entries on top of monitoring, with self-serve pricing starting at ${OUR_FACTS.proPrice} and a free tier of ${OUR_FACTS.freeTier}.`,
+          text: `${c.oneLiner} AEO Improvement adds a guided page audit and draft fixes to review, with paid plans starting at $29 per month and a no-card trial. Check both vendors' current pricing and plan limits.`,
         },
       },
       {
@@ -68,7 +74,7 @@ export default function VsComparison() {
         name: `Which AI engines does ${c.name} monitor?`,
         acceptedAnswer: {
           "@type": "Answer",
-          text: `${c.name} monitors ${c.theirEngines.join(", ")}. AEO Improvement runs prompt simulations against ChatGPT, Claude, Gemini, and Perplexity.`,
+          text: `Check ${c.name}'s current plan for supported engines and usage limits. AEO Improvement's Pro plan supports sampled prompt tests across ChatGPT, Claude, Gemini, and Perplexity.`,
         },
       },
       {
@@ -107,7 +113,7 @@ export default function VsComparison() {
           {/* Hero */}
           <header className="space-y-4">
             <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 border px-3 py-1 text-xs font-semibold">
-              Honest comparison · Updated 2026
+              Product comparison · Reviewed September 2026
             </Badge>
             <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900 leading-tight">
               AEO Improvement vs {c.name}
@@ -116,11 +122,10 @@ export default function VsComparison() {
               {c.oneLiner}
             </p>
             <p className="text-base text-slate-700 leading-relaxed max-w-3xl">
-              <strong>AEO Improvement</strong> takes a different approach: alongside the visibility
-              tracking, we generate the actual technical fixes — your FAQPage JSON-LD, Organization
-              schema, and citation-bot robots.txt entries. Less "you should fix this,"
-              more "here's the file, paste it." Plus a self-serve free tier so you can evaluate
-              without a sales call.
+              <strong>AEO Improvement</strong> combines page audits, prioritized recommendations,
+              draft schema and crawler guidance, and sampled AI answer tests. Review each suggested
+              fix before publishing it. Start with a 30-day trial with no card, then stay free
+              or choose a plan from $29 a month.
             </p>
           </header>
 
@@ -151,8 +156,8 @@ export default function VsComparison() {
           <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 flex items-start gap-2.5">
             <HelpCircle className="h-4 w-4 mt-0.5 shrink-0" />
             <div>
-              <strong>Pricing note:</strong> {c.pricingNote} AEO Improvement publishes prices openly:
-              free tier, {OUR_FACTS.proPrice} for Pro, {OUR_FACTS.agencyPrice} for Agency.
+              <strong>Pricing note:</strong> {c.pricingNote} <a href={vendorPricingUrl[c.slug]} target="_blank" rel="noreferrer" className="underline">Check the vendor's current page</a>.
+              AEO Improvement publishes its plans from $29/month for Starter, {OUR_FACTS.proPrice} for Pro, and {OUR_FACTS.agencyPrice} for Agency.
             </div>
           </div>
 
@@ -160,9 +165,8 @@ export default function VsComparison() {
           <section className="space-y-4">
             <h2 className="text-2xl font-bold text-slate-900">Feature-by-feature comparison</h2>
             <p className="text-sm text-slate-600">
-              Every "{c.name}" answer in this table is sourced from {c.name}'s public marketing
-              pages. Where they don't advertise a feature, we say "Not advertised" rather than
-              guess — talk to them directly to confirm anything ambiguous.
+              AEO Improvement features below reflect this product. Competitor plans and limits
+              change, so check <a href={`https://${c.domain}`} target="_blank" rel="noreferrer" className="text-emerald-700 underline">{c.name}'s current site</a> before deciding.
             </p>
             <div className="rounded-xl border border-slate-200 overflow-hidden bg-white">
               <div className="grid grid-cols-12 bg-slate-50 border-b border-slate-200 text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -173,20 +177,19 @@ export default function VsComparison() {
                 <div className="col-span-4 px-4 py-3">{c.name}</div>
               </div>
               {SHARED_ROWS.map((row) => {
-                const adv = row.advantage[c.slug] ?? "neutral";
                 return (
                   <div key={row.feature} className="grid grid-cols-12 border-b border-slate-100 last:border-b-0 text-sm">
                     <div className="col-span-4 px-4 py-3.5 font-medium text-slate-900">{row.feature}</div>
-                    <div className={`col-span-4 px-4 py-3.5 border-l border-r border-emerald-100 ${adv === "us" ? "bg-emerald-50/50" : ""}`}>
+                    <div className="col-span-4 px-4 py-3.5 border-l border-r border-emerald-100">
                       <div className="flex items-start gap-1.5">
-                        <AdvantageIcon advantage={adv === "us" ? "win" : adv === "them" ? "neutral" : "neutral"} />
+                        <AdvantageIcon advantage="neutral" />
                         <span className="text-slate-800">{row.us}</span>
                       </div>
                     </div>
-                    <div className={`col-span-4 px-4 py-3.5 ${adv === "them" ? "bg-emerald-50/50" : ""}`}>
+                    <div className="col-span-4 px-4 py-3.5">
                       <div className="flex items-start gap-1.5">
-                        <AdvantageIcon advantage={adv === "them" ? "win" : adv === "unknown" ? "unknown" : "neutral"} />
-                        <span className="text-slate-700">{row.theirAnswers[c.slug]}</span>
+                        <AdvantageIcon advantage="unknown" />
+                        <span className="text-slate-700">Check current plan</span>
                       </div>
                     </div>
                   </div>
@@ -195,7 +198,7 @@ export default function VsComparison() {
             </div>
           </section>
 
-          {/* Their strengths — honest acknowledgement */}
+          {/* Their strengths, honest acknowledgement */}
           <section className="space-y-4">
             <h2 className="text-2xl font-bold text-slate-900">What {c.name} does well</h2>
             <p className="text-sm text-slate-600">
@@ -214,23 +217,22 @@ export default function VsComparison() {
 
           {/* Where we win */}
           <section className="space-y-4">
-            <h2 className="text-2xl font-bold text-slate-900">Where AEO Improvement wins for most teams</h2>
+            <h2 className="text-2xl font-bold text-slate-900">Why AEO Improvement may fit your team</h2>
             <ul className="space-y-3">
               <WinItem title="The Fix Generator">
-                Audits tell you what's wrong. We also draft the fix. <code className="text-xs bg-slate-100 px-1.5 py-0.5 rounded">FAQPage</code> JSON-LD,
-                Organization schema, and citation-bot robots.txt entries are ready to copy and deploy.
+                Audits show what needs attention. We also draft Organization and WebSite JSON-LD
+                and crawler guidance where appropriate. Review the output against your real site.
               </WinItem>
-              <WinItem title="A real free tier — not just a demo">
-                {OUR_FACTS.freeTier}. Sign up, run an audit in 90 seconds, no credit card.
-                Most competitors at this scope require a sales conversation.
+              <WinItem title="Try it before choosing a paid plan">
+                {OUR_FACTS.freeTier}. No card is needed to start.
               </WinItem>
               <WinItem title="Transparent, self-serve pricing">
-                {OUR_FACTS.proPrice}. No demo required, no annual commitment, cancel from your
-                dashboard. Most enterprise tools in this space publish nothing about price.
+                Starter begins at $29/month and Pro at {OUR_FACTS.proPrice}. See the pricing page
+                for current limits and annual options. No demo is required.
               </WinItem>
               <WinItem title="Four engines that matter, simulated end-to-end">
                 We run your prompts through {OUR_FACTS.engines} and show you side-by-side
-                whether each engine cites you, your competitors, or neither — per prompt, per engine.
+                whether each engine cites you, your competitors, or neither, per prompt, per engine.
               </WinItem>
             </ul>
           </section>
@@ -238,16 +240,16 @@ export default function VsComparison() {
           {/* Bottom CTA */}
           <Card className="border-2 border-emerald-500 shadow-xl shadow-emerald-500/10 overflow-hidden">
             <div className="bg-gradient-to-r from-emerald-500 to-teal-500 px-6 py-3 text-white text-sm font-semibold flex items-center gap-2">
-              <Zap className="h-4 w-4" /> Try it free — see how it compares yourself
+              <Zap className="h-4 w-4" /> Try it free, see how it compares yourself
             </div>
             <CardContent className="pt-6 pb-6 space-y-4">
               <h3 className="text-2xl font-bold text-slate-900">
-                Run a free AEO audit in 90 seconds
+                Start with a page that matters
               </h3>
               <p className="text-slate-600 leading-relaxed">
-                Paste your URL. We'll run an audit against ChatGPT, score your AEO citability,
-                and show you the top fixes, including deployable JSON-LD and crawler policy entries.
-                Free plan is {OUR_FACTS.freeTier}. No credit card.
+                Paste your URL and review page-readiness signals with prioritized recommendations.
+                The score is not a citation probability. Start with a no-card trial and review
+                any draft code before using it on your site.
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
                 <Button

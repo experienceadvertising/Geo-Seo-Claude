@@ -5,6 +5,25 @@
   "archiveNote": "Earlier release notes retain their original recorded dates. Descriptions were clarified on September 5, 2026 to remove unsupported performance and visibility claims. Historical offers are not current plan entitlements.",
   "entries": [
     {
+      "slug": "clearer-ai-search-guidance-and-plan-value",
+      "isoDate": "2026-09-19",
+      "badge": "Improvement",
+      "title": "Clearer AI search guidance and a simpler way to see plan value",
+      "summary": "Updated the main guides, comparison pages, and product copy so crawler advice, audit limits, and pricing are easier to evaluate.",
+      "audience": "Site owners, marketers, and agencies comparing SEO and AI search tools",
+      "items": [
+        "Separated search crawler access from model training controls in public guidance.",
+        "Removed fixed citation timelines, required answer lengths, and schema shortcuts that providers do not support.",
+        "Made the 30-day no-card trial, ongoing free plan, and Starter price clearer across the site.",
+        "Linked comparison decisions to current vendor information and made draft fixes explicitly reviewable."
+      ],
+      "links": [
+        { "label": "Read the AI search guide", "href": "/how-to-appear-in-ai-search" },
+        { "label": "Compare plans", "href": "/pricing" }
+      ],
+      "evidence": "Reviewed current provider documentation, product entitlements, and public vendor pricing on September 19, 2026."
+    },
+    {
       "slug": "guided-improvement-workbench-and-site-coverage",
       "isoDate": "2026-09-06",
       "badge": "New",

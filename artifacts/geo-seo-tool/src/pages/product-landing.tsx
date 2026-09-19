@@ -61,7 +61,7 @@ export default function ProductLanding({ variant }: { variant: Variant }) {
               </div>
               <Button type="submit" size="lg" className="h-12 bg-emerald-600 hover:bg-emerald-700">Run free audit <ArrowRight className="ml-2 h-4 w-4" /></Button>
             </form>
-            <p className="mt-3 text-xs text-slate-400">First month with all core audit features. No credit card.</p>
+            <p className="mt-3 text-sm text-slate-300">Try it for 30 days with no card. After that, stay free or choose a plan from $29/month. <a href="/changelog" className="underline hover:text-white">See recent improvements.</a></p>
           </div>
         </div>
       </section>

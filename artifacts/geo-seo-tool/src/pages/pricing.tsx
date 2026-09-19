@@ -189,7 +189,7 @@ const PLAN_FEATURES = {
     "Sentiment & tone analysis",
     "Fix Generator (JSON-LD, robots.txt, optional llms.txt)",
     "Competitor citation gap + Share of Voice",
-    "Projects — continuous monitoring & alerts",
+    "Projects, continuous monitoring & alerts",
     "AI crawler pixel request tracking",
     "1-year visibility trend history",
     "Priority email support",
@@ -534,11 +534,12 @@ export default function PricingPage() {
           <Badge className="bg-emerald-100 text-emerald-700 border-0 px-3 py-1 text-xs font-medium">
             Plans &amp; Pricing
           </Badge>
-          <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">Improve how your brand shows up in Google and AI search</h1>
+          <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">A stronger SEO and AI search workflow, starting at $29 a month</h1>
           <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-            Your first month is completely free with all core audit features unlocked and no credit card.
-            After that, stay free for basic audits, start at $29/month for guided SEO and GEO improvements,
-            or upgrade to Pro for ongoing measurement, Google data, and multi-engine visibility.
+            Try the core workflow for 30 days with no card or automatic charge. After that,
+            stay free for basic use, choose Starter for guided audits and fixes, or move to
+            Pro for Google data, ongoing tracking, and four-engine prompt tests. We keep
+            improving the tool, and you can see each release in the changelog.
           </p>
 
           {/* Billing interval toggle */}
@@ -567,7 +568,7 @@ export default function PricingPage() {
             >
               Annual
               <Badge className="bg-emerald-100 text-emerald-700 border-0 text-[10px] px-1.5 py-0.5 font-semibold">
-                Save ~20%
+                Save with annual billing
               </Badge>
             </button>
           </div>
@@ -634,7 +635,7 @@ export default function PricingPage() {
         <div className="text-center space-y-2 text-sm text-muted-foreground">
           <p>
             Monthly plans cancel anytime.{" "}
-            Annual plans billed as a single payment — no mid-year cancellation refunds.
+            Annual plans billed as a single payment, no mid-year cancellation refunds.
           </p>
           <p>
             Questions?{" "}

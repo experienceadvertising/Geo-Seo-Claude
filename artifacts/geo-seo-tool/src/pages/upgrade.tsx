@@ -32,7 +32,7 @@ import { paidPlanActionDisabled, paidPlanActionLabel } from "@/lib/billingDispla
  * Conversion-focused upgrade landing page. The destination for every
  * upsell CTA in the lifecycle emails (approaching-limit, what-you-missed,
  * limit-reached, weekly-insights). Distinct from /pricing which is a
- * generic three-tier comparison — this page is "you, specifically, are
+ * generic three-tier comparison, this page is "you, specifically, are
  * about to benefit from Pro" with live usage data and source-aware copy.
  *
  * Source-aware via ?source= query param. Each source rewrites the hero
@@ -116,7 +116,7 @@ function buildHero(
         badgeTone: "rose",
         headline: "Get everything back in one click",
         subhead:
-          "Last month you had all 4 AI engines, the Fix Generator, monitoring, and competitor tracking. Pro turns it all back on — your history and settings are exactly where you left them.",
+          "Your trial included four AI engines, the Fix Generator, monitoring, and competitor tracking. Pro restores those tools under the paid plan. Review your current history and limits before choosing.",
         showUsage: true,
       };
     case "approaching-audits":
@@ -134,7 +134,7 @@ function buildHero(
         badgeTone: "amber",
         headline: "Run prompt simulations against every engine",
         subhead:
-          "Free covers ChatGPT only with 3 prompts. Pro runs 25 prompts across all 4 engines so you actually see where you're cited.",
+          "Free covers ChatGPT with 3 prompts per simulation. Pro supports up to 25 prompts across four engines so you can compare sampled answers.",
         showUsage: true,
       };
     case "limit-reached-audits":
@@ -161,7 +161,7 @@ function buildHero(
         badgeTone: "indigo",
         headline: "See your site through every AI engine",
         subhead:
-          "You ran an audit against ChatGPT. Here's what the same audit returns when you also see Claude, Gemini, and Perplexity, plus the Fix Generator output for your site.",
+          "Your page audit is a starting point. Pro adds sampled answers from Claude, Gemini, and Perplexity, plus draft fixes to review.",
         showUsage: false,
       };
     case "weekly-insights":
@@ -170,7 +170,7 @@ function buildHero(
         badgeTone: "indigo",
         headline: "Turn this week's insight into action",
         subhead:
-          "Pro unlocks the full toolkit: all 4 engines, deployable JSON-LD and citation-bot robots.txt fixes, and competitor citation tracking.",
+          "Pro adds four-engine prompt tests, draft schema and crawler guidance, and competitor comparisons based on sampled responses.",
         showUsage: false,
       };
     case "first-audit":
@@ -179,7 +179,7 @@ function buildHero(
         badgeTone: "emerald",
         headline: "Ready to go deeper?",
         subhead:
-          "Your free audit shows you a score and recommendations. Pro shows you whether you're cited across all four major AI engines, plus auto-drafts the fixes.",
+          "Your free audit shows page readiness and recommendations. Pro adds sampled answers across four engines and draft fixes to review.",
         showUsage: false,
       };
     case "score-changed":
@@ -188,14 +188,14 @@ function buildHero(
         badgeTone: "indigo",
         headline: "Track every change across every engine",
         subhead:
-          "You're already iterating on your AEO. Pro multiplies your visibility: 4 engines instead of 1, and a year of trend history instead of 30 days.",
+          "Keep your work together. Pro adds four-engine prompt tests and a year of audit history instead of 30 days.",
         showUsage: false,
       };
     default:
       return {
         badge: "Upgrade to Pro",
         badgeTone: "emerald",
-        headline: "Rank in AI answers, not just search",
+        headline: "Turn AI search findings into useful work",
         subhead:
           "Unlock all 4 AI engines, the Fix Generator, and competitor citation tracking. Cancel anytime.",
         showUsage: true,
@@ -243,22 +243,22 @@ const BENEFITS: BenefitRow[] = [
   {
     icon: <FileCode2 className="h-5 w-5 text-emerald-600" />,
     title: "Fix Generator",
-    free: "—",
-    starter: "Auto-drafts JSON-LD and crawler fixes",
-    pro: "Auto-drafts JSON-LD and crawler fixes",
+    free: "Not included",
+    starter: "Draft schema and crawler guidance for review",
+    pro: "Draft schema and crawler guidance for review",
   },
   {
     icon: <Eye className="h-5 w-5 text-emerald-600" />,
     title: "Competitor citation tracking",
-    free: "—",
-    starter: "—",
+    free: "Not included",
+    starter: "Not included",
     pro: "Side-by-side citation gap table",
   },
   {
     icon: <Sparkles className="h-5 w-5 text-emerald-600" />,
     title: "Sentiment & tone analysis",
-    free: "—",
-    starter: "—",
+    free: "Not included",
+    starter: "Not included",
     pro: "Per-engine sentiment scoring",
   },
   {
@@ -314,7 +314,7 @@ export default function UpgradePage() {
     [source, isFree, trialActive, trialEndsAt],
   );
 
-  // Stripe redirect-back handling — same pattern as /pricing so users
+  // Stripe redirect-back handling, same pattern as /pricing so users
   // landing here after checkout get a confirmation toast.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -378,13 +378,13 @@ export default function UpgradePage() {
   const agencyPrice = getPriceForPlan("agency");
   const canManageBilling = !!subData?.canManageBilling;
 
-  // Loading shell — show skeleton instead of hero flash so source-aware
+  // Loading shell, show skeleton instead of hero flash so source-aware
   // copy doesn't briefly render with the wrong plan context.
   if (!isLoaded || planLoading) {
     return (
       <div className="min-h-[calc(100vh-4rem)] py-14 px-4">
         <Helmet>
-          <title>Upgrade — AEO Improvement</title>
+          <title>Upgrade, AEO Improvement</title>
           <meta name="robots" content="noindex,nofollow" />
         </Helmet>
         <div className="max-w-4xl mx-auto space-y-8">
@@ -403,7 +403,7 @@ export default function UpgradePage() {
   return (
     <div className="min-h-[calc(100vh-4rem)] py-12 px-4 bg-gradient-to-b from-slate-50/60 to-white">
       <Helmet>
-        <title>Upgrade — AEO Improvement</title>
+        <title>Upgrade, AEO Improvement</title>
         <meta name="robots" content="noindex,nofollow" />
       </Helmet>
       <div className="max-w-4xl mx-auto space-y-10">
@@ -432,7 +432,7 @@ export default function UpgradePage() {
           </p>
         </div>
 
-        {/* Live usage — only for free users on usage-driven sources */}
+        {/* Live usage, only for free users on usage-driven sources */}
         {isFree && hero.showUsage && (
           <Card className="border-slate-200 bg-white">
             <CardContent className="pt-6 pb-6 space-y-5">
@@ -444,13 +444,13 @@ export default function UpgradePage() {
                 <UsageBar label="Prompt simulations" used={usage.simulations.used} cap={usage.simulations.cap} pct={simsPct} />
               </div>
               <div className="text-xs text-slate-500 pt-1">
-                Quotas refill on the 1st of every month. Upgrading to Pro lifts both caps immediately — no waiting.
+                Quotas refill on the 1st of every month. Upgrading to Pro lifts both caps immediately, no waiting.
               </div>
             </CardContent>
           </Card>
         )}
 
-        {/* Starter CTA card — lowest-friction path after a free trial */}
+        {/* Starter CTA card, lowest-friction path after a free trial */}
         <Card className="border-2 border-sky-400 shadow-lg shadow-sky-500/10 overflow-hidden">
           <div className="bg-gradient-to-r from-sky-600 to-cyan-600 px-6 py-3 text-white text-sm font-semibold flex items-center gap-2">
             <Sparkles className="h-4 w-4" /> Best for one site ready to improve
@@ -498,7 +498,7 @@ export default function UpgradePage() {
           </CardContent>
         </Card>
 
-        {/* Pro CTA card — for measurement and multi-engine visibility */}
+        {/* Pro CTA card, for measurement and multi-engine visibility */}
         <Card className="border-2 border-emerald-500 shadow-xl shadow-emerald-500/10 overflow-hidden">
           <div className="bg-gradient-to-r from-emerald-500 to-teal-500 px-6 py-3 text-white text-sm font-semibold flex items-center gap-2">
             <Zap className="h-4 w-4" /> Full measurement and multi-engine visibility
@@ -542,7 +542,7 @@ export default function UpgradePage() {
           </CardContent>
         </Card>
 
-        {/* Benefits comparison — clear plan boundaries after a full-access trial */}
+        {/* Benefits comparison, clear plan boundaries after a full-access trial */}
         <Card className="border-slate-200 bg-white">
           <CardContent className="pt-6 pb-6">
             <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-5">
@@ -581,7 +581,7 @@ export default function UpgradePage() {
           </CardContent>
         </Card>
 
-        {/* Agency tier — secondary, smaller card so we don't dilute Pro CTA */}
+        {/* Agency tier, secondary, smaller card so we don't dilute Pro CTA */}
         <Card className="border-slate-200 bg-slate-50/40">
           <CardContent className="pt-5 pb-5">
             <div className="flex items-start justify-between flex-wrap gap-4">

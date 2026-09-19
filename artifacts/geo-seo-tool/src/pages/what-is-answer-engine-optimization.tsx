@@ -28,7 +28,7 @@ const faqJsonLd = {
       name: "What is the difference between AEO and SEO?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "SEO (Search Engine Optimization) is focused on appearing in ranked link lists in Google and Bing. AEO (Answer Engine Optimization) is focused on being cited within the AI-generated responses that increasingly replace those link lists. The technical overlap is significant — server-side rendering, page speed, and structured data matter for both — but AEO adds new dimensions: crawler access for AI-specific bots, entity recognition in AI knowledge graphs, content structured for direct-answer extraction, and off-site signals like community presence on Reddit and Wikipedia.",
+        text: "SEO helps people find useful pages in search results. AEO applies the same foundations to AI answers: accessible pages, clear answers, accurate facts, and measurement of actual mentions or citations. Google says its AI search features have no extra technical requirements beyond Search eligibility.",
       },
     },
     {
@@ -44,7 +44,7 @@ const faqJsonLd = {
       name: "Which AI engines should I optimize for?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "The four engines that matter most for most brands in 2026 are ChatGPT (OpenAI), Claude (Anthropic), Gemini (Google), and Perplexity. Each has different retrieval logic, different trust signals, and different recency weighting. A single-engine strategy is not a strategy — the same content can be cited frequently in one engine and not at all in another.",
+        text: "Start with the AI services your customers use. AEO Improvement supports sampled buyer-question tests in ChatGPT, Claude, Gemini, and Perplexity. Answers can vary by prompt, model, and retrieval context.",
       },
     },
     {
@@ -52,7 +52,7 @@ const faqJsonLd = {
       name: "How do I know if AEO is working?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "The most direct measurement is prompt testing: search your key customer questions in each AI engine and track which brands appear and how often. More scalable measurement combines an AEO audit score (tracking technical readiness across multiple dimensions), referral analytics from AI platforms, and periodic mention-rate tracking. Note that AI citation sources rotate frequently — between 40% and 60% month-to-month — so a single test is not a reliable baseline.",
+        text: "Test real customer questions in the AI services that matter to your buyers. Record the prompt, provider, date, mentions, and citations. Compare repeated samples with search query data, qualified visits, and conversions. A readiness score is useful for tracking page changes, not proof of AI visibility.",
       },
     },
   ],
@@ -64,7 +64,7 @@ const articleJsonLd = {
   headline: PAGE_TITLE,
   description: PAGE_DESC,
   datePublished: "2026-05-05",
-  dateModified: "2026-05-05",
+  dateModified: "2026-09-19",
   author: AUTHOR_PERSON_LD,
   publisher: PUBLISHER_ORG,
   mainEntityOfPage: { "@type": "WebPage", "@id": "https://aeoimprovement.com/what-is-answer-engine-optimization" },
@@ -89,27 +89,27 @@ const AEO_DIMENSIONS = [
   {
     icon: <Globe className="h-5 w-5 text-emerald-600" />,
     title: "AI crawler access",
-    body: "GPTBot, ClaudeBot, PerplexityBot, and Google-Extended each follow your robots.txt. Blocking any of them hides your site from that engine's citation pool entirely.",
+    body: "Crawler roles differ. Googlebot controls Google Search access for AI Overviews and AI Mode. OAI-SearchBot serves ChatGPT search. Claude has separate search and user retrieval bots. Check current provider rules before changing robots.txt.",
   },
   {
     icon: <BookOpen className="h-5 w-5 text-sky-600" />,
     title: "Content citability",
-    body: "AI engines extract the paragraph that most directly answers a query. Content structured with direct-answer openings, clear headings, and appropriate passage length is cited significantly more often.",
+    body: "Clear answers, useful headings, and enough context help readers understand a page. No passage length or structure guarantees selection in an AI answer.",
   },
   {
     icon: <BarChart3 className="h-5 w-5 text-purple-600" />,
     title: "Structured data",
-    body: "FAQPage, Organization, Article, and HowTo schema give engines explicit signals about your content and brand. FAQPage in particular maps directly to the question-and-answer format AI uses.",
+    body: "Accurate structured data can describe visible content and real company facts. Google does not require special schema for AI Overviews or AI Mode.",
   },
   {
     icon: <TrendingUp className="h-5 w-5 text-amber-600" />,
     title: "Brand authority",
-    body: "AI engines select from brands they already recognize. Presence on Wikipedia, industry press, Reddit, and LinkedIn builds the entity recognition that precedes citation.",
+    body: "Clear company facts and relevant independent coverage help people assess a brand. No particular profile, publication, or encyclopedia entry is required for an AI citation.",
   },
   {
     icon: <Zap className="h-5 w-5 text-rose-600" />,
     title: "Technical foundation",
-    body: "Server-side rendering, HTTPS, page speed, and canonical URLs are table stakes. AI crawlers, like Googlebot, cannot reliably execute JavaScript — content invisible in View Source is invisible to AI.",
+    body: "Check HTTPS, canonical URLs, and the rendered content. Google can render JavaScript, so test what its crawler sees before prescribing server-side rendering.",
   },
   {
     icon: <Globe className="h-5 w-5 text-teal-600" />,
@@ -127,7 +127,7 @@ export default function WhatIsAEO() {
         path="/what-is-answer-engine-optimization"
         ogType="article"
         publishedTime="2026-05-05"
-        modifiedTime="2026-07-22"
+        modifiedTime="2026-09-19"
         authorName={PRIMARY_AUTHOR.name}
         jsonLd={[articleJsonLd, faqJsonLd, breadcrumb]}
       />
@@ -137,18 +137,18 @@ export default function WhatIsAEO() {
           {/* Hero */}
           <header className="space-y-4">
             <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 border px-3 py-1 text-xs font-semibold inline-flex items-center gap-1.5">
-              <BookOpen className="h-3.5 w-3.5" /> AEO Explainer · Updated July 2026
+              <BookOpen className="h-3.5 w-3.5" /> AEO Explainer · Updated September 2026
             </Badge>
             <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 leading-tight">
               What is Answer Engine Optimization (AEO)?
             </h1>
             <p className="text-sm text-slate-500">
-              By <a href={PRIMARY_AUTHOR.url} rel="author" className="text-emerald-700 hover:underline font-medium">{PRIMARY_AUTHOR.name}</a>, {PRIMARY_AUTHOR.jobTitle} · Updated July 22, 2026
+              By <a href={PRIMARY_AUTHOR.url} rel="author" className="text-emerald-700 hover:underline font-medium">{PRIMARY_AUTHOR.name}</a>, {PRIMARY_AUTHOR.jobTitle} · Updated September 19, 2026
             </p>
             <p className="text-lg text-slate-600 leading-relaxed">
-              AEO is the practice of making your website more likely to be cited and recommended
-              when people ask AI engines questions in your space. Here is how it works, why it matters
-              in 2026, and what it takes to get started.
+              AEO is the work of making useful pages easy for AI search systems to find and
+              understand, then checking whether your brand appears in relevant answers. The
+              work starts with good SEO and a real customer question.
             </p>
           </header>
 
@@ -157,11 +157,9 @@ export default function WhatIsAEO() {
             <CardContent className="pt-6 pb-6 space-y-2">
               <div className="text-xs font-semibold uppercase tracking-wider text-emerald-700">Definition</div>
               <p className="text-slate-800 leading-relaxed text-sm">
-                <strong>Answer Engine Optimization (AEO)</strong> is the practice of structuring your website,
-                content, and off-site presence so that AI-powered answer engines — ChatGPT, Claude, Gemini,
-                Perplexity, and others — cite you when they respond to queries related to your business.
-                Where traditional SEO targets a ranked list of links, AEO targets the AI-generated response
-                that increasingly replaces that list.
+                <strong>Answer Engine Optimization (AEO)</strong> applies search fundamentals to
+                AI answers. Make pages accessible, answer relevant questions clearly, support claims
+                with accurate information, and measure mentions, citations, and useful visits.
               </p>
             </CardContent>
           </Card>
@@ -174,24 +172,10 @@ export default function WhatIsAEO() {
               at the top of the funnel. A few key data points shape the case:
             </p>
             <ul className="space-y-3">
-              <Bullet>
-                ChatGPT, Perplexity, Claude, and Google AI Overviews now handle queries that used to produce
-                ten blue links. If you are not cited in those responses, you are not part of that conversation.
-              </Bullet>
-              <Bullet>
-                Research from major publishers shows that visitors arriving from AI platforms convert to
-                paid subscriptions and purchases at 4 to 5 times the rate of visitors from traditional search.
-                The volume is lower, but the intent is higher.
-              </Bullet>
-              <Bullet>
-                Between 40% and 60% of cited sources change month-to-month across major AI platforms.
-                The category is still being won. Early optimization compounds.
-              </Bullet>
-              <Bullet>
-                AI engines do not discover new brands — they select from brands they already recognize.
-                The brands building entity signals now are establishing the baseline the model uses
-                for the next several years.
-              </Bullet>
+              <Bullet>AI answers are another way buyers discover and compare businesses. A clear, useful page can support both traditional search and AI-assisted discovery.</Bullet>
+              <Bullet>Use your own analytics to see whether AI-referred visitors take valuable actions. Conversion rates vary by audience, source, and tracking setup.</Bullet>
+              <Bullet>Answers and source links can change. Repeated checks are more useful than treating one response as a stable ranking.</Bullet>
+              <Bullet>Make your brand facts easy to verify and your best pages easy to use. Relevant independent coverage can add context, but no single mention guarantees a recommendation.</Bullet>
             </ul>
           </section>
 
@@ -210,11 +194,11 @@ export default function WhatIsAEO() {
                 <tbody className="divide-y divide-slate-100">
                   {[
                     ["Goal", "Rank in a link list", "Be cited in an AI response"],
-                    ["Crawlers", "Googlebot, Bingbot", "GPTBot, ClaudeBot, OAI-SearchBot, PerplexityBot, Google-Extended"],
-                    ["Content structure", "Keywords, headings, internal links", "Direct-answer paragraphs, FAQPage schema, passage-length tuning"],
-                    ["Off-site signals", "Backlinks", "Entity recognition: Wikipedia, Reddit, LinkedIn, press mentions"],
-                    ["Measurement", "Rankings, impressions, CTR", "Prompt testing, citation frequency, AEO audit score"],
-                    ["Stability", "Rankings shift gradually", "Citation sources rotate 40-60% month-to-month — track regularly"],
+                    ["Crawlers", "Googlebot, Bingbot", "Googlebot for Google AI search features; separate search and retrieval bots for other providers"],
+                    ["Content structure", "Useful answers, headings, internal links", "Clear answers to buyer questions with enough context"],
+                    ["Off-site context", "Relevant links and mentions", "Accurate profiles and independent coverage"],
+                    ["Measurement", "Queries, visits, conversions", "Repeated prompt samples, cited URLs, useful visits"],
+                    ["Stability", "Search positions can change", "AI answers and citations can vary by prompt and date"],
                   ].map(([factor, seo, aeo]) => (
                     <tr key={factor}>
                       <td className="py-2.5 pr-4 font-medium text-slate-700 text-xs">{factor}</td>
@@ -231,8 +215,8 @@ export default function WhatIsAEO() {
           <section className="space-y-5">
             <h2 className="text-2xl font-bold text-slate-900">The six dimensions of AEO</h2>
             <p className="text-sm text-slate-600 leading-relaxed">
-              A good AEO audit scores your site across six independent dimensions. Any one of them
-              can be the reason you are not appearing, even if the other five are strong.
+              AEO Improvement summarizes page-readiness checks across six dimensions. These
+              are diagnostic signals, not a formula that predicts whether an AI answer will cite you.
             </p>
             <div className="grid sm:grid-cols-2 gap-4">
               {AEO_DIMENSIONS.map(({ icon, title, body }) => (
@@ -253,19 +237,18 @@ export default function WhatIsAEO() {
           <section className="space-y-4">
             <h2 className="text-2xl font-bold text-slate-900">How to get started with AEO</h2>
             <p className="text-sm text-slate-600 leading-relaxed">
-              The fastest path to baseline AEO visibility is to eliminate the blockers first, then
-              build the positive signals. Most sites have at least one of the following issues
-              that prevents them from being cited at all:
+              Check access and the visitor's task before making a new page. Look for these
+              issues on a page that matters to your business:
             </p>
             <ul className="space-y-2.5">
-              <Bullet>At least one AI crawler is blocked in robots.txt — usually by a wildcard rule targeting all bots.</Bullet>
-              <Bullet>Key page content is rendered by JavaScript and invisible to crawlers in View Source.</Bullet>
-              <Bullet>No FAQPage, Organization, or Article schema exists on any page.</Bullet>
-              <Bullet>The brand has no presence on Wikipedia, LinkedIn, or any authoritative industry publication.</Bullet>
+              <Bullet>A relevant search crawler is blocked by robots.txt or the CDN.</Bullet>
+              <Bullet>The main answer or links are missing from the rendered page a crawler receives.</Bullet>
+              <Bullet>Important company facts or structured data do not match the visible page.</Bullet>
+              <Bullet>The site lacks clear company facts or a practical way to verify and contact the business.</Bullet>
             </ul>
             <p className="text-sm text-slate-600 leading-relaxed">
-              Run a structured audit to find your specific gaps before writing new content. Adding content
-              to a site with crawler access problems or no entity recognition produces very little citation lift.
+              Run an audit to find the specific gaps, then improve the page for the customer.
+              Recheck access and sample buyer questions after the change.
             </p>
           </section>
 
@@ -298,10 +281,10 @@ export default function WhatIsAEO() {
           {/* CTA */}
           <Card className="border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50/30">
             <CardContent className="pt-7 pb-7 text-center space-y-3">
-              <h2 className="font-bold text-xl text-slate-900">Get your AEO score in 60 seconds</h2>
+              <h2 className="font-bold text-xl text-slate-900">Get a clear AEO starting point</h2>
               <p className="text-sm text-slate-600 max-w-md mx-auto">
-                Free audit. Enter your URL and get a 6-dimension AEO score, your crawler access status,
-                schema gaps, and a prioritized fix list. No credit card required.
+                Start a no-card trial. Enter your URL to review page readiness, crawler access,
+                schema findings, and a prioritized fix list.
               </p>
               <Link href="/sign-up">
                 <Button className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-0 mt-2">
