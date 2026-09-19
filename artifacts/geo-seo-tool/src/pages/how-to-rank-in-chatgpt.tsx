@@ -9,7 +9,7 @@ import { GuideSources } from "@/components/guide-sources";
 
 const PAGE_TITLE = "How to Rank in ChatGPT: Get Your Site Cited in AI Answers (2026)";
 const PAGE_DESC =
-  "A practical guide to getting your website cited by ChatGPT search. Covers GPTBot access, entity recognition, structured data, robots.txt strategy, and how to audit your current ChatGPT visibility.";
+  "A practical guide to ChatGPT search visibility. Check OAI-SearchBot access, improve useful page content, and measure sampled mentions and citations.";
 
 const faqJsonLd = {
   "@context": "https://schema.org",
@@ -20,7 +20,7 @@ const faqJsonLd = {
       name: "How does ChatGPT decide which websites to cite?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "ChatGPT's search feature uses two bots: OAI-SearchBot for real-time retrieval and GPTBot for training data. For live citations, OAI-SearchBot must be able to crawl your page, your content must be structured so it can be extracted as a direct answer, and your brand must have sufficient entity recognition in the model's knowledge graph. Pages that are JavaScript-rendered without server-side fallback, blocked in robots.txt, or lacking structured data are frequently skipped.",
+        text: "OpenAI documents OAI-SearchBot for search, GPTBot for model training, and ChatGPT-User for some user requests. Search access and useful page content matter, but OpenAI does not publish a formula that guarantees a citation.",
       },
     },
     {
@@ -28,7 +28,7 @@ const faqJsonLd = {
       name: "Does blocking GPTBot stop ChatGPT from citing my site?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Blocking GPTBot stops your content from being used in model training data, but it does not stop ChatGPT's real-time search from citing you. Real-time citations are handled by OAI-SearchBot, which is a separate user-agent. You can block GPTBot (training) while allowing OAI-SearchBot (live search) — these are independent choices with different consequences.",
+        text: "GPTBot and OAI-SearchBot have separate roles and robots.txt controls. Blocking GPTBot does not by itself block OAI-SearchBot. Check OpenAI's current crawler documentation and your actual access rules before deciding.",
       },
     },
     {
@@ -36,7 +36,7 @@ const faqJsonLd = {
       name: "How long does it take to start appearing in ChatGPT answers?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "For real-time ChatGPT search citations, changes can take effect within days of OAI-SearchBot recrawling your page. Entity recognition in the underlying model changes much more slowly, since it depends on training cycles. Most practitioners see measurable improvement in citation frequency within four to eight weeks of implementing the on-site and off-site changes described in this guide.",
+        text: "There is no reliable timeline or guaranteed citation result. Check access after a change, then sample relevant questions over time and compare referral traffic and conversions.",
       },
     },
     {
@@ -44,7 +44,7 @@ const faqJsonLd = {
       name: "What structured data matters most for ChatGPT?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "FAQPage schema is the highest-leverage structured data for ChatGPT citations because it maps directly to the question-and-answer format ChatGPT returns to users. Organization schema with sameAs links helps with entity recognition. Article schema with dateModified helps ChatGPT assess freshness. HowTo schema is useful for procedural content.",
+        text: "OpenAI does not document a special schema requirement for ChatGPT citations. Use accurate structured data when it describes visible page content and follow the relevant search provider's policies.",
       },
     },
     {
@@ -52,7 +52,7 @@ const faqJsonLd = {
       name: "Can small or newer sites rank in ChatGPT?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Yes, but entity recognition is the main barrier for newer brands. ChatGPT tends to cite sources it already recognizes. Building presence on Wikipedia, industry publications, Reddit, and LinkedIn before expecting citation frequency to rise is the most reliable path for newer sites. Technical fixes (robots.txt, schema, server-side rendering) are necessary but not sufficient if the brand has low entity recognition.",
+        text: "Yes, newer sites can be discovered. Publish useful, accessible answers with clear company facts and genuine evidence. Relevant independent coverage can help people find and evaluate the brand, but a Wikipedia page or special markup is not a prerequisite.",
       },
     },
   ],
@@ -64,7 +64,7 @@ const articleJsonLd = {
   headline: PAGE_TITLE,
   description: PAGE_DESC,
   datePublished: "2026-05-05",
-  dateModified: "2026-05-05",
+  dateModified: "2026-09-19",
   author: AUTHOR_PERSON_LD,
   publisher: PUBLISHER_ORG,
   mainEntityOfPage: { "@type": "WebPage", "@id": "https://aeoimprovement.com/how-to-rank-in-chatgpt" },
@@ -108,7 +108,7 @@ export default function HowToRankInChatGPT() {
         path="/how-to-rank-in-chatgpt"
         ogType="article"
         publishedTime="2026-05-05"
-        modifiedTime="2026-07-22"
+        modifiedTime="2026-09-19"
         authorName={PRIMARY_AUTHOR.name}
         jsonLd={[articleJsonLd, faqJsonLd, breadcrumb]}
       />
@@ -118,18 +118,18 @@ export default function HowToRankInChatGPT() {
           {/* Hero */}
           <header className="space-y-4">
             <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 border px-3 py-1 text-xs font-semibold inline-flex items-center gap-1.5">
-              <Bot className="h-3.5 w-3.5" /> ChatGPT Search Optimization · Updated May 2026
+              <Bot className="h-3.5 w-3.5" /> ChatGPT Search Optimization · Updated September 2026
             </Badge>
             <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 leading-tight">
               How to rank in ChatGPT: get your site cited in AI answers
             </h1>
             <p className="text-sm text-slate-500">
-              By <a href={PRIMARY_AUTHOR.url} rel="author" className="text-emerald-700 hover:underline font-medium">{PRIMARY_AUTHOR.name}</a>, {PRIMARY_AUTHOR.jobTitle} · Updated July 22, 2026
+              By <a href={PRIMARY_AUTHOR.url} rel="author" className="text-emerald-700 hover:underline font-medium">{PRIMARY_AUTHOR.name}</a>, {PRIMARY_AUTHOR.jobTitle} · Updated September 19, 2026
             </p>
             <p className="text-lg text-slate-600 leading-relaxed">
-              ChatGPT now answers questions with citations from the live web. This guide covers
-              exactly how the citation process works, what prevents most sites from appearing,
-              and the specific changes that move the needle fastest.
+              ChatGPT search can show links to web pages, but no site can guarantee selection.
+              This guide covers the access checks, useful content, and measurement that a site
+              owner can actually control.
             </p>
           </header>
 
@@ -138,10 +138,9 @@ export default function HowToRankInChatGPT() {
             <CardContent className="pt-6 pb-6 space-y-3">
               <div className="text-xs font-semibold uppercase tracking-wider text-emerald-700">Key takeaway</div>
               <p className="text-slate-800 leading-relaxed text-sm">
-                ChatGPT citations depend on three independent factors: crawler access (OAI-SearchBot must not
-                be blocked), content extractability (server-side rendered, structured, direct-answer format),
-                and entity recognition (the model must already know your brand exists). Most sites fail on
-                one of the first two and don't realize it. Fix those before touching your content strategy.
+                Check OAI-SearchBot access for search, make the answer easy for readers to find,
+                and test real buyer questions. Keep GPTBot training access as a separate decision.
+                An eligible page may still be absent from a particular response.
               </p>
               <div className="pt-1">
                 <Link href="/sign-up">
@@ -157,8 +156,8 @@ export default function HowToRankInChatGPT() {
           <section className="space-y-5">
             <h2 className="text-2xl font-bold text-slate-900">How ChatGPT search actually works</h2>
             <p className="text-slate-600 leading-relaxed text-sm">
-              ChatGPT uses two separate systems when it cites your site, and most guides conflate them.
-              Understanding the difference is the first step to fixing your visibility.
+              OpenAI documents separate crawlers for search, model training, and some user requests.
+              Knowing which role you are controlling makes a robots.txt decision more useful.
             </p>
             <div className="grid sm:grid-cols-2 gap-4">
               <Card className="border-slate-200">
@@ -166,12 +165,11 @@ export default function HowToRankInChatGPT() {
                   <div className="flex items-center gap-2">
                     <Globe className="h-4 w-4 text-sky-600" />
                     <span className="font-semibold text-sm">OAI-SearchBot</span>
-                    <Badge variant="outline" className="text-[10px] px-1.5">Real-time citations</Badge>
+                    <Badge variant="outline" className="text-[10px] px-1.5">Search</Badge>
                   </div>
                   <p className="text-xs text-slate-600 leading-relaxed">
-                    Crawls your page at query time to retrieve current content for live search responses.
-                    This is the bot that produces citations in ChatGPT answers today.
-                    Blocking it means you will not appear in real-time results, regardless of content quality.
+                    OpenAI identifies this bot for ChatGPT search. Allowing access can make a page
+                    eligible for search discovery, but does not guarantee that an answer will cite it.
                   </p>
                 </CardContent>
               </Card>
@@ -183,25 +181,24 @@ export default function HowToRankInChatGPT() {
                     <Badge variant="outline" className="text-[10px] px-1.5">Model training</Badge>
                   </div>
                   <p className="text-xs text-slate-600 leading-relaxed">
-                    Collects data for model training, not live search. Blocking GPTBot is a legitimate
-                    choice if you prefer not to contribute to training data. It does not prevent ChatGPT
-                    from citing you in search results.
+                    Collects data for model training. It has a separate robots.txt control from
+                    OAI-SearchBot, so site owners can choose a different policy for search and training.
                   </p>
                 </CardContent>
               </Card>
             </div>
             <p className="text-sm text-slate-600 leading-relaxed">
-              Many sites block all OpenAI bots via a single <code className="bg-slate-100 px-1 rounded text-xs">User-agent: *</code> rule
-              and wonder why they never appear in ChatGPT answers. Check your robots.txt before anything else.
+              Check your robots.txt and CDN policy for OAI-SearchBot, then test whether the page can be
+              fetched. Access is a prerequisite for this crawler, not proof that a citation will follow.
             </p>
           </section>
 
           {/* The 6 factors */}
           <section className="space-y-5">
-            <h2 className="text-2xl font-bold text-slate-900">The factors that determine if ChatGPT cites you</h2>
+            <h2 className="text-2xl font-bold text-slate-900">What you can check and improve</h2>
             <p className="text-slate-600 leading-relaxed text-sm">
-              Based on practitioner research and our own audit corpus, these are the signals that
-              most reliably predict citation frequency:
+              OpenAI does not publish a citation formula. These checks help you make the page
+              accessible and useful, then measure actual results.
             </p>
             <ul className="space-y-3">
               <Bullet>
@@ -210,28 +207,24 @@ export default function HowToRankInChatGPT() {
                 search for OAI-SearchBot.
               </Bullet>
               <Bullet>
-                <strong>Server-side rendering.</strong> ChatGPT's crawlers do not reliably execute JavaScript.
-                If your page requires JS to display the content a user sees, the crawler sees an empty shell.
-                View Source and check that your main content is present in the raw HTML.
+                <strong>Content access.</strong> Check whether the main answer and links are available
+                to a crawler. Inspect both initial HTML and rendered content before changing architecture.
               </Bullet>
               <Bullet>
-                <strong>Direct-answer structure.</strong> AI engines lift the paragraph that most directly
-                answers a question. Each major section of your content should open with a 2-3 sentence
-                answer, not a setup paragraph.
+                <strong>Clear answers.</strong> Put the answer near the relevant heading and include
+                enough context to help a person act. There is no required sentence count.
               </Bullet>
               <Bullet>
-                <strong>Entity recognition.</strong> ChatGPT selects from brands it already recognizes.
-                If the model's knowledge graph does not associate your brand with a topic, on-page changes
-                have limited effect. Off-site signals — Wikipedia, LinkedIn, industry press — build this.
+                <strong>Brand facts.</strong> Explain who you are, what you offer, and how to verify
+                your claims. Genuine independent coverage can add context, but no profile is required.
               </Bullet>
               <Bullet>
-                <strong>Structured data.</strong> FAQPage, Organization, and Article schema give ChatGPT
-                explicit signals about what your page contains and who you are.
+                <strong>Structured data.</strong> Use accurate markup where it describes visible content.
+                OpenAI does not document a special ChatGPT schema requirement.
               </Bullet>
               <Bullet>
-                <strong>Content freshness.</strong> ChatGPT search weights recently-updated pages for
-                time-sensitive queries. Keep your <code className="bg-slate-100 px-1 rounded text-xs">dateModified</code> in
-                Article schema accurate.
+                <strong>Current information.</strong> Update facts when they change and use truthful
+                publication dates. A changed date alone does not make an old page useful.
               </Bullet>
             </ul>
           </section>
@@ -240,8 +233,7 @@ export default function HowToRankInChatGPT() {
           <section className="space-y-6">
             <h2 className="text-2xl font-bold text-slate-900">Step-by-step: what to fix and in what order</h2>
             <p className="text-sm text-slate-600 leading-relaxed">
-              Work through these in order. Steps 1 and 2 are quick checks that block everything else
-              if they fail. Steps 3 through 6 compound over time.
+              Start with access and the reader's question. Then add evidence and measure the result.
             </p>
             <div className="space-y-6">
               <Step number={1} title="Audit your robots.txt">
@@ -251,8 +243,8 @@ export default function HowToRankInChatGPT() {
                   that might be blocking all bots.
                 </p>
                 <p>
-                  Decide deliberately: allow OAI-SearchBot for live citations, block GPTBot for training
-                  if you prefer. These are independent lines. Most sites should allow both.
+                  Decide deliberately which search and training access fits your site. OAI-SearchBot
+                  and GPTBot have separate controls. Confirm your rules against OpenAI's current docs.
                 </p>
               </Step>
               <Step number={2} title="Check that your content is crawlable">
@@ -262,43 +254,41 @@ export default function HowToRankInChatGPT() {
                   the page.
                 </p>
                 <p>
-                  If it's not there, your content depends on JavaScript to render. You need server-side
-                  rendering or static generation for at least the above-the-fold content.
+                  If it is missing, inspect the rendered page and test actual crawler access. A
+                  JavaScript page is not automatically invisible, and a framework change needs evidence.
                 </p>
               </Step>
-              <Step number={3} title="Add FAQPage schema to your top page">
+              <Step number={3} title="Answer a real buyer question">
                 <p>
-                  Choose your single highest-traffic or highest-intent page. Write 5 to 8 questions
-                  in the exact phrasing your customers use, with concise direct-answer text for each.
-                  Wrap them in FAQPage JSON-LD and add it to the page head.
+                  Choose a page tied to a customer question. Put the answer near the top and include
+                  the facts, limitations, and next step someone needs. Add FAQPage markup only when
+                  it accurately describes visible content and meets feature policies.
                 </p>
                 <p>
-                  Validate with Google's Rich Results Test before publishing.
+                  Check the published page and any structured data against provider policies.
                 </p>
               </Step>
-              <Step number={4} title="Add Organization schema with entity links">
+              <Step number={4} title="Verify your company facts">
                 <p>
-                  Add Organization JSON-LD to your homepage or root layout. Include <code className="bg-slate-100 px-1 rounded text-xs">sameAs</code> links
-                  pointing to your Wikipedia article, LinkedIn company page, Crunchbase profile, and X handle.
-                  This tells AI engines that these separate profiles all represent the same entity.
+                  Keep your company name, offer, contact path, and genuine profiles consistent.
+                  Organization JSON-LD can describe those facts when it matches the visible page.
                 </p>
               </Step>
               <Step number={5} title="Restructure content for direct-answer extraction">
                 <p>
                   For each major section of content on your key pages, check whether the opening
                   paragraph immediately answers the heading as a question. Rewrite sections that build
-                  context before the answer — lead with the answer, then explain.
+                  context before the answer. Lead with the answer, then explain.
                 </p>
               </Step>
-              <Step number={6} title="Build off-site entity signals">
+              <Step number={6} title="Share original, checkable information">
                 <p>
-                  Get a Wikipedia article for your brand if you meet notability guidelines. Publish
-                  original data or research that can be cited by industry publications. Be present
-                  in the Reddit communities where your customers discuss their problems.
+                  Publish original data or practical examples with a clear method and limits. Share
+                  them with relevant communities or publications when they will help those readers.
                 </p>
                 <p>
-                  These signals take longer but create a compounding effect on how AI engines perceive
-                  your brand's authority on a topic.
+                  Independent mentions can help people find and assess your brand. They are not a
+                  guaranteed route into an AI answer.
                 </p>
               </Step>
             </div>
@@ -308,9 +298,8 @@ export default function HowToRankInChatGPT() {
           <section className="space-y-4">
             <h2 className="text-2xl font-bold text-slate-900">How to measure your ChatGPT citation rate</h2>
             <p className="text-sm text-slate-600 leading-relaxed">
-              Citation visibility in AI engines is less stable than traditional search rankings. Research
-              shows that between 40% and 60% of cited sources rotate month-to-month across major AI platforms.
-              This means a single check is not meaningful — you need regular tracking.
+              AI answers can vary by prompt, date, and retrieval context. Record those details and
+              repeat your most important buyer questions. One answer is a sample, not a stable rate.
             </p>
             <div className="grid sm:grid-cols-3 gap-4">
               {[
@@ -327,7 +316,7 @@ export default function HowToRankInChatGPT() {
                 {
                   icon: <Users className="h-4 w-4 text-purple-600" />,
                   title: "Referral analytics",
-                  body: "ChatGPT-referred visitors arrive at conversion-ready intent. Track ChatGPT.com as a referral source in your analytics.",
+                  body: "Track ChatGPT referral visits and the actions those visitors take. Use your own data to judge quality.",
                 },
               ].map(({ icon, title, body }) => (
                 <Card key={title} className="border-slate-200">
@@ -350,8 +339,8 @@ export default function HowToRankInChatGPT() {
               {[
                 { mistake: "Blocking OAI-SearchBot alongside GPTBot in a wildcard rule.", fix: "Use separate User-agent lines in robots.txt. Allow OAI-SearchBot, then decide on GPTBot separately." },
                 { mistake: "Adding more content without fixing crawler access first.", fix: "No amount of content improvements matter if the bot can't read the page. Audit access before anything else." },
-                { mistake: "Treating ChatGPT optimization as a one-time task.", fix: "Citation sources rotate frequently. Schedule a monthly audit and re-test your key prompts each time." },
-                { mistake: "Expecting on-page changes to work without off-site entity signals.", fix: "If your brand isn't recognized, ChatGPT's retrieval step won't reach you. Build Wikipedia, press, and community presence alongside on-site work." },
+                { mistake: "Treating one AI answer as a permanent result.", fix: "Retest important buyer questions and record prompt, date, model, and cited URL." },
+                { mistake: "Adding unsupported brand claims.", fix: "Use accurate company facts and real examples that a reader can check." },
               ].map(({ mistake, fix }) => (
                 <Card key={mistake} className="border-rose-100 bg-rose-50/30">
                   <CardContent className="pt-4 pb-4 flex gap-3">
@@ -394,7 +383,7 @@ export default function HowToRankInChatGPT() {
           {/* CTA */}
           <Card className="border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50/30">
             <CardContent className="pt-7 pb-7 text-center space-y-3">
-              <h2 className="font-bold text-xl text-slate-900">See exactly how ChatGPT sees your site</h2>
+              <h2 className="font-bold text-xl text-slate-900">Check your site and sample ChatGPT answers</h2>
               <p className="text-sm text-slate-600 max-w-md mx-auto">
                 Run a free AEO audit. You'll get your crawler access status, entity signals, schema gaps,
                 and a prioritized fix list in under 60 seconds.

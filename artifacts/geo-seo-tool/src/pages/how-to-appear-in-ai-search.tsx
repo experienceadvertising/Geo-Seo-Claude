@@ -9,7 +9,7 @@ import { GuideSources } from "@/components/guide-sources";
 
 const PAGE_TITLE = "How to Appear in AI Search Results: A Practical Guide for 2026";
 const PAGE_DESC =
-  "Learn how to get your website cited by ChatGPT, Claude, Gemini, and Perplexity. This guide covers on-site, off-site, and technical optimizations that increase AI search visibility for brands and businesses.";
+  "Check access, answer real buyer questions, add verifiable details, and measure AI search visibility without citation promises.";
 
 const faqJsonLd = {
   "@context": "https://schema.org",
@@ -20,7 +20,7 @@ const faqJsonLd = {
       name: "How do I get my website to show up in ChatGPT answers?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Three things must be true simultaneously: OAI-SearchBot must be allowed in your robots.txt, your page content must be readable in HTML without JavaScript execution, and your brand must have sufficient entity recognition in the model's knowledge graph. Most sites that fail to appear in ChatGPT answers have a problem with one of the first two. Run a technical audit before assuming a content strategy problem.",
+        text: "Make the page publicly accessible, check OAI-SearchBot access for ChatGPT search, and answer a question people actually ask. Clear, useful content can improve eligibility, but no change guarantees that ChatGPT will cite your page.",
       },
     },
     {
@@ -28,7 +28,7 @@ const faqJsonLd = {
       name: "Is AI search optimization the same for all engines?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "No. Each engine has different retrieval logic, trust signals, and recency weighting. ChatGPT uses OAI-SearchBot and GPTBot. Claude uses ClaudeBot. Perplexity uses PerplexityBot. Google AI Overviews uses Google-Extended. A site optimized for one engine may perform very differently on another. Each crawler must be individually allowed in robots.txt, and the content signals that influence citation vary by engine.",
+        text: "No. Search providers use different systems and crawler controls. Google AI Overviews and AI Mode rely on Google Search eligibility and Googlebot access. ChatGPT search uses OAI-SearchBot. Claude has separate search and user retrieval bots. Check each provider's current documentation before editing robots.txt.",
       },
     },
     {
@@ -36,15 +36,15 @@ const faqJsonLd = {
       name: "Does having more content help AI search visibility?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "More content helps only if the technical foundation is already in place. Adding blog posts to a site where AI crawlers are blocked, or where content is JavaScript-rendered and invisible to bots, produces no citation lift. Fix access and extractability first. When content does matter, the priority is depth on specific topics, direct-answer structure, and original data or research that other sources cite — not volume.",
+        text: "More pages alone are not a strategy. Start with pages that answer real customer questions. Improve access, clarity, original detail, and the next step for the reader before publishing another page on the same topic.",
       },
     },
     {
       "@type": "Question",
-      name: "How important is Wikipedia for AI search visibility?",
+      name: "Do I need a Wikipedia page or special AI schema?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Wikipedia is one of the highest-weight sources in AI model training data and is referenced by most major AI engines when forming entity associations. A Wikipedia article for your brand or key product significantly increases the likelihood that AI engines recognize and recommend you. If you do not meet Wikipedia's notability guidelines, focus on press coverage in major industry publications, which has a similar (if slower) effect on entity recognition.",
+        text: "No. Do not create a Wikipedia page unless the topic independently meets Wikipedia's rules. Google says there is no special schema or AI text file required for its AI search features. Accurate structured data can still help Search understand content when it matches the visible page.",
       },
     },
     {
@@ -52,7 +52,7 @@ const faqJsonLd = {
       name: "How long does AI search optimization take to show results?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Technical fixes — unblocking crawlers, fixing robots.txt, adding schema — can produce measurable changes within days to weeks as AI crawlers re-index your pages. Entity recognition changes are slower because they depend on model training cycles and off-site signal accumulation. Most brands see measurable improvement in citation frequency within 60 to 90 days of a comprehensive implementation.",
+        text: "There is no reliable timeline. Crawl and indexing can take time, and an eligible page may never be selected for a particular answer. Track search queries, qualified visits, conversions, and repeated AI answer samples instead of expecting a result within a fixed number of days.",
       },
     },
   ],
@@ -64,7 +64,7 @@ const articleJsonLd = {
   headline: PAGE_TITLE,
   description: PAGE_DESC,
   datePublished: "2026-05-05",
-  dateModified: "2026-05-05",
+  dateModified: "2026-09-19",
   author: AUTHOR_PERSON_LD,
   publisher: PUBLISHER_ORG,
   mainEntityOfPage: { "@type": "WebPage", "@id": "https://aeoimprovement.com/how-to-appear-in-ai-search" },
@@ -89,30 +89,30 @@ const ENGINES = [
   {
     name: "ChatGPT",
     org: "OpenAI",
-    crawler: "OAI-SearchBot (live), GPTBot (training)",
-    signal: "Entity recognition in training data + real-time retrieval",
-    note: "Largest user base. Real-time search enabled by default for Plus/Pro.",
+    crawler: "OAI-SearchBot (search), GPTBot (training)",
+    signal: "Search retrieval and accessible page content",
+    note: "Keep search and training crawler policies separate.",
   },
   {
     name: "Claude",
     org: "Anthropic",
-    crawler: "ClaudeBot",
-    signal: "Web search with live retrieval",
-    note: "Growing fast. Tends to cite fewer sources but with higher precision.",
+    crawler: "Claude-SearchBot, Claude-User (search and retrieval)",
+    signal: "Web search and user-initiated retrieval",
+    note: "ClaudeBot is a separate model-development crawler.",
   },
   {
     name: "Gemini",
     org: "Google",
-    crawler: "Google-Extended",
-    signal: "Integrated with Google Search index signals",
-    note: "Shares infrastructure with Google AI Overviews. Googlebot compliance matters here.",
+    crawler: "Googlebot (Google Search and AI features)",
+    signal: "Search indexing and snippet eligibility",
+    note: "Google-Extended controls certain Gemini uses outside Google Search.",
   },
   {
     name: "Perplexity",
     org: "Perplexity AI",
     crawler: "PerplexityBot",
-    signal: "Heavy real-time retrieval, cites sources inline",
-    note: "Very citation-forward — every response shows sources. High-value target for AEO.",
+    signal: "Search retrieval",
+    note: "Check current Perplexity guidance before changing access rules.",
   },
 ];
 
@@ -125,7 +125,7 @@ export default function HowToAppearInAISearch() {
         path="/how-to-appear-in-ai-search"
         ogType="article"
         publishedTime="2026-05-05"
-        modifiedTime="2026-07-22"
+        modifiedTime="2026-09-19"
         authorName={PRIMARY_AUTHOR.name}
         jsonLd={[articleJsonLd, faqJsonLd, breadcrumb]}
       />
@@ -135,18 +135,18 @@ export default function HowToAppearInAISearch() {
           {/* Hero */}
           <header className="space-y-4">
             <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 border px-3 py-1 text-xs font-semibold inline-flex items-center gap-1.5">
-              <Search className="h-3.5 w-3.5" /> AI Search Visibility Guide · Updated July 2026
+              <Search className="h-3.5 w-3.5" /> AI Search Visibility Guide · Updated September 2026
             </Badge>
             <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 leading-tight">
               How to appear in AI search results: a practical guide for 2026
             </h1>
             <p className="text-sm text-slate-500">
-              By <a href={PRIMARY_AUTHOR.url} rel="author" className="text-emerald-700 hover:underline font-medium">{PRIMARY_AUTHOR.name}</a>, {PRIMARY_AUTHOR.jobTitle} · Updated July 22, 2026
+              By <a href={PRIMARY_AUTHOR.url} rel="author" className="text-emerald-700 hover:underline font-medium">{PRIMARY_AUTHOR.name}</a>, {PRIMARY_AUTHOR.jobTitle} · Updated September 19, 2026
             </p>
             <p className="text-lg text-slate-600 leading-relaxed">
-              Getting cited by ChatGPT, Claude, Gemini, and Perplexity requires a different playbook than
-              traditional SEO. This guide explains what each engine looks for, what the most common blockers
-              are, and which changes produce the fastest results.
+              Start with the same job your customer has: find a reliable answer and decide what to do next.
+              Make that answer accessible, clear, and supported by facts. Then measure whether search and
+              AI systems send useful visitors.
             </p>
           </header>
 
@@ -155,10 +155,9 @@ export default function HowToAppearInAISearch() {
             <CardContent className="pt-6 pb-6 space-y-3">
               <div className="text-xs font-semibold uppercase tracking-wider text-emerald-700">Key takeaway</div>
               <p className="text-slate-800 leading-relaxed text-sm">
-                Most brands that are not appearing in AI search results have a crawler access or rendering
-                problem, not a content problem. Before investing in new content, verify that each AI engine's
-                bot can access your site and read your content in HTML. Then build entity recognition off-site.
-                Content strategy is the third lever, not the first.
+                Check crawl and indexing eligibility, confirm the main answer is visible, and read the page
+                as a buyer would. Fix an access problem if you find one. If the page is accessible, focus on
+                whether it answers the question and gives the reader a useful next step.
               </p>
               <Link href="/sign-up">
                 <Button size="sm" className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-0 mt-1">
@@ -173,7 +172,7 @@ export default function HowToAppearInAISearch() {
             <h2 className="text-2xl font-bold text-slate-900">The four AI engines that matter for most brands</h2>
             <p className="text-sm text-slate-600 leading-relaxed">
               Each engine has different crawlers, different trust signals, and different citation behavior.
-              A single-engine strategy is not a strategy — optimize for all four from the start.
+              Check the providers your customers actually use and keep their crawler rules separate.
             </p>
             <div className="space-y-3">
               {ENGINES.map(({ name, org, crawler, signal, note }) => (
@@ -200,32 +199,30 @@ export default function HowToAppearInAISearch() {
           <section className="space-y-4">
             <h2 className="text-2xl font-bold text-slate-900">How AI search differs from traditional search</h2>
             <p className="text-sm text-slate-600 leading-relaxed">
-              Understanding the differences explains why SEO techniques alone are not sufficient.
+              Traditional search foundations still matter, especially crawl access, useful content, and clear links.
             </p>
             <ul className="space-y-3">
               <Bullet>
-                <strong>One answer, not ten links.</strong> AI engines synthesize a single response rather
-                than returning a ranked list. Being cited in that response requires being selected over all
-                competitors, not just appearing on the page.
+                <strong>Answers can show several links.</strong> The sources displayed vary by question and
+                provider. A useful, eligible page can still be omitted from a particular answer.
               </Bullet>
               <Bullet>
-                <strong>Entity-first selection.</strong> AI engines do not discover new brands — they select
-                from brands they already recognize. Building entity recognition off-site is a prerequisite
-                for appearing in answers, not a nice-to-have.
+                <strong>Specific brand facts help readers.</strong> Explain who you serve, what you offer,
+                and where your claims come from. Independent mentions can provide context, but no fixed
+                number of mentions is a prerequisite for being cited.
               </Bullet>
               <Bullet>
-                <strong>Multiple crawler types.</strong> AI search involves a different set of bots than
-                Googlebot. Each must be individually allowed and each obeys robots.txt independently.
+                <strong>Crawler roles differ.</strong> Search, user retrieval, and model training bots can
+                have separate controls. Google AI Overviews and AI Mode use Google Search eligibility.
               </Bullet>
               <Bullet>
-                <strong>JavaScript is often invisible.</strong> Most AI crawlers do not execute JavaScript.
-                Content visible to a user but rendered by JS is invisible to the crawler — and therefore
-                uncitable.
+                <strong>Rendered content needs checking.</strong> Google can render JavaScript. For any
+                provider, test whether the important answer and links are accessible before assuming a
+                client-rendered page is invisible.
               </Bullet>
               <Bullet>
-                <strong>High citation volatility.</strong> Between 40% and 60% of cited sources change
-                month-to-month across major AI platforms. Traditional search rankings shift gradually;
-                AI citations shift quickly. Regular monitoring is essential.
+                <strong>Answers can vary.</strong> Record the prompt, provider, date, locale, and cited URL
+                when testing. A single response is a sample, not a stable citation rate.
               </Bullet>
             </ul>
           </section>
@@ -237,24 +234,26 @@ export default function HowToAppearInAISearch() {
             <div className="space-y-6">
               <div className="space-y-2">
                 <h3 className="font-bold text-slate-900 flex items-center gap-2">
-                  <Shield className="h-4 w-4 text-emerald-600" /> robots.txt — the first thing to check
+                  <Shield className="h-4 w-4 text-emerald-600" /> robots.txt: the first thing to check
                 </h3>
                 <p className="text-sm text-slate-600 leading-relaxed">
-                  Open your robots.txt and verify each of the following user-agents is allowed or not
-                  explicitly blocked: OAI-SearchBot, GPTBot, ClaudeBot, PerplexityBot, Google-Extended.
-                  A wildcard <code className="bg-slate-100 px-1 rounded text-xs">User-agent: *</code> Disallow
-                  rule blocks all of them at once. Most site owners who add such a rule are not aware it
-                  affects AI crawlers.
+                  Start with the search crawlers relevant to your customers: Googlebot for Google's AI
+                  search features, OAI-SearchBot for ChatGPT search, Claude-SearchBot and Claude-User for
+                  Claude, and PerplexityBot for Perplexity. Check each provider's current documentation,
+                  then inspect robots.txt and any CDN restrictions. GPTBot and ClaudeBot serve separate
+                  model-development purposes. Google-Extended controls some Gemini uses outside Search.
                 </p>
                 <div className="bg-slate-900 rounded-lg p-4 text-xs font-mono text-emerald-300 leading-relaxed">
-                  <p className="text-slate-400"># Allow AI search crawlers explicitly</p>
-                  <p>User-agent: OAI-SearchBot</p>
+                  <p className="text-slate-400"># Example only: review each provider's current policy</p>
+                  <p>User-agent: Googlebot</p>
                   <p>Allow: /</p>
-                  <p className="mt-2">User-agent: ClaudeBot</p>
+                  <p className="mt-2">User-agent: OAI-SearchBot</p>
+                  <p>Allow: /</p>
+                  <p className="mt-2">User-agent: Claude-SearchBot</p>
+                  <p>Allow: /</p>
+                  <p className="mt-2">User-agent: Claude-User</p>
                   <p>Allow: /</p>
                   <p className="mt-2">User-agent: PerplexityBot</p>
-                  <p>Allow: /</p>
-                  <p className="mt-2">User-agent: Google-Extended</p>
                   <p>Allow: /</p>
                 </div>
               </div>
@@ -264,10 +263,10 @@ export default function HowToAppearInAISearch() {
                   <Globe className="h-4 w-4 text-sky-600" /> Server-side rendering
                 </h3>
                 <p className="text-sm text-slate-600 leading-relaxed">
-                  Right-click your most important page and choose View Page Source. Search for a sentence
-                  that a user would see in the main content. If it is not present in the raw HTML, your
-                  page requires JavaScript to render — and AI crawlers will see an empty shell.
-                  Server-side rendering or static site generation are required for the page to be citable.
+                  Check the initial HTML and the rendered page for the main answer and useful links. If
+                  content is missing from the initial HTML, use Search Console's URL Inspection tool to
+                  see what Google rendered. Google can render JavaScript, so a missing sentence in raw
+                  HTML alone does not prove a page is invisible or require a framework change.
                 </p>
               </div>
 
@@ -277,19 +276,20 @@ export default function HowToAppearInAISearch() {
                 </h3>
                 <ul className="space-y-2.5 mt-2">
                   <Bullet>
-                    <strong>FAQPage schema</strong> maps directly to the question-and-answer format AI
-                    uses. Add it to your highest-intent page first.
+                    <strong>FAQPage schema</strong> should only describe visible questions and answers
+                    when the page meets the provider's feature policies. It is not an AI citation requirement.
                   </Bullet>
                   <Bullet>
-                    <strong>Organization schema</strong> with sameAs links (Wikipedia, LinkedIn,
-                    Crunchbase, X) anchors your brand as a recognized entity across AI knowledge graphs.
+                    <strong>Organization schema</strong> can identify genuine company details and profiles.
+                    Include only profiles the company actually owns or represents.
                   </Bullet>
                   <Bullet>
-                    <strong>Article schema</strong> with accurate dateModified signals freshness,
-                    which influences citation for time-sensitive queries.
+                    <strong>Article schema</strong> should use a truthful publication and update date.
+                    Changing a date alone is not evidence that the content is current.
                   </Bullet>
                   <Bullet>
-                    <strong>HowTo schema</strong> is effective for procedural guides and step-by-step content.
+                    <strong>HowTo schema</strong> is optional and should match visible steps. Check current
+                    rich-result support before adding markup for a display feature.
                   </Bullet>
                 </ul>
               </div>
@@ -299,10 +299,9 @@ export default function HowToAppearInAISearch() {
                   <TrendingUp className="h-4 w-4 text-amber-600" /> Content structure for direct-answer extraction
                 </h3>
                 <p className="text-sm text-slate-600 leading-relaxed">
-                  AI engines extract the paragraph that most directly resolves a query. For each major section
-                  of your key pages, the opening paragraph should answer the section heading as a question
-                  in 2 to 3 sentences. Setup paragraphs that build context before the answer are skipped
-                  or excerpted in ways that lose meaning.
+                  Put a clear answer near the relevant heading, then add the detail needed to make it useful.
+                  Descriptive headings, concise summaries, and verifiable facts help readers. There is no
+                  required number of sentences or ideal answer length for AI search.
                 </p>
               </div>
 
@@ -311,7 +310,9 @@ export default function HowToAppearInAISearch() {
                   <Globe className="h-4 w-4 text-teal-600" /> llms.txt
                 </h3>
                 <p className="text-sm text-slate-600 leading-relaxed">
-                  An llms.txt file is an optional plain-text content map. Major answer engines do not document it as a citation gate, so prioritize fresh server-visible content, sitemaps, and citation-path crawler access first.
+                  An llms.txt file is an optional content map. Google says no special AI text file is
+                  required for its AI search features. Prioritize useful pages, search eligibility,
+                  and accurate internal links first.
                 </p>
               </div>
             </div>
@@ -319,37 +320,35 @@ export default function HowToAppearInAISearch() {
 
           {/* Off-site optimizations */}
           <section className="space-y-4">
-            <h2 className="text-2xl font-bold text-slate-900">Off-site optimizations: building entity recognition</h2>
+            <h2 className="text-2xl font-bold text-slate-900">Make your brand easy to verify</h2>
             <p className="text-sm text-slate-600 leading-relaxed">
-              Entity recognition is the factor most often overlooked in AEO guides. On-site work matters,
-              but if the AI engine's knowledge graph does not associate your brand with a problem space,
-              its retrieval step will not reach you regardless of how well your content is structured.
+              Give readers clear information about the company, its products, limitations, and contact
+              options. Keep facts consistent across the pages and profiles you control. Independent
+              coverage can add context, but it does not guarantee inclusion in an AI answer.
             </p>
             <ul className="space-y-3">
               <Bullet>
-                <strong>Wikipedia.</strong> AI model training data draws heavily from Wikipedia. A brand article
-                that meets notability guidelines is one of the highest-leverage entity signals available.
-                If your brand doesn't meet notability guidelines yet, focus on press first.
+                <strong>Wikipedia.</strong> Do not create a brand article as an optimization tactic.
+                Independent notability and Wikipedia's own rules determine whether an article belongs there.
               </Bullet>
               <Bullet>
-                <strong>Industry press coverage.</strong> Mentions in recognized trade publications create
-                the same type of entity association as Wikipedia, more slowly. Aim for original research or
-                data that publications want to cite — not press releases.
+                <strong>Industry coverage.</strong> Share original, checkable information that relevant
+                publications may find useful. A mention or link is evidence of coverage, not proof that
+                an AI provider will recommend the brand.
               </Bullet>
               <Bullet>
-                <strong>Reddit presence.</strong> LLM training data draws significantly from Reddit.
-                Your absence from the communities where your customers discuss their problems is not neutral
-                — it creates a gap that competitors or critics fill. Consistent, helpful participation
-                is the path in, not promotional posts.
+                <strong>Community participation.</strong> Answer real questions where your customers
+                gather, when you can contribute firsthand knowledge. Avoid promotional posts that add
+                nothing to the discussion.
               </Bullet>
               <Bullet>
-                <strong>LinkedIn company page.</strong> Include in your Organization schema sameAs array.
-                AI engines recognize LinkedIn company profiles as entity signals.
+                <strong>Company profiles.</strong> Keep real profiles accurate and link them when they
+                help people verify your company. A sameAs link is a factual identifier, not a ranking promise.
               </Bullet>
               <Bullet>
-                <strong>Open your original data.</strong> Research or proprietary data behind a form wall
-                earns nothing from AI discovery. AI cites whoever it can read. Publish a crawlable version
-                alongside any gated asset.
+                <strong>Original data.</strong> If you want research to be discoverable, publish an
+                accessible summary with methods and limits. A gated report can still serve customers,
+                but the public page should stand on its own.
               </Bullet>
             </ul>
           </section>
@@ -359,11 +358,11 @@ export default function HowToAppearInAISearch() {
             <CardContent className="pt-5 pb-5 flex gap-3">
               <AlertCircle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
               <div className="space-y-1">
-                <p className="text-sm font-semibold text-slate-900">Do the technical audit before adding content</p>
+                <p className="text-sm font-semibold text-slate-900">Check the page before adding content</p>
                 <p className="text-sm text-slate-600 leading-relaxed">
-                  The most common AEO mistake is investing in content strategy while the site has an
-                  undiagnosed crawler access or rendering problem. A blocked bot, a JS-rendered page, or
-                  missing schema negates every content improvement made while they exist. Diagnose first.
+                  A blocked crawler, incorrect canonical, or missing main content can limit discovery.
+                  Check those issues first, then improve the answer and next step for the visitor. Missing
+                  schema by itself does not erase the value of useful page content.
                 </p>
               </div>
             </CardContent>
@@ -375,18 +374,19 @@ export default function HowToAppearInAISearch() {
             <ul className="space-y-3">
               <Bullet>
                 <strong>Manual prompt testing.</strong> Query each AI engine with the exact questions your
-                customers ask. Log which brands appear, how often, and in what context. Do this monthly
-                — not once.
+                customers ask. Log the provider, prompt, date, locale, cited URL, and context. Repeat
+                the sample to see whether the answer is stable.
               </Bullet>
               <Bullet>
                 <strong>AEO audit score.</strong> A structured audit scores your technical readiness
-                across crawler access, citability, schema, brand authority, and platform signals.
-                Tracks what changes between audits.
+                across crawler access, content clarity, schema, and brand facts. Treat the score as a
+                readiness summary, not a citation probability. Compare what changes between audits.
               </Bullet>
               <Bullet>
                 <strong>Referral analytics.</strong> Add ChatGPT, Claude, Perplexity, and Gemini as
-                referral sources in your analytics setup. AI-referred sessions have high intent and
-                convert significantly better than traditional search sessions at current volumes.
+                referral sources in your analytics setup. Compare qualified actions and conversions
+                using your own data. Google AI feature traffic is included in overall Web search reporting
+                in Search Console, so do not label every Google organic visit as AI traffic.
               </Bullet>
             </ul>
           </section>
@@ -421,8 +421,8 @@ export default function HowToAppearInAISearch() {
             <CardContent className="pt-7 pb-7 text-center space-y-3">
               <h2 className="font-bold text-xl text-slate-900">Find out where you stand across all four AI engines</h2>
               <p className="text-sm text-slate-600 max-w-md mx-auto">
-                Free AEO audit. Get your crawler access status, schema gaps, brand authority footprint,
-                and a prioritized fix list. No credit card required.
+                Review crawler access, page content, schema, brand facts, and a prioritized fix list.
+                Start with one useful improvement. No credit card required.
               </p>
               <Link href="/sign-up">
                 <Button className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-0 mt-2">

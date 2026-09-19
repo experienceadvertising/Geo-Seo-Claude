@@ -584,9 +584,9 @@ export default function Results({ view = "audit", auditId }: { view?: "audit" | 
                     icon={<ShieldAlert className="h-4 w-4 text-muted-foreground" />}
                     signals={[
                       { label: "Confirmed signals", value: `${foundSignals} of ${totalSignals}` },
-                      { label: "Brand", value: audit.brandName || "—" },
+                      { label: "Brand", value: audit.brandName || "Not available" },
                     ]}
-                    formula="baseline 10 + Wikipedia(35) + DuckDuckGo(20) + GitHub(6–20) + Organization schema(10). Unavailable third-party checks receive a neutral 5-point adjustment."
+                    formula="Internal scoring heuristic: baseline 10 + Wikipedia(35) + DuckDuckGo(20) + GitHub(6–20) + Organization schema(10). Unavailable third-party checks receive a neutral 5-point adjustment. These are not provider ranking weights."
                   />
                   <ScoreCard
                     title="AI Crawler Access"
@@ -600,7 +600,7 @@ export default function Results({ view = "audit", auditId }: { view?: "audit" | 
                       { label: "Snippet permission", value: audit.hasNoSnippet ? "Blocked" : "Allowed" },
                       { label: "Raw HTML visibility", value: audit.requiresJavaScript ? "JS-dependent" : "Readable" },
                     ]}
-                    formula="70% citation-path bot access + 15% indexable + 10% snippets allowed + 5% readable without JavaScript. Training bots do not affect this score."
+                    formula="Internal scoring heuristic: 70% search and retrieval bot access + 15% noindex check + 10% snippet permission + 5% substantive raw HTML. Training bots do not affect this score. It does not prove indexing or citation."
                   />
                   <ScoreCard
                     title="Technical SEO"
@@ -772,7 +772,7 @@ export default function Results({ view = "audit", auditId }: { view?: "audit" | 
                 : visibleRecs;
               const researchRecs = allRecs.filter(r => r.source?.type === "research" || r.source?.type === "internal_benchmark");
               // Everything that isn't research-backed (practitioner consensus,
-              // expert guidance, or untagged) — a positive-list here silently
+              // expert guidance, or untagged), a positive-list here silently
               // dropped `expert_guidance` recs from the page.
               const consensusRecs = allRecs.filter(r => !researchRecs.includes(r));
 
@@ -975,7 +975,7 @@ export default function Results({ view = "audit", auditId }: { view?: "audit" | 
                 <Bot className="h-4 w-4" /> Platform Scores
               </CardTitle>
               <p className="text-xs text-muted-foreground mt-2 leading-relaxed normal-case font-sans tracking-normal">
-                Per-engine readiness — how prepared this page is for each AI platform, weighted by what that engine values
+                Per-engine readiness, how prepared this page is for each AI platform, weighted by what that engine values
                 (e.g. citability for Perplexity, E-E-A-T for Claude). These are independent of your overall AEO score, which
                 blends the six category scores above; a page can be strong on individual platforms yet still have a lower
                 overall score.
@@ -1044,7 +1044,7 @@ export default function Results({ view = "audit", auditId }: { view?: "audit" | 
           <CardHeader className="pb-4">
             <CardTitle className="text-sm font-mono uppercase tracking-wider flex items-center gap-2">
               <Building2 className="h-4 w-4" /> Brand Authority Signals
-              {audit.brandName && <span className="text-muted-foreground">— {audit.brandName}</span>}
+              {audit.brandName && <span className="text-muted-foreground">for {audit.brandName}</span>}
             </CardTitle>
             <CardDescription className="text-xs">Real-time checks against Wikipedia, DuckDuckGo, GitHub, and on-page entity markers.</CardDescription>
           </CardHeader>
@@ -1156,7 +1156,7 @@ export default function Results({ view = "audit", auditId }: { view?: "audit" | 
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-sm font-mono uppercase tracking-wider">
               <TrendingUp className="h-4 w-4 text-primary" /> AEO Score Trend
-              <span className="text-muted-foreground font-normal normal-case tracking-normal ml-1">— {domain}</span>
+              <span className="text-muted-foreground font-normal normal-case tracking-normal ml-1">for {domain}</span>
             </CardTitle>
             <CardDescription className="text-xs">{trendData.length} audits tracked · Score history for this domain</CardDescription>
           </CardHeader>
@@ -1301,7 +1301,7 @@ function ScoreCard({
         align="start"
         className="max-w-xs bg-popover text-popover-foreground border shadow-lg p-3 space-y-2"
       >
-        <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{title} — How it's scored</div>
+        <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{title}, How it's scored</div>
         {signals && signals.length > 0 && (
           <ul className="text-xs space-y-1">
             {signals.map((s, i) => (

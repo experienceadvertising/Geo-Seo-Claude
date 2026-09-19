@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { SEO, breadcrumbJsonLd } from "@/components/seo";
 import { PRIMARY_AUTHOR, PUBLISHER_ORG } from "@/data/author";
 
-const PAGE_TITLE = "About — AEO Improvement, founded by Evan Weber";
+const PAGE_TITLE = "About, AEO Improvement, founded by Evan Weber";
 const PAGE_DESC =
   "AEO Improvement is an Answer Engine Optimization auditing platform built by Evan Weber to help marketing teams measure and improve how AI search engines like ChatGPT, Claude, Gemini, and Perplexity describe their brands.";
 
@@ -67,9 +67,8 @@ export default function About() {
             About AEO Improvement
           </h1>
           <p className="text-lg text-slate-600 leading-relaxed">
-            We help marketing teams measure and improve how AI search engines —
-            ChatGPT, Claude, Gemini, Perplexity, and Google AI Overviews —
-            describe and cite their brands.
+            We help marketing teams measure and improve how ChatGPT, Claude,
+            Gemini, Perplexity, and Google AI Overviews describe and cite their brands.
           </p>
         </header>
 
@@ -90,16 +89,15 @@ export default function About() {
                   Evan founded AEO Improvement to bring the same rigor brands
                   apply to traditional SEO into the new world of generative
                   search. He has spent his career on the marketer side of the
-                  table — working on how brands get found, talked about, and
-                  trusted — and built this product because the existing tools
-                  for AI search visibility either felt like spreadsheets in a
-                  trench coat or required a six-figure enterprise contract.
+                  table, working on how brands get found, talked about, and
+                  trusted. He built this product to give teams a practical
+                  path from an audit to a useful improvement at an accessible price.
                 </p>
                 <p className="text-slate-700 leading-relaxed text-sm">
                   AEO Improvement is the tool he wishes had existed when he was
                   trying to answer one specific question for the first time:
                   "When my customers ask ChatGPT about us, what does it actually
-                  say?" — and what he could change to make that answer better.
+                  say?" He wanted to connect that answer to work a team could actually do.
                 </p>
                 <a
                   href={PRIMARY_AUTHOR.linkedin}
@@ -118,10 +116,10 @@ export default function About() {
           <h2 className="text-2xl font-bold text-slate-900">What we do</h2>
           <p className="text-slate-700 leading-relaxed">
             AEO Improvement scores any URL across six dimensions of AI search
-            readiness — citability, AI crawler access, brand authority, schema
-            markup, technical SEO, and live prompt simulation — and ships
-            ready-to-paste fixes (JSON-LD and citation-bot robots.txt, with an optional llms.txt map) that move the
-            score, not just dashboards that report it.
+            readiness across content, crawler access, brand facts, schema,
+            technical SEO, and platform checks. It pairs the audit with
+            prioritized recommendations, sampled buyer question tests, and
+            draft code that your team can review before publishing.
           </p>
           <div className="grid sm:grid-cols-3 gap-3 pt-2">
             {[
@@ -133,12 +131,12 @@ export default function About() {
               {
                 icon: <Wrench className="h-5 w-5 text-emerald-600" />,
                 title: "Ship the fixes",
-                body: "Generate FAQ and Organization schema plus citation-bot robots.txt entries instead of leaving a list of things engineering will get to in six weeks.",
+                body: "Review draft Organization and WebSite schema plus crawler guidance, then make the right change on your site.",
               },
               {
                 icon: <BookOpen className="h-5 w-5 text-emerald-600" />,
                 title: "Cite our sources",
-                body: "Each recommendation is tagged research-backed, industry consensus, or internal benchmark. We don't oversell what the literature actually proves.",
+                body: "Recommendations show their source and limits so you can judge what the evidence supports.",
               },
             ].map(({ icon, title, body }) => (
               <Card key={title} className="border-slate-200">
@@ -168,7 +166,7 @@ export default function About() {
             </li>
             <li>
               <strong>Honest competitor framing.</strong> Our buyer's guides
-              recommend competitors when they're a better fit — Brandlight for
+              recommend competitors when they're a better fit, Brandlight for
               enterprise narrative shaping, Profound for attribution, AthenaHQ
               for engine breadth. We'd rather lose a customer to the right tool
               than win one and have them churn.
@@ -181,8 +179,7 @@ export default function About() {
                 methodology page
               </Link>{" "}
               walks through what the Princeton/IIT Delhi 2024 paper actually
-              found and which of our recommendations it does — and doesn't —
-              support.
+              found and which recommendations it supports.
             </li>
           </ul>
         </section>
@@ -209,7 +206,7 @@ export default function About() {
           <ul className="space-y-2 text-sm">
             <li>
               <Link href="/methodology" className="text-emerald-700 hover:underline">
-                Methodology — how we score
+                Methodology, how we score
               </Link>
             </li>
             <li>

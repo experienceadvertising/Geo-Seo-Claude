@@ -32,7 +32,7 @@ import { GuideSources } from "@/components/guide-sources";
  * but we lead with category-based recommendations so the reader can self-
  * select instead of just trusting our ordering. We name ourselves #1
  * because we genuinely believe we're the best fit for self-serve marketers
- * — but we recommend specific competitors where they're the better fit
+ *, but we recommend specific competitors where they're the better fit
  * (e.g. Brandlight for enterprise narrative shaping). This is much more
  * trustworthy framing than a pure self-promotional listicle.
  *
@@ -60,8 +60,8 @@ export default function BestAeoToolsPage({ variant = "aeo" }: BestAeoToolsPagePr
     ? "Compare the best Generative Engine Optimization tools of 2026. Pricing, features, AI engines covered, and which GEO platform fits self-serve marketers, agencies, and enterprise teams."
     : "Compare the best Answer Engine Optimization tools of 2026. Pricing, features, AI engines covered, and which AEO platform fits self-serve marketers, agencies, and enterprise teams.";
 
-  // ItemList schema — Google can render this as a ranked carousel for
-  // "best of" queries. Position is per Schema.org spec (1-indexed).
+  // ItemList describes the visible comparison order. It does not promise
+  // a special search result appearance.
   const itemListJsonLd = {
     "@context": "https://schema.org",
     "@type": "ItemList",
@@ -89,7 +89,7 @@ export default function BestAeoToolsPage({ variant = "aeo" }: BestAeoToolsPagePr
     headline: title,
     description,
     datePublished: "2026-05-03",
-    dateModified: "2026-05-05",
+    dateModified: "2026-09-19",
     author: AUTHOR_PERSON_LD,
     publisher: PUBLISHER_ORG,
     mainEntityOfPage: { "@type": "WebPage", "@id": `https://aeoimprovement.com${path}` },
@@ -108,7 +108,7 @@ export default function BestAeoToolsPage({ variant = "aeo" }: BestAeoToolsPagePr
       bestFor: "Solo marketers, in-house SEO leads, indie founders",
       pick: "AEO Improvement",
       pickHref: `/upgrade?source=best-${acronym.toLowerCase()}-tools`,
-      reasoning: `${OUR_FACTS.freeTier}, ${OUR_FACTS.proPrice} for Pro. Self-serve sign-up, no demos, automated JSON-LD and crawler-policy fixes.`,
+      reasoning: `A 30-day no-card trial, a free plan afterward, and paid plans from $29/month. Audit, test buyer questions, and review draft fixes in one workflow.`,
     },
     {
       icon: <TrendingUp className="h-5 w-5 text-emerald-600" />,
@@ -116,7 +116,7 @@ export default function BestAeoToolsPage({ variant = "aeo" }: BestAeoToolsPagePr
       bestFor: "Brands monitoring across Copilot, Grok, and the long tail",
       pick: "AthenaHQ",
       pickHref: "/vs/athenahq",
-      reasoning: "Advertises 7 monitored engines (the most we've found in this category). Self-serve plan starts at $95/mo.",
+      reasoning: "Advertises coverage across several AI services. Check its current plan, credits, and engine list before choosing it.",
     },
     {
       icon: <Building2 className="h-5 w-5 text-emerald-600" />,
@@ -124,7 +124,7 @@ export default function BestAeoToolsPage({ variant = "aeo" }: BestAeoToolsPagePr
       bestFor: "Mid-market and enterprise teams plugging AI search into existing analytics",
       pick: "Profound",
       pickHref: "/vs/profound",
-      reasoning: "Strong on attribution and zero-click impact analysis. Enterprise sales cycle — pricing on request.",
+      reasoning: "Offers larger-scale visibility and agent workflows. Published plans start at $99/month billed yearly; confirm current limits.",
     },
     {
       icon: <Crown className="h-5 w-5 text-emerald-600" />,
@@ -132,7 +132,7 @@ export default function BestAeoToolsPage({ variant = "aeo" }: BestAeoToolsPagePr
       bestFor: "Global brands worried about AI bias and reputation",
       pick: "Brandlight",
       pickHref: "/vs/brandlight",
-      reasoning: "Bias Score and Source Impact Score, paired with strategic advisory. Enterprise pricing only.",
+      reasoning: "Focuses on enterprise brand intelligence and strategic support. Request current scope and pricing directly.",
     },
     {
       icon: <Search className="h-5 w-5 text-emerald-600" />,
@@ -140,7 +140,7 @@ export default function BestAeoToolsPage({ variant = "aeo" }: BestAeoToolsPagePr
       bestFor: "Brand teams whose top question is 'how does AI describe us?'",
       pick: "Otterly.AI",
       pickHref: "/vs/otterly",
-      reasoning: "Mention rate and sentiment analysis as the headline features. Pricing requires a trial or conversation.",
+      reasoning: "Publishes a $29/month Lite plan for daily prompt tracking. Compare its current engines and add-ons with your needs.",
     },
   ];
 
@@ -152,7 +152,7 @@ export default function BestAeoToolsPage({ variant = "aeo" }: BestAeoToolsPagePr
         path={path}
         ogType="article"
         publishedTime="2026-05-03"
-        modifiedTime="2026-07-22"
+        modifiedTime="2026-09-19"
         authorName={PRIMARY_AUTHOR.name}
         jsonLd={[itemListJsonLd, articleJsonLd, breadcrumb]}
       />
@@ -161,22 +161,22 @@ export default function BestAeoToolsPage({ variant = "aeo" }: BestAeoToolsPagePr
           {/* Hero */}
           <header className="space-y-4 text-center">
             <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 border px-3 py-1 text-xs font-semibold inline-flex items-center gap-1.5">
-              <Trophy className="h-3.5 w-3.5" /> 2026 Buyer's Guide · Updated May 2026
+              <Trophy className="h-3.5 w-3.5" /> 2026 Buyer's Guide · Reviewed September 2026
             </Badge>
             <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900 leading-tight max-w-3xl mx-auto">
               The best {acronym} ({fullName}) tools in 2026
             </h1>
             <p className="text-sm text-slate-500">
-              By <a href={PRIMARY_AUTHOR.url} rel="author" className="text-emerald-700 hover:underline font-medium">{PRIMARY_AUTHOR.name}</a>, {PRIMARY_AUTHOR.jobTitle} · Updated July 22, 2026
+              By <a href={PRIMARY_AUTHOR.url} rel="author" className="text-emerald-700 hover:underline font-medium">{PRIMARY_AUTHOR.name}</a>, {PRIMARY_AUTHOR.jobTitle} · Reviewed September 19, 2026
             </p>
             <p className="text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto">
-              An honest, category-by-category guide. We make {acronym} software ourselves —
-              we'll be transparent about that — but we'll also recommend competitors when
+              An honest, category-by-category guide. We make {acronym} software ourselves,
+              and we'll recommend competitors when
               they're the better fit for your situation.
             </p>
           </header>
 
-          {/* Variant-specific framing — gives this page substantially unique
+          {/* Variant-specific framing, gives this page substantially unique
               content vs its twin, so Google indexes both rather than picking
               one and folding the other. */}
           {isGeo ? (
@@ -186,32 +186,21 @@ export default function BestAeoToolsPage({ variant = "aeo" }: BestAeoToolsPagePr
                 "Generative Engine Optimization" was introduced as a research term by Aggarwal,
                 Murahari et al. in their 2024 KDD paper of the same name (Princeton / IIT Delhi).
                 The paper benchmarks ten content-modification methods against generative AI
-                retrievers and reports their effect on a metric called Position-Adjusted Word
-                Count (PAWC) — essentially, how much weighted real-estate your source receives
-                inside the AI's generated answer. Two methods produced repeatable lift across
-                the corpus: <em>Quotation Addition</em> (citing authoritative third-party
-                sources inline) and <em>Statistics Addition</em> (numeric facts with attribution).
-                Eight of ten methods produced weak, mixed, or negative results — including
-                "keyword stuffing" and "fluency optimization."
+                retrievers and reports how several writing changes affected source visibility
+                in that test. Those results are useful research, but they do not establish a
+                universal recipe for appearing in every AI answer.
               </p>
               <p className="text-slate-700 leading-relaxed">
-                If you're shopping for a GEO tool, the question to ask vendors is whether their
-                recommendations map to what the academic literature has actually validated, or
-                whether they extrapolate beyond it. Most marketing copy in this category implies
-                a tighter cause-and-effect than the research supports. The honest framing is:
-                two specific content techniques have measurable lift, and a long list of
-                technical fundamentals (crawler access, structured data, server-side rendering,
-                entity recognition) are necessary preconditions but don't have clean per-tactic
-                effect sizes. Tools that label every recommendation with a confidence level —
-                "research-backed," "industry consensus," "internal benchmark" — are easier to
-                trust than tools that claim X% lift across the board.
+                If you're shopping for a GEO tool, ask which recommendations are supported by
+                published guidance, which come from limited research, and which are the vendor's
+                own ideas. Crawler access and useful, accurate pages are practical places to start.
+                No vendor can promise a fixed percentage lift in AI citations.
               </p>
               <p className="text-slate-700 leading-relaxed">
-                In practice, "GEO" and "AEO" describe the same work. The vocabulary varies by
-                community (academic and AI-research circles tend to say GEO; in-house SEO teams
-                and agencies tend to say AEO), but the implementation tasks are identical. We
-                evaluate the same five vendors on both pages of this guide because the
-                buyer-decision criteria don't change with the acronym.
+                In practice, "GEO" and "AEO" overlap. Both involve understanding where your
+                brand appears, making important pages more useful, and checking the results over
+                time. We evaluate the same vendors on both pages because those buying questions
+                are similar.
               </p>
             </section>
           ) : (
@@ -219,31 +208,23 @@ export default function BestAeoToolsPage({ variant = "aeo" }: BestAeoToolsPagePr
               <h2 className="text-2xl font-bold text-slate-900">What AEO actually looks like in practice</h2>
               <p className="text-slate-700 leading-relaxed">
                 On a typical week, a marketing team running AEO is doing a few specific things:
-                checking their robots.txt allows OAI-SearchBot, ClaudeBot, PerplexityBot, and
-                Google-Extended; running prompt simulations against ChatGPT, Claude, Gemini,
+                checking the relevant search crawlers, including Googlebot and OAI-SearchBot;
+                running prompt simulations against ChatGPT, Claude, Gemini,
                 and Perplexity to track which competitors get cited for the queries their
-                buyers are asking; updating FAQ schema and answer-capsule paragraphs on their
-                top five pages so AI engines have a clean direct-answer to lift; and watching
-                a small dashboard for week-over-week mention rate. The work is unglamorous and
-                repeatable — closer to ad-account hygiene than content marketing.
+                buyers are asking; improving useful answers on important pages; and checking
+                repeated prompt samples and qualified traffic. The work is repeatable and practical.
               </p>
               <p className="text-slate-700 leading-relaxed">
-                A good AEO tool is judged on whether it reduces that weekly cycle from "two
-                people for half a day" to "one person for an hour." That's why we weight the
-                Fix Generator and prompt simulation flows so heavily in this guide — they're
-                the parts of the loop that consume the most time when you're running AEO without
-                tooling. A pure visibility-monitoring dashboard tells you the score is going
-                down; it doesn't help you make the score go up. Look for tools that ship
-                production-ready output (JSON-LD blocks and citation-bot robots.txt snippets)
-                rather than just charts and exports.
+                A useful tool should help a team move from a finding to a reviewed change.
+                Compare the audit, recommendation, prompt test, and follow-up workflow in a
+                real trial. Draft code needs review for the site before it is published.
               </p>
               <p className="text-slate-700 leading-relaxed">
                 The other practitioner reality worth naming: AEO citation visibility is volatile.
                 Cited sources can rotate from one run to the next across major engines. A single
                 audit is a snapshot, not a baseline. Whichever tool you pick,
                 run a recurring monthly check rather than a one-time setup pass. Even the best
-                technical fixes degrade as crawlers, training cutoffs, and retrieval indexes
-                change underneath you.
+                provider rules, content, and retrieval systems can change over time.
               </p>
             </section>
           )}
@@ -257,23 +238,17 @@ export default function BestAeoToolsPage({ variant = "aeo" }: BestAeoToolsPagePr
               <p className="text-slate-800 leading-relaxed">
                 {isGeo ? (
                   <>
-                    <strong>If you came here from the GEO research paper:</strong> AEO Improvement
-                    explicitly tags recommendations as "research-backed," "industry consensus," or
-                    "internal benchmark" so you can audit which claims actually trace back to the
-                    Aggarwal et al. KDD 2024 corpus.{" "}
-                    <strong>For enterprise narrative-shaping:</strong> Brandlight has the strongest
-                    bias-and-source-impact analysis in the category.{" "}
-                    <strong>For attribution into existing analytics stacks:</strong> Profound.
+                    <strong>For a practical GEO workflow:</strong> AEO Improvement connects page
+                    audits, buyer question tests, and reviewed fixes. You can try it for 30 days
+                    without a card, then stay free or choose a paid plan from $29/month.
+                    Compare the current features and limits of each vendor for your use case.
                   </>
                 ) : (
                   <>
-                    <strong>For most marketers and agencies:</strong> AEO Improvement — self-serve,
-                    free to start, automated Fix Generator drafts JSON-LD and crawler fixes,
-                    transparent pricing at {OUR_FACTS.proPrice}.{" "}
-                    <strong>For enterprises with a sales-cycle budget:</strong> Profound or
-                    Brandlight, depending on whether you optimize for attribution or narrative
-                    shaping.{" "}
-                    <strong>For maximum engine coverage:</strong> AthenaHQ.
+                    <strong>For teams that want to act on what they find:</strong> AEO Improvement
+                    combines audits, AI answer tests, and recommendations in one place. Try it
+                    for 30 days without a card, then stay free or start at $29/month.
+                    Check each vendor's current plan details before deciding.
                   </>
                 )}
               </p>
@@ -300,19 +275,17 @@ export default function BestAeoToolsPage({ variant = "aeo" }: BestAeoToolsPagePr
             <ul className="space-y-2.5">
               <Bullet>
                 <strong>Engine coverage that maps to your customers.</strong> ChatGPT, Claude,
-                Gemini, and Perplexity drive the bulk of meaningful AI search traffic in 2026.
-                Tools that monitor more (Copilot, Grok) are valuable if your buyers actually
-                use those engines — verify before paying for breadth you won't use.
+                Gemini, and Perplexity are services worth evaluating. Add Copilot, Grok,
+                or others if your buyers use them. Test that assumption before paying for breadth.
               </Bullet>
               <Bullet>
                 <strong>Output that ships to production, not just dashboards.</strong> A
-                visibility chart tells you you're losing. Deployable JSON-LD and crawler-policy
-                fixes help you act. Look for the verbs: "generate," "draft," "export."
+                visibility chart shows a sampled result. A prioritized action and reviewed
+                draft fix can help your team improve the page behind it.
               </Bullet>
               <Bullet>
                 <strong>Transparent pricing.</strong> If a vendor won't show you a price page,
-                their default contract is going to be five figures and an annual commitment.
-                That's fine if you're an enterprise; brutal if you're a 3-person team.
+                compare its current plan price, limits, add-ons, and billing terms directly.
               </Bullet>
               <Bullet>
                 <strong>A real free or trial tier.</strong> {acronym} tooling is changing fast.
@@ -328,7 +301,7 @@ export default function BestAeoToolsPage({ variant = "aeo" }: BestAeoToolsPagePr
             </ul>
           </section>
 
-          {/* Category-based picks — the real value of this page */}
+          {/* Category-based picks, the real value of this page */}
           <section className="space-y-5">
             <h2 className="text-2xl font-bold text-slate-900">Best {acronym} tool by use case</h2>
             <div className="space-y-3">
@@ -370,23 +343,18 @@ export default function BestAeoToolsPage({ variant = "aeo" }: BestAeoToolsPagePr
             <Card className="border-slate-200">
               <CardContent className="pt-6 pb-6 space-y-3 text-slate-700 leading-relaxed">
                 <p>
-                  Most tools in this category are built around a dashboard: how often you're
-                  cited, what AI says about you, how you trend over time. That's useful — and
-                  every serious team should track it. But dashboards don't change your AEO
-                  score. <strong>Code on your site changes your AEO score.</strong>
+                  Visibility matters, but teams also need to know what to improve on their site.
+                  AEO Improvement brings the audit, the next action, and later checks together.
                 </p>
                 <p>
-                  We built the Fix Generator because we kept seeing the same pattern with our
-                  own consulting clients: an audit would surface "no FAQPage schema, weak
-                  Organization markup, blocked citation bots" — and the marketer would ask their dev
-                  team for help, and the request would sit in a backlog for six weeks. So
-                  we generate the file for you. Copy, paste, ship. Score moves.
+                  The Fix Generator drafts Organization and WebSite JSON-LD and crawler guidance
+                  where appropriate. You review it against your actual content and site rules
+                  before publishing. The goal is to make a useful change easier to ship.
                 </p>
                 <p>
-                  We're cheaper than most competitors because we run lean and have a real
-                  free tier so you can validate the product before paying anything. We don't
-                  publish vanity metrics like "users see X% lift" because the academic
-                  research doesn't support those numbers honestly — see our{" "}
+                  You can try the workflow for 30 days without a card. After that, stay free
+                  for basic use or choose Starter from $29/month. We keep improving the tool
+                  and explain how our recommendations are sourced on our{" "}
                   <Link href="/methodology" className="text-emerald-600 hover:underline">
                     methodology page
                   </Link>{" "}
@@ -399,13 +367,13 @@ export default function BestAeoToolsPage({ variant = "aeo" }: BestAeoToolsPagePr
           {/* Bottom CTA */}
           <Card className="border-2 border-emerald-500 shadow-xl shadow-emerald-500/10 overflow-hidden">
             <div className="bg-gradient-to-r from-emerald-500 to-teal-500 px-6 py-3 text-white text-sm font-semibold flex items-center gap-2">
-              <Zap className="h-4 w-4" /> Compare for yourself — start free
+              <Zap className="h-4 w-4" /> Compare for yourself, start free
             </div>
             <CardContent className="pt-6 pb-6 space-y-4">
-              <h3 className="text-2xl font-bold text-slate-900">Run a free {acronym} audit in 90 seconds</h3>
+              <h3 className="text-2xl font-bold text-slate-900">Start with a page you want to improve</h3>
               <p className="text-slate-600 leading-relaxed">
                 Paste your URL. We'll score your AEO citability and show your prioritized fixes.
-                Your first month includes the deployable Fix Generator. No credit card.
+                Your first month includes draft fixes to review and use where appropriate. No credit card.
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
                 <Button
