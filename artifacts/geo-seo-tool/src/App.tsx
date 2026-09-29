@@ -41,6 +41,7 @@ const UnsubscribePage = lazy(() => import("@/pages/unsubscribe"));
 const PrivacyPage = lazy(() => import("@/pages/privacy"));
 const TermsPage = lazy(() => import("@/pages/terms"));
 const GoogleDataUsePage = lazy(() => import("@/pages/google-data-use"));
+const MeasureAISearchVisibility = lazy(() => import("@/pages/measure-ai-search-visibility"));
 const ContentEffortGuide = lazy(() => import("@/pages/content-effort-guide"));
 const StrategyGuides = lazy(() => import("@/pages/strategy-guides"));
 const SeoSolutionPage = lazy(() => import("@/pages/seo-solution-page"));
@@ -129,6 +130,7 @@ function AppRoutes() {
         <Route path="/geo-software-for-agencies">{() => <SeoSolutionPage variant="agency" />}</Route>
         <Route path="/ai-citation-readiness-benchmark" component={Benchmark} />
         <Route path="/changelog" component={Changelog} />
+        <Route path="/how-to-measure-ai-search-visibility" component={MeasureAISearchVisibility} />
         <Route path="/content-effort-for-seo-and-ai-search" component={ContentEffortGuide} />
         <Route path="/seo-geo-priorities-2026" component={StrategyGuides} />
         <Route path="/improve-service-pages-for-ai-search" component={StrategyGuides} />

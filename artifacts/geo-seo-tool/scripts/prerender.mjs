@@ -149,6 +149,19 @@ function buildStaticContent(route) {
   const faqs = (route.faqs || []).map(({ question, answer }) => (
     `<section style="margin-top:20px"><h3>${escapeHtmlText(question)}</h3><p>${escapeHtmlText(answer)}</p></section>`
   )).join("\n    ");
+  if (route.path === "/how-to-measure-ai-search-visibility") {
+    return `<main data-static-route="${escapeHtmlAttr(route.path)}" style="max-width:800px;margin:auto;padding:48px 24px;font-family:system-ui,sans-serif;line-height:1.7;color:#0f172a">
+      <p>AEO Improvement guide</p><h1>${heading}</h1><p>Published September 29, 2026 · By Evan Weber</p>
+      ${sections}
+      <section><h2>Sources and further reading</h2><ul>
+        <li><a href="https://developers.google.com/search/blog/2026/06/gen-ai-performance-reports">Google Search Central: generative AI performance reports</a></li>
+        <li><a href="https://developers.google.com/search/docs/appearance/ai-features">Google Search Central: AI features and your website</a></li>
+        <li><a href="https://www.bing.com/webmasters/help/ai-performance-9f8e7d6c">Bing Webmaster Tools: AI Performance</a></li>
+        <li><a href="https://signal.zyppy.com/p/fan-out-framework">Cyrus Shepard, Zyppy Signal: fan-out framework</a></li>
+      </ul></section>
+      <nav aria-label="Related pages"><a href="/free-aeo-audit-tool">Run a free AEO audit</a> · <a href="/how-to-appear-in-ai-search">How to appear in AI search</a></nav>
+    </main>`;
+  }
   if (route.legal) {
     return `<main data-static-route="${escapeHtmlAttr(route.path)}" style="max-width:800px;margin:0 auto;padding:48px 24px;font-family:system-ui,sans-serif;line-height:1.65;color:#0f172a">
       <p style="font-size:14px;font-weight:700;color:#047857">AEO Improvement</p>

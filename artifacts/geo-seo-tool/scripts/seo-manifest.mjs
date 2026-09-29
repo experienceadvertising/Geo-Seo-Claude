@@ -10,6 +10,7 @@
 // The runtime <SEO /> component is still in charge for users. This file only
 // drives the static HTML written to disk for non-JS crawlers.
 
+import measurementSections from "../src/data/measure-ai-search-visibility.json" with { type: "json" };
 import { releases, changelogSchema } from "./changelog-content.mjs";
 import { readFileSync } from "node:fs";
 const strategyGuides = JSON.parse(readFileSync(new URL("../src/data/strategy-guides.json", import.meta.url), "utf8"));
@@ -503,6 +504,18 @@ export const ROUTES = [
       breadcrumbLd([{ name: "Home", path: "/" }, { name: h1, path }]),
     ],
   })),
+  {
+    path: "/how-to-measure-ai-search-visibility",
+    title: "How to Measure Visibility in AI Search Without Guessing | AEO Improvement",
+    h1: "How to Measure Visibility in AI Search Without Guessing",
+    description: "Measure AI search visibility with Search Console, Bing Webmaster Tools, referral traffic, and a repeatable question set without treating citations as sales.",
+    ogType: "article",
+    publishedTime: "2026-09-29",
+    modifiedTime: "2026-09-29",
+    authorName: AUTHOR.name,
+    staticSections: measurementSections,
+    jsonLd: [articleLd({ path: "/how-to-measure-ai-search-visibility", title: "How to Measure Visibility in AI Search Without Guessing", description: "A practical guide to measuring AI search visibility with provider reports and business outcomes.", datePublished: "2026-09-29", dateModified: "2026-09-29" }), breadcrumbLd([{ name: "Home", path: "/" }, { name: "Resources", path: "/content-effort-for-seo-and-ai-search" }, { name: "How to Measure Visibility in AI Search Without Guessing", path: "/how-to-measure-ai-search-visibility" }])],
+  },
   {
     path: "/ai-citation-readiness-benchmark",
     title: "2026 AI Citation Readiness Benchmark | AEO Improvement",
