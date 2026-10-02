@@ -1,0 +1,1 @@
+- [Production schema flow](production-schema-flow.md) — production PostgreSQL schema changes go through Publish, not direct agent SQL.

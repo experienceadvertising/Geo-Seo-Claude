@@ -42,3 +42,9 @@ externalPort = 3000
 
 [nix]
 channel = "stable-25_05"
+
+[userenv]
+
+[userenv.production]
+SCHEDULED_WORKER_ENABLED = "true"
+SCHEDULER_MODE = "cloudflare"

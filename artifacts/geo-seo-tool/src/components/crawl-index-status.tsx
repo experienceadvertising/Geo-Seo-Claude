@@ -26,7 +26,7 @@ export function CrawlIndexStatus({ auditId, siteUrl }: { auditId: number; siteUr
   const report = inspection.data;
   return <section className="border-t pt-4 space-y-3" aria-labelledby="crawl-status-heading">
     <h3 id="crawl-status-heading" className="text-sm font-semibold">Crawl and Index Status</h3>
-    <p className="text-xs text-muted-foreground">Check Google's reported indexing status and last successful crawl for this audited page. This is an on-demand check, not continuous monitoring.</p>
+    <p className="text-xs text-muted-foreground">Check Google's reported indexing status and crawl date for this audited page. This is an on-demand check, not continuous monitoring.</p>
     <Button size="sm" variant="outline" disabled={!siteUrl || inspection.isFetching} onClick={() => { void inspection.refetch(); }}>
       {inspection.isFetching ? "Checking Google..." : report ? "Check again" : "Check crawl and index status"}
     </Button>
@@ -37,14 +37,14 @@ export function CrawlIndexStatus({ auditId, siteUrl }: { auditId: number; siteUr
       <dl className="grid sm:grid-cols-2 gap-3 text-xs">
         {[
           ["Google coverage state", report.coverageState], ["Google index verdict", report.verdict],
-          ["Last successful crawl", report.lastCrawlTime ? new Date(report.lastCrawlTime).toLocaleString() : null],
+          ["Last crawl reported by Google", report.lastCrawlTime ? new Date(report.lastCrawlTime).toLocaleString() : null],
           ["Inspection checked", new Date(report.observedAt).toLocaleString()],
           ["Page fetch", report.pageFetchState], ["Robots access", report.robotsTxtState],
           ["Indexing directive", report.indexingState], ["Google canonical", report.googleCanonical],
           ["Declared canonical", report.userCanonical], ["Inspected page", report.pageUrl],
         ].map(([label, value]) => <div key={label}><dt className="font-medium">{label}</dt><dd className="text-muted-foreground break-all mt-1">{value || "Unavailable"}</dd></div>)}
       </dl>
-      <p className="text-xs text-muted-foreground">PASS is Google's valid verdict. Indexing allowed describes the page's directives and does not prove it is indexed. Crawl age does not override the reported index status.</p>
+      <p className="text-xs text-muted-foreground">Google's verdict and coverage state describe the indexed version it reports. Indexing allowed describes the page's directives and does not prove it is indexed. Crawl age does not override the reported index status.</p>
       <ul className="list-disc pl-5 space-y-1 text-xs text-muted-foreground">{report.nextSteps.map(step => <li key={step}>{step}</li>)}</ul>
       <Link href={`/actions/${auditId}`} className="text-xs text-emerald-700 underline">Open this page's action plan</Link>
     </div>}
