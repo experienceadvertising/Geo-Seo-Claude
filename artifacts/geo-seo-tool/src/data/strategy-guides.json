@@ -50,11 +50,25 @@
       }
     ],
     "sources": [
-      { "label": "Cyrus Shepard, Zyppy Signal: Google AI Ranking Factors expert survey", "url": "https://signal.zyppy.com/p/google-ai-ranking-factors" },
-      { "label": "Cyrus Shepard, Zyppy Signal: Content Effort", "url": "https://signal.zyppy.com/p/content-effort" },
-      { "label": "Google Search Central: AI features and your website", "url": "https://developers.google.com/search/docs/appearance/ai-features" }
+      {
+        "label": "Cyrus Shepard, Zyppy Signal: Google AI Ranking Factors expert survey",
+        "url": "https://signal.zyppy.com/p/google-ai-ranking-factors"
+      },
+      {
+        "label": "Cyrus Shepard, Zyppy Signal: Content Effort",
+        "url": "https://signal.zyppy.com/p/content-effort"
+      },
+      {
+        "label": "Google Search Central: AI features and your website",
+        "url": "https://developers.google.com/search/docs/appearance/ai-features"
+      }
     ],
-    "related": ["/improve-service-pages-for-ai-search", "/content-effort-for-seo-and-ai-search", "/methodology"]
+    "related": [
+      "/improve-service-pages-for-ai-search",
+      "/content-effort-for-seo-and-ai-search",
+      "/methodology",
+      "/google-crawl-dates-and-indexing"
+    ]
   },
   {
     "path": "/improve-service-pages-for-ai-search",
@@ -100,10 +114,86 @@
       }
     ],
     "sources": [
-      { "label": "Cyrus Shepard, Zyppy Signal: Content Effort", "url": "https://signal.zyppy.com/p/content-effort" },
-      { "label": "Cyrus Shepard, Zyppy Signal: SEO Strategies for AI Search", "url": "https://signal.zyppy.com/p/seo-strategies-for-ai-search" },
-      { "label": "Google Search Central: AI features and your website", "url": "https://developers.google.com/search/docs/appearance/ai-features" }
+      {
+        "label": "Cyrus Shepard, Zyppy Signal: Content Effort",
+        "url": "https://signal.zyppy.com/p/content-effort"
+      },
+      {
+        "label": "Cyrus Shepard, Zyppy Signal: SEO Strategies for AI Search",
+        "url": "https://signal.zyppy.com/p/seo-strategies-for-ai-search"
+      },
+      {
+        "label": "Google Search Central: AI features and your website",
+        "url": "https://developers.google.com/search/docs/appearance/ai-features"
+      }
     ],
-    "related": ["/seo-geo-priorities-2026", "/show-first-party-experience-seo", "/methodology"]
+    "related": [
+      "/seo-geo-priorities-2026",
+      "/show-first-party-experience-seo",
+      "/methodology"
+    ]
+  },
+  {
+    "path": "/google-crawl-dates-and-indexing",
+    "title": "Why Google Stops Indexing Pages: What Crawl Dates Can Tell You",
+    "description": "Use Google's last crawl date and reported indexing status to investigate important pages, choose useful fixes and avoid date-only content updates.",
+    "intro": "A page can remain on your website while its search visibility changes. Google's reported last crawl date can help you decide which pages deserve a closer look, especially when you read it alongside indexing status and the page's business value.",
+    "published": "2026-10-02",
+    "sections": [
+      {
+        "heading": "What the 130 and 190-day findings actually mean",
+        "paragraphs": [
+          "Adam Gent studied 1.4 million URLs across 18 sites and found a relationship between long gaps since Google's last crawl and non-indexed states. The sample showed notable changes around 130 and 190 days. These are observational findings, not universal Google deadlines or a prediction that a particular page will disappear.",
+          "The study selected important sitemap URLs with last-crawl data and filtered out technical and duplication exclusions. An old crawl date is a reason to investigate. It does not override Google's reported index status or prove the cause of a visibility change."
+        ]
+      },
+      {
+        "heading": "Check the page before rewriting it",
+        "paragraphs": [
+          "Look at the coverage state, successful fetch, robots access, noindex directives and canonical choice. Fix an accidental technical blocker before deciding the article needs more words. A recent crawl does not guarantee indexing, and permission to index a page does not prove Google has indexed it.",
+          "Missing crawl data should remain unavailable. It should never be turned into zero days or an invented warning. A page reported as unknown to Google may need more investigation, including any historical records you have."
+        ]
+      },
+      {
+        "heading": "Use the new Crawl and Index Status panel",
+        "paragraphs": [
+          "In AEO Improvement, Pro and Agency users with an authorized Search Console connection can open an audited page's AI visibility workflow, choose its matching property and request a Crawl and Index Status check. The panel shows Google's reported coverage state, index verdict, last successful crawl date, elapsed days, fetch state, indexing controls and available canonical URLs.",
+          "The check is on demand and may reuse a timestamped result for up to one hour. It reads Google's stored inspection data, does not perform a live Google inspection, does not submit a page for indexing and is not continuous monitoring. You can open the page's action plan from the panel to continue the work."
+        ]
+      },
+      {
+        "heading": "Improve what makes the page worth keeping",
+        "paragraphs": [
+          "If an important page has a long crawl gap, review whether it still answers a real visitor question with accurate, distinct information. Strengthen relevant internal links, confirm canonical sitemap inclusion and add useful examples or current facts where needed. Changing the published date alone does not improve the answer.",
+          "For example, an illustrative service page might need a clearer explanation of delivery, pricing and limitations, plus a link from the relevant service hub. Another page may duplicate an existing guide and warrant consolidation. Those decisions need page evidence and business context, not an automatic age rule."
+        ]
+      },
+      {
+        "heading": "Measure the next observation",
+        "paragraphs": [
+          "Record what you changed and when. Recheck the reported crawl and indexing status, then compare page queries, impressions, clicks and qualified leads over a sensible period. Recrawling, indexing, search performance and business outcomes are separate observations.",
+          "Crawl age does not change AEO Improvement's numerical score. It is a research-informed review signal. Google search indexing also does not establish whether another AI engine will retrieve or cite the page."
+        ]
+      }
+    ],
+    "sources": [
+      {
+        "label": "Adam Gent: 190-day indexing study and methodology",
+        "url": "https://indexinginsight.com/blog/190-day-indexing-rule"
+      },
+      {
+        "label": "Google: crawl capacity and demand",
+        "url": "https://developers.google.com/crawling/docs/crawl-budget"
+      },
+      {
+        "label": "Google: URL Inspection API",
+        "url": "https://developers.google.com/webmaster-tools/v1/urlInspection.index/inspect"
+      }
+    ],
+    "related": [
+      "/seo-geo-priorities-2026",
+      "/content-effort-for-seo-and-ai-search",
+      "/methodology"
+    ]
   }
 ]
