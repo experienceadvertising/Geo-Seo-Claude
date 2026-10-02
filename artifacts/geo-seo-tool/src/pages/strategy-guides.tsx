@@ -13,13 +13,17 @@ const relatedTitles = new Map<string, string>([
 export default function StrategyGuides() {
   const [location] = useLocation();
   const guide = guides.find((item) => item.path === location) ?? guides[0];
+  const publishedDate = "published" in guide && typeof guide.published === "string" ? guide.published : "2026-09-17";
+  const publishedDateLabel = new Date(`${publishedDate}T12:00:00Z`).toLocaleDateString("en-US", {
+    month: "long", day: "numeric", year: "numeric", timeZone: "UTC",
+  });
   const article = {
     "@context": "https://schema.org",
     "@type": "Article",
     headline: guide.title,
     description: guide.description,
-    datePublished: guide.published,
-    dateModified: guide.published,
+    datePublished: publishedDate,
+    dateModified: publishedDate,
     author: { "@type": "Organization", name: "AEO Improvement" },
     publisher: { "@type": "Organization", name: "AEO Improvement", url: SITE },
     mainEntityOfPage: { "@type": "WebPage", "@id": `${SITE}${guide.path}` },
@@ -44,7 +48,7 @@ export default function StrategyGuides() {
       <p className="text-sm font-semibold text-emerald-700">SEO + GEO field guide</p>
       <h1 className="mt-3 text-4xl font-bold tracking-tight text-slate-950 md:text-5xl">{guide.title}</h1>
       <p className="mt-5 text-lg leading-8 text-slate-600">{guide.intro}</p>
-      <p className="mt-4 text-sm text-slate-500">Published September 17, 2026 · By the AEO Improvement editorial team</p>
+      <p className="mt-4 text-sm text-slate-500">Published {publishedDateLabel} · By the AEO Improvement editorial team</p>
 
       <div className="mt-10 space-y-10">
         {guide.sections.map((section) => (

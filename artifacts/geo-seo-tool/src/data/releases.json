@@ -5,6 +5,25 @@
   "archiveNote": "Earlier release notes retain their original recorded dates. Descriptions were clarified on September 5, 2026 to remove unsupported performance and visibility claims. Historical offers are not current plan entitlements.",
   "entries": [
     {
+      "slug": "crawl-and-index-status",
+      "isoDate": "2026-10-02",
+      "badge": "New",
+      "title": "Google crawl and index status for audited pages",
+      "summary": "Pro and Agency users with Search Console access can request Google's reported index status and crawl details for an audited page.",
+      "audience": "Site owners and agencies reviewing important search pages",
+      "items": [
+        "See Google's reported coverage verdict, crawl date, fetch and access status, and canonical URLs.",
+        "Use older crawl dates as review signals alongside the page's current reported status.",
+        "Open the page's action plan for follow-up work. The on-demand check can reuse data for up to one hour.",
+        "Crawl age does not affect scores, predict deindexing, or trigger indexing requests. No new Google permissions or billing changes are introduced."
+      ],
+      "links": [
+        { "label": "Read the crawl-date guide", "href": "/google-crawl-dates-and-indexing" },
+        { "label": "Open your projects", "href": "/projects" }
+      ],
+      "evidence": "Google URL Inspection API documentation and Adam Gent's observational indexing research. The API reports the indexed version available in Search Console."
+    },
+    {
       "slug": "clearer-ai-search-guidance-and-plan-value",
       "isoDate": "2026-09-19",
       "badge": "Improvement",

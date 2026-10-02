@@ -105,5 +105,68 @@
       { "label": "Google Search Central: AI features and your website", "url": "https://developers.google.com/search/docs/appearance/ai-features" }
     ],
     "related": ["/seo-geo-priorities-2026", "/show-first-party-experience-seo", "/methodology"]
+  },
+  {
+    "path": "/google-crawl-dates-and-indexing",
+    "title": "How to Use Google Crawl Dates to Review Important Pages",
+    "description": "Read Google's reported crawl date alongside index status, fetch details and canonical signals without treating page age as an automatic indexing outcome.",
+    "intro": "Google's reported crawl date can help you decide which important pages deserve a closer look. It is most useful when read alongside Google's reported index status, technical details and the page's value to visitors.",
+    "published": "2026-10-02",
+    "sections": [
+      {
+        "heading": "What the 130- and 190-day checkpoints mean",
+        "paragraphs": [
+          "Adam Gent's study analyzed 1.4 million pages across 18 websites and reported an association between longer crawl gaps and changes in indexing states. The sample and methodology are limited; its findings are observational, not universal Google deadlines or predictions about an individual URL.",
+          "This product uses age bands to prompt a review: an earlier review signal, an extended gap, and a longer gap. Those labels do not replace Google's verdict or imply that a page has been removed from the index."
+        ]
+      },
+      {
+        "heading": "Check the reported status before changing content",
+        "paragraphs": [
+          "Review the coverage state, page fetch, robots access, indexing directive and canonical URLs. Address a confirmed technical issue before rewriting the page. A recent crawl does not guarantee indexing, and an indexing-allowed directive does not prove that a URL is indexed.",
+          "Google's URL Inspection API reports information for the version currently available in Google's index. It is not a live test of the page. If the API has no crawl timestamp, keep the date unavailable rather than treating it as zero days or inventing a warning."
+        ]
+      },
+      {
+        "heading": "Use the Crawl and Index Status panel",
+        "paragraphs": [
+          "In AEO Improvement, Pro and Agency users with an authorized Search Console connection can open an audited page's AI visibility workflow, select an available property and request a Crawl and Index Status check. The panel shows Google's reported coverage verdict, crawl date, fetch and access status, and available canonical URLs.",
+          "The check is on demand and may reuse a timestamped result for up to one hour. It does not submit a page for indexing or run continuous monitoring. You can open the audited page's action plan to continue."
+        ]
+      },
+      {
+        "heading": "Choose useful work for a page that matters",
+        "paragraphs": [
+          "If an important page has an older crawl date, review whether it still answers a real visitor question with accurate, distinct information. Check relevant internal links and canonical sitemap inclusion, and improve examples or facts when needed. Changing the published date alone does not improve the answer.",
+          "Another page may duplicate an existing guide and need consolidation, while a service page may need clearer scope, pricing or limitations. Use page evidence and business context; do not apply an automatic age rule."
+        ]
+      },
+      {
+        "heading": "Measure the next observation",
+        "paragraphs": [
+          "Record what changed and when. Recheck Google's reported crawl and index information, then compare page queries, impressions, clicks and qualified leads over a sensible period. Crawling, indexing, search performance and business outcomes are separate observations.",
+          "Crawl age does not change AEO Improvement's numerical score. Google Search indexing also does not establish whether another AI engine will retrieve or cite a page."
+        ]
+      }
+    ],
+    "sources": [
+      {
+        "label": "Adam Gent: 190-day indexing study and methodology",
+        "url": "https://indexinginsight.com/blog/190-day-indexing-rule"
+      },
+      {
+        "label": "Google Search Console: URL Inspection API",
+        "url": "https://developers.google.com/webmaster-tools/v1/urlInspection.index/inspect"
+      },
+      {
+        "label": "Google Search Central: Crawl budget management",
+        "url": "https://developers.google.com/crawling/docs/crawl-budget"
+      }
+    ],
+    "related": [
+      "/seo-geo-priorities-2026",
+      "/content-effort-for-seo-and-ai-search",
+      "/methodology"
+    ]
   }
 ]
