@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { randomBytes } from "crypto";
-import { and, eq } from "drizzle-orm";
-import { auditsTable, db, googleConnectionsTable } from "@workspace/db";
+import { eq, and } from "drizzle-orm";
+import { db, googleConnectionsTable, auditsTable } from "@workspace/db";
 import { createInspectionService, fetchGoogleInspection, InspectionError } from "../lib/gscInspection";
 import { requireAuth } from "../middlewares/auth";
 import { readRateLimiter } from "../middlewares/rateLimiters";

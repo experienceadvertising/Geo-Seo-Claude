@@ -8,20 +8,26 @@
       "slug": "crawl-and-index-status",
       "isoDate": "2026-10-02",
       "badge": "New",
-      "title": "Google crawl and index status for audited pages",
-      "summary": "Pro and Agency users with Search Console access can request Google's reported index status and crawl details for an audited page.",
-      "audience": "Site owners and agencies reviewing important search pages",
+      "title": "Google crawl and index status alongside page opportunities",
+      "summary": "Connected Pro and Agency users can request Google URL Inspection data for an audited page from the Search Console panel in the AI visibility workflow.",
+      "audience": "Site owners and agencies maintaining important search pages",
       "items": [
-        "See Google's reported coverage verdict, crawl date, fetch and access status, and canonical URLs.",
-        "Use older crawl dates as review signals alongside the page's current reported status.",
-        "Open the page's action plan for follow-up work. The on-demand check can reuse data for up to one hour.",
-        "Crawl age does not affect scores, predict deindexing, or trigger indexing requests. No new Google permissions or billing changes are introduced."
+        "See Google's reported index verdict, coverage state and last successful crawl date.",
+        "Review fetch problems, robots access, indexing directives and canonical differences before changing content.",
+        "Use research-informed crawl-age review signals without changing the AEO score or predicting removal dates.",
+        "Open the page's action plan and choose a useful next improvement. Checks are on demand, may reuse data for one hour and do not request indexing."
       ],
       "links": [
-        { "label": "Read the crawl-date guide", "href": "/google-crawl-dates-and-indexing" },
-        { "label": "Open your projects", "href": "/projects" }
+        {
+          "label": "Read the crawl-date guide",
+          "href": "/google-crawl-dates-and-indexing"
+        },
+        {
+          "label": "Open your projects",
+          "href": "/projects"
+        }
       ],
-      "evidence": "Google URL Inspection API documentation and Adam Gent's observational indexing research. The API reports the indexed version available in Search Console."
+      "evidence": "Google URL Inspection API documentation and Adam Gent's observational indexing research. Provider data requires a connected authorized Search Console property."
     },
     {
       "slug": "clearer-ai-search-guidance-and-plan-value",
@@ -37,8 +43,14 @@
         "Linked comparison decisions to current vendor information and made draft fixes explicitly reviewable."
       ],
       "links": [
-        { "label": "Read the AI search guide", "href": "/how-to-appear-in-ai-search" },
-        { "label": "Compare plans", "href": "/pricing" }
+        {
+          "label": "Read the AI search guide",
+          "href": "/how-to-appear-in-ai-search"
+        },
+        {
+          "label": "Compare plans",
+          "href": "/pricing"
+        }
       ],
       "evidence": "Reviewed current provider documentation, product entitlements, and public vendor pricing on September 19, 2026."
     },
@@ -99,7 +111,12 @@
         "Added conditional category and listing-page examples informed by SearchPilot experiments alongside Google, OpenAI and Zyppy guidance.",
         "Corrected overstated schema and citation claims and clarified research limitations."
       ],
-      "links": [{ "label": "Read our methodology", "href": "/methodology" }],
+      "links": [
+        {
+          "label": "Read our methodology",
+          "href": "/methodology"
+        }
+      ],
       "evidence": "Implementation-guidance release; source review recorded in docs/independent-evidence-review-2026-09-05.md."
     },
     {
