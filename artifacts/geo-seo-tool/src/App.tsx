@@ -131,6 +131,7 @@ function AppRoutes() {
         <Route path="/changelog" component={Changelog} />
         <Route path="/content-effort-for-seo-and-ai-search" component={ContentEffortGuide} />
         <Route path="/seo-geo-priorities-2026" component={StrategyGuides} />
+        <Route path="/google-crawl-dates-and-indexing" component={StrategyGuides} />
         <Route path="/improve-service-pages-for-ai-search" component={StrategyGuides} />
         <Route path="/show-first-party-experience-seo" component={ContentEffortGuide} />
         <Route path="/seo-content-quality-vs-filler" component={ContentEffortGuide} />
