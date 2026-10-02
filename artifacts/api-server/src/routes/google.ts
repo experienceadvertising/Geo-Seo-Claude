@@ -1,7 +1,8 @@
 import { Router, type IRouter } from "express";
 import { randomBytes } from "crypto";
-import { eq } from "drizzle-orm";
-import { db, googleConnectionsTable } from "@workspace/db";
+import { and, eq } from "drizzle-orm";
+import { auditsTable, db, googleConnectionsTable } from "@workspace/db";
+import { createInspectionService, fetchGoogleInspection, InspectionError } from "../lib/gscInspection";
 import { requireAuth } from "../middlewares/auth";
 import { readRateLimiter } from "../middlewares/rateLimiters";
 import { getStoredPlan, getUserPlan, planAtLeast } from "../lib/planUtils";
@@ -16,6 +17,44 @@ import {
 const router: IRouter = Router();
 
 const PREFIX = "/integrations/google";
+const inspectPage = createInspectionService();
+
+router.get(`${PREFIX}/search-console/inspection`, requireAuth, readRateLimiter, async (req, res): Promise<void> => {
+  res.setHeader("Cache-Control", "private, no-store");
+  if (!(await requirePro(req.userId!))) {
+    res.status(403).json({ error: "Search Console inspection is a Pro feature.", upgradeRequired: true }); return;
+  }
+  const auditId = Number(req.query.auditId);
+  const siteUrl = typeof req.query.siteUrl === "string" ? req.query.siteUrl.trim() : "";
+  if (!Number.isSafeInteger(auditId) || auditId <= 0 || !siteUrl || siteUrl.length > 500) {
+    res.status(400).json({ error: "A valid auditId and Search Console property are required." }); return;
+  }
+  const [audit] = await db.select({ url: auditsTable.url }).from(auditsTable)
+    .where(and(eq(auditsTable.id, auditId), eq(auditsTable.userId, req.userId!))).limit(1);
+  if (!audit) { res.status(404).json({ error: "Audit not found." }); return; }
+  const conn = await getConnection(req.userId!);
+  if (!conn) { res.status(404).json({ error: "Connect Google to inspect this page." }); return; }
+  if (!hasSearchConsoleScope(conn.scope)) {
+    res.status(409).json({ error: "Reconnect Google to grant read-only Search Console access.", needsReconnect: true }); return;
+  }
+  try {
+    const token = await getValidAccessToken(conn);
+    const page = new URL(audit.url); page.hash = "";
+    const report = await inspectPage({
+      userId: req.userId!, siteUrl, pageUrl: page.toString(),
+      listSites: () => listSearchConsoleSites(token),
+      fetchInspection: () => fetchGoogleInspection(token, siteUrl, page.toString()),
+    });
+    res.json(report);
+  } catch (err) {
+    req.log.warn({ status: err instanceof InspectionError ? err.status : 502 }, "Search Console inspection failed");
+    if (err instanceof InspectionError) {
+      if (err.status === 429) res.setHeader("Retry-After", "60");
+      res.status(err.status).json({ error: err.message }); return;
+    }
+    res.status(502).json({ error: "Couldn't inspect this page. Try again or reconnect Google if access has expired." });
+  }
+});
 
 async function getConnection(userId: string) {
   const [conn] = await db.select().from(googleConnectionsTable).where(eq(googleConnectionsTable.userId, userId));

@@ -20,6 +20,7 @@ import { Helmet } from "react-helmet-async";
 import { usePlan } from "@/hooks/usePlan";
 import { UpgradePrompt } from "@/components/upgrade-prompt";
 import { Separator } from "@/components/ui/separator";
+import { CrawlIndexStatus } from "@/components/crawl-index-status";
 
 const ENGINES = [
   { id: "chatgpt", label: "ChatGPT", color: "bg-emerald-500" },
@@ -195,6 +196,8 @@ function SearchConsoleOpportunityCard({
               ))}
             </select>
           </div>
+
+          <CrawlIndexStatus key={`${auditId}:${selectedSiteUrl}`} auditId={auditId} siteUrl={selectedSiteUrl} />
 
           {opportunities.isLoading ? (
             <div className="h-28 rounded-md bg-muted/60 animate-pulse" />
@@ -715,7 +718,7 @@ export default function SimulatePage() {
                 Prompts (one per line
                 {!isPro && <span className="ml-1 text-amber-600 font-semibold">· {planLabel}: max {maxPrompts}</span>})
               </label>
-              <div className="flex items-center gap-1.5">
+              <div className="flex flex-wrap items-center gap-1.5">
                 <div className="flex rounded-md border overflow-hidden text-xs">
                   <button
                     type="button"
