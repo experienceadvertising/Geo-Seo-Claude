@@ -45,17 +45,24 @@ const GA4_MEASUREMENT_ID =
   (import.meta.env.VITE_GA4_MEASUREMENT_ID as string | undefined) ||
   (import.meta.env.PROD ? "G-H3L37CSDKR" : undefined);
 const GOOGLE_ADS_ID = import.meta.env.VITE_GOOGLE_ADS_ID as string | undefined;
-const GOOGLE_ADS_SIGNUP_LABEL = import.meta.env.VITE_GOOGLE_ADS_SIGNUP_LABEL as string | undefined;
-const GOOGLE_ADS_ACTIVATION_LABEL = import.meta.env.VITE_GOOGLE_ADS_ACTIVATION_LABEL as string | undefined;
+const GOOGLE_ADS_SIGNUP_LABEL = import.meta.env.VITE_GOOGLE_ADS_SIGNUP_LABEL as
+  | string
+  | undefined;
+const GOOGLE_ADS_ACTIVATION_LABEL = import.meta.env
+  .VITE_GOOGLE_ADS_ACTIVATION_LABEL as string | undefined;
 const META_PIXEL_ID = import.meta.env.VITE_META_PIXEL_ID as string | undefined;
-const LINKEDIN_PARTNER_ID = import.meta.env.VITE_LINKEDIN_PARTNER_ID as string | undefined;
+const LINKEDIN_PARTNER_ID = import.meta.env.VITE_LINKEDIN_PARTNER_ID as
+  | string
+  | undefined;
 
 let initialized = false;
+let consentOverride: TrackingConsent | null = null;
+let lastPageView: string | null = null;
 
 function safeRead<T>(key: string): T | null {
   try {
     const raw = window.localStorage.getItem(key);
-    return raw ? JSON.parse(raw) as T : null;
+    return raw ? (JSON.parse(raw) as T) : null;
   } catch {
     return null;
   }
@@ -64,32 +71,54 @@ function safeRead<T>(key: string): T | null {
 function safeWrite(key: string, value: unknown) {
   try {
     window.localStorage.setItem(key, JSON.stringify(value));
+    return true;
   } catch {
     // Storage can be unavailable in hardened browsers.
+    return false;
+  }
+}
+
+function sendGoogle(...args: unknown[]) {
+  try {
+    window.gtag?.(...args);
+  } catch {
+    /* Measurement must not interrupt the product. */
+  }
+}
+
+function sendMeta(...args: unknown[]) {
+  try {
+    window.fbq?.(...args);
+  } catch {
+    /* Measurement must not interrupt the product. */
   }
 }
 
 function ensureGtag() {
   window.dataLayer = window.dataLayer || [];
   if (!window.gtag) {
-    window.gtag = (...args: any[]) => {
-      window.dataLayer!.push(args);
+    window.gtag = function () {
+      window.dataLayer!.push(arguments);
     };
   }
 }
 
 function addScript(id: string, src: string) {
-  if (document.getElementById(id)) return;
-  const script = document.createElement("script");
-  script.id = id;
-  script.async = true;
-  script.src = src;
-  document.head.appendChild(script);
+  try {
+    if (document.getElementById(id)) return;
+    const script = document.createElement("script");
+    script.id = id;
+    script.async = true;
+    script.src = src;
+    document.head.appendChild(script);
+  } catch {
+    /* Optional tag loading must not interrupt the product. */
+  }
 }
 
 function applyGoogleConsent(consent: TrackingConsent | null) {
   ensureGtag();
-  window.gtag!("consent", consent ? "update" : "default", {
+  sendGoogle("consent", consent ? "update" : "default", {
     analytics_storage: consent?.analytics ? "granted" : "denied",
     ad_storage: consent?.ads ? "granted" : "denied",
     ad_user_data: consent?.ads ? "granted" : "denied",
@@ -99,22 +128,32 @@ function applyGoogleConsent(consent: TrackingConsent | null) {
 }
 
 function initializeGoogle(consent: TrackingConsent) {
-  if (!consent.analytics && !consent.ads) return;
+  if (
+    (!consent.analytics && !consent.ads) ||
+    (navigator as Navigator & { globalPrivacyControl?: boolean })
+      .globalPrivacyControl
+  )
+    return;
   const loaderId = GA4_MEASUREMENT_ID || GOOGLE_ADS_ID;
   if (!loaderId) return;
 
   ensureGtag();
-  addScript("aeo-google-tag", `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(loaderId)}`);
-  window.gtag!("js", new Date());
+  addScript(
+    "aeo-google-tag",
+    `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(loaderId)}`,
+  );
+  sendGoogle("js", new Date());
 
   if (consent.analytics && GA4_MEASUREMENT_ID) {
-    window.gtag!("config", GA4_MEASUREMENT_ID, {
+    sendGoogle("config", GA4_MEASUREMENT_ID, {
       send_page_view: false,
+      page_location: measurementContext().page_location,
+      page_referrer: "",
       allow_google_signals: consent.ads,
     });
   }
   if (consent.ads && GOOGLE_ADS_ID) {
-    window.gtag!("config", GOOGLE_ADS_ID);
+    sendGoogle("config", GOOGLE_ADS_ID);
   }
 }
 
@@ -130,7 +169,7 @@ function initializeMeta(consent: TrackingConsent) {
   window.fbq = fbq;
   window._fbq = fbq;
   addScript("aeo-meta-pixel", "https://connect.facebook.net/en_US/fbevents.js");
-  window.fbq("init", META_PIXEL_ID);
+  sendMeta("init", META_PIXEL_ID);
 }
 
 function initializeLinkedIn(consent: TrackingConsent) {
@@ -140,10 +179,18 @@ function initializeLinkedIn(consent: TrackingConsent) {
   if (!window._linkedin_data_partner_ids.includes(LINKEDIN_PARTNER_ID)) {
     window._linkedin_data_partner_ids.push(LINKEDIN_PARTNER_ID);
   }
-  addScript("aeo-linkedin-insight", "https://snap.licdn.com/li.lms-analytics/insight.min.js");
+  addScript(
+    "aeo-linkedin-insight",
+    "https://snap.licdn.com/li.lms-analytics/insight.min.js",
+  );
 }
 
 function initializeVendors(consent: TrackingConsent) {
+  if (
+    (navigator as Navigator & { globalPrivacyControl?: boolean })
+      .globalPrivacyControl
+  )
+    return;
   initializeGoogle(consent);
   initializeMeta(consent);
   initializeLinkedIn(consent);
@@ -152,7 +199,7 @@ function initializeVendors(consent: TrackingConsent) {
 function readTouch(): AttributionTouch {
   const params = new URLSearchParams(window.location.search);
   return {
-    landingPage: window.location.pathname + window.location.search,
+    landingPage: window.location.pathname,
     referrer: document.referrer || null,
     capturedAt: new Date().toISOString(),
     utmSource: params.get("utm_source"),
@@ -170,17 +217,25 @@ export function captureAttribution() {
   if (typeof window === "undefined") return;
   const touch = readTouch();
   const hasCampaignSignal = Boolean(
-    touch.utmSource || touch.utmMedium || touch.utmCampaign || touch.utmTerm ||
-    touch.utmContent || touch.gclid || touch.msclkid || touch.fbclid,
+    touch.utmSource ||
+    touch.utmMedium ||
+    touch.utmCampaign ||
+    touch.utmTerm ||
+    touch.utmContent ||
+    touch.gclid ||
+    touch.msclkid ||
+    touch.fbclid,
   );
-  if (!safeRead<AttributionTouch>(FIRST_TOUCH_KEY)) safeWrite(FIRST_TOUCH_KEY, touch);
+  if (!safeRead<AttributionTouch>(FIRST_TOUCH_KEY))
+    safeWrite(FIRST_TOUCH_KEY, touch);
   if (hasCampaignSignal || !safeRead<AttributionTouch>(LAST_TOUCH_KEY)) {
     safeWrite(LAST_TOUCH_KEY, touch);
   }
 }
 
 export function getAttribution() {
-  if (typeof window === "undefined") return { firstTouch: null, lastTouch: null };
+  if (typeof window === "undefined")
+    return { firstTouch: null, lastTouch: null };
   return {
     firstTouch: safeRead<AttributionTouch>(FIRST_TOUCH_KEY),
     lastTouch: safeRead<AttributionTouch>(LAST_TOUCH_KEY),
@@ -189,7 +244,12 @@ export function getAttribution() {
 
 export function getTrackingConsent(): TrackingConsent | null {
   if (typeof window === "undefined") return null;
-  return safeRead<TrackingConsent>(CONSENT_KEY);
+  if (
+    (navigator as Navigator & { globalPrivacyControl?: boolean })
+      .globalPrivacyControl
+  )
+    return { analytics: false, ads: false, updatedAt: "" };
+  return consentOverride ?? safeRead<TrackingConsent>(CONSENT_KEY);
 }
 
 export function setTrackingConsent(choice: ConsentChoice) {
@@ -198,10 +258,15 @@ export function setTrackingConsent(choice: ConsentChoice) {
     ads: choice === "all",
     updatedAt: new Date().toISOString(),
   };
-  safeWrite(CONSENT_KEY, consent);
+  if (!consent.analytics) lastPageView = null;
+  consentOverride = consent;
+  const persisted = safeWrite(CONSENT_KEY, consent);
   applyGoogleConsent(consent);
   initializeVendors(consent);
-  window.dispatchEvent(new CustomEvent("aeo:consent-updated", { detail: consent }));
+  window.dispatchEvent(
+    new CustomEvent("aeo:consent-updated", { detail: consent }),
+  );
+  return persisted;
 }
 
 export function initializeAnalytics() {
@@ -213,25 +278,119 @@ export function initializeAnalytics() {
   initialized = true;
 }
 
-function eventContext() {
-  const { firstTouch, lastTouch } = getAttribution();
+const knownPaths = new Set([
+  "/",
+  "/dashboard",
+  "/sign-in",
+  "/sign-up",
+  "/verify-email",
+  "/forgot-password",
+  "/reset-password",
+  "/unsubscribe",
+  "/projects",
+  "/site-scan",
+  "/recommended-tools",
+  "/admin",
+  "/pricing",
+  "/upgrade",
+  "/methodology",
+  "/about",
+  "/contact",
+  "/privacy",
+  "/terms",
+  "/google-data-use",
+  "/best-aeo-tools",
+  "/best-geo-optimization-tools",
+  "/how-to-rank-in-chatgpt",
+  "/what-is-answer-engine-optimization",
+  "/how-to-appear-in-ai-search",
+  "/free-aeo-audit-tool",
+  "/ai-visibility-checker",
+  "/chatgpt-citation-tracker",
+  "/aeo-software",
+  "/ai-visibility-software",
+  "/geo-software-for-agencies",
+  "/ai-citation-readiness-benchmark",
+  "/changelog",
+  "/content-effort-for-seo-and-ai-search",
+  "/seo-geo-priorities-2026",
+  "/google-crawl-dates-and-indexing",
+  "/improve-service-pages-for-ai-search",
+  "/show-first-party-experience-seo",
+  "/seo-content-quality-vs-filler",
+  "/create-content-ai-can-cite",
+  "/content-audit-original-research-checklist",
+  "/document-expertise-methodology",
+  "/seo",
+  "/actions",
+  "/ai-visibility",
+]);
+function measurementContext(path = window.location.pathname) {
+  const clean = path.split(/[?#]/, 1)[0].replace(/\/$/, "") || "/";
+  const privateMatch =
+    /^\/(results|simulate|seo|actions|ai-visibility)\/[^/]+$/.exec(clean);
+  const publicMatch = /^\/(vs)\/[^/]+$/.exec(clean);
+  const pagePath = knownPaths.has(clean)
+    ? clean
+    : privateMatch
+      ? `/${privateMatch[1]}/:id`
+      : publicMatch
+        ? `/${publicMatch[1]}/:slug`
+        : "/not-found";
   return {
-    page_path: window.location.pathname + window.location.search,
-    first_utm_source: firstTouch?.utmSource ?? undefined,
-    first_utm_campaign: firstTouch?.utmCampaign ?? undefined,
-    last_utm_source: lastTouch?.utmSource ?? undefined,
-    last_utm_campaign: lastTouch?.utmCampaign ?? undefined,
+    page_path: pagePath,
+    page_location: window.location.origin + pagePath,
+    page_referrer: "",
+    page_title: knownPaths.has(clean)
+      ? document.title
+      : "AEO Improvement: " + pagePath,
   };
 }
 
-export function trackEvent(name: string, parameters: Record<string, unknown> = {}) {
+function safeParameters(parameters: Record<string, unknown>) {
+  const allowed = new Set([
+    "landing_variant",
+    "has_store_url",
+    "billing_period",
+    "source",
+    "plan",
+    "billing_interval",
+    "current_plan",
+    "method",
+    "article_slug",
+    "focus_channel",
+    "value",
+    "currency",
+  ]);
+  return Object.fromEntries(
+    Object.entries(parameters).filter(
+      ([key, value]) =>
+        allowed.has(key) &&
+        (typeof value === "boolean"
+          ? true
+          : typeof value === "number"
+            ? Number.isFinite(value)
+            : typeof value === "string" &&
+              /^[a-zA-Z0-9 _.-]{1,100}$/.test(value)),
+    ),
+  );
+}
+
+export function trackEvent(
+  name: string,
+  parameters: Record<string, unknown> = {},
+) {
   if (typeof window === "undefined") return;
   if (!initialized) initializeAnalytics();
   const consent = getTrackingConsent();
   if (!consent?.analytics) return;
 
-  const payload = { ...eventContext(), ...parameters };
-  window.gtag?.("event", name, payload);
+  const payload = { ...safeParameters(parameters), ...measurementContext() };
+  try {
+    sendGoogle("event", name, payload);
+  } catch {
+    /* Measurement must not interrupt the product. */
+  }
   if (consent.ads) {
     const metaStandardEvents: Record<string, string> = {
       sign_up_complete: "CompleteRegistration",
@@ -239,8 +398,8 @@ export function trackEvent(name: string, parameters: Record<string, unknown> = {
       checkout_started: "InitiateCheckout",
     };
     const standardEvent = metaStandardEvents[name];
-    if (standardEvent) window.fbq?.("track", standardEvent, payload);
-    else window.fbq?.("trackCustom", name, payload);
+    if (standardEvent) sendMeta("track", standardEvent, payload);
+    else sendMeta("trackCustom", name, payload);
   }
 }
 
@@ -250,24 +409,30 @@ export function trackPageView(path: string) {
   const consent = getTrackingConsent();
   if (!consent?.analytics) return;
 
-  window.gtag?.("event", "page_view", {
-    page_path: path,
-    page_title: document.title,
-    page_location: window.location.href,
+  const cleanPath = path.split(/[?#]/, 1)[0];
+  if (lastPageView === cleanPath) return;
+  lastPageView = cleanPath;
+  sendGoogle("event", "page_view", {
+    ...measurementContext(path),
   });
-  if (consent.ads) window.fbq?.("track", "PageView");
+  if (consent.ads) sendMeta("track", "PageView");
 }
 
 export function trackGoogleAdsConversion(
   kind: "signup" | "activation",
-  parameters: { value?: number; currency?: string; transactionId?: string } = {},
+  parameters: {
+    value?: number;
+    currency?: string;
+    transactionId?: string;
+  } = {},
 ) {
   const consent = getTrackingConsent();
   if (!consent?.ads || !GOOGLE_ADS_ID) return;
-  const label = kind === "signup" ? GOOGLE_ADS_SIGNUP_LABEL : GOOGLE_ADS_ACTIVATION_LABEL;
+  const label =
+    kind === "signup" ? GOOGLE_ADS_SIGNUP_LABEL : GOOGLE_ADS_ACTIVATION_LABEL;
   if (!label) return;
 
-  window.gtag?.("event", "conversion", {
+  sendGoogle("event", "conversion", {
     send_to: `${GOOGLE_ADS_ID}/${label}`,
     value: parameters.value,
     currency: parameters.currency,

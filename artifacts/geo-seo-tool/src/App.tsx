@@ -8,7 +8,6 @@ import { AuthProvider, useAuth } from "@/context/AuthContext";
 import Home from "@/pages/home";
 import { Layout } from "@/components/layout";
 import { ErrorBoundary } from "@/components/error-boundary";
-import { CookieConsent } from "@/components/cookie-consent";
 import { RouteTracker } from "@/components/route-tracker";
 import { Loader2 } from "lucide-react";
 
@@ -173,7 +172,6 @@ function AppShell() {
     <TooltipProvider>
       <RouteTracker />
       <ErrorBoundary><Suspense fallback={<PageLoading />}><AppRoutes /></Suspense></ErrorBoundary>
-      <CookieConsent />
       <Toaster />
     </TooltipProvider>
   );
