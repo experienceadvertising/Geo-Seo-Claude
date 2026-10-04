@@ -228,8 +228,8 @@ function eventContext() {
 }
 
 function safeParameters(parameters: Record<string, unknown>) {
-  const allowed = new Set(["source", "plan", "billing_interval", "current_plan", "method", "article_slug", "focus_channel", "value", "currency"]);
-  return Object.fromEntries(Object.entries(parameters).filter(([key, value]) => allowed.has(key) && (typeof value === "number" ? Number.isFinite(value) : typeof value === "string" && /^[a-zA-Z0-9 _.-]{1,100}$/.test(value))));
+  const allowed = new Set(["landing_variant", "has_store_url", "billing_period", "source", "plan", "billing_interval", "current_plan", "method", "article_slug", "focus_channel", "value", "currency"]);
+  return Object.fromEntries(Object.entries(parameters).filter(([key, value]) => allowed.has(key) && (typeof value === "boolean" ? true : typeof value === "number" ? Number.isFinite(value) : typeof value === "string" && /^[a-zA-Z0-9 _.-]{1,100}$/.test(value))));
 }
 
 export function trackEvent(name: string, parameters: Record<string, unknown> = {}) {

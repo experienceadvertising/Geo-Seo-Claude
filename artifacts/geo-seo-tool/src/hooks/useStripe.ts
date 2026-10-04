@@ -1,3 +1,5 @@
+import { acceptedCheckoutUrl } from "@/lib/accepted-registration";
+import { trackEvent } from "@/lib/analytics";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
 import { customFetch } from "@workspace/api-client-react";
@@ -55,14 +57,18 @@ export function useStripeSubscription() {
 
 export function useCheckout() {
   const { toast } = useToast();
-  return useMutation<{ url: string }, Error, { priceId: string; plan: string }>({
-    mutationFn: ({ priceId, plan }) =>
-      customFetch<{ url: string }>("/api/stripe/checkout", {
-        method: "POST",
-        body: JSON.stringify({ priceId, plan }),
-      }),
-    onSuccess: ({ url }) => {
-      if (url) window.location.href = url;
+  return useMutation<{ url: string }, Error, { priceId: string; plan: string; billingInterval?: string }>({
+    mutationFn: async ({ priceId, plan }) => {
+      const result = await customFetch<{ url: string }>("/api/stripe/checkout", {
+        method: "POST", body: JSON.stringify({ priceId, plan }),
+      });
+      const url = acceptedCheckoutUrl(result);
+      if (!url) throw new Error("Checkout was not confirmed. Please try again.");
+      return { url };
+    },
+    onSuccess: ({ url }, variables) => {
+      trackEvent("checkout_started", { plan: variables.plan, billing_interval: variables.billingInterval });
+      window.location.href = url;
     },
     onError: (err) => {
       toast({
