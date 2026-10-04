@@ -67,7 +67,7 @@ export function useCheckout() {
       return { url };
     },
     onSuccess: ({ url }, variables) => {
-      trackEvent("checkout_started", { plan: variables.plan, billing_interval: variables.billingInterval });
+      try { trackEvent("checkout_started", { plan: variables.plan, billing_interval: variables.billingInterval }); } catch { /* Measurement must not block checkout. */ }
       window.location.href = url;
     },
     onError: (err) => {
