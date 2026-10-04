@@ -45,18 +45,24 @@ const GA4_MEASUREMENT_ID =
   (import.meta.env.VITE_GA4_MEASUREMENT_ID as string | undefined) ||
   (import.meta.env.PROD ? "G-H3L37CSDKR" : undefined);
 const GOOGLE_ADS_ID = import.meta.env.VITE_GOOGLE_ADS_ID as string | undefined;
-const GOOGLE_ADS_SIGNUP_LABEL = import.meta.env.VITE_GOOGLE_ADS_SIGNUP_LABEL as string | undefined;
-const GOOGLE_ADS_ACTIVATION_LABEL = import.meta.env.VITE_GOOGLE_ADS_ACTIVATION_LABEL as string | undefined;
+const GOOGLE_ADS_SIGNUP_LABEL = import.meta.env.VITE_GOOGLE_ADS_SIGNUP_LABEL as
+  | string
+  | undefined;
+const GOOGLE_ADS_ACTIVATION_LABEL = import.meta.env
+  .VITE_GOOGLE_ADS_ACTIVATION_LABEL as string | undefined;
 const META_PIXEL_ID = import.meta.env.VITE_META_PIXEL_ID as string | undefined;
-const LINKEDIN_PARTNER_ID = import.meta.env.VITE_LINKEDIN_PARTNER_ID as string | undefined;
+const LINKEDIN_PARTNER_ID = import.meta.env.VITE_LINKEDIN_PARTNER_ID as
+  | string
+  | undefined;
 
 let initialized = false;
+let consentOverride: TrackingConsent | null = null;
 let lastPageView: string | null = null;
 
 function safeRead<T>(key: string): T | null {
   try {
     const raw = window.localStorage.getItem(key);
-    return raw ? JSON.parse(raw) as T : null;
+    return raw ? (JSON.parse(raw) as T) : null;
   } catch {
     return null;
   }
@@ -65,17 +71,27 @@ function safeRead<T>(key: string): T | null {
 function safeWrite(key: string, value: unknown) {
   try {
     window.localStorage.setItem(key, JSON.stringify(value));
+    return true;
   } catch {
     // Storage can be unavailable in hardened browsers.
+    return false;
   }
 }
 
 function sendGoogle(...args: unknown[]) {
-  try { window.gtag?.(...args); } catch { /* Measurement must not interrupt the product. */ }
+  try {
+    window.gtag?.(...args);
+  } catch {
+    /* Measurement must not interrupt the product. */
+  }
 }
 
 function sendMeta(...args: unknown[]) {
-  try { window.fbq?.(...args); } catch { /* Measurement must not interrupt the product. */ }
+  try {
+    window.fbq?.(...args);
+  } catch {
+    /* Measurement must not interrupt the product. */
+  }
 }
 
 function ensureGtag() {
@@ -88,12 +104,16 @@ function ensureGtag() {
 }
 
 function addScript(id: string, src: string) {
-  if (document.getElementById(id)) return;
-  const script = document.createElement("script");
-  script.id = id;
-  script.async = true;
-  script.src = src;
-  document.head.appendChild(script);
+  try {
+    if (document.getElementById(id)) return;
+    const script = document.createElement("script");
+    script.id = id;
+    script.async = true;
+    script.src = src;
+    document.head.appendChild(script);
+  } catch {
+    /* Optional tag loading must not interrupt the product. */
+  }
 }
 
 function applyGoogleConsent(consent: TrackingConsent | null) {
@@ -108,19 +128,27 @@ function applyGoogleConsent(consent: TrackingConsent | null) {
 }
 
 function initializeGoogle(consent: TrackingConsent) {
-  if ((!consent.analytics && !consent.ads) || (navigator as Navigator & { globalPrivacyControl?: boolean }).globalPrivacyControl) return;
+  if (
+    (!consent.analytics && !consent.ads) ||
+    (navigator as Navigator & { globalPrivacyControl?: boolean })
+      .globalPrivacyControl
+  )
+    return;
   const loaderId = GA4_MEASUREMENT_ID || GOOGLE_ADS_ID;
   if (!loaderId) return;
 
   ensureGtag();
-  addScript("aeo-google-tag", `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(loaderId)}`);
+  addScript(
+    "aeo-google-tag",
+    `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(loaderId)}`,
+  );
   sendGoogle("js", new Date());
 
   if (consent.analytics && GA4_MEASUREMENT_ID) {
     sendGoogle("config", GA4_MEASUREMENT_ID, {
       send_page_view: false,
-    page_location: window.location.origin + window.location.pathname,
-    page_referrer: "",
+      page_location: measurementContext().page_location,
+      page_referrer: "",
       allow_google_signals: consent.ads,
     });
   }
@@ -151,11 +179,18 @@ function initializeLinkedIn(consent: TrackingConsent) {
   if (!window._linkedin_data_partner_ids.includes(LINKEDIN_PARTNER_ID)) {
     window._linkedin_data_partner_ids.push(LINKEDIN_PARTNER_ID);
   }
-  addScript("aeo-linkedin-insight", "https://snap.licdn.com/li.lms-analytics/insight.min.js");
+  addScript(
+    "aeo-linkedin-insight",
+    "https://snap.licdn.com/li.lms-analytics/insight.min.js",
+  );
 }
 
 function initializeVendors(consent: TrackingConsent) {
-  if ((navigator as Navigator & { globalPrivacyControl?: boolean }).globalPrivacyControl) return;
+  if (
+    (navigator as Navigator & { globalPrivacyControl?: boolean })
+      .globalPrivacyControl
+  )
+    return;
   initializeGoogle(consent);
   initializeMeta(consent);
   initializeLinkedIn(consent);
@@ -182,17 +217,25 @@ export function captureAttribution() {
   if (typeof window === "undefined") return;
   const touch = readTouch();
   const hasCampaignSignal = Boolean(
-    touch.utmSource || touch.utmMedium || touch.utmCampaign || touch.utmTerm ||
-    touch.utmContent || touch.gclid || touch.msclkid || touch.fbclid,
+    touch.utmSource ||
+    touch.utmMedium ||
+    touch.utmCampaign ||
+    touch.utmTerm ||
+    touch.utmContent ||
+    touch.gclid ||
+    touch.msclkid ||
+    touch.fbclid,
   );
-  if (!safeRead<AttributionTouch>(FIRST_TOUCH_KEY)) safeWrite(FIRST_TOUCH_KEY, touch);
+  if (!safeRead<AttributionTouch>(FIRST_TOUCH_KEY))
+    safeWrite(FIRST_TOUCH_KEY, touch);
   if (hasCampaignSignal || !safeRead<AttributionTouch>(LAST_TOUCH_KEY)) {
     safeWrite(LAST_TOUCH_KEY, touch);
   }
 }
 
 export function getAttribution() {
-  if (typeof window === "undefined") return { firstTouch: null, lastTouch: null };
+  if (typeof window === "undefined")
+    return { firstTouch: null, lastTouch: null };
   return {
     firstTouch: safeRead<AttributionTouch>(FIRST_TOUCH_KEY),
     lastTouch: safeRead<AttributionTouch>(LAST_TOUCH_KEY),
@@ -201,8 +244,12 @@ export function getAttribution() {
 
 export function getTrackingConsent(): TrackingConsent | null {
   if (typeof window === "undefined") return null;
-  if ((navigator as Navigator & { globalPrivacyControl?: boolean }).globalPrivacyControl) return { analytics: false, ads: false, updatedAt: "" };
-  return safeRead<TrackingConsent>(CONSENT_KEY);
+  if (
+    (navigator as Navigator & { globalPrivacyControl?: boolean })
+      .globalPrivacyControl
+  )
+    return { analytics: false, ads: false, updatedAt: "" };
+  return consentOverride ?? safeRead<TrackingConsent>(CONSENT_KEY);
 }
 
 export function setTrackingConsent(choice: ConsentChoice) {
@@ -212,10 +259,14 @@ export function setTrackingConsent(choice: ConsentChoice) {
     updatedAt: new Date().toISOString(),
   };
   if (!consent.analytics) lastPageView = null;
-  safeWrite(CONSENT_KEY, consent);
+  consentOverride = consent;
+  const persisted = safeWrite(CONSENT_KEY, consent);
   applyGoogleConsent(consent);
   initializeVendors(consent);
-  window.dispatchEvent(new CustomEvent("aeo:consent-updated", { detail: consent }));
+  window.dispatchEvent(
+    new CustomEvent("aeo:consent-updated", { detail: consent }),
+  );
+  return persisted;
 }
 
 export function initializeAnalytics() {
@@ -227,23 +278,119 @@ export function initializeAnalytics() {
   initialized = true;
 }
 
-function eventContext() {
-  return { page_path: window.location.pathname, page_location: window.location.origin + window.location.pathname, page_referrer: "" };
+const knownPaths = new Set([
+  "/",
+  "/dashboard",
+  "/sign-in",
+  "/sign-up",
+  "/verify-email",
+  "/forgot-password",
+  "/reset-password",
+  "/unsubscribe",
+  "/projects",
+  "/site-scan",
+  "/recommended-tools",
+  "/admin",
+  "/pricing",
+  "/upgrade",
+  "/methodology",
+  "/about",
+  "/contact",
+  "/privacy",
+  "/terms",
+  "/google-data-use",
+  "/best-aeo-tools",
+  "/best-geo-optimization-tools",
+  "/how-to-rank-in-chatgpt",
+  "/what-is-answer-engine-optimization",
+  "/how-to-appear-in-ai-search",
+  "/free-aeo-audit-tool",
+  "/ai-visibility-checker",
+  "/chatgpt-citation-tracker",
+  "/aeo-software",
+  "/ai-visibility-software",
+  "/geo-software-for-agencies",
+  "/ai-citation-readiness-benchmark",
+  "/changelog",
+  "/content-effort-for-seo-and-ai-search",
+  "/seo-geo-priorities-2026",
+  "/google-crawl-dates-and-indexing",
+  "/improve-service-pages-for-ai-search",
+  "/show-first-party-experience-seo",
+  "/seo-content-quality-vs-filler",
+  "/create-content-ai-can-cite",
+  "/content-audit-original-research-checklist",
+  "/document-expertise-methodology",
+  "/seo",
+  "/actions",
+  "/ai-visibility",
+]);
+function measurementContext(path = window.location.pathname) {
+  const clean = path.split(/[?#]/, 1)[0].replace(/\/$/, "") || "/";
+  const privateMatch =
+    /^\/(results|simulate|seo|actions|ai-visibility)\/[^/]+$/.exec(clean);
+  const publicMatch = /^\/(vs)\/[^/]+$/.exec(clean);
+  const pagePath = knownPaths.has(clean)
+    ? clean
+    : privateMatch
+      ? `/${privateMatch[1]}/:id`
+      : publicMatch
+        ? `/${publicMatch[1]}/:slug`
+        : "/not-found";
+  return {
+    page_path: pagePath,
+    page_location: window.location.origin + pagePath,
+    page_referrer: "",
+    page_title: knownPaths.has(clean)
+      ? document.title
+      : "AEO Improvement: " + pagePath,
+  };
 }
 
 function safeParameters(parameters: Record<string, unknown>) {
-  const allowed = new Set(["landing_variant", "has_store_url", "billing_period", "source", "plan", "billing_interval", "current_plan", "method", "article_slug", "focus_channel", "value", "currency"]);
-  return Object.fromEntries(Object.entries(parameters).filter(([key, value]) => allowed.has(key) && (typeof value === "boolean" ? true : typeof value === "number" ? Number.isFinite(value) : typeof value === "string" && /^[a-zA-Z0-9 _.-]{1,100}$/.test(value))));
+  const allowed = new Set([
+    "landing_variant",
+    "has_store_url",
+    "billing_period",
+    "source",
+    "plan",
+    "billing_interval",
+    "current_plan",
+    "method",
+    "article_slug",
+    "focus_channel",
+    "value",
+    "currency",
+  ]);
+  return Object.fromEntries(
+    Object.entries(parameters).filter(
+      ([key, value]) =>
+        allowed.has(key) &&
+        (typeof value === "boolean"
+          ? true
+          : typeof value === "number"
+            ? Number.isFinite(value)
+            : typeof value === "string" &&
+              /^[a-zA-Z0-9 _.-]{1,100}$/.test(value)),
+    ),
+  );
 }
 
-export function trackEvent(name: string, parameters: Record<string, unknown> = {}) {
+export function trackEvent(
+  name: string,
+  parameters: Record<string, unknown> = {},
+) {
   if (typeof window === "undefined") return;
   if (!initialized) initializeAnalytics();
   const consent = getTrackingConsent();
   if (!consent?.analytics) return;
 
-  const payload = { ...safeParameters(parameters), ...eventContext() };
-  try { sendGoogle("event", name, payload); } catch { /* Measurement must not interrupt the product. */ }
+  const payload = { ...safeParameters(parameters), ...measurementContext() };
+  try {
+    sendGoogle("event", name, payload);
+  } catch {
+    /* Measurement must not interrupt the product. */
+  }
   if (consent.ads) {
     const metaStandardEvents: Record<string, string> = {
       sign_up_complete: "CompleteRegistration",
@@ -266,21 +413,23 @@ export function trackPageView(path: string) {
   if (lastPageView === cleanPath) return;
   lastPageView = cleanPath;
   sendGoogle("event", "page_view", {
-    page_path: path.split(/[?#]/, 1)[0],
-    page_title: document.title,
-    page_location: window.location.origin + window.location.pathname,
-    page_referrer: "",
+    ...measurementContext(path),
   });
   if (consent.ads) sendMeta("track", "PageView");
 }
 
 export function trackGoogleAdsConversion(
   kind: "signup" | "activation",
-  parameters: { value?: number; currency?: string; transactionId?: string } = {},
+  parameters: {
+    value?: number;
+    currency?: string;
+    transactionId?: string;
+  } = {},
 ) {
   const consent = getTrackingConsent();
   if (!consent?.ads || !GOOGLE_ADS_ID) return;
-  const label = kind === "signup" ? GOOGLE_ADS_SIGNUP_LABEL : GOOGLE_ADS_ACTIVATION_LABEL;
+  const label =
+    kind === "signup" ? GOOGLE_ADS_SIGNUP_LABEL : GOOGLE_ADS_ACTIVATION_LABEL;
   if (!label) return;
 
   sendGoogle("event", "conversion", {
