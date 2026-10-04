@@ -74,6 +74,10 @@ function sendGoogle(...args: unknown[]) {
   try { window.gtag?.(...args); } catch { /* Measurement must not interrupt the product. */ }
 }
 
+function sendMeta(...args: unknown[]) {
+  try { window.fbq?.(...args); } catch { /* Measurement must not interrupt the product. */ }
+}
+
 function ensureGtag() {
   window.dataLayer = window.dataLayer || [];
   if (!window.gtag) {
@@ -137,7 +141,7 @@ function initializeMeta(consent: TrackingConsent) {
   window.fbq = fbq;
   window._fbq = fbq;
   addScript("aeo-meta-pixel", "https://connect.facebook.net/en_US/fbevents.js");
-  window.fbq("init", META_PIXEL_ID);
+  sendMeta("init", META_PIXEL_ID);
 }
 
 function initializeLinkedIn(consent: TrackingConsent) {
@@ -247,8 +251,8 @@ export function trackEvent(name: string, parameters: Record<string, unknown> = {
       checkout_started: "InitiateCheckout",
     };
     const standardEvent = metaStandardEvents[name];
-    if (standardEvent) window.fbq?.("track", standardEvent, payload);
-    else window.fbq?.("trackCustom", name, payload);
+    if (standardEvent) sendMeta("track", standardEvent, payload);
+    else sendMeta("trackCustom", name, payload);
   }
 }
 
@@ -267,7 +271,7 @@ export function trackPageView(path: string) {
     page_location: window.location.origin + window.location.pathname,
     page_referrer: "",
   });
-  if (consent.ads) window.fbq?.("track", "PageView");
+  if (consent.ads) sendMeta("track", "PageView");
 }
 
 export function trackGoogleAdsConversion(

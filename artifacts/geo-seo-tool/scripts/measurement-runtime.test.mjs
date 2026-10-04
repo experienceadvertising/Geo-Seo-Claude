@@ -81,6 +81,7 @@ for (const [project, file, key, choice] of [
     assert.equal(event[2].email, undefined);
     assert.equal(event[2].page_location, "https://example.com/privacy");
     assert.ok(!JSON.stringify(calls).includes("private@example.com"));
+    r.win.fbq = () => { throw new Error("blocked Meta vendor"); };
     r.win.gtag = () => {
       throw new Error("vendor blocked");
     };
