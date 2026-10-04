@@ -209,6 +209,7 @@ router.post("/auth/register", registerRateLimiter, async (req, res): Promise<voi
 
   logger.info({ userId, email: normalizedEmail, baseUrl }, "User registered");
   res.status(201).json({
+    accepted: true,
     message: "Account created! Check your email for a verification link.",
   });
 });

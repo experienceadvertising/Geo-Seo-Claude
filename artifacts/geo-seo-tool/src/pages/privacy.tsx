@@ -1,3 +1,4 @@
+import { CookieConsent } from "@/components/cookie-consent";
 import { ExternalLink } from "lucide-react";
 import { Link } from "wouter";
 import { SEO } from "@/components/seo";
@@ -56,7 +57,7 @@ const sections = [
   {
     title: "Your choices",
     body: [
-      "Choose Essential only in the cookie notice to prevent analytics and advertising tags from loading.",
+      "Choose Essential only in the analytics preferences on this page to prevent analytics and advertising tags from loading.",
       "Disconnect Google integrations from the product and manage third-party permissions from the relevant provider.",
       "Use unsubscribe links in marketing emails. Essential service, security, and billing messages may still be sent while your account remains active.",
       "Turn browser notifications off from the browser where you enabled them. Scheduled notifications are limited to a weekly task and one weekly authority-source strategy; completed audits, simulations, and material monitoring changes can trigger separate event updates. Expired or rejected browser endpoints are removed after the push provider reports that they no longer work.",
@@ -79,6 +80,7 @@ export default function PrivacyPage() {
           This policy explains what AEO Improvement collects and how that information is used.
         </p>
       </div>
+      <CookieConsent />
       <div className="mt-10 space-y-9">
         {sections.map((section) => (
           <section key={section.title} className="space-y-3">

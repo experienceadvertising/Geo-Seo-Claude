@@ -51,6 +51,7 @@ const META_PIXEL_ID = import.meta.env.VITE_META_PIXEL_ID as string | undefined;
 const LINKEDIN_PARTNER_ID = import.meta.env.VITE_LINKEDIN_PARTNER_ID as string | undefined;
 
 let initialized = false;
+let lastPageView: string | null = null;
 
 function safeRead<T>(key: string): T | null {
   try {
@@ -69,11 +70,15 @@ function safeWrite(key: string, value: unknown) {
   }
 }
 
+function sendGoogle(...args: unknown[]) {
+  try { window.gtag?.(...args); } catch { /* Measurement must not interrupt the product. */ }
+}
+
 function ensureGtag() {
   window.dataLayer = window.dataLayer || [];
   if (!window.gtag) {
-    window.gtag = (...args: any[]) => {
-      window.dataLayer!.push(args);
+    window.gtag = function () {
+      window.dataLayer!.push(arguments);
     };
   }
 }
@@ -89,7 +94,7 @@ function addScript(id: string, src: string) {
 
 function applyGoogleConsent(consent: TrackingConsent | null) {
   ensureGtag();
-  window.gtag!("consent", consent ? "update" : "default", {
+  sendGoogle("consent", consent ? "update" : "default", {
     analytics_storage: consent?.analytics ? "granted" : "denied",
     ad_storage: consent?.ads ? "granted" : "denied",
     ad_user_data: consent?.ads ? "granted" : "denied",
@@ -99,22 +104,24 @@ function applyGoogleConsent(consent: TrackingConsent | null) {
 }
 
 function initializeGoogle(consent: TrackingConsent) {
-  if (!consent.analytics && !consent.ads) return;
+  if ((!consent.analytics && !consent.ads) || (navigator as Navigator & { globalPrivacyControl?: boolean }).globalPrivacyControl) return;
   const loaderId = GA4_MEASUREMENT_ID || GOOGLE_ADS_ID;
   if (!loaderId) return;
 
   ensureGtag();
   addScript("aeo-google-tag", `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(loaderId)}`);
-  window.gtag!("js", new Date());
+  sendGoogle("js", new Date());
 
   if (consent.analytics && GA4_MEASUREMENT_ID) {
-    window.gtag!("config", GA4_MEASUREMENT_ID, {
+    sendGoogle("config", GA4_MEASUREMENT_ID, {
       send_page_view: false,
+    page_location: window.location.origin + window.location.pathname,
+    page_referrer: "",
       allow_google_signals: consent.ads,
     });
   }
   if (consent.ads && GOOGLE_ADS_ID) {
-    window.gtag!("config", GOOGLE_ADS_ID);
+    sendGoogle("config", GOOGLE_ADS_ID);
   }
 }
 
@@ -144,6 +151,7 @@ function initializeLinkedIn(consent: TrackingConsent) {
 }
 
 function initializeVendors(consent: TrackingConsent) {
+  if ((navigator as Navigator & { globalPrivacyControl?: boolean }).globalPrivacyControl) return;
   initializeGoogle(consent);
   initializeMeta(consent);
   initializeLinkedIn(consent);
@@ -152,7 +160,7 @@ function initializeVendors(consent: TrackingConsent) {
 function readTouch(): AttributionTouch {
   const params = new URLSearchParams(window.location.search);
   return {
-    landingPage: window.location.pathname + window.location.search,
+    landingPage: window.location.pathname,
     referrer: document.referrer || null,
     capturedAt: new Date().toISOString(),
     utmSource: params.get("utm_source"),
@@ -189,6 +197,7 @@ export function getAttribution() {
 
 export function getTrackingConsent(): TrackingConsent | null {
   if (typeof window === "undefined") return null;
+  if ((navigator as Navigator & { globalPrivacyControl?: boolean }).globalPrivacyControl) return { analytics: false, ads: false, updatedAt: "" };
   return safeRead<TrackingConsent>(CONSENT_KEY);
 }
 
@@ -198,6 +207,7 @@ export function setTrackingConsent(choice: ConsentChoice) {
     ads: choice === "all",
     updatedAt: new Date().toISOString(),
   };
+  if (!consent.analytics) lastPageView = null;
   safeWrite(CONSENT_KEY, consent);
   applyGoogleConsent(consent);
   initializeVendors(consent);
@@ -214,14 +224,12 @@ export function initializeAnalytics() {
 }
 
 function eventContext() {
-  const { firstTouch, lastTouch } = getAttribution();
-  return {
-    page_path: window.location.pathname + window.location.search,
-    first_utm_source: firstTouch?.utmSource ?? undefined,
-    first_utm_campaign: firstTouch?.utmCampaign ?? undefined,
-    last_utm_source: lastTouch?.utmSource ?? undefined,
-    last_utm_campaign: lastTouch?.utmCampaign ?? undefined,
-  };
+  return { page_path: window.location.pathname, page_location: window.location.origin + window.location.pathname, page_referrer: "" };
+}
+
+function safeParameters(parameters: Record<string, unknown>) {
+  const allowed = new Set(["source", "plan", "billing_interval", "current_plan", "method", "article_slug", "focus_channel", "value", "currency"]);
+  return Object.fromEntries(Object.entries(parameters).filter(([key, value]) => allowed.has(key) && (typeof value === "number" ? Number.isFinite(value) : typeof value === "string" && /^[a-zA-Z0-9 _.-]{1,100}$/.test(value))));
 }
 
 export function trackEvent(name: string, parameters: Record<string, unknown> = {}) {
@@ -230,8 +238,8 @@ export function trackEvent(name: string, parameters: Record<string, unknown> = {
   const consent = getTrackingConsent();
   if (!consent?.analytics) return;
 
-  const payload = { ...eventContext(), ...parameters };
-  window.gtag?.("event", name, payload);
+  const payload = { ...safeParameters(parameters), ...eventContext() };
+  try { sendGoogle("event", name, payload); } catch { /* Measurement must not interrupt the product. */ }
   if (consent.ads) {
     const metaStandardEvents: Record<string, string> = {
       sign_up_complete: "CompleteRegistration",
@@ -250,10 +258,14 @@ export function trackPageView(path: string) {
   const consent = getTrackingConsent();
   if (!consent?.analytics) return;
 
-  window.gtag?.("event", "page_view", {
-    page_path: path,
+  const cleanPath = path.split(/[?#]/, 1)[0];
+  if (lastPageView === cleanPath) return;
+  lastPageView = cleanPath;
+  sendGoogle("event", "page_view", {
+    page_path: path.split(/[?#]/, 1)[0],
     page_title: document.title,
-    page_location: window.location.href,
+    page_location: window.location.origin + window.location.pathname,
+    page_referrer: "",
   });
   if (consent.ads) window.fbq?.("track", "PageView");
 }
@@ -267,7 +279,7 @@ export function trackGoogleAdsConversion(
   const label = kind === "signup" ? GOOGLE_ADS_SIGNUP_LABEL : GOOGLE_ADS_ACTIVATION_LABEL;
   if (!label) return;
 
-  window.gtag?.("event", "conversion", {
+  sendGoogle("event", "conversion", {
     send_to: `${GOOGLE_ADS_ID}/${label}`,
     value: parameters.value,
     currency: parameters.currency,

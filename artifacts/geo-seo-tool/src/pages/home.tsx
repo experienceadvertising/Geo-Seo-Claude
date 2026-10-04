@@ -1131,6 +1131,10 @@ function SignedInDashboard() {
         if (source === "post_signup_landing" || rawUrl === pendingAuditUrl.current) {
           removeBrowserStorage("pendingAuditUrl");
         }
+        if (!Number.isSafeInteger(data?.id) || data.id <= 0) {
+          toast({ title: "Audit was not confirmed", description: "Please try again.", variant: "destructive" });
+          return;
+        }
         trackEvent("audit_completed", { source });
         if (!readBrowserStorage("aeo.activationConverted")) {
           writeBrowserStorage("aeo.activationConverted", "true");
