@@ -1,3 +1,4 @@
+import { isAcceptedRegistration } from "@/lib/accepted-registration";
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Loader2, Sparkles, CheckCircle2 } from "lucide-react";
@@ -53,14 +54,16 @@ export default function SignUpPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (loading) return;
     setError(null);
     setLoading(true);
     trackEvent("sign_up_started");
     try {
-      await customFetch("/api/auth/register", {
+      const result = await customFetch<{ accepted?: boolean }>("/api/auth/register", {
         method: "POST",
         body: JSON.stringify({ firstName, email, password, referralCode, onboardingUrl: readBrowserStorage("pendingAuditUrl") }),
       });
+      if (!isAcceptedRegistration(result)) throw new Error("Registration was not confirmed. Please try again.");
       trackEvent("sign_up_complete");
       trackGoogleAdsConversion("signup");
       setDone(true);

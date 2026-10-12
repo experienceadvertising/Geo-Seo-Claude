@@ -304,7 +304,7 @@ export interface AiReferralReport {
 export async function fetchAiReferrals(accessToken: string, propertyId: string, days = 28): Promise<AiReferralReport> {
   const property = propertyId.startsWith("properties/") ? propertyId : `properties/${propertyId}`;
   const body = {
-    dateRanges: [{ startDate: `${days}daysAgo`, endDate: "today" }],
+    dateRanges: [{ startDate: `${days - 1}daysAgo`, endDate: "today" }],
     dimensions: [{ name: "date" }, { name: "sessionSource" }],
     metrics: [{ name: "sessions" }],
     dimensionFilter: {

@@ -925,8 +925,8 @@ export default function SimulatePage() {
             <CardHeader>
               <div className="flex items-start justify-between flex-wrap gap-4">
                 <div>
-                  <CardTitle>AI Visibility Score</CardTitle>
-                  <CardDescription>Across {result.summary.totalPrompts} prompts and {result.summary.perEngine.length} engines</CardDescription>
+                  <CardTitle>Sampled answer visibility</CardTitle>
+                  <CardDescription>Across {result.summary.totalPrompts} prompts and {result.summary.perEngine.length} engines. Rates use successful responses only. These are provider API responses to your saved prompts, not consumer search impressions. This sample does not measure all AI searches, clicks, or revenue.</CardDescription>
                 </div>
                 <div className="flex gap-6 items-start">
                   <div className="text-center">
@@ -934,10 +934,10 @@ export default function SimulatePage() {
                       result.summary.overallVisibilityScore >= 60 ? "text-green-600"
                       : result.summary.overallVisibilityScore >= 30 ? "text-yellow-600"
                       : "text-red-600"
-                    }`}>{result.summary.overallVisibilityScore}</div>
+                    }`}>{result.summary.perEngine.some((engine: any) => engine.errorRate < 1) ? result.summary.overallVisibilityScore : "Unavailable"}</div>
                     <div className="text-xs text-muted-foreground">/ 100 visibility</div>
                   </div>
-                  {result.summary.topicalBreadthScore !== undefined && (
+                  {result.summary.topicalBreadthScore !== undefined && result.summary.perEngine.some((engine: any) => engine.errorRate < 1) && (
                     <div className="text-center border-l pl-6">
                       <div className={`text-5xl font-bold ${
                         result.summary.topicalBreadthScore >= 60 ? "text-green-600"
@@ -948,7 +948,7 @@ export default function SimulatePage() {
                         / 100 breadth
                         <Info
                           className="h-3 w-3 shrink-0 text-muted-foreground/50"
-                          aria-label="Topical breadth: % of prompts where you were mentioned by at least one engine. Measures how wide your coverage is across the topic cluster."
+                          aria-label="Topical breadth: percentage of prompts with a successful response where at least one engine mentioned you. This is sampled answer coverage, not search rankings."
                         />
                       </div>
                     </div>
@@ -968,11 +968,11 @@ export default function SimulatePage() {
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Mentioned</span>
-                        <span className="font-mono font-semibold">{pct(e.mentionRate)}</span>
+                        <span className="font-mono font-semibold">{e.errorRate >= 1 ? "Unavailable" : pct(e.mentionRate)}</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Cited</span>
-                        <span className="font-mono font-semibold">{pct(e.citationRate)}</span>
+                        <span className="font-mono font-semibold">{e.errorRate >= 1 ? "Unavailable" : pct(e.citationRate)}</span>
                       </div>
                       {e.avgFirstPosition !== null && e.avgFirstPosition !== undefined && (
                         <div className="flex justify-between text-sm">

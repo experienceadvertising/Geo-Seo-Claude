@@ -217,12 +217,12 @@ function GoogleAnalyticsSection() {
           <div className="space-y-4">
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-bold">{referrals.data.totalSessions.toLocaleString()}</span>
-              <span className="text-sm text-muted-foreground">AI-referred sessions · last {referrals.data.days} days · {referrals.data.property}</span>
+              <span className="text-sm text-muted-foreground">Recognized AI-source sessions · {referrals.data.days}-day window · {referrals.data.property}</span>
             </div>
+            <p className="text-xs text-muted-foreground">Across the selected GA4 property, using this app’s source-host allowlist. This differs from GA4’s AI Assistant channel. Google AI Overviews and AI Mode traffic is included in Organic Search by GA4. These sessions do not measure citations or conversions.</p>
             {referrals.data.totalSessions === 0 ? (
               <p className="text-sm text-muted-foreground">
-                No AI-referral sessions recorded in this window yet. As ChatGPT, Perplexity and others start citing you,
-                their referred visits will show up here.
+                No sessions from the app’s recognized AI-source hosts were recorded in this window. Zero recorded referrals does not mean zero AI citations.
               </p>
             ) : (
               <>

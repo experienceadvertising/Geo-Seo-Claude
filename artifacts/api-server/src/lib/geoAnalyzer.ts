@@ -1,3 +1,4 @@
+import { observedRobotsText } from "./measurementAvailability";
 import * as cheerio from "cheerio";
 import { analyzeBrandAuthority, type BrandSignal } from "./brandAuthority";
 import {
@@ -253,8 +254,8 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
     timeoutMs: 10000,
     maxBytes: 512 * 1024,
   })
-    .then((r) => r.text())
-    .catch(() => "");
+    .then(async (r) => ({ text: observedRobotsText(r.status, r.headers.get("content-type") || "", await r.text()), error: null as Error | null }))
+    .catch(() => ({ text: "", error: new Error("Crawler access could not be verified because robots.txt could not be fetched. Try again later.") }));
   // Validate llms.txt content, not just HTTP 200 — SPA catch-all routes
   // serve index.html for ANY path, which previously counted as "has
   // llms.txt" (a false positive that inflated two scores).
@@ -501,7 +502,9 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
 
   // Check robots.txt (fetched concurrently above)
   const crawlerStatuses: CrawlerStatus[] = [];
-  const robotsTxt = await robotsPromise;
+  const robotsObservation = await robotsPromise;
+  if (robotsObservation.error) throw robotsObservation.error;
+  const robotsTxt = robotsObservation.text;
 
   const rules = parseRobotsTxt(robotsTxt);
   for (const crawler of AI_CRAWLERS) {
@@ -683,26 +686,26 @@ export async function analyzeUrl(url: string): Promise<AnalysisResult> {
     {
       platform: "ChatGPT / OpenAI",
       score: Math.round((botAllowed("OAI-SearchBot") ? 50 : 10) + citabilityScore * 0.3 + schemaScore * 0.2),
-      status: botAllowed("OAI-SearchBot") ? "Crawler allowed" : "Crawler blocked",
-      recommendations: ["Allow OAI-SearchBot (ChatGPT Search index) and ChatGPT-User in robots.txt", "Use FAQ schema for Q&A content", "Include citations and statistics"],
+      status: botAllowed("OAI-SearchBot") ? "Allowed by observed robots rules; actual access unverified" : "Disallowed by observed robots rules",
+      recommendations: ["Allow OAI-SearchBot (ChatGPT Search index) and ChatGPT-User in robots.txt", "Make answers useful and supported by visible evidence; structured data is not a citation guarantee", "Include citations and statistics"],
     },
     {
       platform: "Claude / Anthropic",
       score: Math.round((botAllowed("Claude-SearchBot") ? 50 : 10) + citabilityScore * 0.3 + contentQualityScore * 0.2),
-      status: botAllowed("Claude-SearchBot") ? "Crawler allowed" : "Crawler blocked",
+      status: botAllowed("Claude-SearchBot") ? "Allowed by observed robots rules; actual access unverified" : "Disallowed by observed robots rules",
       recommendations: ["Allow Claude-SearchBot and Claude-User in robots.txt", "Focus on E-E-A-T signals", "Create comprehensive topic clusters"],
     },
     {
       platform: "Perplexity",
       score: Math.round((botAllowed("PerplexityBot") ? 50 : 10) + citabilityScore * 0.35 + contentQualityScore * 0.15),
-      status: botAllowed("PerplexityBot") ? "Crawler allowed" : "Crawler blocked",
+      status: botAllowed("PerplexityBot") ? "Allowed by observed robots rules; actual access unverified" : "Disallowed by observed robots rules",
       recommendations: ["Allow PerplexityBot and Perplexity-User in robots.txt", "Provide factual, citation-ready content", "Link to authoritative sources"],
     },
     {
       platform: "Google AI Overviews",
       score: Math.round(technicalScore * 0.4 + citabilityScore * 0.3 + schemaScore * 0.3),
-      status: hasNoIndex ? "Blocked" : hasHttps ? "Eligible" : "At Risk",
-      recommendations: ["AI Overviews source from the regular Google index — keep Googlebot allowed and rankings strong", "Use HowTo and FAQ schemas", "Build topical authority with comprehensive coverage"],
+      status: hasNoIndex ? "Noindex detected" : hasNoSnippet ? "Snippet restriction detected" : "No noindex found; Google indexing and AI appearance unverified",
+      recommendations: ["AI Overviews source from the regular Google index — keep Googlebot allowed and rankings strong", "Use supported structured data only when it matches visible page content; no special AI schema is required", "Build topical authority with comprehensive coverage"],
     },
   ];
 

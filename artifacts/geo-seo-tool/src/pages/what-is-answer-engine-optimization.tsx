@@ -271,6 +271,7 @@ export default function WhatIsAEO() {
             <ul className="space-y-2 text-sm">
               <li><Link href="/how-to-rank-in-chatgpt" className="text-emerald-600 hover:underline">How to rank in ChatGPT</Link></li>
               <li><Link href="/how-to-appear-in-ai-search" className="text-emerald-600 hover:underline">How to appear in AI search results across all major engines</Link></li>
+              <li><Link href="/how-to-measure-ai-search-visibility" className="text-emerald-600 hover:underline">How to measure visibility in AI search</Link></li>
               <li><Link href="/best-aeo-tools" className="text-emerald-600 hover:underline">Best AEO tools in 2026</Link></li>
               <li><Link href="/methodology" className="text-emerald-600 hover:underline">AEO Improvement methodology</Link></li>
             </ul>

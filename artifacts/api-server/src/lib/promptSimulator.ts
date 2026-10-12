@@ -1,3 +1,4 @@
+import { requireSuccessfulSample } from "./measurementAvailability";
 import OpenAI from "openai";
 import Anthropic from "@anthropic-ai/sdk";
 import { safeFetch } from "./safeFetch";
@@ -57,11 +58,11 @@ async function withRetry<T>(
 function sanitizeError(err: unknown): string {
   const msg = err instanceof Error ? err.message : String(err);
   // Return friendly messages for common failure patterns before stripping
-  if (/timed?\s*out/i.test(msg)) return "Request timed out — the engine took too long to respond";
-  if (/rate.?limit|429|RATELIMIT|too many requests/i.test(msg)) return "Rate limit reached — try again in a few minutes";
-  if (/401|unauthorized|invalid.?key|authentication failed/i.test(msg)) return "Authentication error — service configuration issue";
-  if (/503|502|504|service\s+unavailable|bad\s+gateway/i.test(msg)) return "Service temporarily unavailable — try again later";
-  if (/ECONNREFUSED|ENOTFOUND|fetch\s+failed|network\s+error/i.test(msg)) return "Network error — could not reach the engine";
+  if (/timed?\s*out/i.test(msg)) return "Request timed out; the engine took too long to respond";
+  if (/rate.?limit|429|RATELIMIT|too many requests/i.test(msg)) return "Rate limit reached; try again in a few minutes";
+  if (/401|unauthorized|invalid.?key|authentication failed/i.test(msg)) return "Authentication error; service configuration issue";
+  if (/503|502|504|service\s+unavailable|bad\s+gateway/i.test(msg)) return "Service temporarily unavailable; try again later";
+  if (/ECONNREFUSED|ENOTFOUND|fetch\s+failed|network\s+error/i.test(msg)) return "Network error; could not reach the engine";
   // Strip credentials, raw JSON blobs, and URLs before showing remainder
   return msg
     .replace(/https?:\/\/\S+/g, "[url]")
@@ -71,7 +72,7 @@ function sanitizeError(err: unknown): string {
     .replace(/\{[^}]{0,600}\}/gs, "")
     .replace(/\s{2,}/g, " ")
     .trim()
-    .slice(0, 200) || "An unexpected error occurred — try again";
+    .slice(0, 200) || "An unexpected error occurred; try again";
 }
 
 export type EngineId = "chatgpt" | "claude" | "gemini" | "perplexity";
@@ -112,7 +113,7 @@ export interface SimulationSummary {
   overallVisibilityScore: number;
   /**
    * % of prompts (0-100) where the brand was mentioned by at least ONE engine.
-   * Measures topical breadth — how wide your coverage is across the query cluster.
+   * Measures topical breadth; how wide your coverage is across the query cluster.
    * Based on Zyppy Signal "Fan-out Rank breadth" factor (score 8.9/10).
    */
   topicalBreadthScore: number;
@@ -191,7 +192,7 @@ function extractFanoutTopics(results: PromptResultRow[]): Array<{ topic: string;
       for (const rawUrl of er.citedUrls) {
         try {
           const { hostname, pathname } = new URL(rawUrl);
-          // Skip the user's own domain — we want what ELSE is being cited
+          // Skip the user's own domain; we want what ELSE is being cited
           const segments = pathname.split("/").filter(s => s.length > 3 && !/^\d+$/.test(s) && !/^[a-f0-9-]{20,}$/.test(s));
           for (const seg of segments) {
             // Split slug-style segments into words
@@ -244,7 +245,7 @@ const MULTI_PART_SUFFIXES = new Set([
 function rootDomain(hostname: string): string {
   const parts = hostname.toLowerCase().replace(/^www\./, "").split(".");
   if (parts.length <= 2) return parts.join(".");
-  // Handle multi-label public suffixes (.co.uk etc.) — use last 3 labels there.
+  // Handle multi-label public suffixes (.co.uk etc.); use last 3 labels there.
   const lastTwo = parts.slice(-2).join(".");
   if (MULTI_PART_SUFFIXES.has(lastTwo) && parts.length >= 3) {
     return parts.slice(-3).join(".");
@@ -354,13 +355,13 @@ async function queryClaude(prompt: string): Promise<{ text: string; urls: string
 
 // Resolve a vertexaisearch.cloud.google.com/grounding-api-redirect URL to its
 // final destination via HEAD with redirect-follow. Returns the original URL on
-// any failure so we never lose data — but the resolved URL is what we want for
+// any failure so we never lose data; but the resolved URL is what we want for
 // citation matching (otherwise every Gemini citation looks like
 // "vertexaisearch.cloud.google.com" and matches nothing).
 async function resolveRedirect(url: string, timeoutMs = 5000): Promise<string> {
   try {
     // Grounding URIs come from the model, not the user, but they're still an
-    // uncontrolled outbound target — route them through the SSRF-guarded
+    // uncontrolled outbound target; route them through the SSRF-guarded
     // fetcher (which re-validates every redirect hop) instead of raw fetch.
     const res = await safeFetch(url, { method: "HEAD", timeoutMs, maxBytes: 64 * 1024 });
     return res.finalUrl || url;
@@ -397,7 +398,7 @@ async function queryGemini(prompt: string): Promise<{ text: string; urls: string
 
   // Resolve grounding-api-redirect URLs in parallel so citation matching
   // sees the real destination (stripe.com/docs/...) instead of the opaque
-  // vertexaisearch host. 5s per URL, capped — this never blocks the engine
+  // vertexaisearch host. 5s per URL, capped; this never blocks the engine
   // beyond ~5s even if some redirects hang.
   const rawGroundingUris: string[] = Array.isArray(grounding?.groundingChunks)
     ? grounding.groundingChunks.map((c: any) => c?.web?.uri).filter((u: any): u is string => typeof u === "string")
@@ -512,7 +513,7 @@ export async function runPromptSimulation(
   // Each prompt runs all engines in parallel. We additionally run several
   // prompts in parallel (bounded concurrency) so a 25-prompt simulation
   // doesn't serialize on the prompt axis. Concurrency=3 is a safe middle
-  // ground — high enough to cut wall-clock time roughly 3x, low enough to
+  // ground; high enough to cut wall-clock time roughly 3x, low enough to
   // stay well under per-engine rate limits even with 4 engines × 3 prompts
   // in flight.
   const PROMPT_CONCURRENCY = 3;
@@ -532,6 +533,8 @@ export async function runPromptSimulation(
   await Promise.all(
     Array.from({ length: Math.min(PROMPT_CONCURRENCY, prompts.length) }, worker),
   );
+
+  requireSuccessfulSample(results);
 
   // Build summary
   const perEngine = engines.map((e) => {
@@ -582,11 +585,12 @@ export async function runPromptSimulation(
   // Topical breadth score: % of prompts where the brand was mentioned by ANY engine.
   // Maps to Zyppy Signal "Fan-out Rank breadth" (score 8.9/10): ranking for multiple
   // related queries in the topic cluster, not just head terms, drives AI citation frequency.
-  const promptsWithAnyMention = results.filter((row) =>
+  const observedPrompts = results.filter(row => row.engines.some(answer => !answer.error));
+  const promptsWithAnyMention = observedPrompts.filter((row) =>
     row.engines.some((er) => er.brandMentioned && !er.error)
   ).length;
-  const topicalBreadthScore = prompts.length > 0
-    ? Math.round((promptsWithAnyMention / prompts.length) * 100)
+  const topicalBreadthScore = observedPrompts.length > 0
+    ? Math.round((promptsWithAnyMention / observedPrompts.length) * 100)
     : 0;
 
   // Fan-out topics: topics inferred from cited URL paths (zero extra API cost).

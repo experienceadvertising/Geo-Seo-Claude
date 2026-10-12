@@ -975,10 +975,7 @@ export default function Results({ view = "audit", auditId }: { view?: "audit" | 
                 <Bot className="h-4 w-4" /> Platform Scores
               </CardTitle>
               <p className="text-xs text-muted-foreground mt-2 leading-relaxed normal-case font-sans tracking-normal">
-                Per-engine readiness, how prepared this page is for each AI platform, weighted by what that engine values
-                (e.g. citability for Perplexity, E-E-A-T for Claude). These are independent of your overall AEO score, which
-                blends the six category scores above; a page can be strong on individual platforms yet still have a lower
-                overall score.
+                These are internal page-readiness heuristics based on crawler rules and content signals. Their weights are our own, not published platform ranking factors. They do not measure Google indexing, AI citations, referral visits, or business outcomes. Confirm those separately with provider evidence.
               </p>
             </CardHeader>
             <CardContent className="p-0">
@@ -989,7 +986,7 @@ export default function Results({ view = "audit", auditId }: { view?: "audit" | 
                       <span className="font-bold text-sm">{platform.platform}</span>
                       <ScoreBadge score={platform.score} className="px-2 py-0.5 text-xs" />
                     </div>
-                    <div className="text-xs text-muted-foreground">{platform.status}</div>
+                    <div className="text-xs text-muted-foreground">{platform.status === "Eligible" ? "No noindex found; Google indexing and AI appearance unverified" : platform.status}</div>
                   </div>
                 ))}
               </div>
