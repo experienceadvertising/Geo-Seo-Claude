@@ -13,6 +13,7 @@
 import { releases, changelogSchema } from "./changelog-content.mjs";
 import { readFileSync } from "node:fs";
 const strategyGuides = JSON.parse(readFileSync(new URL("../src/data/strategy-guides.json", import.meta.url), "utf8"));
+const visibilityMeasurementGuide = JSON.parse(readFileSync(new URL("../src/data/ai-search-visibility-measurement.json", import.meta.url), "utf8"));
 const SITE = "https://aeoimprovement.com";
 
 const PUBLISHER = {
@@ -172,6 +173,12 @@ export const ROUTES = [
     publishedTime: "2026-05-05",
     modifiedTime: "2026-07-22",
     authorName: AUTHOR.name,
+    staticRelatedLinks: [
+      {
+        label: "How to Measure Visibility in AI Search Without Guessing",
+        href: "/how-to-measure-ai-search-visibility",
+      },
+    ],
     jsonLd: [
       articleLd({
         path: "/what-is-answer-engine-optimization",
@@ -524,6 +531,35 @@ export const ROUTES = [
     path, title: `${title} | AEO Improvement`, description, ogType: "article", publishedTime: "2026-08-17", modifiedTime: "2026-08-17", authorName: AUTHOR.name,
     jsonLd: [articleLd({ path, title, description, datePublished: "2026-08-17", dateModified: "2026-08-17" }), breadcrumbLd([{ name: "Home", path: "/" }, { name: "Resources", path: "/content-effort-for-seo-and-ai-search" }, { name: title, path }])],
   })),
+  {
+    path: visibilityMeasurementGuide.path,
+    title: visibilityMeasurementGuide.seoTitle,
+    h1: visibilityMeasurementGuide.title,
+    description: visibilityMeasurementGuide.description,
+    ogType: "article",
+    publishedTime: visibilityMeasurementGuide.published,
+    modifiedTime: visibilityMeasurementGuide.published,
+    authorName: visibilityMeasurementGuide.byline,
+    visibilityGuide: visibilityMeasurementGuide,
+    jsonLd: [
+      {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        headline: visibilityMeasurementGuide.title,
+        description: visibilityMeasurementGuide.description,
+        datePublished: visibilityMeasurementGuide.published,
+        dateModified: visibilityMeasurementGuide.published,
+        author: { "@type": "Organization", name: "AEO Improvement" },
+        publisher: PUBLISHER,
+        mainEntityOfPage: { "@type": "WebPage", "@id": `${SITE}${visibilityMeasurementGuide.path}` },
+      },
+      breadcrumbLd([
+        { name: "Home", path: "/" },
+        { name: "Guides", path: "/what-is-answer-engine-optimization" },
+        { name: visibilityMeasurementGuide.title, path: visibilityMeasurementGuide.path },
+      ]),
+    ],
+  },
   ...strategyGuides.map((guide) => ({
     path: guide.path,
     title: `${guide.title} | AEO Improvement`,

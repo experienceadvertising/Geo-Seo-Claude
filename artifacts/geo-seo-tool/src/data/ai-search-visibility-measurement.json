@@ -1,0 +1,443 @@
+{
+  "path": "/how-to-measure-ai-search-visibility",
+  "title": "How to Measure Visibility in AI Search Without Guessing",
+  "seoTitle": "Measure AI Search Visibility Without Guessing | AEO Improvement",
+  "description": "Use one repeatable worksheet to separate indexing, Google AI-feature impressions, Bing citations, AI referrals, and business outcomes with clear limits.",
+  "published": "2026-10-10",
+  "byline": "AEO Improvement editorial",
+  "intro": "AI-search visibility is not one metric. A page can be indexed without appearing in an AI feature, cited without sending a visit, and visited without producing a qualified outcome. This guide gives you a repeatable, source-labeled worksheet to record each signal separately, compare like with like, and state only what the evidence supports.",
+  "takeaways": [
+    "Treat indexing as an eligibility check, not proof of AI visibility.",
+    "Google reports impressions for supported Search generative AI features when the report is available for a property. Bing reports citation activity, not impressions or visits.",
+    "Analytics records visits. A citation does not mean someone clicked, and a visit does not mean someone converted.",
+    "Choose a business outcome before comparing periods, then use the same definition, page scope, filters, and attribution window.",
+    "Keep platform metrics in their original units. Do not combine impressions, citations, sessions, and leads into one visibility score."
+  ],
+  "contents": [
+    {
+      "id": "four-records",
+      "label": "Treat visibility as four records"
+    },
+    {
+      "id": "indexing",
+      "label": "1. Check indexing"
+    },
+    {
+      "id": "ai-platform-reports",
+      "label": "2. Record supported AI impressions and citations"
+    },
+    {
+      "id": "referral-visits",
+      "label": "3. Measure referral visits"
+    },
+    {
+      "id": "business-outcomes",
+      "label": "4. Connect business outcomes"
+    },
+    {
+      "id": "worksheet",
+      "label": "Copy the repeatable worksheet"
+    },
+    {
+      "id": "worked-example",
+      "label": "Worked example"
+    },
+    {
+      "id": "repeatable-questions",
+      "label": "Choose repeatable customer questions"
+    },
+    {
+      "id": "interpretation-limits",
+      "label": "Interpret the limits"
+    },
+    {
+      "id": "next-action",
+      "label": "Choose the next action"
+    }
+  ],
+  "illustration": {
+    "alt": "A four-lane measurement map keeps indexing, AI-feature impressions or citations, referral visits, and business outcomes distinct while showing the page and date range as shared context.",
+    "caption": "Connect the records by page and date range. Keep their units and meanings separate."
+  },
+  "sections": [
+    {
+      "id": "four-records",
+      "heading": "Treat visibility as four records, not one score",
+      "paragraphs": [
+        "A useful measurement starts by asking what each source actually observed. Search Console can report whether a page is indexed and, when the generative AI report is available, impressions in named Google Search features. Bing Webmaster Tools reports citation activity across its supported AI experiences. Analytics records visits that arrive at your site. Your CRM or commerce system records the outcomes your business defined.",
+        "Those records answer different questions. They are not interchangeable stages in a guaranteed funnel. A citation may not produce a click. A visit may not be attributable to an AI source. An outcome may follow several visits, a sales conversation, or work that happened outside the measured session."
+      ],
+      "bullets": [
+        "Indexing: can this URL appear in a search feature that requires an indexed page?",
+        "Supported AI reporting: did a provider report an impression or citation for this URL or property?",
+        "Referral visits: did a session reach this page from a source that analytics can identify?",
+        "Business outcomes: did a defined lead, sale, or other goal occur within the attribution rules you chose?"
+      ],
+      "sourceIds": []
+    },
+    {
+      "id": "indexing",
+      "heading": "1. Check indexing before interpreting visibility",
+      "paragraphs": [
+        "Inspect the exact canonical URL in Google Search Console and record the verdict, inspection date, canonical information, and last crawl date when it is available. A missing crawl date is a missing observation, not a date to estimate. If you use a different search provider's index report, keep that result separate rather than treating one provider's status as universal.",
+        "Google says a page must be indexed and eligible to appear with a Search snippet to be shown as a supporting link in AI Overviews or AI Mode. Those checks establish technical eligibility only. They do not show that the page received an AI-feature impression or citation."
+      ],
+      "bullets": [
+        "Record the URL Inspection result and the date you checked it.",
+        "Copy Google's reported last crawl date only when one is present.",
+        "Compare the selected canonical URL, not a redirect or a similar URL variant.",
+        "Keep the status beside the other evidence, but do not count it as an impression, citation, visit, or outcome."
+      ],
+      "sourceIds": [
+        "google-ai-features"
+      ]
+    },
+    {
+      "id": "ai-platform-reports",
+      "heading": "2. Record supported AI impressions and citations separately",
+      "paragraphs": [
+        "Google's June 3, 2026 Search Central announcement introduced separate Search and Discover generative AI performance reports. The Search report help page currently describes impressions for AI Overviews and AI Mode, with page, country, device, and date views. Discover has its own report. Google notes that the Search report may not appear when a property has not received enough generative AI impressions. Record the report and filters you actually used; do not turn a missing report into zero.",
+        "Google's AI-features guide also says AI Overviews and AI Mode activity is included in the overall Search Console Performance report under Web. Treat the dedicated view as a way to inspect supported AI-feature impressions, not a second batch of traffic to add to the overall total.",
+        "Bing Webmaster Tools uses a different unit. Its AI Performance report describes citation activity across Microsoft Copilot, AI-generated summaries in Bing, and selected partner integrations. It reports cited pages, citation counts, and grouped grounding queries. Bing's documentation explicitly says citations do not represent clicks, traffic, or engagement. The June 2026 additions for Intents, Topics, Citation Share, and Compare are described as preview capabilities, so mark them as previews if you use them.",
+        "Do not add Google's impressions to Bing's citations or compare their percentages as if their denominators matched. Keep the provider, feature, page, date range, geography, device, and available filters beside each number. Use the report's own definition and export rather than a manual sample of prompts."
+      ],
+      "bullets": [
+        "Google: record the Search generative AI impressions report if it is available for the property. Keep Discover data separate.",
+        "Bing: record citations, cited pages, and grounding-query context from AI Performance. Do not label them impressions or visits.",
+        "If you run a prompt sample, label it as a sample. Record the prompt, date, location, engine, and setup; it is not provider-wide impression or citation volume."
+      ],
+      "sourceIds": [
+        "google-report-announcement",
+        "google-report-help",
+        "google-ai-features",
+        "bing-performance",
+        "bing-june-update"
+      ]
+    },
+    {
+      "id": "referral-visits",
+      "heading": "3. Measure referral visits in analytics",
+      "paragraphs": [
+        "In GA4, filter landing pages to the URL being measured and inspect sessions alongside the available session source, medium, and channel. Keep a consistent rule for which sources count as AI referrals. Google Analytics' current default AI Assistant channel includes sources such as ChatGPT, Gemini, DeepSeek, Copilot, and Grok, but explicitly excludes Google AI Overviews and AI Mode. A default channel name is therefore not a complete inventory of AI-origin visits.",
+        "Referrer information may be absent, grouped differently, or changed by a provider, browser, app, or redirect. Keep identifiable sources separate from direct or unattributed sessions. Do not assign every unexplained visit to AI search. If you use campaign tags on links you control, document the tagging rule and do not assume a tagged link identifies every organic AI citation."
+      ],
+      "bullets": [
+        "Use sessions, not citation counts, as the visit measure.",
+        "Filter to the same destination URL and equal-length comparison periods.",
+        "Save the source and channel definition you used so a later report can be reproduced.",
+        "Treat unattributed traffic as unknown unless the evidence supports a source."
+      ],
+      "sourceIds": [
+        "ga4-channels",
+        "google-ai-features"
+      ]
+    },
+    {
+      "id": "business-outcomes",
+      "heading": "4. Connect business outcomes without overclaiming",
+      "paragraphs": [
+        "Before collecting numbers, define the outcome that matters for this page: a qualified inquiry, booked consultation, trial activation, purchase, or another event your team can verify. Name the source system, event definition, attribution window, and whether the value is a count or an amount. If a lead becomes qualified in a CRM, use the CRM status rather than treating every form submission as revenue.",
+        "Compare outcomes for the same page and time windows where the data allows it. Record campaign changes, sales-cycle delays, tracking changes, and other known context. A higher citation count followed by a lead is a sequence, not proof that the citation caused the lead. Use attribution labels as the rules of a report, not as a causal experiment."
+      ],
+      "bullets": [
+        "Write down the exact event or CRM stage before looking at the result.",
+        "Use the same attribution window and conversion definition in both periods.",
+        "Report counts and value with their denominator and scope. Small counts can move sharply in percentage terms.",
+        "Use language such as 'occurred during the period' unless the study design supports a causal claim."
+      ],
+      "sourceIds": [
+        "google-ai-features",
+        "ga4-channels"
+      ]
+    },
+    {
+      "id": "interpretation-limits",
+      "heading": "Limits to keep on the record",
+      "paragraphs": [
+        "Provider reports are bounded by the features, properties, dates, filters, and data each provider makes available. Google's report availability can depend on reported impression volume. Bing says its data is aggregated and is not a complete log of every time content may have been referenced; its grounding queries are generalized. A provider report is useful evidence within that scope, not a census of every AI answer.",
+        "A comparison can also change for reasons outside your edit: user demand, query mix, seasonality, competing pages, content freshness, model changes, partner refresh cycles, tracking changes, and sales-cycle timing. Keep an annotation for material changes and resist explaining a movement with one cause when several changed together.",
+        "A simple percent change is (comparison value minus baseline value) divided by baseline value, multiplied by 100. When the baseline is zero, report the absolute difference and write 'percentage change not defined' rather than inventing a percentage. For small counts, show both the raw numbers and the percentage."
+      ],
+      "bullets": [
+        "Do not treat an unavailable report, missing crawl date, or unclassified visit as zero.",
+        "Do not combine impressions, citations, sessions, and outcomes into a single score.",
+        "Do not infer a provider-wide trend from a small hand-run prompt sample.",
+        "Do not claim causation from a before-and-after comparison without a design that can rule out alternatives."
+      ],
+      "sourceIds": [
+        "google-report-help",
+        "bing-performance",
+        "bing-june-update"
+      ]
+    },
+    {
+      "id": "repeatable-questions",
+      "heading": "Choose repeatable questions from real demand",
+      "paragraphs": [
+        "Start with Search Console queries, customer questions, and sales objections for the page you are measuring. Cyrus Shepard’s Zyppy Signal fan-out framework suggests beginning with a topic where your page already has search visibility, then reviewing related questions before measuring again. This is attributed practitioner guidance for choosing useful coverage, not a confirmed ranking rule.",
+        "Keep the same question set for comparisons and save the exact prompt, engine and model, collection date, locale, retrieval setup, answer, and cited URLs. Fan-out queries and answers can vary between runs. A sample can reveal an inaccurate brand description or missing evidence, but it cannot establish market-wide citation share."
+      ],
+      "sourceIds": [
+        "zyppy-fan-out"
+      ]
+    },
+    {
+      "id": "next-action",
+      "heading": "Choose the next action after the baseline",
+      "paragraphs": [
+        "Use the worksheet to find the first evidence-backed gap. If indexing is unresolved, investigate access and canonical signals before interpreting low AI visibility. If the page is eligible but platform reports show little activity, review the page and the questions it serves without promising a citation. If visibility is reported but visits or qualified outcomes are absent, check the landing-page experience, referral attribution, and the offer before publishing more content.",
+        "This guide focuses on measurement, not the order for fixing every SEO or GEO problem. Use the related guides to choose an action after the baseline or interpret a crawl-date observation."
+      ],
+      "relatedLinks": [
+        {
+          "label": "SEO and GEO Priorities: What to Fix First",
+          "href": "/seo-geo-priorities-2026",
+          "context": "Use this guide to choose what to fix first."
+        },
+        {
+          "label": "Why Google Stops Indexing Pages: What Crawl Dates Can Tell You",
+          "href": "/google-crawl-dates-and-indexing",
+          "context": "Use this guide to interpret a reported crawl date."
+        }
+      ],
+      "sourceIds": []
+    }
+  ],
+  "worksheet": {
+    "intro": "Choose one page and two equal-length periods. Use the same property, timezone, geography, device filters, and outcome definition in both. Fill in what each source actually reports; use 'not available' or 'unknown' where evidence is missing.",
+    "setupFields": [
+      {
+        "name": "page_url",
+        "label": "Page URL",
+        "placeholder": "Paste the canonical URL you are measuring"
+      },
+      {
+        "name": "property",
+        "label": "Property or site",
+        "placeholder": "Name the Search Console and analytics property"
+      },
+      {
+        "name": "baseline_period",
+        "label": "Baseline period",
+        "placeholder": "Start date to end date"
+      },
+      {
+        "name": "comparison_period",
+        "label": "Comparison period",
+        "placeholder": "An equal-length period"
+      },
+      {
+        "name": "data_retrieved",
+        "label": "Date the reports were retrieved",
+        "placeholder": "Record when you exported or checked each provider report"
+      },
+      {
+        "name": "timezone_filters",
+        "label": "Timezone and filters",
+        "placeholder": "Country, device, search feature, source rule"
+      },
+      {
+        "name": "outcome_definition",
+        "label": "Business outcome definition",
+        "placeholder": "Qualified lead, activation, sale, or other verified event"
+      },
+      {
+        "name": "changes_notes",
+        "label": "Changes and context",
+        "placeholder": "Page edits, campaigns, tracking changes, seasonality, or known gaps"
+      }
+    ],
+    "periodLabels": {
+      "baseline": "Baseline",
+      "comparison": "Comparison"
+    },
+    "signals": [
+      {
+        "id": "indexing",
+        "title": "1. Indexing status",
+        "description": "A technical eligibility check, not a visibility count.",
+        "source": "Search Console URL Inspection",
+        "fields": [
+          {
+            "key": "index_status",
+            "label": "Verdict, inspection date, canonical, and crawl date if shown",
+            "placeholder": "Record the reported values; do not estimate a missing crawl date"
+          }
+        ],
+        "guardrail": "Keep status and dates as text. An indexed verdict does not establish an impression or citation."
+      },
+      {
+        "id": "ai-reports",
+        "title": "2. Supported AI impressions and citations",
+        "description": "Keep each provider's report, feature, and unit in its own row.",
+        "source": "Google Search Console and Bing Webmaster Tools",
+        "fields": [
+          {
+            "key": "google_ai_impressions",
+            "label": "Google Search generative AI impressions",
+            "unit": "impressions",
+            "placeholder": "Enter the reported value or 'not available'"
+          },
+          {
+            "key": "bing_citations",
+            "label": "Bing AI Performance citations",
+            "unit": "citations",
+            "placeholder": "Enter the reported value or 'not available'"
+          },
+          {
+            "key": "bing_cited_pages_queries",
+            "label": "Bing cited pages and grounding-query notes",
+            "unit": "notes",
+            "placeholder": "Record the report context or export reference"
+          }
+        ],
+        "guardrail": "Google impressions and Bing citations have different definitions and are not additive or directly comparable."
+      },
+      {
+        "id": "referral-visits",
+        "title": "3. Referral visits",
+        "description": "Count sessions identified by the same source rule in both periods.",
+        "source": "Analytics, filtered to this landing page",
+        "fields": [
+          {
+            "key": "ai_sessions",
+            "label": "AI-attributed sessions",
+            "unit": "sessions",
+            "placeholder": "Enter sessions under your documented source rule"
+          },
+          {
+            "key": "session_sources",
+            "label": "Source and channel notes",
+            "unit": "notes",
+            "placeholder": "List recognized sources and any unattributed traffic"
+          }
+        ],
+        "guardrail": "A reported citation is not a visit. Unattributed sessions remain unknown."
+      },
+      {
+        "id": "business-outcomes",
+        "title": "4. Business outcomes",
+        "description": "Choose one verified event and preserve its definition.",
+        "source": "Analytics key event, CRM, booking, or commerce system",
+        "fields": [
+          {
+            "key": "outcome_count_value",
+            "label": "Outcome count and value",
+            "unit": "count or amount",
+            "placeholder": "Enter only the selected, verified outcome"
+          },
+          {
+            "key": "attribution_rule",
+            "label": "Attribution window and rule",
+            "unit": "notes",
+            "placeholder": "Record the same window and rule for both periods"
+          }
+        ],
+        "guardrail": "A before-and-after change does not prove that an AI impression or citation caused the outcome."
+      }
+    ],
+    "downloadLabel": "Download completed worksheet as CSV",
+    "resetLabel": "Clear worksheet"
+  },
+  "workedExample": {
+    "heading": "Worked example: read each change in its own unit",
+    "notice": "Hypothetical values created only to demonstrate the arithmetic. These are not AEO Improvement, customer, or research results.",
+    "intro": "Suppose the same page is indexed in two equal four-week periods. The provider reports and the site's analytics show the following:",
+    "rows": [
+      {
+        "metric": "Indexing",
+        "baseline": "Indexed",
+        "comparison": "Indexed",
+        "change": "No status change",
+        "interpretation": "The eligibility check stayed the same. It does not establish AI visibility."
+      },
+      {
+        "metric": "Google generative AI impressions",
+        "baseline": "80",
+        "comparison": "100",
+        "change": "+20, or +25%",
+        "interpretation": "The Google report's impression count rose for its reported scope."
+      },
+      {
+        "metric": "Bing AI citations",
+        "baseline": "4",
+        "comparison": "6",
+        "change": "+2, or +50%",
+        "interpretation": "Bing reported two more citations in this small sample. It is not a 50% increase in visits."
+      },
+      {
+        "metric": "Identified AI referral sessions",
+        "baseline": "8",
+        "comparison": "10",
+        "change": "+2, or +25%",
+        "interpretation": "Analytics attributed two more sessions under the chosen source rule."
+      },
+      {
+        "metric": "Qualified leads",
+        "baseline": "1",
+        "comparison": "1",
+        "change": "No change",
+        "interpretation": "The selected business outcome did not increase in this example."
+      }
+    ],
+    "closing": "The defensible summary is that the reported counts changed while qualified leads did not. The sample does not show that citations generated the sessions, that sessions generated the lead, or that an edit caused any movement. Check the raw counts, report availability, attribution rules, and other changes before choosing a next step."
+  },
+  "sources": [
+    {
+      "id": "google-report-announcement",
+      "label": "Google Search Central: Introducing Search Generative AI performance reports in Search Console, June 3, 2026",
+      "url": "https://developers.google.com/search/blog/2026/06/gen-ai-performance-reports"
+    },
+    {
+      "id": "google-report-help",
+      "label": "Google Search Console Help: Generative AI performance report (Search)",
+      "url": "https://support.google.com/webmasters/answer/16984139?hl=en"
+    },
+    {
+      "id": "google-ai-features",
+      "label": "Google Search Central: AI features and your website",
+      "url": "https://developers.google.com/search/docs/appearance/ai-features"
+    },
+    {
+      "id": "bing-performance",
+      "label": "Bing Webmaster Blog: Introducing AI Performance in Bing Webmaster Tools",
+      "url": "https://blogs.bing.com/webmaster/2026/2/Introducing-AI-Performance-in-Bing-Webmaster-Tools-Public-Preview/"
+    },
+    {
+      "id": "bing-june-update",
+      "label": "Bing Search Blog: New AI Visibility Insights in Bing Webmaster Tools, June 2026",
+      "url": "https://blogs.bing.com/search/2026/6/New-AI-Visibility-Insights-in-Bing-Webmaster-Tools-Intents-Topics-Citation-Share-Compare/"
+    },
+    {
+      "id": "ga4-channels",
+      "label": "Google Analytics Help: Default channel group",
+      "url": "https://support.google.com/analytics/answer/9756891?hl=en"
+    },
+    {
+      "id": "zyppy-fan-out",
+      "label": "Cyrus Shepard, Zyppy Signal: Fan-out Framework, practitioner guidance",
+      "url": "https://signal.zyppy.com/p/fan-out-framework"
+    }
+  ],
+  "related": [
+    {
+      "label": "SEO and GEO Priorities: What to Fix First",
+      "href": "/seo-geo-priorities-2026"
+    },
+    {
+      "label": "Why Google Stops Indexing Pages: What Crawl Dates Can Tell You",
+      "href": "/google-crawl-dates-and-indexing"
+    },
+    {
+      "label": "How to Appear in AI Search Results: A Practical Guide",
+      "href": "/how-to-appear-in-ai-search"
+    }
+  ],
+  "callToAction": {
+    "heading": "Start with a measurable page",
+    "body": "Choose the page, source, period, and outcome you can verify before making changes.",
+    "label": "Run a free page audit",
+    "href": "/free-aeo-audit-tool"
+  },
+  "reviewed": "2026-10-10"
+}

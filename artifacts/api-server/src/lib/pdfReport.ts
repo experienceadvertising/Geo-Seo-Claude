@@ -138,11 +138,8 @@ export function generateAuditPdf(audit: AuditRow, stream: Writable): Promise<voi
   doc.fontSize(10).font("Helvetica").text("/ 100", 50, heroY + 78, { width: 130, align: "center" });
 
   // Scores breakdown beside hero
-  const scores = asObj<Scores>(audit.scores, {
-    citability: 0, brandAuthority: 0, aiCrawlerAccess: 0,
-    technicalSeo: 0, structuredData: 0, platformOptimization: 0,
-  });
-  const items: Array<[string, number, number]> = [
+  const scores = asObj<Partial<Scores>>(audit.scores, {});
+  const items: Array<[string, number | undefined, number]> = [
     ["Citability", scores.citability, 25],
     ["Brand Authority", scores.brandAuthority, 20],
     ["AI Crawler Access", scores.aiCrawlerAccess, 20],
@@ -156,11 +153,12 @@ export function generateAuditPdf(audit: AuditRow, stream: Writable): Promise<voi
   for (const [name, score, weight] of items) {
     doc.fillColor(COLORS.ink).font("Helvetica-Bold").fontSize(9).text(name, bx, by, { width: bw - 60, continued: true });
     doc.fillColor(COLORS.muted).font("Helvetica").text(`  (${weight}%)`, { continued: false });
-    doc.fillColor(scoreColor(score)).font("Helvetica-Bold").fontSize(10).text(`${Math.round(score)}/100`, bx + bw - 50, by, { width: 50, align: "right" });
+    const observedScore = typeof score === "number" && Number.isFinite(score) ? score : null;
+    doc.fillColor(observedScore === null ? COLORS.muted : scoreColor(observedScore)).font("Helvetica-Bold").fontSize(10).text(observedScore === null ? "Unavailable" : `${Math.round(observedScore)}/100`, bx + bw - 60, by, { width: 60, align: "right" });
     // bar
     const barY = by + 14;
     doc.roundedRect(bx, barY, bw, 4, 2).fillColor(COLORS.border).fill();
-    doc.roundedRect(bx, barY, bw * (score / 100), 4, 2).fillColor(scoreColor(score)).fill();
+    if (observedScore !== null && observedScore > 0) doc.roundedRect(bx, barY, bw * (observedScore / 100), 4, 2).fillColor(scoreColor(observedScore)).fill();
     by += 24;
   }
   doc.y = Math.max(heroY + 120, by + 10);
@@ -213,7 +211,7 @@ export function generateAuditPdf(audit: AuditRow, stream: Writable): Promise<voi
   // Brand authority
   const signals = asArray<BrandSignal>(audit.brandSignals);
   if (signals.length > 0) {
-    sectionHeader(doc, `Brand Authority Signals${audit.brandName ? ` — ${audit.brandName}` : ""}`);
+    sectionHeader(doc, `Brand Authority Signals${audit.brandName ? `; ${audit.brandName}` : ""}`);
     for (const s of signals) {
       const y = doc.y;
       const state = s.state ?? (s.found ? "found" : "not_found");
@@ -226,7 +224,7 @@ export function generateAuditPdf(audit: AuditRow, stream: Writable): Promise<voi
     }
   }
 
-  // GEO Recommendations — each labeled with its source. For research +
+  // GEO Recommendations; each labeled with its source. For research +
   // internal_benchmark recs we render the citation inline (academic-paper
   // style); for practitioner_consensus we show a short [industry consensus]
   // tag inline and aggregate citations into a numbered footnotes section at
@@ -236,7 +234,7 @@ export function generateAuditPdf(audit: AuditRow, stream: Writable): Promise<voi
     if (doc.y > doc.page.height - 250) doc.addPage();
     sectionHeader(doc, "Prioritized GEO Recommendations");
     doc.fontSize(8).fillColor(COLORS.muted).font("Helvetica-Oblique")
-      .text("Each recommendation is labeled with its source — peer-reviewed research, internal benchmark, or practitioner consensus. Apply top items first.");
+      .text("Each recommendation is labeled with its source; peer-reviewed research, internal benchmark, or practitioner consensus. Apply top items first.");
 
     // Detect v1 schema (any rec carries a `source` field). Same .some() check
     // the API uses to compute recommendationsSchemaVersion. Mirrored on the
@@ -249,7 +247,7 @@ export function generateAuditPdf(audit: AuditRow, stream: Writable): Promise<voi
     }
     doc.moveDown(0.4);
 
-    // Collect practitioner_consensus citations as we render — emit numbered
+    // Collect practitioner_consensus citations as we render; emit numbered
     // footnotes after the rec list. Map citation→footnote index so the same
     // citation isn't repeated.
     const footnoteIndexByCitation = new Map<string, number>();
@@ -266,7 +264,7 @@ export function generateAuditPdf(audit: AuditRow, stream: Writable): Promise<voi
       doc.fillColor("white").fontSize(8).font("Helvetica-Bold")
         .text(String(r.priority ?? "").toUpperCase(), 50, y + 3, { width: 58, align: "center" });
 
-      // Title is always rendered cleanly in bold — NO source suffix mixed in.
+      // Title is always rendered cleanly in bold; NO source suffix mixed in.
       // Source attribution is a separate muted/italic 8pt line below, so the
       // visual hierarchy makes practitioner_consensus clearly lighter than
       // the bold title (architect fix: previously the [industry consensus]
@@ -279,7 +277,7 @@ export function generateAuditPdf(audit: AuditRow, stream: Writable): Promise<voi
       doc.fillColor(COLORS.ink).fontSize(9).font("Helvetica")
         .text(String(r.detail ?? ""), 116, doc.y + 2, { width: doc.page.width - 166, lineGap: 1 });
 
-      // Source-attribution line. Always muted, oblique, 8pt — lighter than
+      // Source-attribution line. Always muted, oblique, 8pt; lighter than
       // both the bold title and the regular-weight detail body.
       const src = r.source;
       if (src) {
@@ -295,7 +293,7 @@ export function generateAuditPdf(audit: AuditRow, stream: Writable): Promise<voi
           doc.fillColor(COLORS.muted).fontSize(8).font("Helvetica-Oblique")
             .text(`[industry consensus ${n}]`, 116, doc.y + 2, { width: doc.page.width - 166 });
         } else {
-          // research (verified or pending) and internal_benchmark — render
+          // research (verified or pending) and internal_benchmark; render
           // the citation inline. Pending-verification gets an explicit flag.
           const flag = src.type === "research" && !src.verified
             ? " · pending verification"
@@ -318,7 +316,7 @@ export function generateAuditPdf(audit: AuditRow, stream: Writable): Promise<voi
       doc.moveDown(0.2);
       for (const fn of footnotes) {
         doc.fillColor(COLORS.muted).fontSize(8).font("Helvetica")
-          .text(`${fn.n}. ${fn.citation}${fn.url ? ` — ${fn.url}` : ""}`, 50, doc.y, { width: doc.page.width - 100, lineGap: 1 });
+          .text(`${fn.n}. ${fn.citation}${fn.url ? `; ${fn.url}` : ""}`, 50, doc.y, { width: doc.page.width - 100, lineGap: 1 });
       }
     }
   }
@@ -353,13 +351,15 @@ export function generateAuditPdf(audit: AuditRow, stream: Writable): Promise<voi
   const platforms = asArray<Platform>(audit.platforms);
   if (platforms?.length) {
     if (doc.y > doc.page.height - 250) doc.addPage();
-    sectionHeader(doc, "Platform Optimization");
+    sectionHeader(doc, "Platform Readiness Heuristics");
+    doc.fillColor(COLORS.muted).fontSize(9).font("Helvetica").text("Internal scoring weights, not provider ranking factors. These scores do not establish indexing, AI citation, traffic, or business results.");
+    doc.moveDown(0.5);
     for (const p of platforms) {
       const y = doc.y;
       const score = Number.isFinite(p.score) ? p.score : 0;
       doc.fillColor(COLORS.ink).fontSize(11).font("Helvetica-Bold").text(String(p.platform ?? "Platform"), 50, y, { continued: true });
       doc.fillColor(scoreColor(score)).text(`   ${Math.round(score)}/100`, { continued: true });
-      doc.fillColor(COLORS.muted).fontSize(9).font("Helvetica").text(`   ${p.status ?? ""}`);
+      doc.fillColor(COLORS.muted).fontSize(9).font("Helvetica").text(`   ${p.status === "Eligible" ? "Indexing and AI appearance unverified" : p.status ?? ""}`);
       doc.moveDown(0.2);
       asArray<string>(p.recommendations).forEach((rec) => {
         doc.fillColor(COLORS.muted).fontSize(9).font("Helvetica").text(`  · ${String(rec)}`, 60);

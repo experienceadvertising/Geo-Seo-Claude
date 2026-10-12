@@ -123,7 +123,86 @@ function buildHeadInjection(route) {
   return lines.join("\n    ");
 }
 
+function buildVisibilityGuideContent(guide) {
+  const sourceById = new Map(guide.sources.map((source) => [source.id, source]));
+  const renderSources = (ids) => {
+    if (!ids?.length) return "";
+    const links = ids.map((id) => sourceById.get(id)).filter(Boolean)
+      .map((source) => `<li><a href="${escapeHtmlAttr(source.url)}" target="_blank" rel="noreferrer noopener">${escapeHtmlText(source.label)}</a></li>`)
+      .join("");
+    return `<ul aria-label="Supporting sources" style="margin:14px 0;padding-left:22px;font-size:14px">${links}</ul>`;
+  };
+  const contents = guide.contents.map((item) =>
+    `<li style="margin:5px 0"><a href="#${escapeHtmlAttr(item.id)}">${escapeHtmlText(item.label)}</a></li>`,
+  ).join("");
+  const takeaways = guide.takeaways.map((item) =>
+    `<li style="margin:8px 0">${escapeHtmlText(item)}</li>`,
+  ).join("");
+  const sections = guide.sections.map((section) => {
+    const paragraphs = section.paragraphs.map((paragraph) => `<p>${escapeHtmlText(paragraph)}</p>`).join("");
+    const bullets = section.bullets?.length
+      ? `<ul style="padding-left:24px">${section.bullets.map((item) => `<li style="margin:8px 0">${escapeHtmlText(item)}</li>`).join("")}</ul>`
+      : "";
+    const relatedLinks = section.relatedLinks?.length
+      ? `<ul style="padding-left:24px">${section.relatedLinks.map((item) => `<li style="margin:8px 0"><a href="${escapeHtmlAttr(item.href)}">${escapeHtmlText(item.label)}</a> <span>${escapeHtmlText(item.context)}</span></li>`).join("")}</ul>`
+      : "";
+    return `<section id="${escapeHtmlAttr(section.id)}" style="margin-top:36px"><h2>${escapeHtmlText(section.heading)}</h2>${paragraphs}${bullets}${relatedLinks}${renderSources(section.sourceIds)}</section>`;
+  }).join("\n");
+  const setupFields = guide.worksheet.setupFields.map((field) =>
+    `<label style="display:block;margin:10px 0;font-weight:600">${escapeHtmlText(field.label)}<input name="${escapeHtmlAttr(field.name)}" type="text" placeholder="${escapeHtmlAttr(field.placeholder)}" style="display:block;width:100%;min-height:42px;margin-top:5px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;font-weight:400" /></label>`,
+  ).join("");
+  const signalCards = guide.worksheet.signals.map((signal) => {
+    const fields = signal.fields.map((field) => {
+      const name = escapeHtmlText(field.label);
+      const unit = field.unit ? ` <span>(${escapeHtmlText(field.unit)})</span>` : "";
+      return `<div style="margin-top:16px"><p style="margin-bottom:6px;font-weight:600">${name}${unit}</p><label style="display:block;margin:8px 0">${escapeHtmlText(guide.worksheet.periodLabels.baseline)}<input name="${escapeHtmlAttr(`${field.key}_baseline`)}" type="text" placeholder="${escapeHtmlAttr(field.placeholder)}" style="display:block;width:100%;min-height:42px;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px" /></label><label style="display:block;margin:8px 0">${escapeHtmlText(guide.worksheet.periodLabels.comparison)}<input name="${escapeHtmlAttr(`${field.key}_comparison`)}" type="text" placeholder="${escapeHtmlAttr(field.placeholder)}" style="display:block;width:100%;min-height:42px;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px" /></label></div>`;
+    }).join("");
+    return `<fieldset style="min-width:0;margin:14px 0;padding:16px;border:1px solid #cbd5e1;border-radius:12px"><legend style="padding:0 6px;font-weight:700">${escapeHtmlText(signal.title)}</legend><p>${escapeHtmlText(signal.description)}</p><p style="font-size:14px;color:#475569">Source: ${escapeHtmlText(signal.source)}</p>${fields}<p style="font-size:14px;color:#475569">${escapeHtmlText(signal.guardrail)}</p></fieldset>`;
+  }).join("");
+  const exampleRows = guide.workedExample.rows.map((row) =>
+    `<li style="margin:14px 0"><strong>${escapeHtmlText(row.metric)}:</strong> ${escapeHtmlText(row.baseline)} to ${escapeHtmlText(row.comparison)} (${escapeHtmlText(row.change)}). ${escapeHtmlText(row.interpretation)}</li>`,
+  ).join("");
+  const sources = guide.sources.map((source) =>
+    `<li style="margin:8px 0"><a href="${escapeHtmlAttr(source.url)}" target="_blank" rel="noreferrer noopener">${escapeHtmlText(source.label)}</a></li>`,
+  ).join("");
+  const related = guide.related.map((item) =>
+    `<li style="margin:8px 0"><a href="${escapeHtmlAttr(item.href)}">${escapeHtmlText(item.label)}</a></li>`,
+  ).join("");
+  const publishedLabel = new Date(`${guide.published}T12:00:00Z`).toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+
+  return `<main data-static-route="${escapeHtmlAttr(guide.path)}" style="max-width:920px;margin:auto;padding:40px 20px;font-family:system-ui,sans-serif;line-height:1.7;color:#0f172a">
+    <article>
+      <header><p style="font-weight:700;color:#047857">AEO Improvement field guide</p><h1>${escapeHtmlText(guide.title)}</h1><p style="font-size:19px;color:#475569">${escapeHtmlText(guide.intro)}</p><p style="font-size:14px;color:#64748b"><time datetime="${escapeHtmlAttr(guide.published)}">Published ${escapeHtmlText(publishedLabel)}</time> · By ${escapeHtmlText(guide.byline)}</p></header>
+      <figure aria-label="${escapeHtmlAttr(guide.illustration.alt)}" style="margin:28px 0;padding:18px;border:1px solid #dbe4ea;border-radius:16px;background:#f8fafc">
+        <ol style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:0;padding:0;list-style:none">
+          <li style="padding:12px;border-radius:10px;background:#e0f2fe"><strong>01 · Indexing</strong><br />Eligibility check</li>
+          <li style="padding:12px;border-radius:10px;background:#dcfce7"><strong>02 · AI reports</strong><br />Impressions or citations</li>
+          <li style="padding:12px;border-radius:10px;background:#fef3c7"><strong>03 · Visits</strong><br />Analytics sessions</li>
+          <li style="padding:12px;border-radius:10px;background:#ede9fe"><strong>04 · Outcomes</strong><br />Verified business events</li>
+        </ol>
+        <figcaption style="margin-top:12px;color:#475569">${escapeHtmlText(guide.illustration.caption)}</figcaption>
+      </figure>
+      <aside style="margin:26px 0;padding:20px;border:1px solid #a7f3d0;border-radius:14px;background:#ecfdf5"><h2>Key takeaways</h2><ul style="padding-left:22px">${takeaways}</ul></aside>
+      <nav aria-label="On this page" style="margin:26px 0;padding:18px;border:1px solid #dbe4ea;border-radius:14px"><h2>Contents</h2><ol style="padding-left:22px">${contents}</ol></nav>
+      ${sections}
+      <section id="worksheet" style="margin-top:40px"><h2>Copy the repeatable worksheet</h2><p>${escapeHtmlText(guide.worksheet.intro)}</p><div id="ai-visibility-worksheet"><fieldset style="margin:18px 0;padding:16px;border:1px solid #cbd5e1;border-radius:12px"><legend style="padding:0 6px;font-weight:700">Scope and comparison</legend>${setupFields}</fieldset>${signalCards}<button type="button">${escapeHtmlText(guide.worksheet.downloadLabel)}</button> <button type="button">${escapeHtmlText(guide.worksheet.resetLabel)}</button></div></section>
+      <section id="worked-example" style="margin-top:40px"><h2>${escapeHtmlText(guide.workedExample.heading)}</h2><p style="padding:12px;border-left:4px solid #f59e0b;background:#fffbeb">${escapeHtmlText(guide.workedExample.notice)}</p><p>${escapeHtmlText(guide.workedExample.intro)}</p><ul style="padding-left:24px">${exampleRows}</ul><p>${escapeHtmlText(guide.workedExample.closing)}</p></section>
+      <section style="margin-top:40px"><h2>Sources</h2><p>Claims about provider reporting are linked to current official documentation. Values in the worked example are hypothetical.</p><ul style="padding-left:24px">${sources}</ul></section>
+      <section style="margin-top:40px;padding:20px;border:1px solid #dbe4ea;border-radius:14px"><h2>${escapeHtmlText(guide.callToAction.heading)}</h2><p>${escapeHtmlText(guide.callToAction.body)}</p><a href="${escapeHtmlAttr(guide.callToAction.href)}">${escapeHtmlText(guide.callToAction.label)}</a></section>
+      <nav aria-label="Related guides" style="margin-top:40px"><h2>Related guides</h2><ul style="padding-left:24px">${related}</ul></nav>
+    </article>
+  </main>`;
+}
+
 function buildStaticContent(route) {
+  if (route.visibilityGuide) {
+    return buildVisibilityGuideContent(route.visibilityGuide);
+  }
   if (route.strategyGuide) {
     const guide = route.strategyGuide;
     const sections = guide.sections.map((section) => `<section style="margin-top:36px"><h2>${escapeHtmlText(section.heading)}</h2>${section.paragraphs.map((paragraph) => `<p>${escapeHtmlText(paragraph)}</p>`).join("")}</section>`).join("\n");
@@ -149,6 +228,9 @@ function buildStaticContent(route) {
   const faqs = (route.faqs || []).map(({ question, answer }) => (
     `<section style="margin-top:20px"><h3>${escapeHtmlText(question)}</h3><p>${escapeHtmlText(answer)}</p></section>`
   )).join("\n    ");
+  const staticRelated = (route.staticRelatedLinks || []).map(({ label, href }) => (
+    `<li style="margin:8px 0"><a href="${escapeHtmlAttr(href)}">${escapeHtmlText(label)}</a></li>`
+  )).join("");
   if (route.legal) {
     return `<main data-static-route="${escapeHtmlAttr(route.path)}" style="max-width:800px;margin:0 auto;padding:48px 24px;font-family:system-ui,sans-serif;line-height:1.65;color:#0f172a">
       <p style="font-size:14px;font-weight:700;color:#047857">AEO Improvement</p>
@@ -166,6 +248,7 @@ function buildStaticContent(route) {
     <section style="margin-top:32px"><h2>Current methodology</h2><p>Citation-path bots are scored separately from training bots. OAI-SearchBot controls ChatGPT search discovery while GPTBot is used for model training. llms.txt is treated as optional because it is not a demonstrated citation gate. Fresh, server-visible content and explicit last-updated dates receive higher priority.</p></section>
     ${sections}
     ${faqs ? `<section style="margin-top:32px"><h2>Frequently asked questions</h2>${faqs}</section>` : ""}
+    ${staticRelated ? `<nav aria-label="Related guides" style="margin-top:32px"><h2>Related guides</h2><ul style="padding-left:24px">${staticRelated}</ul></nav>` : ""}
     <nav aria-label="Related pages" style="margin-top:32px"><a href="/free-aeo-audit-tool">Run a free AEO audit</a> · <a href="/methodology">Read the methodology</a> · <a href="/ai-citation-readiness-benchmark">View the benchmark</a> · <a href="/pricing">Pricing</a></nav>
     <section style="margin-top:32px"><h2>Primary references</h2><ul><li><a href="https://platform.openai.com/docs/bots">OpenAI crawler documentation</a></li><li><a href="https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data">Google structured data documentation</a></li><li><a href="https://schema.org/Organization">Schema.org Organization</a></li></ul></section>
   </main>`;

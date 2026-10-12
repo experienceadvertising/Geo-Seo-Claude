@@ -166,4 +166,10 @@
     <loc>https://aeoimprovement.com/google-crawl-dates-and-indexing</loc>
     <lastmod>2026-10-02</lastmod>
   </url>
+  <url>
+    <loc>https://aeoimprovement.com/how-to-measure-ai-search-visibility</loc>
+    <lastmod>2026-10-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
 </urlset>

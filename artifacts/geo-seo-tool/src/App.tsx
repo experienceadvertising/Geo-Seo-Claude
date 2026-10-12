@@ -8,7 +8,6 @@ import { AuthProvider, useAuth } from "@/context/AuthContext";
 import Home from "@/pages/home";
 import { Layout } from "@/components/layout";
 import { ErrorBoundary } from "@/components/error-boundary";
-import { CookieConsent } from "@/components/cookie-consent";
 import { RouteTracker } from "@/components/route-tracker";
 import { Loader2 } from "lucide-react";
 
@@ -43,6 +42,7 @@ const TermsPage = lazy(() => import("@/pages/terms"));
 const GoogleDataUsePage = lazy(() => import("@/pages/google-data-use"));
 const ContentEffortGuide = lazy(() => import("@/pages/content-effort-guide"));
 const StrategyGuides = lazy(() => import("@/pages/strategy-guides"));
+const AiSearchVisibilityMeasurementGuide = lazy(() => import("@/pages/ai-search-visibility-measurement"));
 const SeoSolutionPage = lazy(() => import("@/pages/seo-solution-page"));
 const RecommendedTools = lazy(() => import("@/pages/recommended-tools"));
 const WorkspaceSection = lazy(() => import("@/pages/workspace-section"));
@@ -121,6 +121,7 @@ function AppRoutes() {
         <Route path="/how-to-rank-in-chatgpt" component={HowToRankInChatGPT} />
         <Route path="/what-is-answer-engine-optimization" component={WhatIsAEO} />
         <Route path="/how-to-appear-in-ai-search" component={HowToAppearInAISearch} />
+        <Route path="/how-to-measure-ai-search-visibility" component={AiSearchVisibilityMeasurementGuide} />
         <Route path="/free-aeo-audit-tool">{() => <ProductLanding variant="audit" />}</Route>
         <Route path="/ai-visibility-checker">{() => <ProductLanding variant="visibility" />}</Route>
         <Route path="/chatgpt-citation-tracker">{() => <ProductLanding variant="citations" />}</Route>
@@ -173,7 +174,6 @@ function AppShell() {
     <TooltipProvider>
       <RouteTracker />
       <ErrorBoundary><Suspense fallback={<PageLoading />}><AppRoutes /></Suspense></ErrorBoundary>
-      <CookieConsent />
       <Toaster />
     </TooltipProvider>
   );

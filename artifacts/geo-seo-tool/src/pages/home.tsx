@@ -1,3 +1,4 @@
+import { publicAuditUrl } from "@/lib/public-audit-url";
 import React from "react";
 import { SiteTaskQueue } from "@/components/site-task-queue";
 import { sameAuditPage } from "@/lib/auditProgress";
@@ -232,8 +233,7 @@ function SignedOutLanding() {
     }
     const normalized = /^https?:\/\//i.test(enteredUrl) ? enteredUrl : `https://${enteredUrl}`;
     try {
-      const parsed = new URL(normalized);
-      if (!/^https?:$/.test(parsed.protocol) || !parsed.hostname.includes(".")) throw new Error("Invalid URL");
+      const parsed = publicAuditUrl(normalized);
       writeBrowserStorage("pendingAuditUrl", parsed.toString());
       setLocation("/sign-up");
     } catch {
@@ -1114,8 +1114,7 @@ function SignedInDashboard() {
     let normalized = trimmed;
     if (!/^https?:\/\//.test(normalized)) normalized = "https://" + normalized;
     try {
-      const parsed = new URL(normalized);
-      if (!/^https?:$/.test(parsed.protocol) || !parsed.hostname.includes(".")) throw new Error("Invalid URL");
+      const parsed = publicAuditUrl(normalized);
       normalized = parsed.toString();
     } catch {
       toast({
@@ -1130,6 +1129,10 @@ function SignedInDashboard() {
       onSuccess: (data: any) => {
         if (source === "post_signup_landing" || rawUrl === pendingAuditUrl.current) {
           removeBrowserStorage("pendingAuditUrl");
+        }
+        if (!Number.isSafeInteger(data?.id) || data.id <= 0) {
+          toast({ title: "Audit was not confirmed", description: "Please try again.", variant: "destructive" });
+          return;
         }
         trackEvent("audit_completed", { source });
         if (!readBrowserStorage("aeo.activationConverted")) {

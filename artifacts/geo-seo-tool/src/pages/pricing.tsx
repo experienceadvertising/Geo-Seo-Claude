@@ -436,8 +436,7 @@ export default function PricingPage() {
       });
       return;
     }
-    trackEvent("checkout_started", { plan: planId, billing_interval: billing });
-    checkout.mutate({ priceId: price.priceId, plan: planId });
+    checkout.mutate({ priceId: price.priceId, plan: planId, billingInterval: billing });
   }
 
   const starterMonthly = getPriceForPlan("starter", "month");

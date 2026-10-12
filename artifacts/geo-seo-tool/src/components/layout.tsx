@@ -75,11 +75,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-14 max-w-screen-2xl items-center px-4 sm:px-6 lg:px-8">
           <div className="flex mr-4 items-center gap-2">
-            <Link href="/" className="flex items-center gap-2 font-bold text-lg tracking-tight">
+            <Link href="/" className="flex items-center gap-2 font-bold text-lg tracking-tight" aria-label="AEO Improvement">
               <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-teal-600 to-emerald-700 text-white shadow-sm">
                 <Sparkles className="h-4 w-4" />
               </span>
-              <span className="whitespace-nowrap">AEO Improvement</span>
+              <span className="whitespace-nowrap">AEO<span className="hidden sm:inline"> Improvement</span></span>
             </Link>
           </div>
           <div className="flex flex-1 items-center justify-end gap-3">
@@ -394,6 +394,7 @@ function SiteFooter() {
                 { label: "Rank in ChatGPT", href: "/how-to-rank-in-chatgpt" },
                 { label: "Appear in AI Search", href: "/how-to-appear-in-ai-search" },
                 { label: "SEO and GEO priorities", href: "/seo-geo-priorities-2026" },
+                { label: "Measure AI search visibility", href: "/how-to-measure-ai-search-visibility" },
                 { label: "Improve service pages", href: "/improve-service-pages-for-ai-search" },
                 { label: "Best AEO Tools", href: "/best-aeo-tools" },
                 { label: "Best GEO Tools", href: "/best-geo-optimization-tools" },
