@@ -1,0 +1,231 @@
+diff --git a/artifacts/geo-seo-tool/scripts/prerender.mjs b/artifacts/geo-seo-tool/scripts/prerender.mjs
+index 2fe80a5..2a146b8 100644
+--- a/artifacts/geo-seo-tool/scripts/prerender.mjs
++++ b/artifacts/geo-seo-tool/scripts/prerender.mjs
+@@ -191,6 +191,7 @@ function buildVisibilityGuideContent(guide) {
+       <aside style="margin:26px 0;padding:20px;border:1px solid #a7f3d0;border-radius:14px;background:#ecfdf5"><h2>Key takeaways</h2><ul style="padding-left:22px">${takeaways}</ul></aside>
+       <nav aria-label="On this page" style="margin:26px 0;padding:18px;border:1px solid #dbe4ea;border-radius:14px"><h2>Contents</h2><ol style="padding-left:22px">${contents}</ol></nav>
+       ${sections}
++      <section id="brand-review" style="margin-top:40px"><h2>Review how AI describes your brand</h2><p>Inspired by <a href="https://www.annsmarty.com/">Ann Smarty</a>’s approach to reviewing brand attributes, buying objections and cited sources. <a href="https://www.annsmarty.com/p/geoaeo-audit-and-ai-visibility-tracking">Read her original article</a>. This is practitioner guidance, not an endorsement or a confirmed ranking factor.</p><p>The interactive manual review records repeatable context, answer evidence, objections, cited sources and a specific action with an owner and recheck date. It requires JavaScript. Notes stay in this tab; download the CSV before navigating away or reloading. No values are saved to your account or sent to an AI provider.</p></section>
+       <section id="worksheet" style="margin-top:40px"><h2>Copy the repeatable worksheet</h2><p>${escapeHtmlText(guide.worksheet.intro)}</p><div id="ai-visibility-worksheet"><fieldset style="margin:18px 0;padding:16px;border:1px solid #cbd5e1;border-radius:12px"><legend style="padding:0 6px;font-weight:700">Scope and comparison</legend>${setupFields}</fieldset>${signalCards}<button type="button">${escapeHtmlText(guide.worksheet.downloadLabel)}</button> <button type="button">${escapeHtmlText(guide.worksheet.resetLabel)}</button></div></section>
+       <section id="worked-example" style="margin-top:40px"><h2>${escapeHtmlText(guide.workedExample.heading)}</h2><p style="padding:12px;border-left:4px solid #f59e0b;background:#fffbeb">${escapeHtmlText(guide.workedExample.notice)}</p><p>${escapeHtmlText(guide.workedExample.intro)}</p><ul style="padding-left:24px">${exampleRows}</ul><p>${escapeHtmlText(guide.workedExample.closing)}</p></section>
+       <section style="margin-top:40px"><h2>Sources</h2><p>Claims about provider reporting are linked to current official documentation. Values in the worked example are hypothetical.</p><ul style="padding-left:24px">${sources}</ul></section>
+diff --git a/artifacts/geo-seo-tool/src/data/ai-search-visibility-measurement.json b/artifacts/geo-seo-tool/src/data/ai-search-visibility-measurement.json
+index 183a877..8c13a84 100644
+--- a/artifacts/geo-seo-tool/src/data/ai-search-visibility-measurement.json
++++ b/artifacts/geo-seo-tool/src/data/ai-search-visibility-measurement.json
+@@ -50,6 +50,14 @@
+       "id": "repeatable-questions",
+       "label": "Choose repeatable questions from real demand"
+     },
++    {
++      "id": "brand-perception",
++      "label": "Check brand descriptions and buying objections"
++    },
++    {
++      "id": "brand-review",
++      "label": "Open the manual brand review"
++    },
+     {
+       "id": "worksheet",
+       "label": "Use the worksheet"
+@@ -218,6 +226,21 @@
+       ],
+       "sourceIds": []
+     },
++    {
++      "id": "brand-perception",
++      "heading": "Check brand descriptions and buying objections",
++      "paragraphs": [
++        "Ann Smarty recommends reviewing the attributes attached to a brand, the objections that could discourage a buyer, and the sources cited alongside those descriptions. This section and the manual review below are inspired by her practitioner guidance. Her original article is linked below, along with her website. She has not endorsed this tool.",
++        "Compare a brand with a close alternative using the same question. Save the answer, setup and evidence. Check whether an objection describes a genuine limitation, an outdated claim, a real service problem or something still unverified. Start with pages and profiles you control. Correct facts with evidence and fix actual service problems; do not try to hide legitimate criticism.",
++        "Fictional example: an assistant describes a scheduling product as suitable only for solo users. The reviewer checks the cited pricing page and finds an old one-seat limit. The product now supports team scheduling, confirmed in current documentation. The product owner updates the pricing page and checks the published text. A later run of the same prompt still needs its own evidence; the correction being live does not guarantee that an assistant will use it.",
++        "Use the manual brand review below to document one answer and export a decision record. Keep these qualitative observations separate from provider totals and verified business outcomes. Cited URLs do not prove which sources shaped an answer. Record grounding queries only when a provider exposes them; otherwise mark them unavailable."
++      ],
++      "bullets": [],
++      "sourceIds": [
++        "ann-smarty",
++        "ann-smarty-site"
++      ]
++    },
+     {
+       "id": "repeatable-questions",
+       "heading": "Choose repeatable questions from real demand",
+@@ -465,6 +488,16 @@
+       "id": "zyppy-fan-out",
+       "label": "Cyrus Shepard, Zyppy Signal: Fan-out Framework, practitioner guidance",
+       "url": "https://signal.zyppy.com/p/fan-out-framework"
++    },
++    {
++      "id": "ann-smarty",
++      "label": "Ann Smarty: GEO/AEO Audit and AI Visibility Tracking, November 3, 2026",
++      "url": "https://www.annsmarty.com/p/geoaeo-audit-and-ai-visibility-tracking"
++    },
++    {
++      "id": "ann-smarty-site",
++      "label": "Ann Smarty: website and newsletter",
++      "url": "https://www.annsmarty.com/"
+     }
+   ],
+   "related": [
+@@ -488,5 +521,5 @@
+     "href": "/free-aeo-audit-tool"
+   },
+   "reviewed": "2026-10-20",
+-  "modified": "2026-10-27"
++  "modified": "2026-11-03"
+ }
+diff --git a/artifacts/geo-seo-tool/src/pages/ai-search-visibility-measurement.tsx b/artifacts/geo-seo-tool/src/pages/ai-search-visibility-measurement.tsx
+index 9a8bf33..3bd6985 100644
+--- a/artifacts/geo-seo-tool/src/pages/ai-search-visibility-measurement.tsx
++++ b/artifacts/geo-seo-tool/src/pages/ai-search-visibility-measurement.tsx
+@@ -1,3 +1,4 @@
++import { BrandPerceptionReview } from "@/components/brand-perception-review";
+ import { csvCell } from "@/lib/worksheet-csv";
+ import { useState, type ReactNode } from "react";
+ import { Link } from "wouter";
+@@ -250,6 +251,8 @@ export default function AiSearchVisibilityMeasurement() {
+                 ))}
+               </div>
+ 
++              <BrandPerceptionReview />
++
+               <section id="worksheet" aria-labelledby="worksheet-heading" className="mt-14 scroll-mt-8 border-t border-slate-200 pt-10">
+                 <p className="text-xs font-bold uppercase tracking-[0.14em] text-teal-800">Reusable worksheet</p>
+                 <h2 id="worksheet-heading" className="mt-2 text-3xl font-bold tracking-[-0.03em] text-[#102a3a]">{articleData.contents.find((item) => item.id === "worksheet")?.label}</h2>
+diff --git a/artifacts/geo-seo-tool/src/pages/simulate.tsx b/artifacts/geo-seo-tool/src/pages/simulate.tsx
+index 2ce07c0..67a1d3b 100644
+--- a/artifacts/geo-seo-tool/src/pages/simulate.tsx
++++ b/artifacts/geo-seo-tool/src/pages/simulate.tsx
+@@ -1,3 +1,4 @@
++import { BrandPerceptionReview } from "@/components/brand-perception-review";
+ import React, { useState, useMemo } from "react";
+ import { useParams, Link } from "wouter";
+ import {
+@@ -631,6 +632,8 @@ export default function SimulatePage() {
+         </p>
+       </div>
+ 
++      <BrandPerceptionReview />
++
+       {/* Value proposition explainer */}
+       <div className="rounded-xl border border-violet-500/20 bg-gradient-to-br from-violet-500/5 via-transparent to-transparent p-5">
+         <p className="text-xs font-semibold uppercase tracking-wider text-violet-700 dark:text-violet-400 mb-4">What this answers</p>
+@@ -650,7 +653,7 @@ export default function SimulatePage() {
+             </div>
+             <div>
+               <p className="text-sm font-semibold">Am I being cited?</p>
+-              <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">Citation = a source link to your domain. It drives traffic and signals to the engine that your site is authoritative.</p>
++              <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">A citation is a source link to your domain in this answer. It does not establish a visit, authority, or a business outcome.</p>
+             </div>
+           </div>
+           <div className="flex gap-3">
+diff --git a/artifacts/geo-seo-tool/src/components/brand-perception-review.tsx b/artifacts/geo-seo-tool/src/components/brand-perception-review.tsx
+new file mode 100644
+index 0000000..6597104
+--- /dev/null
++++ b/artifacts/geo-seo-tool/src/components/brand-perception-review.tsx
+@@ -0,0 +1,42 @@
++import { useState } from 'react';
++import { brandReviewCsv, objectionTypes, reviewGroups } from '@/lib/brand-review';
++
++export function BrandPerceptionReview() {
++  const [values, setValues] = useState<Record<string, string>>({});
++  const [downloaded, setDownloaded] = useState(false);
++  function update(key: string, value: string) {
++    setValues(current => ({ ...current, [key]: value }));
++    setDownloaded(false);
++  }
++  function download() {
++    const url = URL.createObjectURL(new Blob([brandReviewCsv(values)], { type: 'text/csv;charset=utf-8' }));
++    const link = document.createElement('a');
++    link.href = url;
++    link.download = 'brand-perception-review.csv';
++    document.body.appendChild(link);
++    link.click();
++    link.remove();
++    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
++    setDownloaded(true);
++  }
++  return <section id="brand-review" aria-labelledby="brand-review-heading" className="my-10 scroll-mt-8 rounded-xl border border-teal-200 bg-white p-5 text-slate-800 sm:p-7">
++    <h2 id="brand-review-heading" className="text-2xl font-bold">Review how AI describes your brand</h2>
++    <p className="mt-3 text-sm leading-6">Inspired by <a className="text-teal-800 underline" href="https://www.annsmarty.com/" target="_blank" rel="noopener noreferrer">Ann Smarty</a>’s approach to reviewing brand attributes, buying objections and cited sources. <a className="text-teal-800 underline" href="https://www.annsmarty.com/p/geoaeo-audit-and-ai-visibility-tracking" target="_blank" rel="noopener noreferrer">Read her original article</a>. This is practitioner guidance, not an endorsement or a confirmed ranking factor.</p>
++    <p className="mt-3 text-sm leading-6">Use one form per prompt and engine answer. These notes stay in this tab and are lost on reload or navigation. Download before leaving. Nothing entered here is saved to your account or sent to an AI provider.</p>
++    <details className="mt-5">
++      <summary className="cursor-pointer rounded-lg border border-teal-700 px-4 py-3 font-semibold text-teal-900 focus-visible:outline focus-visible:outline-2">Open manual brand review</summary>
++      <div className="mt-6 space-y-6">
++        {reviewGroups.map(group => <fieldset key={group.title} className="min-w-0 rounded-lg border border-slate-200 p-4">
++          <legend className="px-2 font-semibold">{group.title}</legend>
++          <div className="grid gap-4 sm:grid-cols-2">{group.fields.map(([key, label, hint]) => <label key={key} className="block min-w-0 text-sm font-medium" htmlFor={`brand-review-${key}`}>
++            {label}<textarea id={`brand-review-${key}`} value={values[key] || ''} onChange={event => update(key, event.target.value)} placeholder={hint} rows={3} className="mt-2 block w-full rounded-md border border-slate-400 bg-white p-3 text-slate-900 focus:outline focus:outline-2 focus:outline-teal-700" />
++          </label>)}</div>
++          {group.title.startsWith('4.') && <label className="mt-4 block text-sm font-medium" htmlFor="brand-review-category">Objection category<select id="brand-review-category" value={values.category || 'Not reviewed'} onChange={event => update('category', event.target.value)} className="mt-2 block w-full rounded-md border border-slate-400 bg-white p-3 text-slate-900">{objectionTypes.map(type => <option key={type}>{type}</option>)}</select></label>}
++        </fieldset>)}
++        <p className="text-sm leading-6">Cited sources are evidence to inspect, not proof of influence or truth. A small prompt sample is not a measure of overall reputation. Keep unavailable queries distinct from generated suggestions. Private browsing does not remove every source of personalization.</p>
++        <div className="flex flex-wrap gap-3"><button type="button" onClick={download} className="min-h-11 rounded-lg bg-teal-800 px-4 py-3 font-semibold text-white">Download brand review CSV</button><button type="button" onClick={() => { if (window.confirm('Clear this review? Download a copy first if you need to keep it.')) { setValues({}); setDownloaded(false); } }} className="min-h-11 rounded-lg border border-slate-400 px-4 py-3">Clear brand review</button></div>
++        <p role="status" className="text-sm">{downloaded ? 'Download created. Keep the CSV before leaving this page.' : 'Review is not saved. Export a copy to keep your notes.'}</p>
++      </div>
++    </details>
++  </section>;
++}
+diff --git a/artifacts/geo-seo-tool/src/lib/brand-review.ts b/artifacts/geo-seo-tool/src/lib/brand-review.ts
+new file mode 100644
+index 0000000..ed304c4
+--- /dev/null
++++ b/artifacts/geo-seo-tool/src/lib/brand-review.ts
+@@ -0,0 +1,31 @@
++import { csvCell } from './worksheet-csv.ts';
++
++export const reviewGroups = [
++  { title: '1. Repeatable context', fields: [
++    ['brand', 'Brand or product', 'The exact brand being reviewed'],
++    ['competitor', 'Close competitor', 'A relevant alternative, or not applicable'],
++    ['prompt', 'Exact prompt', 'Paste the question unchanged'],
++    ['context', 'Date, engine and setup', 'Date/time, engine/model, country/language, login, plan and search enabled or disabled. Record unknowns.'],
++  ] },
++  { title: '2. What the answer says', fields: [
++    ['evidence', 'Answer evidence', 'Paste the relevant answer excerpt and a run ID or evidence reference'],
++    ['attributes', 'Observed brand attributes', 'Audience, features, price positioning or other descriptions actually present'],
++    ['objection', 'Buying objection', 'What might discourage a buyer? Use not observed if absent.'],
++    ['verification', 'Fact check', 'What supports or contradicts the claim? Record evidence and unknowns.'],
++  ] },
++  { title: '3. Sources you can inspect', fields: [
++    ['sources', 'Cited URLs and source types', 'For each URL: own site, owned profile, independent source, competitor or unknown. Match it to the relevant claim where possible.'],
++    ['grounding', 'Observed grounding queries', 'Paste only platform-disclosed queries with their evidence reference, or write unavailable.'],
++  ] },
++  { title: '4. Choose a useful action', fields: [
++    ['action', 'Action and target page', 'What should change, where, and what evidence will support it?'],
++    ['owner', 'Owner and recheck date', 'Who will do it and when will you repeat the same prompt and setup?'],
++    ['check', 'Completion check', 'How will you verify the correction or service improvement separately from a later AI response?'],
++  ] },
++] as const;
++export const objectionTypes = ['Not reviewed', 'True limitation needing context', 'Outdated claim needing correction', 'Real service problem needing work', 'Unverified assertion needing investigation', 'No objection observed'] as const;
++export function brandReviewCsv(values: Record<string, string>): string {
++  const rows = [['Group', 'Field', 'Value'], ...reviewGroups.flatMap(group => group.fields.map(([key, label]) => [group.title, label, values[key] || 'Not recorded'])), ['4. Choose a useful action', 'Objection category', values.category || 'Not reviewed']];
++  rows.push(['Credit', 'Practitioner guidance', 'Ann Smarty: https://www.annsmarty.com/p/geoaeo-audit-and-ai-visibility-tracking']);
++  return '\uFEFF' + rows.map(row => row.map(csvCell).join(',')).join('\r\n');
++}
+diff --git a/artifacts/geo-seo-tool/src/lib/brand-review.test.ts b/artifacts/geo-seo-tool/src/lib/brand-review.test.ts
+new file mode 100644
+index 0000000..8df6498
+--- /dev/null
++++ b/artifacts/geo-seo-tool/src/lib/brand-review.test.ts
+@@ -0,0 +1,18 @@
++import { test } from 'node:test';
++import assert from 'node:assert/strict';
++import { brandReviewCsv } from './brand-review.ts';
++
++test('review export preserves multiline evidence and credit, and marks missing data', () => {
++  const csv = brandReviewCsv({ evidence: 'First line\nHe said "teams"', category: 'Outdated claim needing correction' });
++  assert.ok(csv.startsWith('\uFEFF'));
++  assert.ok(csv.includes('"First line\nHe said ""teams"""'));
++  assert.ok(csv.includes('Not recorded'));
++  assert.ok(csv.includes('Outdated claim needing correction'));
++  assert.ok(csv.includes('Ann Smarty: https://www.annsmarty.com/'));
++});
++test('review export neutralizes formula values in evidence and action fields', () => {
++  const csv = brandReviewCsv({ evidence: '=HYPERLINK("https://example.com")', action: ' \t+1+1', owner: '@SUM(1)' });
++  assert.ok(csv.includes('"\'=HYPERLINK'));
++  assert.ok(csv.includes('"\' \t+1+1"'));
++  assert.ok(csv.includes('"\'@SUM(1)"'));
++});
